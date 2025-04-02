@@ -6,10 +6,10 @@ import {
   updatePayment,
   deletePayment,
   getStudentPayments,
-  getClassPayments,
+  getBatchPayments,
 } from "../controllers/paymentController.js";
 import { protect, authorize } from "../middleware/auth.js";
-import validate from "../middleware/validate.js";
+import { validate } from "../middleware/validate.js";
 import {
   createPaymentValidator,
   updatePaymentValidator,
@@ -49,7 +49,7 @@ router.get(
   getStudentPayments
 );
 
-// Get payments by class
-router.get("/class/:classId", authorize("admin", "staff"), getClassPayments);
+// Get payments by batch
+router.get("/batch/:batchId", authorize("admin", "staff"), getBatchPayments);
 
 export default router;

@@ -6,25 +6,28 @@ import {
   updateSubject,
   deleteSubject,
 } from "../controllers/subjectController.js";
-import { protect } from "../middleware/auth.js";
-import validate from "../middleware/validate.js";
+import { protect, authorize } from "../middleware/auth.js";
+import { validate } from "../middleware/validate.js";
 import {
-  subjectValidator,
+  createSubjectValidator,
   updateSubjectValidator,
 } from "../middleware/validators/subjectValidators.js";
 
 const router = express.Router();
 
-// Apply authentication middleware to all routes
+// All routes are protected
 router.use(protect);
 
-// Public routes (for authenticated users)
-router.get("/", getSubjects);
-router.get("/:id", getSubject);
+// Routes accessible by admin and staff
+router
+  .route("/")
+  .get(authorize("admin", "staff", "teacher"), getSubjects)
+  .post(authorize("admin"), createSubjectValidator, validate, createSubject);
 
-// Admin only routes
-router.post("/", subjectValidator, validate, createSubject);
-router.put("/:id", updateSubjectValidator, validate, updateSubject);
-router.delete("/:id", deleteSubject);
+router
+  .route("/:id")
+  .get(authorize("admin", "staff", "teacher"), getSubject)
+  .put(authorize("admin"), updateSubjectValidator, validate, updateSubject)
+  .delete(authorize("admin"), deleteSubject);
 
 export default router;

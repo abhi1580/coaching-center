@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import {
   Box,
   Typography,
@@ -20,6 +21,7 @@ import {
   MenuItem,
   Chip,
   Alert,
+  CircularProgress,
 } from "@mui/material";
 import {
   Add as AddIcon,
@@ -29,6 +31,8 @@ import {
 import { Formik, Form } from "formik";
 import * as Yup from "yup";
 import { teacherService } from "../services/api";
+import { fetchSubjects } from "../store/slices/subjectSlice";
+import { updateTeacher, createTeacher } from "../store/slices/teacherSlice";
 
 const validationSchema = Yup.object({
   name: Yup.string().required("Name is required"),
@@ -47,7 +51,7 @@ const validationSchema = Yup.object({
   address: Yup.string().required("Address is required"),
   subjects: Yup.array()
     .of(Yup.string())
-    .required("At least one subject is required"),
+    .min(1, "At least one subject is required"),
   qualification: Yup.string().required("Qualification is required"),
   experience: Yup.number()
     .required("Experience is required")
@@ -59,20 +63,9 @@ const validationSchema = Yup.object({
   status: Yup.string().required("Status is required"),
 });
 
-const subjects = [
-  "Physics",
-  "Chemistry",
-  "Mathematics",
-  "Biology",
-  "Computer Science",
-  "English",
-  "History",
-  "Geography",
-  "Economics",
-  "Political Science",
-];
-
 const Teachers = () => {
+  const dispatch = useDispatch();
+  const { subjects } = useSelector((state) => state.subjects);
   const [teachers, setTeachers] = useState([]);
   const [open, setOpen] = useState(false);
   const [selectedTeacher, setSelectedTeacher] = useState(null);
@@ -82,7 +75,8 @@ const Teachers = () => {
 
   useEffect(() => {
     fetchTeachers();
-  }, []);
+    dispatch(fetchSubjects());
+  }, [dispatch]);
 
   const fetchTeachers = async () => {
     try {
@@ -129,63 +123,28 @@ const Teachers = () => {
 
   const handleSubmit = async (values, { setSubmitting, resetForm }) => {
     try {
-      console.log("Form values before submission:", values);
-      console.log("Selected teacher:", selectedTeacher);
+      // Ensure subjects is an array of valid IDs
+      const subjectIds = Array.isArray(values.subjects)
+        ? values.subjects.filter((id) => id && id.trim() !== "") // Filter out empty/null values
+        : [];
+
+      const formData = {
+        ...values,
+        subjects: subjectIds,
+        status: values.status || "active",
+      };
 
       if (selectedTeacher) {
-        // For update, remove password and email from the data
-        const { password, email, ...updateData } = values;
-        console.log("Updating teacher with data:", updateData);
-        
-        try {
-          // Ensure we're sending the correct data format
-          const updatePayload = {
-            name: values.name,
-            phone: values.phone,
-            address: values.address,
-            subjects: values.subjects,
-            qualification: values.qualification,
-            experience: values.experience,
-            joiningDate: values.joiningDate,
-            salary: values.salary,
-            status: values.status,
-            gender: values.gender
-          };
-          console.log("Update payload:", updatePayload);
-          
-          const response = await teacherService.update(selectedTeacher._id, updatePayload);
-          console.log("Update response:", response);
-          
-          if (response.data && response.data.success) {
-            setSuccess(response.data.message || "Teacher updated successfully");
-            await fetchTeachers(); // Wait for the fetch to complete
-            handleClose();
-            resetForm();
-          } else {
-            throw new Error(response.data?.message || "Failed to update teacher");
-          }
-        } catch (updateError) {
-          console.error("Update error:", updateError);
-          setError(updateError.response?.data?.message || "Error updating teacher");
-        }
+        await dispatch(
+          updateTeacher({ id: selectedTeacher._id, data: formData })
+        ).unwrap();
       } else {
-        // For create, include all data including password
-        console.log("Creating teacher with data:", values);
-        try {
-          const response = await teacherService.create(values);
-          console.log("Create response:", response);
-          setSuccess("Teacher added successfully");
-          await fetchTeachers(); // Wait for the fetch to complete
-          handleClose();
-          resetForm();
-        } catch (createError) {
-          console.error("Create error:", createError);
-          setError(createError.response?.data?.message || "Error creating teacher");
-        }
+        await dispatch(createTeacher(formData)).unwrap();
       }
-    } catch (error) {
-      console.error("Error in handleSubmit:", error);
-      setError("An unexpected error occurred");
+      handleClose();
+      resetForm();
+    } catch (err) {
+      console.error("Error saving teacher:", err);
     } finally {
       setSubmitting(false);
     }
@@ -194,36 +153,44 @@ const Teachers = () => {
   const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this teacher?")) {
       try {
-        console.log("Deleting teacher with ID:", id);
-        const response = await teacherService.delete(id);
-        console.log("Delete response:", response);
-
-        if (response.data && response.data.success) {
-          setSuccess(response.data.message || "Teacher deleted successfully");
-          await fetchTeachers(); // Wait for the fetch to complete
-        } else {
-          throw new Error(response.data?.message || "Failed to delete teacher");
-        }
+        await teacherService.delete(id);
+        setSuccess("Teacher deleted successfully");
+        fetchTeachers();
       } catch (error) {
         console.error("Error deleting teacher:", error);
-        setError(
-          error.response?.data?.message ||
-            error.message ||
-            "Error deleting teacher"
-        );
+        setError(error.response?.data?.message || "Failed to delete teacher");
       }
     }
   };
 
-  return (
-    <Box>
+  if (loading) {
+    return (
       <Box
-        display="flex"
-        justifyContent="space-between"
-        alignItems="center"
-        mb={3}
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          minHeight: "60vh",
+        }}
       >
-        <Typography variant="h4">Teachers</Typography>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  return (
+    <Box sx={{ p: 3 }}>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          mb: 3,
+        }}
+      >
+        <Typography variant="h4" component="h1">
+          Teachers
+        </Typography>
         <Button
           variant="contained"
           color="primary"
@@ -235,17 +202,13 @@ const Teachers = () => {
       </Box>
 
       {error && (
-        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
+        <Alert severity="error" sx={{ mb: 2 }}>
           {error}
         </Alert>
       )}
 
       {success && (
-        <Alert
-          severity="success"
-          sx={{ mb: 2 }}
-          onClose={() => setSuccess(null)}
-        >
+        <Alert severity="success" sx={{ mb: 2 }}>
           {success}
         </Alert>
       )}
@@ -255,78 +218,103 @@ const Teachers = () => {
           <TableHead>
             <TableRow>
               <TableCell>Name</TableCell>
+              <TableCell>Contact</TableCell>
+              <TableCell>Professional Info</TableCell>
               <TableCell>Subjects</TableCell>
-              <TableCell>Qualification</TableCell>
-              <TableCell>Experience</TableCell>
-              <TableCell>Phone</TableCell>
               <TableCell>Status</TableCell>
               <TableCell>Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {loading ? (
-              <TableRow>
-                <TableCell colSpan={7} align="center">
-                  Loading...
+            {teachers.map((teacher) => (
+              <TableRow key={teacher._id}>
+                <TableCell>
+                  <Box>
+                    <Typography variant="subtitle1" fontWeight="bold">
+                      {teacher.name}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {teacher.email}
+                    </Typography>
+                  </Box>
                 </TableCell>
-              </TableRow>
-            ) : teachers.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={7} align="center">
-                  No teachers found
+                <TableCell>
+                  <Box>
+                    <Typography variant="body2">{teacher.phone}</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {teacher.address}
+                    </Typography>
+                  </Box>
                 </TableCell>
-              </TableRow>
-            ) : (
-              teachers.map((teacher) => (
-                <TableRow key={teacher._id}>
-                  <TableCell>{teacher.name}</TableCell>
-                  <TableCell>
-                    <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
-                      {teacher.subjects?.map((subject) => (
+                <TableCell>
+                  <Box>
+                    <Typography variant="body2">
+                      {teacher.qualification}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {teacher.experience} years exp.
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      ₹{teacher.salary}/month
+                    </Typography>
+                  </Box>
+                </TableCell>
+                <TableCell>
+                  <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
+                    {teacher.subjects?.map((subjectId) => {
+                      const subject = subjects.find((s) => s._id === subjectId);
+                      return (
                         <Chip
-                          key={subject}
-                          label={subject}
+                          key={subjectId}
+                          label={subject?.name || subjectId}
                           size="small"
                           color="primary"
                           variant="outlined"
                         />
-                      ))}
-                    </Box>
-                  </TableCell>
-                  <TableCell>{teacher.qualification}</TableCell>
-                  <TableCell>{teacher.experience} years</TableCell>
-                  <TableCell>{teacher.phone}</TableCell>
-                  <TableCell>
-                    <Chip
-                      label={teacher.status}
-                      color={
-                        teacher.status === "active" ? "success" : "success"
-                      }
-                      size="small"
-                    />
-                  </TableCell>
-                  <TableCell>
+                      );
+                    })}
+                  </Box>
+                </TableCell>
+                <TableCell>
+                  <Chip
+                    label={teacher.status}
+                    color={teacher.status === "active" ? "success" : "error"}
+                    size="small"
+                  />
+                </TableCell>
+                <TableCell>
+                  <Box sx={{ display: "flex", gap: 1 }}>
                     <IconButton
-                      onClick={() => handleOpen(teacher)}
                       color="primary"
+                      onClick={() => handleOpen(teacher)}
+                      size="small"
                     >
                       <EditIcon />
                     </IconButton>
                     <IconButton
-                      onClick={() => handleDelete(teacher._id)}
                       color="error"
+                      onClick={() => handleDelete(teacher._id)}
+                      size="small"
                     >
                       <DeleteIcon />
                     </IconButton>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
+                  </Box>
+                </TableCell>
+              </TableRow>
+            ))}
           </TableBody>
         </Table>
       </TableContainer>
 
-      <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
+      <Dialog
+        open={open}
+        onClose={handleClose}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{
+          sx: { minHeight: "50vh" },
+        }}
+      >
         <DialogTitle>
           {selectedTeacher ? "Edit Teacher" : "Add New Teacher"}
         </DialogTitle>
@@ -336,7 +324,7 @@ const Teachers = () => {
               initialValues={{
                 name: selectedTeacher?.name || "",
                 email: selectedTeacher?.email || "",
-                password: selectedTeacher?.password || "",
+                password: "", // Always start with empty password
                 phone: selectedTeacher?.phone || "",
                 gender: selectedTeacher?.gender || "male",
                 address: selectedTeacher?.address || "",
@@ -356,6 +344,7 @@ const Teachers = () => {
               validateOnBlur={true}
               onSubmit={handleSubmit}
               context={{ isEdit: !!selectedTeacher }}
+              enableReinitialize={true} // Add this to update form when selectedTeacher changes
             >
               {({
                 values,
@@ -363,11 +352,12 @@ const Teachers = () => {
                 touched,
                 handleChange,
                 handleBlur,
+                handleSubmit,
                 isSubmitting,
-                handleSubmit: formikHandleSubmit
+                setFieldValue,
               }) => (
-                <Form onSubmit={formikHandleSubmit}>
-                  <Grid container spacing={3}>
+                <form onSubmit={handleSubmit}>
+                  <Grid container spacing={2}>
                     {/* Personal Information Section */}
                     <Grid item xs={12}>
                       <Typography variant="h6" color="primary" gutterBottom>
@@ -378,7 +368,7 @@ const Teachers = () => {
                       <TextField
                         fullWidth
                         name="name"
-                        label="Teacher Name"
+                        label="Name"
                         value={values.name}
                         onChange={handleChange}
                         onBlur={handleBlur}
@@ -391,29 +381,31 @@ const Teachers = () => {
                         fullWidth
                         name="email"
                         label="Email"
+                        type="email"
                         value={values.email}
                         onChange={handleChange}
                         onBlur={handleBlur}
                         error={touched.email && Boolean(errors.email)}
                         helperText={touched.email && errors.email}
-                        disabled={!!selectedTeacher}
                       />
                     </Grid>
-                    {!selectedTeacher && (
-                      <Grid item xs={12} sm={6}>
-                        <TextField
-                          fullWidth
-                          name="password"
-                          label="Password"
-                          type="password"
-                          value={values.password}
-                          onChange={handleChange}
-                          onBlur={handleBlur}
-                          error={touched.password && Boolean(errors.password)}
-                          helperText={touched.password && errors.password}
-                        />
-                      </Grid>
-                    )}
+                    <Grid item xs={12} sm={6}>
+                      <TextField
+                        fullWidth
+                        name="password"
+                        label={
+                          selectedTeacher
+                            ? "New Password (Optional)"
+                            : "Password"
+                        }
+                        type="password"
+                        value={values.password}
+                        onChange={handleChange}
+                        onBlur={handleBlur}
+                        error={touched.password && Boolean(errors.password)}
+                        helperText={touched.password && errors.password}
+                      />
+                    </Grid>
                     <Grid item xs={12} sm={6}>
                       <TextField
                         fullWidth
@@ -432,15 +424,11 @@ const Teachers = () => {
                         select
                         name="gender"
                         label="Gender"
-                        value={values.gender || "male"}
-                        onChange={(e) => {
-                          console.log("Gender selected:", e.target.value);
-                          handleChange(e);
-                        }}
+                        value={values.gender}
+                        onChange={handleChange}
                         onBlur={handleBlur}
                         error={touched.gender && Boolean(errors.gender)}
                         helperText={touched.gender && errors.gender}
-                        disabled={!!selectedTeacher}
                       >
                         <MenuItem value="male">Male</MenuItem>
                         <MenuItem value="female">Female</MenuItem>
@@ -475,24 +463,12 @@ const Teachers = () => {
                     </Grid>
                     <Grid item xs={12}>
                       <TextField
-                        fullWidth
                         select
-                        multiple
+                        fullWidth
                         name="subjects"
-                        label="Select Subjects"
+                        label="Subjects"
                         value={values.subjects}
-                        onChange={(e) => {
-                          const selectedSubjects = Array.isArray(e.target.value)
-                            ? e.target.value
-                            : [e.target.value];
-                          handleChange({
-                            target: {
-                              name: "subjects",
-                              value: selectedSubjects,
-                            },
-                          });
-                        }}
-                        onBlur={handleBlur}
+                        onChange={handleChange}
                         error={touched.subjects && Boolean(errors.subjects)}
                         helperText={touched.subjects && errors.subjects}
                         SelectProps={{
@@ -506,15 +482,21 @@ const Teachers = () => {
                               }}
                             >
                               {selected.map((value) => (
-                                <Chip key={value} label={value} size="small" />
+                                <Chip
+                                  key={value}
+                                  label={
+                                    subjects.find((s) => s._id === value)
+                                      ?.name || value
+                                  }
+                                />
                               ))}
                             </Box>
                           ),
                         }}
                       >
                         {subjects.map((subject) => (
-                          <MenuItem key={subject} value={subject}>
-                            {subject}
+                          <MenuItem key={subject._id} value={subject._id}>
+                            {subject.name}
                           </MenuItem>
                         ))}
                       </TextField>
@@ -548,18 +530,6 @@ const Teachers = () => {
                         helperText={touched.experience && errors.experience}
                       />
                     </Grid>
-
-                    {/* Employment Details Section */}
-                    <Grid item xs={12}>
-                      <Typography
-                        variant="h6"
-                        color="primary"
-                        gutterBottom
-                        sx={{ mt: 2 }}
-                      >
-                        Employment Details
-                      </Typography>
-                    </Grid>
                     <Grid item xs={12} sm={6}>
                       <TextField
                         fullWidth
@@ -571,6 +541,22 @@ const Teachers = () => {
                         onBlur={handleBlur}
                         error={touched.salary && Boolean(errors.salary)}
                         helperText={touched.salary && errors.salary}
+                      />
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                      <TextField
+                        fullWidth
+                        name="joiningDate"
+                        label="Joining Date"
+                        type="date"
+                        value={values.joiningDate}
+                        onChange={handleChange}
+                        onBlur={handleBlur}
+                        error={
+                          touched.joiningDate && Boolean(errors.joiningDate)
+                        }
+                        helperText={touched.joiningDate && errors.joiningDate}
+                        InputLabelProps={{ shrink: true }}
                       />
                     </Grid>
                     <Grid item xs={12} sm={6}>
@@ -589,75 +575,19 @@ const Teachers = () => {
                         <MenuItem value="inactive">Inactive</MenuItem>
                       </TextField>
                     </Grid>
-                    <Grid item xs={12} sm={6}>
-                      <TextField
-                        fullWidth
-                        name="joiningDate"
-                        label="Joining Date"
-                        type="date"
-                        value={values.joiningDate}
-                        onChange={handleChange}
-                        onBlur={handleBlur}
-                        error={
-                          touched.joiningDate && Boolean(errors.joiningDate)
-                        }
-                        helperText={touched.joiningDate && errors.joiningDate}
-                        InputLabelProps={{ shrink: true }}
-                      />
-                    </Grid>
                   </Grid>
-                  <DialogActions sx={{ mt: 3 }}>
-                    <Button onClick={handleClose} color="inherit">
-                      Cancel
-                    </Button>
+                  <DialogActions sx={{ mt: 2 }}>
+                    <Button onClick={handleClose}>Cancel</Button>
                     <Button
                       type="submit"
                       variant="contained"
-                      disabled={isSubmitting}
                       color="primary"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        console.log("Submit button clicked");
-                        console.log("Form values:", values);
-                        console.log("Selected teacher:", selectedTeacher);
-                        if (selectedTeacher) {
-                          const updatePayload = {
-                            name: values.name,
-                            phone: values.phone,
-                            address: values.address,
-                            subjects: values.subjects,
-                            qualification: values.qualification,
-                            experience: values.experience,
-                            joiningDate: values.joiningDate,
-                            salary: values.salary,
-                            status: values.status,
-                            gender: values.gender
-                          };
-                          console.log("Update payload:", updatePayload);
-                          teacherService.update(selectedTeacher._id, updatePayload)
-                            .then(response => {
-                              console.log("Update response:", response);
-                              if (response.data && response.data.success) {
-                                setSuccess(response.data.message || "Teacher updated successfully");
-                                fetchTeachers();
-                                handleClose();
-                              } else {
-                                throw new Error(response.data?.message || "Failed to update teacher");
-                              }
-                            })
-                            .catch(error => {
-                              console.error("Update error:", error);
-                              setError(error.response?.data?.message || "Error updating teacher");
-                            });
-                        } else {
-                          formikHandleSubmit(e);
-                        }
-                      }}
+                      disabled={isSubmitting}
                     >
-                      {selectedTeacher ? "Update Teacher" : "Add Teacher"}
+                      {selectedTeacher ? "Update" : "Add"}
                     </Button>
                   </DialogActions>
-                </Form>
+                </form>
               )}
             </Formik>
           </Box>

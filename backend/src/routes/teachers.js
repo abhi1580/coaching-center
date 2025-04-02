@@ -7,7 +7,7 @@ import {
   deleteTeacher,
 } from "../controllers/teacherController.js";
 import { protect, authorize } from "../middleware/auth.js";
-import validate from "../middleware/validate.js";
+import { validate } from "../middleware/validate.js";
 import {
   createTeacherValidator,
   updateTeacherValidator,
@@ -15,21 +15,19 @@ import {
 
 const router = express.Router();
 
-// Protect all routes after this middleware
+// All routes are protected
 router.use(protect);
 
-// All routes are admin-only
-router.use(authorize("admin"));
-
+// Routes accessible by admin and staff
 router
   .route("/")
-  .get(getTeachers)
-  .post(createTeacherValidator, validate, createTeacher);
+  .get(authorize("admin", "staff"), getTeachers)
+  .post(authorize("admin"), createTeacher);
 
 router
   .route("/:id")
-  .get(getTeacher)
-  .put(updateTeacherValidator, validate, updateTeacher)
-  .delete(deleteTeacher);
+  .get(authorize("admin", "staff"), getTeacher)
+  .put(authorize("admin"), updateTeacher)
+  .delete(authorize("admin"), deleteTeacher);
 
 export default router;

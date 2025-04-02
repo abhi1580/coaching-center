@@ -11,6 +11,7 @@ import staffRoutes from "./routes/staff.js";
 import teacherRoutes from "./routes/teachers.js";
 import subjectRoutes from "./routes/subjectRoutes.js";
 import standardRoutes from "./routes/standardRoutes.js";
+import dashboardRoutes from "./routes/dashboard.js";
 
 // Load environment variables
 dotenv.config();
@@ -23,6 +24,14 @@ connectDB();
 // Middleware
 app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Request logging middleware
+app.use((req, res, next) => {
+  console.log(`${req.method} ${req.url}`);
+  console.log("Request Body:", req.body);
+  next();
+});
 
 // Routes
 app.use("/api/auth", authRoutes);
@@ -34,10 +43,19 @@ app.use("/api/staff", staffRoutes);
 app.use("/api/teachers", teacherRoutes);
 app.use("/api/subjects", subjectRoutes);
 app.use("/api/standards", standardRoutes);
+app.use("/api/dashboard", dashboardRoutes);
+
+// 404 handler
+app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    message: "Route not found",
+  });
+});
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-  console.error(err.stack);
+  console.error("Error:", err);
   res.status(500).json({
     success: false,
     message: "Something went wrong!",
@@ -49,4 +67,6 @@ app.use((err, req, res, next) => {
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
+  console.log(`Environment: ${process.env.NODE_ENV}`);
+  console.log(`MongoDB URI: ${process.env.MONGODB_URI}`);
 });

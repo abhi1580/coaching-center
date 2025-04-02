@@ -7,7 +7,7 @@ export const getPayments = async (req, res) => {
   try {
     const payments = await Payment.find()
       .populate("student", "name")
-      .populate("class", "name")
+      .populate("batch", "name")
       .sort({ date: -1 });
     res.json(payments);
   } catch (error) {
@@ -23,7 +23,7 @@ export const getPayment = async (req, res) => {
 
     const payment = await Payment.findById(id)
       .populate("student", "name")
-      .populate("class", "name");
+      .populate("batch", "name");
     if (!payment) {
       return res.status(404).json({ message: "Payment not found" });
     }
@@ -33,14 +33,14 @@ export const getPayment = async (req, res) => {
   }
 };
 
-// Get payments for a specific class
-export const getClassPayments = async (req, res) => {
+// Get payments for a specific batch
+export const getBatchPayments = async (req, res) => {
   try {
-    const { classId } = req.params;
-    validateMongoDbId(classId);
-    const payments = await Payment.find({ class: classId })
+    const { batchId } = req.params;
+    validateMongoDbId(batchId);
+    const payments = await Payment.find({ batch: batchId })
       .populate("student", "name")
-      .populate("class", "name")
+      .populate("batch", "name")
       .sort({ date: -1 });
     res.json(payments);
   } catch (error) {
@@ -55,7 +55,7 @@ export const getStudentPayments = async (req, res) => {
     validateMongoDbId(studentId);
     const payments = await Payment.find({ student: studentId })
       .populate("student", "name")
-      .populate("class", "name")
+      .populate("batch", "name")
       .sort({ date: -1 });
     res.json(payments);
   } catch (error) {

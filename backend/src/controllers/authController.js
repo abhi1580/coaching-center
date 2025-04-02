@@ -317,3 +317,158 @@ export const resetPassword = async (req, res) => {
     });
   }
 };
+
+// @desc    Create admin user (Super admin only or first admin)
+// @route   POST /api/auth/create-admin
+// @access  Private (Super admin only) or Public (for first admin)
+export const createAdmin = async (req, res) => {
+  try {
+    console.log("Starting admin user creation process...");
+    console.log("Request body:", JSON.stringify(req.body, null, 2));
+
+    // Check if any admin exists
+    console.log("Checking for existing admin users...");
+    const adminExists = await User.findOne({ role: "admin" });
+    console.log("Admin exists:", !!adminExists);
+
+    // If admin exists, require authentication
+    if (adminExists) {
+      if (!req.user || req.user.role !== "admin") {
+        console.log("Unauthorized attempt to create admin");
+        return res.status(403).json({
+          success: false,
+          message: "Only super admin can create other admin users",
+        });
+      }
+    }
+
+    const { firstName, lastName, email, password, phone, address, gender } =
+      req.body;
+
+    console.log("Validating required fields...");
+    // Validate required fields
+    if (
+      !firstName ||
+      !lastName ||
+      !email ||
+      !password ||
+      !phone ||
+      !address ||
+      !gender
+    ) {
+      console.log("Missing required fields:", {
+        firstName: !!firstName,
+        lastName: !!lastName,
+        email: !!email,
+        password: !!password,
+        phone: !!phone,
+        address: !!address,
+        gender: !!gender,
+      });
+      return res.status(400).json({
+        success: false,
+        message: "Please provide all required fields",
+      });
+    }
+
+    // Check if user exists
+    console.log("Checking if user exists with email:", email);
+    const userExists = await User.findOne({ email });
+    if (userExists) {
+      console.log("User already exists with email:", email);
+      return res.status(400).json({
+        success: false,
+        message: "User already exists",
+      });
+    }
+
+    console.log("Creating new admin user...");
+    console.log("Preparing user data:", {
+      name: `${firstName} ${lastName}`,
+      email,
+      phone,
+      address,
+      gender,
+      role: "admin",
+      status: "active",
+    });
+
+    // Create admin user
+    console.log("Attempting to save user to database...");
+    const admin = await User.create({
+      name: `${firstName} ${lastName}`,
+      email,
+      password,
+      phone,
+      address,
+      gender,
+      role: "admin",
+      status: "active",
+    });
+    console.log("User saved successfully to database");
+
+    console.log("Admin user created successfully:", {
+      id: admin._id,
+      name: admin.name,
+      email: admin.email,
+      role: admin.role,
+    });
+
+    // Verify the user was actually created in the database
+    console.log("Verifying user in database...");
+    const verifyUser = await User.findById(admin._id);
+    console.log("Verification result:", verifyUser ? "Success" : "Failed");
+    if (verifyUser) {
+      console.log("Verified user details:", {
+        id: verifyUser._id,
+        name: verifyUser.name,
+        email: verifyUser.email,
+        role: verifyUser.role,
+      });
+    }
+
+    res.status(201).json({
+      success: true,
+      message: "Admin created successfully",
+      admin: {
+        id: admin._id,
+        name: admin.name,
+        email: admin.email,
+        role: admin.role,
+      },
+    });
+  } catch (error) {
+    console.error("Admin creation error:", {
+      name: error.name,
+      message: error.message,
+      code: error.code,
+      stack: error.stack,
+      details: error,
+    });
+    res.status(500).json({
+      success: false,
+      message: "Error in creating admin",
+      error: error.message,
+    });
+  }
+};
+
+export const logout = async (req, res) => {
+  try {
+    // Clear the token from the client
+    res.clearCookie("token");
+
+    // Send success response
+    res.status(200).json({
+      success: true,
+      message: "Logged out successfully",
+    });
+  } catch (error) {
+    console.error("Logout error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error during logout",
+      error: error.message,
+    });
+  }
+};

@@ -4,29 +4,23 @@ const subjectSchema = new mongoose.Schema(
   {
     name: {
       type: String,
-      required: [true, "Please add a subject name"],
+      required: [true, "Please add a name"],
       trim: true,
     },
     description: {
       type: String,
       required: [true, "Please add a description"],
+      trim: true,
     },
     duration: {
       type: String,
       required: [true, "Please add duration"],
+      trim: true,
     },
-    price: {
-      type: Number,
-      required: [true, "Please add price"],
-    },
-    standard: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Standard",
-      required: [true, "Please select a standard"],
-    },
-    isActive: {
-      type: Boolean,
-      default: true,
+    status: {
+      type: String,
+      enum: ["active", "inactive"],
+      default: "active",
     },
   },
   {

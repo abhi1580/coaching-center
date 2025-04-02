@@ -9,7 +9,7 @@ import {
   getStudentPayments,
 } from "../controllers/studentController.js";
 import { protect, authorize } from "../middleware/auth.js";
-import validate from "../middleware/validate.js";
+import { validate } from "../middleware/validate.js";
 import {
   createStudentValidator,
   updateStudentValidator,

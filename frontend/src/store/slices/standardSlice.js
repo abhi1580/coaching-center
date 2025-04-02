@@ -7,7 +7,7 @@ export const fetchStandards = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const response = await standardService.getAll();
-      return response.data.data || response.data;
+      return response.data;
     } catch (error) {
       return rejectWithValue(
         error.response?.data || { message: "Failed to fetch standards" }
@@ -20,9 +20,12 @@ export const createStandard = createAsyncThunk(
   "standards/create",
   async (standardData, { rejectWithValue }) => {
     try {
+      console.log("Creating standard with data:", standardData); // Debug log
       const response = await standardService.create(standardData);
+      console.log("Standard creation response:", response); // Debug log
       return response.data.data || response.data;
     } catch (error) {
+      console.error("Error creating standard:", error); // Debug log
       return rejectWithValue(
         error.response?.data || { message: "Failed to create standard" }
       );
@@ -83,7 +86,7 @@ const standardSlice = createSlice({
       })
       .addCase(fetchStandards.fulfilled, (state, action) => {
         state.loading = false;
-        state.standards = action.payload;
+        state.standards = action.payload.data || [];
       })
       .addCase(fetchStandards.rejected, (state, action) => {
         state.loading = false;
@@ -97,7 +100,7 @@ const standardSlice = createSlice({
       })
       .addCase(createStandard.fulfilled, (state, action) => {
         state.loading = false;
-        state.standards.push(action.payload);
+        state.standards.push(action.payload.data);
         state.success = true;
       })
       .addCase(createStandard.rejected, (state, action) => {

@@ -7,9 +7,9 @@ const paymentSchema = new mongoose.Schema(
       ref: "Student",
       required: true,
     },
-    class: {
+    batch: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Class",
+      ref: "Batch",
       required: true,
     },
     amount: {
@@ -47,7 +47,7 @@ const paymentSchema = new mongoose.Schema(
 );
 
 // Add indexes for better query performance
-paymentSchema.index({ student: 1, class: 1 });
+paymentSchema.index({ student: 1, batch: 1 });
 paymentSchema.index({ date: -1 });
 
 const Payment = mongoose.model("Payment", paymentSchema);

@@ -7,21 +7,25 @@ export const fetchSubjects = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const response = await subjectService.getAll();
-      return response.data.data || response.data;
+      return response.data;
     } catch (error) {
-      return rejectWithValue(error.response?.data || { message: "Failed to fetch subjects" });
+      return rejectWithValue(
+        error.response?.data?.message || "Failed to fetch subjects"
+      );
     }
   }
 );
 
 export const createSubject = createAsyncThunk(
   "subjects/create",
-  async (subjectData, { rejectWithValue }) => {
+  async (data, { rejectWithValue }) => {
     try {
-      const response = await subjectService.create(subjectData);
-      return response.data.data || response.data;
+      const response = await subjectService.create(data);
+      return response.data;
     } catch (error) {
-      return rejectWithValue(error.response?.data || { message: "Failed to create subject" });
+      return rejectWithValue(
+        error.response?.data?.message || "Failed to create subject"
+      );
     }
   }
 );
@@ -31,9 +35,11 @@ export const updateSubject = createAsyncThunk(
   async ({ id, data }, { rejectWithValue }) => {
     try {
       const response = await subjectService.update(id, data);
-      return response.data.data || response.data;
+      return response.data;
     } catch (error) {
-      return rejectWithValue(error.response?.data || { message: "Failed to update subject" });
+      return rejectWithValue(
+        error.response?.data?.message || "Failed to update subject"
+      );
     }
   }
 );
@@ -45,93 +51,90 @@ export const deleteSubject = createAsyncThunk(
       await subjectService.delete(id);
       return id;
     } catch (error) {
-      return rejectWithValue(error.response?.data || { message: "Failed to delete subject" });
+      return rejectWithValue(
+        error.response?.data?.message || "Failed to delete subject"
+      );
     }
   }
 );
 
-const initialState = {
-  subjects: [],
-  loading: false,
-  error: null,
-  success: false,
-};
-
 const subjectSlice = createSlice({
   name: "subjects",
-  initialState,
+  initialState: {
+    subjects: [],
+    loading: false,
+    error: null,
+    success: null,
+  },
   reducers: {
     resetStatus: (state) => {
       state.error = null;
-      state.success = false;
+      state.success = null;
     },
   },
   extraReducers: (builder) => {
     builder
-      // Fetch Subjects
+      // Fetch subjects
       .addCase(fetchSubjects.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
       .addCase(fetchSubjects.fulfilled, (state, action) => {
         state.loading = false;
-        state.subjects = action.payload;
+        state.subjects = action.payload.data || [];
       })
       .addCase(fetchSubjects.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload?.message || "Failed to fetch subjects";
+        state.error = action.payload;
       })
-      // Create Subject
+      // Create subject
       .addCase(createSubject.pending, (state) => {
         state.loading = true;
         state.error = null;
-        state.success = false;
       })
       .addCase(createSubject.fulfilled, (state, action) => {
         state.loading = false;
-        state.subjects.push(action.payload);
-        state.success = true;
+        state.subjects.push(action.payload.data);
+        state.success = "Subject created successfully";
       })
       .addCase(createSubject.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload?.message || "Failed to create subject";
+        state.error = action.payload;
       })
-      // Update Subject
+      // Update subject
       .addCase(updateSubject.pending, (state) => {
         state.loading = true;
         state.error = null;
-        state.success = false;
       })
       .addCase(updateSubject.fulfilled, (state, action) => {
         state.loading = false;
         const index = state.subjects.findIndex(
-          (s) => s._id === action.payload._id
+          (subject) => subject._id === action.payload.data._id
         );
         if (index !== -1) {
-          state.subjects[index] = action.payload;
+          state.subjects[index] = action.payload.data;
         }
-        state.success = true;
+        state.success = "Subject updated successfully";
       })
       .addCase(updateSubject.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload?.message || "Failed to update subject";
+        state.error = action.payload;
       })
-      // Delete Subject
+      // Delete subject
       .addCase(deleteSubject.pending, (state) => {
         state.loading = true;
         state.error = null;
-        state.success = false;
       })
       .addCase(deleteSubject.fulfilled, (state, action) => {
         state.loading = false;
         state.subjects = state.subjects.filter(
-          (s) => s._id !== action.payload
+          (subject) => subject._id !== action.payload
         );
-        state.success = true;
+        state.success = "Subject deleted successfully";
       })
       .addCase(deleteSubject.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload?.message || "Failed to delete subject";
+        state.error = action.payload;
       });
   },
 });

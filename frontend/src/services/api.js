@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const api = axios.create({
+export const api = axios.create({
   baseURL: "http://localhost:5000/api",
   headers: {
     "Content-Type": "application/json",
@@ -75,15 +75,6 @@ export const teacherService = {
   delete: (id) => api.delete(`/teachers/${id}`),
 };
 
-// Batch services
-export const batchService = {
-  getAll: () => api.get("/batches"),
-  getById: (id) => api.get(`/batches/${id}`),
-  create: (data) => api.post("/batches", data),
-  update: (id, data) => api.put(`/batches/${id}`, data),
-  delete: (id) => api.delete(`/batches/${id}`),
-};
-
 // Subject services
 export const subjectService = {
   getAll: () => api.get("/subjects"),
@@ -100,6 +91,24 @@ export const standardService = {
   create: (data) => api.post("/standards", data),
   update: (id, data) => api.put(`/standards/${id}`, data),
   delete: (id) => api.delete(`/standards/${id}`),
+};
+
+// Batch services
+export const batchService = {
+  getAll: () => api.get("/batches"),
+  getById: (id) => api.get(`/batches/${id}`),
+  create: (data) => api.post("/batches", data),
+  update: (id, data) => api.put(`/batches/${id}`, data),
+  delete: (id) => api.delete(`/batches/${id}`),
+};
+
+// Class services
+export const classService = {
+  getAll: () => api.get("/classes"),
+  getById: (id) => api.get(`/classes/${id}`),
+  create: (data) => api.post("/classes", data),
+  update: (id, data) => api.put(`/classes/${id}`, data),
+  delete: (id) => api.delete(`/classes/${id}`),
 };
 
 // Payment services
@@ -120,18 +129,19 @@ export const announcementService = {
   delete: (id) => api.delete(`/announcements/${id}`),
 };
 
-// Staff services
+// Dashboard services
+export const dashboardService = {
+  getStats: () => api.get("/dashboard/stats"),
+  getRecentActivities: () => api.get("/dashboard/recent-activities"),
+  getUpcomingClasses: () => api.get("/dashboard/upcoming-classes"),
+};
+
+// Staff Service
 export const staffService = {
   getAll: () => api.get("/staff"),
   getById: (id) => api.get(`/staff/${id}`),
   create: (data) => api.post("/staff", data),
   update: (id, data) => api.put(`/staff/${id}`, data),
   delete: (id) => api.delete(`/staff/${id}`),
+  updateStatus: (id, status) => api.patch(`/staff/${id}/status`, { status }),
 };
-
-// Dashboard services
-export const dashboardService = {
-  getStats: () => api.get("/dashboard/stats"),
-};
-
-export { api };

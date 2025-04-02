@@ -23,6 +23,7 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  Chip,
 } from "@mui/material";
 import {
   Add as AddIcon,
@@ -50,7 +51,9 @@ const validationSchema = Yup.object({
     .required("Description is required")
     .min(10, "Description must be at least 10 characters")
     .max(500, "Description must not exceed 500 characters"),
-  subjects: Yup.array().of(Yup.string()),
+  subjects: Yup.array()
+    .of(Yup.string().required("Subject ID is required"))
+    .min(1, "At least one subject is required"),
 });
 
 const Standards = () => {
@@ -68,6 +71,19 @@ const Standards = () => {
   }, [dispatch]);
 
   useEffect(() => {
+    if (subjects) {
+      console.log(
+        "Available subjects:",
+        subjects.map((s) => ({
+          id: s._id,
+          name: s.name,
+          status: s.status,
+        }))
+      );
+    }
+  }, [subjects]);
+
+  useEffect(() => {
     if (success) {
       setOpen(false);
       setEditingStandard(null);
@@ -83,11 +99,65 @@ const Standards = () => {
       subjects: [],
     },
     validationSchema: validationSchema,
-    onSubmit: (values) => {
-      if (editingStandard) {
-        dispatch(updateStandard({ id: editingStandard._id, data: values }));
-      } else {
-        dispatch(createStandard(values));
+    onSubmit: async (values) => {
+      try {
+        // Ensure subjects is an array of valid IDs
+        const formData = {
+          ...values,
+          subjects: Array.isArray(values.subjects)
+            ? values.subjects.filter((id) => id && id.trim() !== "")
+            : [],
+          level: Number(values.level),
+        };
+
+        console.log("Form submission details:");
+        console.log(
+          "Available subjects:",
+          subjects?.map((s) => ({
+            id: s._id,
+            name: s.name,
+            status: s.status,
+          }))
+        );
+        console.log("Selected subject IDs:", formData.subjects);
+        console.log(
+          "Selected subject names:",
+          formData.subjects.map((id) => {
+            const subject = subjects?.find((s) => s._id === id);
+            return subject ? subject.name : "Unknown";
+          })
+        );
+        console.log("Full form data:", formData);
+
+        // Validate that all selected subjects exist and are active
+        const invalidSubjects = formData.subjects.filter((id) => {
+          const subject = subjects?.find((s) => s._id === id);
+          return !subject || subject.status !== "active";
+        });
+
+        if (invalidSubjects.length > 0) {
+          console.error("Invalid subjects found:", invalidSubjects);
+          formik.setFieldError("subjects", "Please select valid subjects");
+          return;
+        }
+
+        if (editingStandard) {
+          await dispatch(
+            updateStandard({ id: editingStandard._id, data: formData })
+          ).unwrap();
+        } else {
+          await dispatch(createStandard(formData)).unwrap();
+        }
+      } catch (error) {
+        console.error("Error submitting form:", error);
+        if (error.invalidSubjects) {
+          formik.setFieldError("subjects", "Please select valid subjects");
+        } else {
+          formik.setFieldError(
+            "subjects",
+            error.message || "Error selecting subjects"
+          );
+        }
       }
     },
   });
@@ -95,11 +165,25 @@ const Standards = () => {
   const handleOpen = (standard = null) => {
     if (standard) {
       setEditingStandard(standard);
+      console.log("Editing standard:", standard);
+      console.log("Standard subjects:", standard.subjects);
+
+      // Ensure we're getting the correct subject IDs
+      const subjectIds =
+        standard.subjects?.map((subject) => {
+          // If subject is already an ID, use it
+          if (typeof subject === "string") return subject;
+          // If subject is an object, get its ID
+          return subject._id;
+        }) || [];
+
+      console.log("Mapped subject IDs:", subjectIds);
+
       formik.setValues({
         name: standard.name,
         level: standard.level,
         description: standard.description,
-        subjects: standard.subjects.map((subject) => subject._id),
+        subjects: subjectIds,
       });
     } else {
       setEditingStandard(null);
@@ -189,11 +273,13 @@ const Standards = () => {
                   <TableCell>{standard.description}</TableCell>
                   <TableCell>
                     {standard.subjects
-                      .map(
-                        (subject) =>
-                          subjects.find((s) => s._id === subject._id)?.name
-                      )
-                      .join(", ")}
+                      ?.map((subject) => {
+                        const foundSubject = subjects?.find(
+                          (s) => s._id === subject._id
+                        );
+                        return foundSubject?.name || "Unknown Subject";
+                      })
+                      .join(", ") || "No subjects"}
                   </TableCell>
                   <TableCell>
                     <IconButton
@@ -271,16 +357,36 @@ const Standards = () => {
                 multiple
                 name="subjects"
                 value={formik.values.subjects}
-                onChange={formik.handleChange}
+                onChange={(event) => {
+                  const value = event.target.value;
+                  console.log("Selected subjects:", value);
+                  formik.setFieldValue("subjects", value);
+                }}
                 error={
                   formik.touched.subjects && Boolean(formik.errors.subjects)
                 }
+                renderValue={(selected) => (
+                  <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
+                    {selected.map((value) => {
+                      const subject = subjects?.find((s) => s._id === value);
+                      return (
+                        <Chip
+                          key={value}
+                          label={subject?.name || "Unknown Subject"}
+                          color={subject ? "primary" : "error"}
+                        />
+                      );
+                    })}
+                  </Box>
+                )}
               >
-                {subjects.map((subject) => (
-                  <MenuItem key={subject._id} value={subject._id}>
-                    {subject.name}
-                  </MenuItem>
-                ))}
+                {subjects
+                  ?.filter((subject) => subject.status === "active")
+                  .map((subject) => (
+                    <MenuItem key={subject._id} value={subject._id}>
+                      {subject.name}
+                    </MenuItem>
+                  ))}
               </Select>
               {formik.touched.subjects && formik.errors.subjects && (
                 <Typography color="error" variant="caption">

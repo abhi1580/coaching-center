@@ -2,7 +2,7 @@ import { check } from "express-validator";
 
 export const createPaymentValidator = [
   check("student", "Student ID is required").isMongoId(),
-  check("class", "Class ID is required").isMongoId(),
+  check("batch", "Batch ID is required").isMongoId(),
   check("amount", "Amount must be a positive number")
     .isFloat({ min: 0 })
     .not()

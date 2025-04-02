@@ -19,13 +19,16 @@ import {
   IconButton,
   Alert,
   CircularProgress,
+  Grid,
+  FormControlLabel,
+  Switch,
 } from "@mui/material";
 import {
   Add as AddIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
 } from "@mui/icons-material";
-import { useFormik } from "formik";
+import { Formik } from "formik";
 import * as Yup from "yup";
 import {
   fetchSubjects,
@@ -35,13 +38,13 @@ import {
   resetStatus,
 } from "../store/slices/subjectSlice";
 
-const validationSchema = Yup.object({
+const validationSchema = Yup.object().shape({
   name: Yup.string().required("Name is required"),
   description: Yup.string().required("Description is required"),
   duration: Yup.string().required("Duration is required"),
-  price: Yup.number()
-    .required("Price is required")
-    .min(0, "Price must be greater than or equal to 0"),
+  status: Yup.string()
+    .oneOf(["active", "inactive"])
+    .required("Status is required"),
 });
 
 const Subjects = () => {
@@ -50,7 +53,7 @@ const Subjects = () => {
     (state) => state.subjects
   );
   const [open, setOpen] = useState(false);
-  const [editingSubject, setEditingSubject] = useState(null);
+  const [selectedSubject, setSelectedSubject] = useState(null);
 
   useEffect(() => {
     dispatch(fetchSubjects());
@@ -59,53 +62,53 @@ const Subjects = () => {
   useEffect(() => {
     if (success) {
       setOpen(false);
-      setEditingSubject(null);
+      setSelectedSubject(null);
       dispatch(resetStatus());
     }
   }, [success, dispatch]);
 
-  const formik = useFormik({
-    initialValues: {
-      name: "",
-      description: "",
-      duration: "",
-      price: "",
-    },
-    validationSchema: validationSchema,
-    onSubmit: (values) => {
-      if (editingSubject) {
-        dispatch(updateSubject({ id: editingSubject._id, data: values }));
-      } else {
-        dispatch(createSubject(values));
-      }
-    },
-  });
-
   const handleOpen = (subject = null) => {
-    if (subject) {
-      setEditingSubject(subject);
-      formik.setValues({
-        name: subject.name,
-        description: subject.description,
-        duration: subject.duration,
-        price: subject.price,
-      });
-    } else {
-      setEditingSubject(null);
-      formik.resetForm();
-    }
+    setSelectedSubject(subject);
     setOpen(true);
   };
 
   const handleClose = () => {
+    setSelectedSubject(null);
     setOpen(false);
-    setEditingSubject(null);
-    formik.resetForm();
+    dispatch(resetStatus());
+  };
+
+  const handleSubmit = async (values, { setSubmitting, resetForm }) => {
+    try {
+      if (selectedSubject) {
+        dispatch(updateSubject({ id: selectedSubject._id, data: values }));
+      } else {
+        dispatch(createSubject(values));
+      }
+    } catch (err) {
+      console.error("Error saving subject:", err);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleDelete = (id) => {
     if (window.confirm("Are you sure you want to delete this subject?")) {
       dispatch(deleteSubject(id));
+    }
+  };
+
+  const handleStatusChange = async (subjectId, currentStatus) => {
+    try {
+      const newStatus = currentStatus === "active" ? "inactive" : "active";
+      dispatch(
+        updateSubject({
+          id: subjectId,
+          data: { status: newStatus },
+        })
+      );
+    } catch (error) {
+      console.error("Error updating subject status:", error);
     }
   };
 
@@ -139,6 +142,7 @@ const Subjects = () => {
         </Typography>
         <Button
           variant="contained"
+          color="primary"
           startIcon={<AddIcon />}
           onClick={() => handleOpen()}
         >
@@ -154,7 +158,7 @@ const Subjects = () => {
 
       {success && (
         <Alert severity="success" sx={{ mb: 2 }}>
-          Operation completed successfully
+          {success}
         </Alert>
       )}
 
@@ -165,110 +169,178 @@ const Subjects = () => {
               <TableCell>Name</TableCell>
               <TableCell>Description</TableCell>
               <TableCell>Duration</TableCell>
-              <TableCell>Price</TableCell>
+              <TableCell>Status</TableCell>
               <TableCell>Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {subjects && subjects.length > 0 ? (
-              subjects.map((subject) => (
-                <TableRow key={subject._id}>
-                  <TableCell>{subject.name}</TableCell>
-                  <TableCell>{subject.description}</TableCell>
-                  <TableCell>{subject.duration}</TableCell>
-                  <TableCell>${subject.price}</TableCell>
-                  <TableCell>
-                    <IconButton
-                      color="primary"
-                      onClick={() => handleOpen(subject)}
-                    >
-                      <EditIcon />
-                    </IconButton>
-                    <IconButton
-                      color="error"
-                      onClick={() => handleDelete(subject._id)}
-                    >
-                      <DeleteIcon />
-                    </IconButton>
-                  </TableCell>
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={5} align="center">
-                  No subjects found
+            {subjects.map((subject) => (
+              <TableRow
+                key={subject._id}
+                sx={{
+                  backgroundColor:
+                    subject.status === "active"
+                      ? "inherit"
+                      : "rgba(0, 0, 0, 0.04)",
+                  "&:hover": {
+                    backgroundColor:
+                      subject.status === "active"
+                        ? "rgba(0, 0, 0, 0.04)"
+                        : "rgba(0, 0, 0, 0.08)",
+                  },
+                }}
+              >
+                <TableCell>{subject.name}</TableCell>
+                <TableCell>{subject.description}</TableCell>
+                <TableCell>{subject.duration}</TableCell>
+                <TableCell>
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={subject.status === "active"}
+                        onChange={() =>
+                          handleStatusChange(subject._id, subject.status)
+                        }
+                        color="primary"
+                      />
+                    }
+                    label={subject.status}
+                  />
+                </TableCell>
+                <TableCell>
+                  <IconButton
+                    color="primary"
+                    onClick={() => handleOpen(subject)}
+                    size="small"
+                  >
+                    <EditIcon />
+                  </IconButton>
+                  <IconButton
+                    color="error"
+                    onClick={() => handleDelete(subject._id)}
+                    size="small"
+                  >
+                    <DeleteIcon />
+                  </IconButton>
                 </TableCell>
               </TableRow>
-            )}
+            ))}
           </TableBody>
         </Table>
       </TableContainer>
 
-      <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
+      <Dialog
+        open={open}
+        onClose={handleClose}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: { minHeight: "50vh" },
+        }}
+      >
         <DialogTitle>
-          {editingSubject ? "Edit Subject" : "Add New Subject"}
+          {selectedSubject ? "Edit Subject" : "Add New Subject"}
         </DialogTitle>
-        <form onSubmit={formik.handleSubmit}>
-          <DialogContent>
-            <TextField
-              fullWidth
-              margin="normal"
-              name="name"
-              label="Name"
-              value={formik.values.name}
-              onChange={formik.handleChange}
-              error={formik.touched.name && Boolean(formik.errors.name)}
-              helperText={formik.touched.name && formik.errors.name}
-            />
-            <TextField
-              fullWidth
-              margin="normal"
-              name="description"
-              label="Description"
-              multiline
-              rows={4}
-              value={formik.values.description}
-              onChange={formik.handleChange}
-              error={
-                formik.touched.description && Boolean(formik.errors.description)
-              }
-              helperText={
-                formik.touched.description && formik.errors.description
-              }
-            />
-            <TextField
-              fullWidth
-              margin="normal"
-              name="duration"
-              label="Duration (e.g., 3 months)"
-              value={formik.values.duration}
-              onChange={formik.handleChange}
-              error={formik.touched.duration && Boolean(formik.errors.duration)}
-              helperText={formik.touched.duration && formik.errors.duration}
-            />
-            <TextField
-              fullWidth
-              margin="normal"
-              name="price"
-              label="Price"
-              type="number"
-              value={formik.values.price}
-              onChange={formik.handleChange}
-              error={formik.touched.price && Boolean(formik.errors.price)}
-              helperText={formik.touched.price && formik.errors.price}
-            />
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={handleClose}>Cancel</Button>
-            <Button
-              type="submit"
-              variant="contained"
-              disabled={formik.isSubmitting}
+        <DialogContent>
+          <Box sx={{ mt: 2 }}>
+            <Formik
+              initialValues={{
+                name: selectedSubject?.name || "",
+                description: selectedSubject?.description || "",
+                duration: selectedSubject?.duration || "",
+                status: selectedSubject?.status || "active",
+              }}
+              validationSchema={validationSchema}
+              validateOnChange={true}
+              validateOnBlur={true}
+              onSubmit={handleSubmit}
             >
-              {editingSubject ? "Update" : "Add"}
-            </Button>
-          </DialogActions>
-        </form>
+              {({
+                values,
+                errors,
+                touched,
+                handleChange,
+                handleBlur,
+                handleSubmit,
+                isSubmitting,
+                setFieldValue,
+              }) => (
+                <form onSubmit={handleSubmit}>
+                  <Grid container spacing={2}>
+                    <Grid item xs={12}>
+                      <TextField
+                        fullWidth
+                        name="name"
+                        label="Subject Name"
+                        value={values.name}
+                        onChange={handleChange}
+                        onBlur={handleBlur}
+                        error={touched.name && Boolean(errors.name)}
+                        helperText={touched.name && errors.name}
+                      />
+                    </Grid>
+                    <Grid item xs={12}>
+                      <TextField
+                        fullWidth
+                        name="description"
+                        label="Description"
+                        multiline
+                        rows={3}
+                        value={values.description}
+                        onChange={handleChange}
+                        onBlur={handleBlur}
+                        error={
+                          touched.description && Boolean(errors.description)
+                        }
+                        helperText={touched.description && errors.description}
+                      />
+                    </Grid>
+                    <Grid item xs={12}>
+                      <TextField
+                        fullWidth
+                        name="duration"
+                        label="Duration (e.g., 1 hour, 2 hours)"
+                        value={values.duration}
+                        onChange={handleChange}
+                        onBlur={handleBlur}
+                        error={touched.duration && Boolean(errors.duration)}
+                        helperText={touched.duration && errors.duration}
+                      />
+                    </Grid>
+                    <Grid item xs={12}>
+                      <FormControlLabel
+                        control={
+                          <Switch
+                            checked={values.status === "active"}
+                            onChange={(e) =>
+                              setFieldValue(
+                                "status",
+                                e.target.checked ? "active" : "inactive"
+                              )
+                            }
+                            color="primary"
+                          />
+                        }
+                        label={values.status}
+                      />
+                    </Grid>
+                  </Grid>
+                  <DialogActions sx={{ mt: 2 }}>
+                    <Button onClick={handleClose}>Cancel</Button>
+                    <Button
+                      type="submit"
+                      variant="contained"
+                      color="primary"
+                      disabled={isSubmitting}
+                    >
+                      {selectedSubject ? "Update" : "Add"}
+                    </Button>
+                  </DialogActions>
+                </form>
+              )}
+            </Formik>
+          </Box>
+        </DialogContent>
       </Dialog>
     </Box>
   );
