@@ -259,8 +259,8 @@ const Teachers = () => {
                     </Typography>
                   </Box>
                 </TableCell>
-                  <TableCell>
-                    <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
+                <TableCell>
+                  <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
                     {teacher.subjects?.map((subjectId) => {
                       const subject = subjects.find((s) => s._id === subjectId);
                       return (
@@ -273,16 +273,16 @@ const Teachers = () => {
                         />
                       );
                     })}
-                    </Box>
-                  </TableCell>
-                  <TableCell>
-                    <Chip
-                      label={teacher.status}
+                  </Box>
+                </TableCell>
+                <TableCell>
+                  <Chip
+                    label={teacher.status}
                     color={teacher.status === "active" ? "success" : "error"}
-                      size="small"
-                    />
-                  </TableCell>
-                  <TableCell>
+                    size="small"
+                  />
+                </TableCell>
+                <TableCell>
                   <Box sx={{ display: "flex", gap: 1 }}>
                     <IconButton
                       color="primary"
@@ -299,8 +299,8 @@ const Teachers = () => {
                       <DeleteIcon />
                     </IconButton>
                   </Box>
-                  </TableCell>
-                </TableRow>
+                </TableCell>
+              </TableRow>
             ))}
           </TableBody>
         </Table>
@@ -389,23 +389,23 @@ const Teachers = () => {
                         helperText={touched.email && errors.email}
                       />
                     </Grid>
-                      <Grid item xs={12} sm={6}>
-                        <TextField
-                          fullWidth
-                          name="password"
+                    <Grid item xs={12} sm={6}>
+                      <TextField
+                        fullWidth
+                        name="password"
                         label={
                           selectedTeacher
                             ? "New Password (Optional)"
                             : "Password"
                         }
-                          type="password"
-                          value={values.password}
-                          onChange={handleChange}
-                          onBlur={handleBlur}
-                          error={touched.password && Boolean(errors.password)}
-                          helperText={touched.password && errors.password}
-                        />
-                      </Grid>
+                        type="password"
+                        value={values.password}
+                        onChange={handleChange}
+                        onBlur={handleBlur}
+                        error={touched.password && Boolean(errors.password)}
+                        helperText={touched.password && errors.password}
+                      />
+                    </Grid>
                     <Grid item xs={12} sm={6}>
                       <TextField
                         fullWidth

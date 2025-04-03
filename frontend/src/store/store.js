@@ -5,6 +5,7 @@ import standardReducer from "./slices/standardSlice";
 import studentReducer from "./slices/studentSlice";
 import batchReducer from "./slices/batchSlice";
 import teacherReducer from "./slices/teacherSlice";
+import announcementReducer from "./slices/announcementSlice";
 
 export const store = configureStore({
   reducer: {
@@ -14,5 +15,6 @@ export const store = configureStore({
     students: studentReducer,
     batches: batchReducer,
     teachers: teacherReducer,
+    announcements: announcementReducer,
   },
 });

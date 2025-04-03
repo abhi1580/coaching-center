@@ -1,51 +1,88 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { announcementService } from "../../services/api";
 
+// Async thunks
 export const fetchAnnouncements = createAsyncThunk(
-  "announcements/fetchAnnouncements",
-  async () => {
-    const response = await announcementService.getAll();
-    return response.data;
+  "announcements/fetchAll",
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await announcementService.getAll();
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data || error.message);
+    }
+  }
+);
+
+export const fetchAnnouncement = createAsyncThunk(
+  "announcements/fetchOne",
+  async (id, { rejectWithValue }) => {
+    try {
+      const response = await announcementService.getById(id);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data || error.message);
+    }
   }
 );
 
 export const createAnnouncement = createAsyncThunk(
-  "announcements/createAnnouncement",
-  async (announcementData) => {
-    const response = await announcementService.create(announcementData);
-    return response.data;
+  "announcements/create",
+  async (announcementData, { rejectWithValue }) => {
+    try {
+      const response = await announcementService.create(announcementData);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data || error.message);
+    }
   }
 );
 
 export const updateAnnouncement = createAsyncThunk(
-  "announcements/updateAnnouncement",
-  async ({ id, data }) => {
-    const response = await announcementService.update(id, data);
-    return response.data;
+  "announcements/update",
+  async ({ id, data }, { rejectWithValue }) => {
+    try {
+      const response = await announcementService.update(id, data);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data || error.message);
+    }
   }
 );
 
 export const deleteAnnouncement = createAsyncThunk(
-  "announcements/deleteAnnouncement",
-  async (id) => {
-    await announcementService.delete(id);
-    return id;
+  "announcements/delete",
+  async (id, { rejectWithValue }) => {
+    try {
+      await announcementService.delete(id);
+      return id;
+    } catch (error) {
+      return rejectWithValue(error.response?.data || error.message);
+    }
   }
 );
 
 const initialState = {
   announcements: [],
+  currentAnnouncement: null,
   loading: false,
   error: null,
+  success: false,
 };
 
 const announcementSlice = createSlice({
   name: "announcements",
   initialState,
-  reducers: {},
+  reducers: {
+    resetStatus: (state) => {
+      state.loading = false;
+      state.error = null;
+      state.success = false;
+    },
+  },
   extraReducers: (builder) => {
     builder
-      // Fetch Announcements
+      // Fetch all announcements
       .addCase(fetchAnnouncements.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -56,28 +93,82 @@ const announcementSlice = createSlice({
       })
       .addCase(fetchAnnouncements.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.error.message;
+        state.error = action.payload;
       })
-      // Create Announcement
+      // Fetch single announcement
+      .addCase(fetchAnnouncement.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchAnnouncement.fulfilled, (state, action) => {
+        state.loading = false;
+        state.currentAnnouncement = action.payload;
+      })
+      .addCase(fetchAnnouncement.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      // Create announcement
+      .addCase(createAnnouncement.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+        state.success = false;
+      })
       .addCase(createAnnouncement.fulfilled, (state, action) => {
-        state.announcements.push(action.payload);
+        state.loading = false;
+        state.success = true;
+        if (!Array.isArray(state.announcements.data)) {
+          state.announcements = { data: [] };
+        }
+        state.announcements.data.unshift(action.payload);
       })
-      // Update Announcement
+      .addCase(createAnnouncement.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      // Update announcement
+      .addCase(updateAnnouncement.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+        state.success = false;
+      })
       .addCase(updateAnnouncement.fulfilled, (state, action) => {
-        const index = state.announcements.findIndex(
-          (announcement) => announcement._id === action.payload._id
-        );
-        if (index !== -1) {
-          state.announcements[index] = action.payload;
+        state.loading = false;
+        state.success = true;
+        if (Array.isArray(state.announcements.data)) {
+          const index = state.announcements.data.findIndex(
+            (a) => a._id === action.payload._id
+          );
+          if (index !== -1) {
+            state.announcements.data[index] = action.payload;
+          }
         }
       })
-      // Delete Announcement
+      .addCase(updateAnnouncement.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      // Delete announcement
+      .addCase(deleteAnnouncement.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+        state.success = false;
+      })
       .addCase(deleteAnnouncement.fulfilled, (state, action) => {
-        state.announcements = state.announcements.filter(
-          (announcement) => announcement._id !== action.payload
-        );
+        state.loading = false;
+        state.success = true;
+        if (Array.isArray(state.announcements.data)) {
+          state.announcements.data = state.announcements.data.filter(
+            (a) => a._id !== action.payload
+          );
+        }
+      })
+      .addCase(deleteAnnouncement.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
       });
   },
 });
 
+export const { resetStatus } = announcementSlice.actions;
 export default announcementSlice.reducer;

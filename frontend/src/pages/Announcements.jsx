@@ -1,8 +1,14 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import {
   Box,
-  Typography,
   Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  Typography,
   Paper,
   Table,
   TableBody,
@@ -11,130 +17,199 @@ import {
   TableHead,
   TableRow,
   IconButton,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
-  Grid,
+  Alert,
+  CircularProgress,
+  FormControl,
+  InputLabel,
+  Select,
   MenuItem,
+  Chip,
+  Grid,
+  Divider,
 } from "@mui/material";
 import {
   Add as AddIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
+  Visibility as VisibilityIcon,
 } from "@mui/icons-material";
-import { Formik, Form } from "formik";
+import { useFormik } from "formik";
 import * as Yup from "yup";
-import { announcementService } from "../services/api";
+import {
+  fetchAnnouncements,
+  createAnnouncement,
+  updateAnnouncement,
+  deleteAnnouncement,
+  resetStatus,
+} from "../store/slices/announcementSlice";
 
 const validationSchema = Yup.object({
-  title: Yup.string().required("Title is required"),
-  content: Yup.string().required("Content is required"),
-  type: Yup.string().required("Type is required"),
-  priority: Yup.string().required("Priority is required"),
-  startDate: Yup.date().required("Start date is required"),
-  endDate: Yup.date().required("End date is required"),
+  title: Yup.string()
+    .required("Title is required")
+    .min(3, "Title must be at least 3 characters")
+    .max(100, "Title must not exceed 100 characters")
+    .trim(),
+  content: Yup.string()
+    .required("Content is required")
+    .min(10, "Content must be at least 10 characters"),
+  type: Yup.string()
+    .required("Type is required")
+    .oneOf(
+      ["General", "Academic", "Event", "Holiday", "Emergency"],
+      "Invalid type"
+    ),
+  priority: Yup.string()
+    .required("Priority is required")
+    .oneOf(["Low", "Medium", "High"], "Invalid priority"),
+  targetAudience: Yup.string()
+    .required("Target audience is required")
+    .oneOf(["All", "Students", "Teachers", "Staff"], "Invalid target audience"),
+  startDate: Yup.date()
+    .required("Start date is required")
+    .min(new Date(), "Start date cannot be in the past"),
+  endDate: Yup.date()
+    .required("End date is required")
+    .min(Yup.ref("startDate"), "End date must be after start date"),
+  status: Yup.string()
+    .required("Status is required")
+    .oneOf(["Active", "Inactive"], "Invalid status"),
 });
 
 const Announcements = () => {
-  const [announcements, setAnnouncements] = useState([]);
+  const dispatch = useDispatch();
+  const { announcements, loading, error, success } = useSelector(
+    (state) => state.announcements
+  );
   const [open, setOpen] = useState(false);
+  const [editingAnnouncement, setEditingAnnouncement] = useState(null);
+  const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [selectedAnnouncement, setSelectedAnnouncement] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
 
   useEffect(() => {
-    fetchAnnouncements();
-  }, []);
+    dispatch(fetchAnnouncements());
+  }, [dispatch]);
 
-  const fetchAnnouncements = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const response = await announcementService.getAll();
-      console.log("Announcements API Response:", response);
-
-      // Handle different possible response formats
-      let announcementsData = [];
-      if (response.data) {
-        if (Array.isArray(response.data)) {
-          announcementsData = response.data;
-        } else if (Array.isArray(response.data.announcements)) {
-          announcementsData = response.data.announcements;
-        } else if (response.data.data && Array.isArray(response.data.data)) {
-          announcementsData = response.data.data;
-        }
-      }
-
-      console.log("Processed Announcements Data:", announcementsData);
-      setAnnouncements(announcementsData);
-    } catch (error) {
-      console.error("Error fetching announcements:", error);
-      setError(
-        error.response?.data?.message || "Failed to fetch announcements"
-      );
-      setAnnouncements([]);
-    } finally {
-      setLoading(false);
+  useEffect(() => {
+    if (success) {
+      setOpen(false);
+      setEditingAnnouncement(null);
+      dispatch(resetStatus());
+      dispatch(fetchAnnouncements());
     }
-  };
+  }, [success, dispatch]);
+
+  const formik = useFormik({
+    initialValues: {
+      title: "",
+      content: "",
+      type: "",
+      priority: "Medium",
+      targetAudience: "All",
+      startDate: "",
+      endDate: "",
+      status: "Active",
+    },
+    validationSchema,
+    onSubmit: async (values) => {
+      try {
+        if (editingAnnouncement) {
+          await dispatch(
+            updateAnnouncement({ id: editingAnnouncement._id, data: values })
+          ).unwrap();
+        } else {
+          await dispatch(createAnnouncement(values)).unwrap();
+        }
+      } catch (error) {
+        console.error("Error submitting form:", error);
+      }
+    },
+  });
 
   const handleOpen = (announcement = null) => {
-    setSelectedAnnouncement(announcement);
+    if (announcement) {
+      setEditingAnnouncement(announcement);
+      formik.setValues({
+        title: announcement.title,
+        content: announcement.content,
+        type: announcement.type,
+        priority: announcement.priority,
+        targetAudience: announcement.targetAudience,
+        startDate: new Date(announcement.startDate).toISOString().split("T")[0],
+        endDate: new Date(announcement.endDate).toISOString().split("T")[0],
+        status: announcement.status,
+      });
+    } else {
+      setEditingAnnouncement(null);
+      formik.resetForm();
+    }
     setOpen(true);
   };
 
   const handleClose = () => {
-    setSelectedAnnouncement(null);
     setOpen(false);
+    setEditingAnnouncement(null);
+    formik.resetForm();
   };
 
-  const handleSubmit = async (values, { setSubmitting, resetForm }) => {
-    try {
-      if (selectedAnnouncement) {
-        await announcementService.update(selectedAnnouncement._id, values);
-      } else {
-        await announcementService.create(values);
-      }
-      fetchAnnouncements();
-      handleClose();
-      resetForm();
-    } catch (error) {
-      console.error("Error saving announcement:", error);
-    }
-    setSubmitting(false);
+  const handleView = (announcement) => {
+    setSelectedAnnouncement(announcement);
+    setViewDialogOpen(true);
   };
 
-  const handleDelete = async (id) => {
+  const handleDelete = (id) => {
     if (window.confirm("Are you sure you want to delete this announcement?")) {
-      try {
-        await announcementService.delete(id);
-        fetchAnnouncements();
-      } catch (error) {
-        console.error("Error deleting announcement:", error);
-      }
+      dispatch(deleteAnnouncement(id));
     }
   };
+
+  if (loading) {
+    return (
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          minHeight: "60vh",
+        }}
+      >
+        <CircularProgress />
+      </Box>
+    );
+  }
 
   return (
-    <Box>
+    <Box sx={{ p: 3 }}>
       <Box
-        display="flex"
-        justifyContent="space-between"
-        alignItems="center"
-        mb={3}
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          mb: 3,
+        }}
       >
-        <Typography variant="h4">Announcements</Typography>
+        <Typography variant="h4" component="h1">
+          Announcements
+        </Typography>
         <Button
           variant="contained"
-          color="primary"
           startIcon={<AddIcon />}
           onClick={() => handleOpen()}
         >
           Add Announcement
         </Button>
       </Box>
+
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error.message || error}
+        </Alert>
+      )}
+
+      {success && (
+        <Alert severity="success" sx={{ mb: 2 }}>
+          Operation completed successfully
+        </Alert>
+      )}
 
       <TableContainer component={Paper}>
         <Table>
@@ -143,178 +218,307 @@ const Announcements = () => {
               <TableCell>Title</TableCell>
               <TableCell>Type</TableCell>
               <TableCell>Priority</TableCell>
+              <TableCell>Target Audience</TableCell>
               <TableCell>Start Date</TableCell>
               <TableCell>End Date</TableCell>
+              <TableCell>Status</TableCell>
+              <TableCell>Created By</TableCell>
               <TableCell>Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {announcements.map((announcement) => (
-              <TableRow key={announcement._id}>
-                <TableCell>{announcement.title}</TableCell>
-                <TableCell>{announcement.type}</TableCell>
-                <TableCell>{announcement.priority}</TableCell>
-                <TableCell>
-                  {new Date(announcement.startDate).toLocaleDateString()}
-                </TableCell>
-                <TableCell>
-                  {new Date(announcement.endDate).toLocaleDateString()}
-                </TableCell>
-                <TableCell>
-                  <IconButton
-                    onClick={() => handleOpen(announcement)}
-                    color="primary"
-                  >
-                    <EditIcon />
-                  </IconButton>
-                  <IconButton
-                    onClick={() => handleDelete(announcement._id)}
-                    color="error"
-                  >
-                    <DeleteIcon />
-                  </IconButton>
+            {announcements &&
+            announcements.data &&
+            announcements.data.length > 0 ? (
+              announcements.data.map((announcement) => (
+                <TableRow
+                  key={
+                    announcement._id || Math.random().toString(36).substr(2, 9)
+                  }
+                >
+                  <TableCell>{announcement.title}</TableCell>
+                  <TableCell>
+                    <Chip
+                      label={announcement.type}
+                      color={
+                        announcement.type === "Emergency"
+                          ? "error"
+                          : announcement.type === "Event"
+                          ? "primary"
+                          : "default"
+                      }
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <Typography
+                      sx={{
+                        color:
+                          announcement.priority === "High"
+                            ? "error.main"
+                            : announcement.priority === "Medium"
+                            ? "warning.main"
+                            : "success.main",
+                        fontWeight: "bold",
+                      }}
+                    >
+                      {announcement.priority || "Medium"}
+                    </Typography>
+                  </TableCell>
+                  <TableCell>{announcement.targetAudience}</TableCell>
+                  <TableCell>
+                    {new Date(announcement.startDate).toLocaleDateString()}
+                  </TableCell>
+                  <TableCell>
+                    {new Date(announcement.endDate).toLocaleDateString()}
+                  </TableCell>
+                  <TableCell>
+                    <Chip
+                      label={announcement.status}
+                      color={
+                        announcement.status === "Active" ? "success" : "error"
+                      }
+                    />
+                  </TableCell>
+                  <TableCell>
+                    {announcement.createdBy?.name || "Unknown"}
+                  </TableCell>
+                  <TableCell>
+                    <IconButton
+                      color="primary"
+                      onClick={() => handleView(announcement)}
+                    >
+                      <VisibilityIcon />
+                    </IconButton>
+                    <IconButton
+                      color="primary"
+                      onClick={() => handleOpen(announcement)}
+                    >
+                      <EditIcon />
+                    </IconButton>
+                    <IconButton
+                      color="error"
+                      onClick={() => handleDelete(announcement._id)}
+                    >
+                      <DeleteIcon />
+                    </IconButton>
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={9} align="center">
+                  No announcements found
                 </TableCell>
               </TableRow>
-            ))}
+            )}
           </TableBody>
         </Table>
       </TableContainer>
 
+      {/* View Dialog */}
+      <Dialog
+        open={viewDialogOpen}
+        onClose={() => setViewDialogOpen(false)}
+        maxWidth="md"
+        fullWidth
+      >
+        {selectedAnnouncement && (
+          <>
+            <DialogTitle>{selectedAnnouncement.title}</DialogTitle>
+            <DialogContent>
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="subtitle1" color="text.secondary">
+                  Type: {selectedAnnouncement.type}
+                </Typography>
+                <Typography variant="subtitle1" color="text.secondary">
+                  Priority: {selectedAnnouncement.priority}
+                </Typography>
+                <Typography variant="subtitle1" color="text.secondary">
+                  Target Audience: {selectedAnnouncement.targetAudience}
+                </Typography>
+                <Typography variant="subtitle1" color="text.secondary">
+                  Status: {selectedAnnouncement.status}
+                </Typography>
+                <Typography variant="subtitle1" color="text.secondary">
+                  Start Date:{" "}
+                  {new Date(
+                    selectedAnnouncement.startDate
+                  ).toLocaleDateString()}
+                </Typography>
+                <Typography variant="subtitle1" color="text.secondary">
+                  End Date:{" "}
+                  {new Date(selectedAnnouncement.endDate).toLocaleDateString()}
+                </Typography>
+                <Typography variant="subtitle1" color="text.secondary">
+                  Created By:{" "}
+                  {selectedAnnouncement.createdBy?.name || "Unknown"}
+                </Typography>
+                <Typography variant="subtitle1" color="text.secondary">
+                  Created At:{" "}
+                  {new Date(selectedAnnouncement.createdAt).toLocaleString()}
+                </Typography>
+              </Box>
+              <Divider sx={{ my: 2 }} />
+              <Typography variant="body1" sx={{ whiteSpace: "pre-wrap" }}>
+                {selectedAnnouncement.content}
+              </Typography>
+            </DialogContent>
+          </>
+        )}
+      </Dialog>
+
+      {/* Edit/Create Dialog */}
       <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
         <DialogTitle>
-          {selectedAnnouncement ? "Edit Announcement" : "Add Announcement"}
+          {editingAnnouncement ? "Edit Announcement" : "Add New Announcement"}
         </DialogTitle>
-        <Formik
-          initialValues={
-            selectedAnnouncement || {
-              title: "",
-              content: "",
-              type: "",
-              priority: "",
-              startDate: "",
-              endDate: "",
-            }
-          }
-          validationSchema={validationSchema}
-          onSubmit={handleSubmit}
-        >
-          {({
-            values,
-            errors,
-            touched,
-            handleChange,
-            handleBlur,
-            isSubmitting,
-          }) => (
-            <Form>
-              <DialogContent>
-                <Grid container spacing={2}>
-                  <Grid item xs={12}>
-                    <TextField
-                      fullWidth
-                      name="title"
-                      label="Title"
-                      value={values.title}
-                      onChange={handleChange}
-                      onBlur={handleBlur}
-                      error={touched.title && Boolean(errors.title)}
-                      helperText={touched.title && errors.title}
-                    />
-                  </Grid>
-                  <Grid item xs={12}>
-                    <TextField
-                      fullWidth
-                      name="content"
-                      label="Content"
-                      multiline
-                      rows={4}
-                      value={values.content}
-                      onChange={handleChange}
-                      onBlur={handleBlur}
-                      error={touched.content && Boolean(errors.content)}
-                      helperText={touched.content && errors.content}
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <TextField
-                      fullWidth
-                      name="type"
-                      label="Type"
-                      select
-                      value={values.type}
-                      onChange={handleChange}
-                      onBlur={handleBlur}
-                      error={touched.type && Boolean(errors.type)}
-                      helperText={touched.type && errors.type}
-                    >
-                      <MenuItem value="general">General</MenuItem>
-                      <MenuItem value="academic">Academic</MenuItem>
-                      <MenuItem value="event">Event</MenuItem>
-                      <MenuItem value="holiday">Holiday</MenuItem>
-                      <MenuItem value="emergency">Emergency</MenuItem>
-                    </TextField>
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <TextField
-                      fullWidth
-                      name="priority"
-                      label="Priority"
-                      select
-                      value={values.priority}
-                      onChange={handleChange}
-                      onBlur={handleBlur}
-                      error={touched.priority && Boolean(errors.priority)}
-                      helperText={touched.priority && errors.priority}
-                    >
-                      <MenuItem value="low">Low</MenuItem>
-                      <MenuItem value="medium">Medium</MenuItem>
-                      <MenuItem value="high">High</MenuItem>
-                    </TextField>
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <TextField
-                      fullWidth
-                      name="startDate"
-                      label="Start Date"
-                      type="date"
-                      value={values.startDate}
-                      onChange={handleChange}
-                      onBlur={handleBlur}
-                      error={touched.startDate && Boolean(errors.startDate)}
-                      helperText={touched.startDate && errors.startDate}
-                      InputLabelProps={{ shrink: true }}
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <TextField
-                      fullWidth
-                      name="endDate"
-                      label="End Date"
-                      type="date"
-                      value={values.endDate}
-                      onChange={handleChange}
-                      onBlur={handleBlur}
-                      error={touched.endDate && Boolean(errors.endDate)}
-                      helperText={touched.endDate && errors.endDate}
-                      InputLabelProps={{ shrink: true }}
-                    />
-                  </Grid>
-                </Grid>
-              </DialogContent>
-              <DialogActions>
-                <Button onClick={handleClose}>Cancel</Button>
-                <Button
-                  type="submit"
-                  variant="contained"
-                  color="primary"
-                  disabled={isSubmitting}
-                >
-                  {selectedAnnouncement ? "Update" : "Add"}
-                </Button>
-              </DialogActions>
-            </Form>
-          )}
-        </Formik>
+        <form onSubmit={formik.handleSubmit}>
+          <DialogContent>
+            <Grid container spacing={2}>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  name="title"
+                  label="Title"
+                  value={formik.values.title}
+                  onChange={formik.handleChange}
+                  error={formik.touched.title && Boolean(formik.errors.title)}
+                  helperText={formik.touched.title && formik.errors.title}
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  name="content"
+                  label="Content"
+                  multiline
+                  rows={4}
+                  value={formik.values.content}
+                  onChange={formik.handleChange}
+                  error={
+                    formik.touched.content && Boolean(formik.errors.content)
+                  }
+                  helperText={formik.touched.content && formik.errors.content}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <FormControl fullWidth>
+                  <InputLabel>Type</InputLabel>
+                  <Select
+                    name="type"
+                    value={formik.values.type}
+                    onChange={formik.handleChange}
+                    error={formik.touched.type && Boolean(formik.errors.type)}
+                  >
+                    <MenuItem value="General">General</MenuItem>
+                    <MenuItem value="Academic">Academic</MenuItem>
+                    <MenuItem value="Event">Event</MenuItem>
+                    <MenuItem value="Holiday">Holiday</MenuItem>
+                    <MenuItem value="Emergency">Emergency</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <FormControl fullWidth>
+                  <InputLabel>Priority</InputLabel>
+                  <Select
+                    name="priority"
+                    value={formik.values.priority}
+                    onChange={formik.handleChange}
+                    error={
+                      formik.touched.priority && Boolean(formik.errors.priority)
+                    }
+                  >
+                    <MenuItem value="Low">Low</MenuItem>
+                    <MenuItem value="Medium">Medium</MenuItem>
+                    <MenuItem value="High">High</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <FormControl fullWidth>
+                  <InputLabel>Target Audience</InputLabel>
+                  <Select
+                    name="targetAudience"
+                    value={formik.values.targetAudience}
+                    onChange={formik.handleChange}
+                    error={
+                      formik.touched.targetAudience &&
+                      Boolean(formik.errors.targetAudience)
+                    }
+                  >
+                    <MenuItem value="All">All</MenuItem>
+                    <MenuItem value="Students">Students</MenuItem>
+                    <MenuItem value="Teachers">Teachers</MenuItem>
+                    <MenuItem value="Staff">Staff</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <FormControl fullWidth>
+                  <InputLabel>Status</InputLabel>
+                  <Select
+                    name="status"
+                    value={formik.values.status}
+                    onChange={formik.handleChange}
+                    error={
+                      formik.touched.status && Boolean(formik.errors.status)
+                    }
+                  >
+                    <MenuItem value="Active">Active</MenuItem>
+                    <MenuItem value="Inactive">Inactive</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  name="startDate"
+                  label="Start Date"
+                  type="date"
+                  value={formik.values.startDate}
+                  onChange={formik.handleChange}
+                  error={
+                    formik.touched.startDate && Boolean(formik.errors.startDate)
+                  }
+                  helperText={
+                    formik.touched.startDate && formik.errors.startDate
+                  }
+                  InputLabelProps={{
+                    shrink: true,
+                  }}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  name="endDate"
+                  label="End Date"
+                  type="date"
+                  value={formik.values.endDate}
+                  onChange={formik.handleChange}
+                  error={
+                    formik.touched.endDate && Boolean(formik.errors.endDate)
+                  }
+                  helperText={formik.touched.endDate && formik.errors.endDate}
+                  InputLabelProps={{
+                    shrink: true,
+                  }}
+                />
+              </Grid>
+            </Grid>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleClose}>Cancel</Button>
+            <Button
+              type="submit"
+              variant="contained"
+              disabled={formik.isSubmitting}
+            >
+              {editingAnnouncement ? "Update" : "Add"}
+            </Button>
+          </DialogActions>
+        </form>
       </Dialog>
     </Box>
   );

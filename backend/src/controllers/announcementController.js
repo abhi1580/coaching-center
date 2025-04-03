@@ -2,101 +2,162 @@ import Announcement from "../models/Announcement.js";
 import { validateMongoDbId } from "../utils/validateMongoDbId.js";
 import { handleError } from "../utils/errorHandler.js";
 
-// Get all announcements
+// @desc    Get all announcements
+// @route   GET /api/announcements
+// @access  Private
 export const getAnnouncements = async (req, res) => {
   try {
     const announcements = await Announcement.find()
-      .populate("createdBy", "name")
+      .populate("createdBy", "name email")
       .sort({ createdAt: -1 });
-    res.json(announcements);
+    res.json({
+      success: true,
+      count: announcements.length,
+      data: announcements,
+    });
   } catch (error) {
-    handleError(res, error);
+    res.status(500).json({
+      success: false,
+      message: "Error in getting announcements",
+      error: error.message,
+    });
   }
 };
 
-// Get single announcement
+// @desc    Get single announcement
+// @route   GET /api/announcements/:id
+// @access  Private
 export const getAnnouncement = async (req, res) => {
   try {
-    const { id } = req.params;
-    validateMongoDbId(id);
-
-    const announcement = await Announcement.findById(id).populate(
+    const announcement = await Announcement.findById(req.params.id).populate(
       "createdBy",
-      "name"
+      "name email"
     );
     if (!announcement) {
-      return res.status(404).json({ message: "Announcement not found" });
+      return res.status(404).json({
+        success: false,
+        message: "Announcement not found",
+      });
     }
-    res.json(announcement);
+    res.json({
+      success: true,
+      data: announcement,
+    });
   } catch (error) {
-    handleError(res, error);
+    res.status(500).json({
+      success: false,
+      message: "Error in getting announcement",
+      error: error.message,
+    });
   }
 };
 
-// Create announcement
+// @desc    Create announcement
+// @route   POST /api/announcements
+// @access  Private (Admin only)
 export const createAnnouncement = async (req, res) => {
   try {
-    const announcement = new Announcement({
+    // Check if user is admin
+    if (req.user.role !== "admin") {
+      return res.status(403).json({
+        success: false,
+        message: "Only admin can create announcements",
+      });
+    }
+
+    const announcement = await Announcement.create({
       ...req.body,
       createdBy: req.user._id,
     });
-    await announcement.save();
-    res.status(201).json(announcement);
+
+    await announcement.populate("createdBy", "name email");
+
+    res.status(201).json({
+      success: true,
+      data: announcement,
+    });
   } catch (error) {
-    handleError(res, error);
+    res.status(500).json({
+      success: false,
+      message: "Error in creating announcement",
+      error: error.message,
+    });
   }
 };
 
-// Update announcement
+// @desc    Update announcement
+// @route   PUT /api/announcements/:id
+// @access  Private (Admin only)
 export const updateAnnouncement = async (req, res) => {
   try {
-    const { id } = req.params;
-    validateMongoDbId(id);
-
-    const announcement = await Announcement.findById(id);
-    if (!announcement) {
-      return res.status(404).json({ message: "Announcement not found" });
+    // Check if user is admin
+    if (req.user.role !== "admin") {
+      return res.status(403).json({
+        success: false,
+        message: "Only admin can update announcements",
+      });
     }
 
-    // Check if user is the creator of the announcement
-    if (announcement.createdBy.toString() !== req.user._id.toString()) {
-      return res
-        .status(403)
-        .json({ message: "Not authorized to update this announcement" });
-    }
-
-    const updatedAnnouncement = await Announcement.findByIdAndUpdate(
-      id,
+    const announcement = await Announcement.findByIdAndUpdate(
+      req.params.id,
       req.body,
-      { new: true }
-    );
-    res.json(updatedAnnouncement);
+      {
+        new: true,
+        runValidators: true,
+      }
+    ).populate("createdBy", "name email");
+
+    if (!announcement) {
+      return res.status(404).json({
+        success: false,
+        message: "Announcement not found",
+      });
+    }
+
+    res.json({
+      success: true,
+      data: announcement,
+    });
   } catch (error) {
-    handleError(res, error);
+    res.status(500).json({
+      success: false,
+      message: "Error in updating announcement",
+      error: error.message,
+    });
   }
 };
 
-// Delete announcement
+// @desc    Delete announcement
+// @route   DELETE /api/announcements/:id
+// @access  Private (Admin only)
 export const deleteAnnouncement = async (req, res) => {
   try {
-    const { id } = req.params;
-    validateMongoDbId(id);
+    // Check if user is admin
+    if (req.user.role !== "admin") {
+      return res.status(403).json({
+        success: false,
+        message: "Only admin can delete announcements",
+      });
+    }
 
-    const announcement = await Announcement.findById(id);
+    const announcement = await Announcement.findByIdAndDelete(req.params.id);
+
     if (!announcement) {
-      return res.status(404).json({ message: "Announcement not found" });
+      return res.status(404).json({
+        success: false,
+        message: "Announcement not found",
+      });
     }
 
-    // Check if user is the creator of the announcement
-    if (announcement.createdBy.toString() !== req.user._id.toString()) {
-      return res
-        .status(403)
-        .json({ message: "Not authorized to delete this announcement" });
-    }
-
-    await Announcement.findByIdAndDelete(id);
-    res.json({ message: "Announcement deleted successfully" });
+    res.json({
+      success: true,
+      message: "Announcement deleted successfully",
+    });
   } catch (error) {
-    handleError(res, error);
+    res.status(500).json({
+      success: false,
+      message: "Error in deleting announcement",
+      error: error.message,
+    });
   }
 };

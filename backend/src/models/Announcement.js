@@ -14,7 +14,13 @@ const announcementSchema = new mongoose.Schema(
     type: {
       type: String,
       required: true,
-      enum: ["General", "Class", "Event", "Holiday"],
+      enum: ["General", "Academic", "Event", "Holiday", "Emergency"],
+    },
+    priority: {
+      type: String,
+      required: true,
+      enum: ["Low", "Medium", "High"],
+      default: "Medium",
     },
     targetAudience: {
       type: String,
