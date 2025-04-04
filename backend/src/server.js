@@ -1,4 +1,5 @@
 import express from "express";
+import mongoose from "mongoose";
 import cors from "cors";
 import dotenv from "dotenv";
 import connectDB from "./config/db.js";
@@ -12,6 +13,8 @@ import teacherRoutes from "./routes/teachers.js";
 import subjectRoutes from "./routes/subjectRoutes.js";
 import standardRoutes from "./routes/standardRoutes.js";
 import dashboardRoutes from "./routes/dashboard.js";
+import cron from "node-cron";
+import { checkAndExpireAnnouncements } from "./utils/announcementExpiry.js";
 
 // Load environment variables
 dotenv.config();
@@ -31,6 +34,11 @@ app.use((req, res, next) => {
   console.log(`${req.method} ${req.url}`);
   console.log("Request Body:", req.body);
   next();
+});
+
+// Schedule announcement expiry check to run every minute
+cron.schedule("* * * * *", () => {
+  checkAndExpireAnnouncements();
 });
 
 // Routes
@@ -67,6 +75,4 @@ app.use((err, req, res, next) => {
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
-  console.log(`Environment: ${process.env.NODE_ENV}`);
-  console.log(`MongoDB URI: ${process.env.MONGODB_URI}`);
 });

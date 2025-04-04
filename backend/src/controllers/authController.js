@@ -7,8 +7,8 @@ import { sendEmail } from "../utils/email.js";
 import mongoose from "mongoose";
 
 // Generate JWT Token
-const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, {
+const generateToken = (id, role) => {
+  return jwt.sign({ id, role }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRE,
   });
 };
@@ -155,26 +155,35 @@ export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
+    console.log(`Login attempt for email: ${email}`);
+
     // Check if user exists
     const user = await User.findOne({ email }).select("+password");
+
     if (!user) {
+      console.log(`User not found for email: ${email}`);
       return res.status(401).json({
         success: false,
         message: "Invalid credentials",
       });
     }
+
+    console.log(`User found with role: ${user.role}`);
 
     // Check password
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
+      console.log(`Password mismatch for user: ${email}`);
       return res.status(401).json({
         success: false,
         message: "Invalid credentials",
       });
     }
 
-    // Generate token
-    const token = generateToken(user._id);
+    console.log(`Login successful for user: ${email}, role: ${user.role}`);
+
+    // Generate token with role
+    const token = generateToken(user._id, user.role);
 
     res.json({
       success: true,
@@ -187,6 +196,7 @@ export const login = async (req, res) => {
       },
     });
   } catch (error) {
+    console.error("Login error:", error);
     res.status(500).json({
       success: false,
       message: "Error in login",
@@ -303,7 +313,7 @@ export const resetPassword = async (req, res) => {
     await user.save();
 
     // Generate token
-    const token = generateToken(user._id);
+    const token = generateToken(user._id, user.role);
 
     res.json({
       success: true,
@@ -333,13 +343,54 @@ export const createAdmin = async (req, res) => {
 
     // If admin exists, require authentication
     if (adminExists) {
-      if (!req.user || req.user.role !== "admin") {
-        console.log("Unauthorized attempt to create admin");
-        return res.status(403).json({
-          success: false,
-          message: "Only super admin can create other admin users",
-        });
+      // For the first admin creation, we need to check if there's token in the header
+      // NOTE: This route is public so req.user might not be set by any middleware
+      // We need to manually check the authorization header
+      console.log("Authorization header:", req.headers.authorization);
+
+      const authHeader = req.headers.authorization;
+      if (!authHeader) {
+        console.log(
+          "No authorization header found for subsequent admin creation"
+        );
+        // Allow creation if this is potentially the first admin (if adminExists was stale)
+        const doubleCheck = await User.countDocuments({ role: "admin" });
+        if (doubleCheck > 0) {
+          return res.status(401).json({
+            success: false,
+            message: "Authentication required to create additional admin users",
+          });
+        } else {
+          console.log(
+            "Double-check confirmed no admins exist, allowing creation"
+          );
+        }
+      } else {
+        try {
+          // Extract and verify token
+          const token = authHeader.split(" ")[1];
+          const decoded = jwt.verify(token, process.env.JWT_SECRET);
+          const user = await User.findById(decoded.id);
+
+          if (!user || user.role !== "admin") {
+            console.log("Unauthorized attempt to create admin");
+            return res.status(403).json({
+              success: false,
+              message: "Only existing admins can create other admin users",
+            });
+          }
+        } catch (err) {
+          console.log("Token verification failed:", err.message);
+          return res.status(401).json({
+            success: false,
+            message: "Invalid authentication token",
+          });
+        }
       }
+    } else {
+      console.log(
+        "No admin users exist yet, allowing creation without authentication"
+      );
     }
 
     const { firstName, lastName, email, password, phone, address, gender } =

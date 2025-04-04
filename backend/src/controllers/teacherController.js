@@ -8,7 +8,7 @@ import mongoose from "mongoose";
 export const getTeachers = async (req, res) => {
   try {
     const teachers = await Teacher.find().populate(
-      "classes",
+      "batches",
       "name subject schedule"
     );
 
@@ -32,7 +32,7 @@ export const getTeachers = async (req, res) => {
 export const getTeacher = async (req, res) => {
   try {
     const teacher = await Teacher.findById(req.params.id).populate(
-      "classes",
+      "batches",
       "name subject schedule"
     );
 
@@ -134,7 +134,6 @@ export const createTeacher = async (req, res) => {
       data: teacher,
     });
   } catch (error) {
-    console.error("Teacher creation error:", error);
     res.status(500).json({
       success: false,
       message: "Error in creating teacher",
@@ -237,7 +236,6 @@ export const deleteTeacher = async (req, res) => {
       message: "Teacher deleted successfully",
     });
   } catch (error) {
-    console.error("Error in deleteTeacher:", error);
     res.status(500).json({
       success: false,
       message: "Error in deleting teacher",

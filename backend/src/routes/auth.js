@@ -28,6 +28,8 @@ router.post(
   forgotPassword
 );
 router.post("/reset-password", resetPasswordValidator, validate, resetPassword);
+
+// Special route for creating admin - doesn't require auth for first admin
 router.post("/create-admin", createAdminValidator, validate, createAdmin);
 
 // Protected routes

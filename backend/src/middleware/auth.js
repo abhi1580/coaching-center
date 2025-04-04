@@ -18,6 +18,7 @@ export const authenticateToken = async (req, res, next) => {
       return errorResponse(res, 401, "User not found");
     }
 
+    // Store user in request
     req.user = user;
     next();
   } catch (error) {
@@ -36,12 +37,42 @@ export const protect = authenticateToken;
 
 export const authorize = (...roles) => {
   return (req, res, next) => {
-    if (!roles.includes(req.user.role)) {
-      return res.status(403).json({
+    try {
+      if (!req.user || !req.user.role) {
+        console.log("Authorization failed: User role not found");
+        return res.status(403).json({
+          success: false,
+          message: "User role not found",
+        });
+      }
+
+      // Ensure role is a string and convert to lowercase for case-insensitive comparison
+      const userRole = String(req.user.role).toLowerCase();
+      const allowedRoles = roles.map((role) => String(role).toLowerCase());
+
+      console.log("User role:", userRole);
+      console.log("Allowed roles:", allowedRoles);
+      console.log("Check result:", allowedRoles.includes(userRole));
+
+      if (!allowedRoles.includes(userRole)) {
+        console.log(
+          `Authorization failed: Role ${req.user.role} not authorized`
+        );
+        return res.status(403).json({
+          success: false,
+          message: `User role ${req.user.role} is not authorized to access this route`,
+        });
+      }
+
+      console.log("Authorization successful for role:", userRole);
+      next();
+    } catch (error) {
+      console.error("Authorization error:", error);
+      return res.status(500).json({
         success: false,
-        message: `User role ${req.user.role} is not authorized to access this route`,
+        message: "Error checking authorization",
+        error: error.message,
       });
     }
-    next();
   };
 };

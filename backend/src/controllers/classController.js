@@ -169,11 +169,12 @@ export const deleteClass = async (req, res) => {
 
     // Remove class from all enrolled students
     await Student.updateMany(
-      { enrolledClasses: classItem._id },
-      { $pull: { enrolledClasses: classItem._id } }
+      { classes: classItem._id },
+      { $pull: { classes: classItem._id } }
     );
 
-    await classItem.remove();
+    // Use deleteOne() instead of the deprecated remove() method
+    await Class.deleteOne({ _id: classItem._id });
 
     res.json({
       success: true,
@@ -233,7 +234,7 @@ export const addStudent = async (req, res) => {
     await classItem.save();
 
     // Add class to student's enrolled classes
-    student.enrolledClasses.push(classItem._id);
+    student.classes.push(classItem._id);
     await student.save();
 
     res.json({
@@ -270,7 +271,7 @@ export const removeStudent = async (req, res) => {
 
     // Remove class from student's enrolled classes
     await Student.findByIdAndUpdate(req.params.studentId, {
-      $pull: { enrolledClasses: classItem._id },
+      $pull: { classes: classItem._id },
     });
 
     res.json({

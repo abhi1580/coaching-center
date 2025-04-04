@@ -75,15 +75,9 @@ const batchSchema = new mongoose.Schema(
       trim: true,
     },
     fees: {
-      amount: {
-        type: Number,
-        required: true,
-      },
-      frequency: {
-        type: String,
-        enum: ["monthly", "quarterly", "annually"],
-        required: true,
-      },
+      type: Number,
+      required: true,
+      min: 0,
     },
   },
   {

@@ -2,25 +2,72 @@ import Announcement from "../models/Announcement.js";
 import { validateMongoDbId } from "../utils/validateMongoDbId.js";
 import { handleError } from "../utils/errorHandler.js";
 
+// Helper functions
+const validateAnnouncementFields = (fields) => {
+  const requiredFields = [
+    "title",
+    "content",
+    "type",
+    "priority",
+    "targetAudience",
+    "startDate",
+    "startTime",
+    "endDate",
+    "endTime",
+  ];
+
+  const missingFields = requiredFields.filter((field) => !fields[field]);
+  if (missingFields.length > 0) {
+    throw new Error(`Missing required fields: ${missingFields.join(", ")}`);
+  }
+};
+
+const createDateTime = (date, time) => {
+  const dateTime = new Date(`${date}T${time}`);
+  if (isNaN(dateTime.getTime())) {
+    throw new Error("Invalid date or time format");
+  }
+  return dateTime;
+};
+
+const validateDateTime = (startDateTime, endDateTime) => {
+  if (endDateTime <= startDateTime) {
+    throw new Error("End date/time must be after start date/time");
+  }
+};
+
+const validatePastDate = (dateTime) => {
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  if (dateTime < today) {
+    throw new Error("Start date cannot be in the past");
+  }
+};
+
 // @desc    Get all announcements
 // @route   GET /api/announcements
 // @access  Private
 export const getAnnouncements = async (req, res) => {
   try {
     const announcements = await Announcement.find()
-      .populate("createdBy", "name email")
+      .populate("createdBy", "name")
       .sort({ createdAt: -1 });
-    res.json({
+
+    // Calculate counts
+    const counts = {
+      total: announcements.length,
+      active: announcements.filter((a) => a.status === "Active").length,
+      scheduled: announcements.filter((a) => a.status === "Scheduled").length,
+      expired: announcements.filter((a) => a.status === "Expired").length,
+    };
+
+    res.status(200).json({
       success: true,
-      count: announcements.length,
       data: announcements,
+      counts,
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Error in getting announcements",
-      error: error.message,
-    });
+    handleError(res, error, "Failed to fetch announcements");
   }
 };
 
@@ -29,26 +76,27 @@ export const getAnnouncements = async (req, res) => {
 // @access  Private
 export const getAnnouncement = async (req, res) => {
   try {
-    const announcement = await Announcement.findById(req.params.id).populate(
+    const { id } = req.params;
+    validateMongoDbId(id);
+
+    const announcement = await Announcement.findById(id).populate(
       "createdBy",
       "name email"
     );
+
     if (!announcement) {
       return res.status(404).json({
         success: false,
         message: "Announcement not found",
       });
     }
+
     res.json({
       success: true,
       data: announcement,
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Error in getting announcement",
-      error: error.message,
-    });
+    handleError(res, error, "Error in getting announcement");
   }
 };
 
@@ -57,31 +105,34 @@ export const getAnnouncement = async (req, res) => {
 // @access  Private (Admin only)
 export const createAnnouncement = async (req, res) => {
   try {
-    // Check if user is admin
-    if (req.user.role !== "admin") {
-      return res.status(403).json({
-        success: false,
-        message: "Only admin can create announcements",
-      });
-    }
+    validateAnnouncementFields(req.body);
+
+    const startDateTime = createDateTime(
+      req.body.startDate,
+      req.body.startTime
+    );
+    const endDateTime = createDateTime(req.body.endDate, req.body.endTime);
+
+    validateDateTime(startDateTime, endDateTime);
+    validatePastDate(startDateTime);
 
     const announcement = await Announcement.create({
-      ...req.body,
+      title: req.body.title,
+      content: req.body.content,
+      type: req.body.type,
+      priority: req.body.priority,
+      targetAudience: req.body.targetAudience,
+      startTime: startDateTime,
+      endTime: endDateTime,
       createdBy: req.user._id,
     });
-
-    await announcement.populate("createdBy", "name email");
 
     res.status(201).json({
       success: true,
       data: announcement,
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Error in creating announcement",
-      error: error.message,
-    });
+    handleError(res, error, "Error in creating announcement");
   }
 };
 
@@ -90,40 +141,52 @@ export const createAnnouncement = async (req, res) => {
 // @access  Private (Admin only)
 export const updateAnnouncement = async (req, res) => {
   try {
-    // Check if user is admin
-    if (req.user.role !== "admin") {
-      return res.status(403).json({
-        success: false,
-        message: "Only admin can update announcements",
-      });
-    }
+    const { id } = req.params;
+    validateMongoDbId(id);
 
-    const announcement = await Announcement.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      {
-        new: true,
-        runValidators: true,
-      }
-    ).populate("createdBy", "name email");
+    validateAnnouncementFields(req.body);
 
-    if (!announcement) {
+    const startDateTime = createDateTime(
+      req.body.startDate,
+      req.body.startTime
+    );
+    const endDateTime = createDateTime(req.body.endDate, req.body.endTime);
+
+    validateDateTime(startDateTime, endDateTime);
+
+    const existingAnnouncement = await Announcement.findById(id);
+    if (!existingAnnouncement) {
       return res.status(404).json({
         success: false,
         message: "Announcement not found",
       });
     }
 
+    // Only validate past date for new announcements
+    if (existingAnnouncement.startTime > new Date()) {
+      validatePastDate(startDateTime);
+    }
+
+    const announcement = await Announcement.findByIdAndUpdate(
+      id,
+      {
+        title: req.body.title,
+        content: req.body.content,
+        type: req.body.type,
+        priority: req.body.priority,
+        targetAudience: req.body.targetAudience,
+        startTime: startDateTime,
+        endTime: endDateTime,
+      },
+      { new: true, runValidators: true }
+    );
+
     res.json({
       success: true,
       data: announcement,
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Error in updating announcement",
-      error: error.message,
-    });
+    handleError(res, error, "Error in updating announcement");
   }
 };
 
@@ -132,16 +195,10 @@ export const updateAnnouncement = async (req, res) => {
 // @access  Private (Admin only)
 export const deleteAnnouncement = async (req, res) => {
   try {
-    // Check if user is admin
-    if (req.user.role !== "admin") {
-      return res.status(403).json({
-        success: false,
-        message: "Only admin can delete announcements",
-      });
-    }
+    const { id } = req.params;
+    validateMongoDbId(id);
 
-    const announcement = await Announcement.findByIdAndDelete(req.params.id);
-
+    const announcement = await Announcement.findByIdAndDelete(id);
     if (!announcement) {
       return res.status(404).json({
         success: false,
@@ -154,10 +211,6 @@ export const deleteAnnouncement = async (req, res) => {
       message: "Announcement deleted successfully",
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Error in deleting announcement",
-      error: error.message,
-    });
+    handleError(res, error, "Error in deleting announcement");
   }
 };

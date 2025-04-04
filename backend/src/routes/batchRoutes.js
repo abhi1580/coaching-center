@@ -1,51 +1,56 @@
 import express from "express";
-import { body } from "express-validator";
 import {
   getAllBatches,
   getBatchById,
   createBatch,
   updateBatch,
   deleteBatch,
+  getBatchesBySubject,
 } from "../controllers/batchController.js";
-import { validateRequest } from "../middleware/validateRequest.js";
+import {
+  createBatchValidator,
+  updateBatchValidator,
+} from "../middleware/validators/batchValidators.js";
+import { protect, authorize } from "../middleware/auth.js";
+import { validate } from "../middleware/validate.js";
 
 const router = express.Router();
 
-// Validation middleware
-const batchValidation = [
-  body("name").trim().notEmpty().withMessage("Name is required"),
-  body("standard").trim().notEmpty().withMessage("Standard is required"),
-  body("subject").trim().notEmpty().withMessage("Subject is required"),
-  body("startDate").trim().notEmpty().withMessage("Start date is required"),
-  body("endDate").trim().notEmpty().withMessage("End date is required"),
-  body("schedule.days").isArray().withMessage("Schedule days must be an array"),
-  body("schedule.startTime")
-    .trim()
-    .notEmpty()
-    .withMessage("Start time is required"),
-  body("schedule.endTime")
-    .trim()
-    .notEmpty()
-    .withMessage("End time is required"),
-  body("capacity").isInt({ min: 1 }).withMessage("Capacity must be at least 1"),
-  body("fees.amount")
-    .isFloat({ min: 0 })
-    .withMessage("Fee amount must be a positive number"),
-  body("fees.frequency")
-    .isIn(["monthly", "quarterly", "yearly"])
-    .withMessage("Invalid fee frequency"),
-  body("status")
-    .isIn(["upcoming", "ongoing", "completed", "cancelled"])
-    .withMessage("Invalid status"),
-  body("teacher").trim().notEmpty().withMessage("Teacher is required"),
-  body("description").optional().trim(),
-];
+// Apply authentication middleware to all routes
+router.use(protect);
 
-// Routes
-router.get("/", getAllBatches);
-router.get("/:id", getBatchById);
-router.post("/", batchValidation, validateRequest, createBatch);
-router.put("/:id", batchValidation, validateRequest, updateBatch);
-router.delete("/:id", deleteBatch);
+// Get all batches
+router.get("/", authorize("admin", "staff", "teacher"), getAllBatches);
+
+// Get batches by subject
+router.get(
+  "/by-subject",
+  authorize("admin", "staff", "teacher"),
+  getBatchesBySubject
+);
+
+// Get single batch
+router.get("/:id", authorize("admin", "staff", "teacher"), getBatchById);
+
+// Create new batch
+router.post(
+  "/",
+  authorize("admin"),
+  createBatchValidator,
+  validate,
+  createBatch
+);
+
+// Update batch
+router.put(
+  "/:id",
+  authorize("admin"),
+  updateBatchValidator,
+  validate,
+  updateBatch
+);
+
+// Delete batch
+router.delete("/:id", authorize("admin"), deleteBatch);
 
 export default router;

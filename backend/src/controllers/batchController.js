@@ -12,7 +12,10 @@ export const getAllBatches = async (req, res) => {
       .populate("teacher", "name");
     res.json(batches);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
   }
 };
 
@@ -54,7 +57,13 @@ export const createBatch = async (req, res) => {
       return res.status(404).json({ message: "Subject not found" });
     }
 
-    const batch = new Batch(req.body);
+    // Ensure fees is a number
+    const batchData = {
+      ...req.body,
+      fees: Number(req.body.fees),
+    };
+
+    const batch = new Batch(batchData);
     const newBatch = await batch.save();
 
     const populatedBatch = await Batch.findById(newBatch._id)
@@ -99,7 +108,13 @@ export const updateBatch = async (req, res) => {
       return res.status(404).json({ message: "Batch not found" });
     }
 
-    Object.assign(batch, req.body);
+    // Ensure fees is a number if provided
+    const updateData = { ...req.body };
+    if (updateData.fees) {
+      updateData.fees = Number(updateData.fees);
+    }
+
+    Object.assign(batch, updateData);
     await batch.save();
 
     const updatedBatch = await Batch.findById(batch._id)
@@ -124,5 +139,58 @@ export const deleteBatch = async (req, res) => {
     res.json({ message: "Batch deleted successfully" });
   } catch (error) {
     res.status(500).json({ message: error.message });
+  }
+};
+
+// Get batches by subject
+export const getBatchesBySubject = async (req, res) => {
+  try {
+    let { subjects, standard } = req.query;
+    console.log("Get batches by subject request:", { subjects, standard });
+
+    // Validate query parameters
+    if (!subjects) {
+      return res.status(400).json({
+        success: false,
+        message: "Subject ID is required",
+      });
+    }
+
+    // Convert subjects to array if it's a string
+    if (!Array.isArray(subjects)) {
+      // If multiple subjects are passed as comma-separated string
+      if (subjects.includes(",")) {
+        subjects = subjects.split(",");
+      } else {
+        subjects = [subjects];
+      }
+    }
+
+    console.log("Processed subjects:", subjects);
+
+    // Build the query
+    let query = { subject: { $in: subjects } };
+
+    // Add standard filter if provided
+    if (standard) {
+      query.standard = standard;
+    }
+
+    console.log("Query for batches:", query);
+
+    const batches = await Batch.find(query)
+      .populate("standard", "name level")
+      .populate("subject", "name")
+      .populate("teacher", "name");
+
+    console.log(`Found ${batches.length} batches`);
+
+    res.json(batches);
+  } catch (error) {
+    console.error("Error in getBatchesBySubject:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
   }
 };

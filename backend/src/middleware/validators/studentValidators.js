@@ -7,9 +7,7 @@ export const createStudentValidator = [
   check("address", "Address is required").not().isEmpty(),
   check("parentName", "Parent name is required").not().isEmpty(),
   check("parentPhone", "Parent phone number is required").not().isEmpty(),
-  check("enrolledClasses", "Enrolled classes must be an array")
-    .optional()
-    .isArray(),
+  check("classes", "Classes must be an array").optional().isArray(),
 ];
 
 export const updateStudentValidator = [
@@ -22,9 +20,7 @@ export const updateStudentValidator = [
     .optional()
     .not()
     .isEmpty(),
-  check("enrolledClasses", "Enrolled classes must be an array")
-    .optional()
-    .isArray(),
+  check("classes", "Classes must be an array").optional().isArray(),
   check("status", "Status must be either active or inactive")
     .optional()
     .isIn(["active", "inactive"]),

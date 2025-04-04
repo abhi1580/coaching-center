@@ -53,10 +53,12 @@ const studentSchema = new mongoose.Schema(
         ref: "Subject",
       },
     ],
-    grade: {
-      type: String,
-      required: true,
-    },
+    batches: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Batch",
+      },
+    ],
     board: {
       type: String,
       required: [true, "Board is required"],
@@ -87,6 +89,10 @@ const studentSchema = new mongoose.Schema(
       type: String,
       enum: ["Active", "Inactive"],
       default: "Active",
+    },
+    dateOfBirth: {
+      type: Date,
+      required: [true, "Date of birth is required"],
     },
     joiningDate: {
       type: Date,

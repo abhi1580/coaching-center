@@ -196,7 +196,7 @@ export const deleteStaff = async (req, res) => {
 
     try {
       // Delete staff record
-      await staff.remove({ session });
+      await Staff.deleteOne({ _id: staff._id }).session(session);
 
       // Delete corresponding user record
       await User.findOneAndDelete({ email: staff.email }).session(session);

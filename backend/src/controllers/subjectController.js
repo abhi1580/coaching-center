@@ -5,12 +5,52 @@ import asyncHandler from "../middleware/async.js";
 // @route   GET /api/subjects
 // @access  Public
 export const getSubjects = asyncHandler(async (req, res) => {
-  const subjects = await Subject.find();
-  res.status(200).json({
-    success: true,
-    count: subjects.length,
-    data: subjects,
-  });
+  try {
+    const { standard } = req.query;
+    
+    let query = {};
+    
+    // If standard ID is provided, filter subjects by standard
+    if (standard) {
+      // Find the standard first to check if it exists
+      const Standard = (await import('../models/Standard.js')).default;
+      const standardDoc = await Standard.findById(standard);
+      
+      if (!standardDoc) {
+        return res.status(404).json({
+          success: false,
+          error: "Standard not found"
+        });
+      }
+      
+      // Return subjects associated with this standard
+      const subjects = await Subject.find({
+        _id: { $in: standardDoc.subjects }
+      });
+      
+      return res.status(200).json({
+        success: true,
+        count: subjects.length,
+        data: subjects
+      });
+    }
+    
+    // If no standard filter, return all subjects
+    const subjects = await Subject.find(query);
+    
+    res.status(200).json({
+      success: true,
+      count: subjects.length,
+      data: subjects,
+    });
+  } catch (error) {
+    console.error("Error fetching subjects:", error);
+    res.status(500).json({
+      success: false,
+      error: "Server Error",
+      message: error.message
+    });
+  }
 });
 
 // @desc    Get single subject

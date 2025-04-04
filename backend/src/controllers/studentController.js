@@ -1,4 +1,5 @@
 import Student from "../models/Student.js";
+import User from "../models/User.js";
 import Class from "../models/Class.js";
 import Payment from "../models/Payment.js";
 import { validateObjectId } from "../utils/validation.js";
@@ -15,11 +16,14 @@ export const getAllStudents = async (req, res) => {
     if (role === "teacher") {
       const teacherClasses = await Class.find({ teacher: req.user._id });
       const classIds = teacherClasses.map((cls) => cls._id);
-      query = { enrolledClasses: { $in: classIds } };
+      query = { classes: { $in: classIds } };
     }
 
     const students = await Student.find(query)
-      .populate("enrolledClasses", "name subject schedule")
+      .populate("standard", "name level")
+      .populate("subjects", "name")
+      .populate("batches", "name subject")
+      .populate("classes", "name subject schedule")
       .populate("payments", "amount date status")
       .sort({ createdAt: -1 });
 
@@ -40,7 +44,10 @@ export const getStudent = async (req, res) => {
     }
 
     const student = await Student.findById(id)
-      .populate("enrolledClasses", "name subject schedule")
+      .populate("standard", "name level")
+      .populate("subjects", "name")
+      .populate("batches", "name subject")
+      .populate("classes", "name subject schedule")
       .populate("payments", "amount date status");
 
     if (!student) {
@@ -49,7 +56,7 @@ export const getStudent = async (req, res) => {
 
     // Check if teacher has access to this student
     if (req.user.role === "teacher") {
-      const hasAccess = student.enrolledClasses.some(
+      const hasAccess = student.classes.some(
         (cls) => cls.teacher.toString() === req.user._id.toString()
       );
       if (!hasAccess) {
@@ -76,11 +83,16 @@ export const createStudent = async (req, res) => {
       address,
       parentName,
       parentPhone,
-      grade,
+      parentEmail,
+      standard,
+      subjects,
+      batches,
       board,
       schoolName,
       previousPercentage,
+      dateOfBirth,
       joiningDate,
+      password,
     } = req.body;
 
     // Check if email already exists
@@ -88,6 +100,28 @@ export const createStudent = async (req, res) => {
     if (existingStudent) {
       return res.status(400).json({ message: "Email already registered" });
     }
+
+    // Check if a user with this email already exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res
+        .status(400)
+        .json({ message: "Email already registered for a user account" });
+    }
+
+    // Create a user account first with role="student"
+    const user = await User.create({
+      name,
+      email,
+      password: password || "student123",
+      phone,
+      address,
+      role: "student",
+      gender,
+      status: "active",
+    });
+
+    console.log("Created user account for student:", user._id);
 
     const student = new Student({
       name,
@@ -97,16 +131,38 @@ export const createStudent = async (req, res) => {
       address,
       parentName,
       parentPhone,
-      grade,
+      parentEmail,
+      standard,
+      subjects,
+      batches,
       board,
       schoolName,
       previousPercentage,
+      dateOfBirth,
       joiningDate,
+      user: user._id,
     });
 
     const newStudent = await student.save();
-    res.status(201).json(newStudent);
+
+    // If batches are provided, add student to batches as well
+    if (batches && batches.length > 0) {
+      const Batch = (await import("../models/Batch.js")).default;
+      await Batch.updateMany(
+        { _id: { $in: batches } },
+        { $addToSet: { enrolledStudents: newStudent._id } }
+      );
+    }
+
+    // Populate the student with standard, subjects, and batches
+    const populatedStudent = await Student.findById(newStudent._id)
+      .populate("standard", "name level")
+      .populate("subjects", "name")
+      .populate("batches", "name subject");
+
+    res.status(201).json(populatedStudent);
   } catch (error) {
+    console.error("Error creating student:", error);
     res.status(400).json({ message: error.message });
   }
 };
@@ -129,11 +185,15 @@ export const updateStudent = async (req, res) => {
       address,
       parentName,
       parentPhone,
-      grade,
+      parentEmail,
+      standard,
+      subjects,
+      batches,
       board,
       schoolName,
       previousPercentage,
       status,
+      dateOfBirth,
       joiningDate,
     } = req.body;
 
@@ -153,6 +213,9 @@ export const updateStudent = async (req, res) => {
       return res.status(404).json({ message: "Student not found" });
     }
 
+    // Get previous batches for comparison
+    const previousBatches = [...student.batches].map((b) => b.toString());
+
     // Update fields
     Object.assign(student, {
       name,
@@ -162,17 +225,74 @@ export const updateStudent = async (req, res) => {
       address,
       parentName,
       parentPhone,
-      grade,
+      parentEmail,
+      standard,
+      subjects,
+      batches,
       board,
       schoolName,
       previousPercentage,
       status,
+      dateOfBirth,
       joiningDate,
     });
 
     const updatedStudent = await student.save();
-    res.json(updatedStudent);
+
+    // Update corresponding User record if it exists
+    if (student.user) {
+      const user = await User.findById(student.user);
+      if (user) {
+        user.name = name || user.name;
+        user.email = email || user.email;
+        user.phone = phone || user.phone;
+        user.address = address || user.address;
+        user.gender = gender || user.gender;
+        user.status = status === "Active" ? "active" : "inactive";
+        await user.save();
+        console.log("Updated user account for student:", user._id);
+      }
+    }
+
+    // If batches are changed, update batch enrollments
+    if (batches) {
+      const newBatches = batches.map((b) => b.toString());
+      const Batch = (await import("../models/Batch.js")).default;
+
+      // Remove student from batches that are no longer assigned
+      const removedBatches = previousBatches.filter(
+        (b) => !newBatches.includes(b)
+      );
+      if (removedBatches.length > 0) {
+        await Batch.updateMany(
+          { _id: { $in: removedBatches } },
+          { $pull: { enrolledStudents: student._id } }
+        );
+      }
+
+      // Add student to new batches
+      const addedBatches = newBatches.filter(
+        (b) => !previousBatches.includes(b)
+      );
+      if (addedBatches.length > 0) {
+        await Batch.updateMany(
+          { _id: { $in: addedBatches } },
+          { $addToSet: { enrolledStudents: student._id } }
+        );
+      }
+    }
+
+    // Populate the updated student
+    const populatedStudent = await Student.findById(updatedStudent._id)
+      .populate("standard", "name level")
+      .populate("subjects", "name")
+      .populate("batches", "name subject")
+      .populate("classes", "name subject schedule")
+      .populate("payments", "amount date status");
+
+    res.json(populatedStudent);
   } catch (error) {
+    console.error("Error updating student:", error);
     res.status(400).json({ message: error.message });
   }
 };
@@ -187,23 +307,33 @@ export const deleteStudent = async (req, res) => {
       return res.status(400).json({ message: "Invalid student ID" });
     }
 
+    // Find the student
     const student = await Student.findById(id);
     if (!student) {
       return res.status(404).json({ message: "Student not found" });
     }
 
-    // Remove student from all enrolled classes
-    await Class.updateMany(
-      { _id: { $in: student.enrolledClasses } },
-      { $pull: { students: id } }
-    );
+    // Remove student from all batches
+    if (student.batches && student.batches.length > 0) {
+      const Batch = (await import("../models/Batch.js")).default;
+      await Batch.updateMany(
+        { _id: { $in: student.batches } },
+        { $pull: { enrolledStudents: student._id } }
+      );
+    }
 
-    // Delete all payments associated with the student
-    await Payment.deleteMany({ student: id });
+    // Delete corresponding User record if it exists
+    if (student.user) {
+      await User.findByIdAndDelete(student.user);
+      console.log("Deleted user account for student:", student.user);
+    }
 
-    await student.remove();
+    // Delete the student
+    await Student.findByIdAndDelete(id);
+
     res.json({ message: "Student deleted successfully" });
   } catch (error) {
+    console.error("Error deleting student:", error);
     res.status(500).json({ message: error.message });
   }
 };
@@ -219,7 +349,7 @@ export const getStudentClasses = async (req, res) => {
     }
 
     const student = await Student.findById(id).populate({
-      path: "enrolledClasses",
+      path: "classes",
       select: "name subject schedule teacher",
       populate: {
         path: "teacher",
@@ -231,7 +361,7 @@ export const getStudentClasses = async (req, res) => {
       return res.status(404).json({ message: "Student not found" });
     }
 
-    res.json(student.enrolledClasses);
+    res.json(student.classes);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

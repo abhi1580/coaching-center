@@ -61,10 +61,10 @@ const teacherSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
-    classes: [
+    batches: [
       {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "Class",
+        ref: "Batch",
       },
     ],
   },

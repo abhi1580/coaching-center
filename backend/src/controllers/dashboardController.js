@@ -2,20 +2,69 @@ import User from "../models/User.js";
 import Subject from "../models/Subject.js";
 import Payment from "../models/Payment.js";
 import Class from "../models/Class.js";
+import Batch from "../models/Batch.js";
+import Standard from "../models/Standard.js";
+import Staff from "../models/Staff.js";
+import Announcement from "../models/Announcement.js";
 
-const getStats = async (req, res) => {
+// Export individual controller functions for easier imports
+export const getStats = async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
     let stats = {};
 
     if (user.role === "admin") {
+      // Get total students
+      const totalStudents = await User.countDocuments({ role: "student" });
+      console.log("Total students count from DB:", totalStudents);
+
+      // Get total teachers
+      const totalTeachers = await User.countDocuments({ role: "teacher" });
+
+      // Get total batches
+      const totalBatches = await Batch.countDocuments();
+
+      // Get total subjects
+      const totalSubjects = await Subject.countDocuments();
+
+      // Get total standards
+      const totalStandards = await Standard.countDocuments();
+
+      // Get total staff
+      const totalStaff = await Staff.countDocuments();
+
+      // Get total payments and revenue
+      const paymentStats = await Payment.aggregate([
+        {
+          $group: {
+            _id: null,
+            totalPayments: { $sum: 1 },
+            totalRevenue: { $sum: "$amount" },
+          },
+        },
+      ]).then((result) => result[0] || { totalPayments: 0, totalRevenue: 0 });
+
+      // Get total announcements
+      const totalAnnouncements = await Announcement.countDocuments();
+
       stats = {
-        totalStudents: await User.countDocuments({ role: "student" }),
-        totalTeachers: await User.countDocuments({ role: "teacher" }),
-        totalSubjects: await Subject.countDocuments(),
-        totalRevenue: await Payment.aggregate([
-          { $group: { _id: null, total: { $sum: "$amount" } } },
-        ]).then((result) => result[0]?.total || 0),
+        totalStudents,
+        totalTeachers,
+        totalBatches,
+        totalSubjects,
+        totalStandards,
+        totalStaff,
+        totalPayments: paymentStats.totalPayments,
+        totalRevenue: paymentStats.totalRevenue,
+        totalAnnouncements,
+        // Calculate percentages for growth indicators
+        studentGrowth: await calculateGrowthPercentage(User, {
+          role: "student",
+        }),
+        teacherGrowth: await calculateGrowthPercentage(User, {
+          role: "teacher",
+        }),
+        revenueGrowth: await calculateRevenueGrowth(),
       };
     } else if (user.role === "teacher") {
       const teacherSubjects = await Subject.find({ teacher: user._id });
@@ -47,7 +96,7 @@ const getStats = async (req, res) => {
   }
 };
 
-const getRecentActivities = async (req, res) => {
+export const getRecentActivities = async (req, res) => {
   try {
     const activities = await Payment.find()
       .sort({ createdAt: -1 })
@@ -62,7 +111,7 @@ const getRecentActivities = async (req, res) => {
   }
 };
 
-const getUpcomingClasses = async (req, res) => {
+export const getUpcomingClasses = async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
     let query = {};
@@ -106,10 +155,65 @@ const calculateAverageScore = async (studentId, subjectIds) => {
   return 78; // Placeholder
 };
 
-const dashboardController = {
+// Helper function to calculate growth percentage
+const calculateGrowthPercentage = async (Model, query = {}) => {
+  const now = new Date();
+  const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+
+  const currentCount = await Model.countDocuments({
+    ...query,
+    createdAt: { $lte: now },
+  });
+
+  const lastMonthCount = await Model.countDocuments({
+    ...query,
+    createdAt: { $lte: lastMonth },
+  });
+
+  if (lastMonthCount === 0) return 100;
+  return ((currentCount - lastMonthCount) / lastMonthCount) * 100;
+};
+
+// Helper function to calculate revenue growth
+const calculateRevenueGrowth = async () => {
+  const now = new Date();
+  const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+
+  const currentRevenue = await Payment.aggregate([
+    {
+      $match: {
+        createdAt: { $lte: now },
+      },
+    },
+    {
+      $group: {
+        _id: null,
+        total: { $sum: "$amount" },
+      },
+    },
+  ]).then((result) => result[0]?.total || 0);
+
+  const lastMonthRevenue = await Payment.aggregate([
+    {
+      $match: {
+        createdAt: { $lte: lastMonth },
+      },
+    },
+    {
+      $group: {
+        _id: null,
+        total: { $sum: "$amount" },
+      },
+    },
+  ]).then((result) => result[0]?.total || 0);
+
+  if (lastMonthRevenue === 0) return 100;
+  return ((currentRevenue - lastMonthRevenue) / lastMonthRevenue) * 100;
+};
+
+// Create a default export that includes all the named exports for backward compatibility
+export default {
   getStats,
   getRecentActivities,
   getUpcomingClasses,
 };
-
-export default dashboardController;
