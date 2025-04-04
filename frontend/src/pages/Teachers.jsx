@@ -22,11 +22,19 @@ import {
   Chip,
   Alert,
   CircularProgress,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+  InputAdornment,
 } from "@mui/material";
 import {
   Add as AddIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
+  FilterList as FilterIcon,
+  Search as SearchIcon,
+  ExpandMore as ExpandMoreIcon,
+  Clear as ClearIcon,
 } from "@mui/icons-material";
 import { Formik, Form } from "formik";
 import * as Yup from "yup";
@@ -39,47 +47,130 @@ import {
   deleteTeacher,
 } from "../store/slices/teacherSlice";
 
-const validationSchema = Yup.object({
-  name: Yup.string().required("Name is required"),
-  email: Yup.string().email("Invalid email").required("Email is required"),
-  password: Yup.string()
-    .min(6, "Password must be at least 6 characters")
-    .when("$isEdit", {
-      is: true,
-      then: (schema) => schema.nullable(),
-      otherwise: (schema) => schema.required("Password is required"),
-    }),
-  phone: Yup.string()
-    .matches(/^[0-9]{10}$/, "Phone number must be 10 digits")
-    .required("Phone number is required"),
-  gender: Yup.string().required("Gender is required"),
-  address: Yup.string().required("Address is required"),
-  subjects: Yup.array()
-    .of(Yup.string())
-    .min(1, "At least one subject is required"),
-  qualification: Yup.string().required("Qualification is required"),
-  experience: Yup.number()
-    .required("Experience is required")
-    .min(0, "Experience cannot be negative"),
-  joiningDate: Yup.date().required("Joining date is required"),
-  salary: Yup.number()
-    .required("Salary is required")
-    .min(0, "Salary must be a positive number"),
-  status: Yup.string().required("Status is required"),
-});
+const validationSchema = (isEdit) =>
+  Yup.object({
+    name: Yup.string().required("Name is required"),
+    email: Yup.string().email("Invalid email").required("Email is required"),
+    password: isEdit
+      ? Yup.string()
+          .nullable()
+          .test(
+            "password-optional",
+            "Password must be at least 6 characters",
+            function (value) {
+              return !value || value === "" || value.length >= 6;
+            }
+          )
+      : Yup.string()
+          .required("Password is required")
+          .min(6, "Password must be at least 6 characters"),
+    phone: Yup.string()
+      .matches(/^[0-9]{10}$/, "Phone number must be 10 digits")
+      .required("Phone number is required"),
+    gender: Yup.string().required("Gender is required"),
+    address: Yup.string().required("Address is required"),
+    subjects: Yup.array()
+      .of(Yup.string())
+      .min(1, "At least one subject is required"),
+    qualification: Yup.string().required("Qualification is required"),
+    experience: Yup.number()
+      .required("Experience is required")
+      .min(0, "Experience cannot be negative"),
+    joiningDate: Yup.date().required("Joining date is required"),
+    salary: Yup.number()
+      .required("Salary is required")
+      .min(0, "Salary must be a positive number"),
+    status: Yup.string().required("Status is required"),
+  });
 
 const Teachers = () => {
   const dispatch = useDispatch();
   const { subjects } = useSelector((state) => state.subjects);
-  const { teachers, loading, error } = useSelector((state) => state.teachers);
+  const {
+    teachers,
+    loading,
+    error: reduxError,
+  } = useSelector((state) => state.teachers);
   const [open, setOpen] = useState(false);
   const [selectedTeacher, setSelectedTeacher] = useState(null);
   const [success, setSuccess] = useState(null);
+  const [error, setError] = useState(null);
+
+  // Filter state
+  const [nameFilter, setNameFilter] = useState("");
+  const [subjectFilter, setSubjectFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [qualificationFilter, setQualificationFilter] = useState("");
+  const [filteredTeachers, setFilteredTeachers] = useState([]);
+  const [filterExpanded, setFilterExpanded] = useState(false);
 
   useEffect(() => {
     dispatch(fetchTeachers());
     dispatch(fetchSubjects());
   }, [dispatch]);
+
+  // Initialize filtered teachers when teachers data loads
+  useEffect(() => {
+    setFilteredTeachers(teachers || []);
+    // Clear any Redux errors
+    if (reduxError) {
+      setError(reduxError);
+    }
+  }, [teachers, reduxError]);
+
+  // Apply filters whenever teachers data or filter values change
+  useEffect(() => {
+    if (!teachers || teachers.length === 0) {
+      setFilteredTeachers([]);
+      return;
+    }
+
+    let results = [...teachers];
+
+    // Filter by name
+    if (nameFilter) {
+      const searchTerm = nameFilter.toLowerCase();
+      results = results.filter(
+        (teacher) =>
+          teacher.name.toLowerCase().includes(searchTerm) ||
+          teacher.email.toLowerCase().includes(searchTerm)
+      );
+    }
+
+    // Filter by subject
+    if (subjectFilter) {
+      results = results.filter(
+        (teacher) =>
+          teacher.subjects && teacher.subjects.includes(subjectFilter)
+      );
+    }
+
+    // Filter by status
+    if (statusFilter) {
+      results = results.filter(
+        (teacher) => teacher.status.toLowerCase() === statusFilter.toLowerCase()
+      );
+    }
+
+    // Filter by qualification
+    if (qualificationFilter) {
+      const searchQual = qualificationFilter.toLowerCase();
+      results = results.filter(
+        (teacher) =>
+          teacher.qualification &&
+          teacher.qualification.toLowerCase().includes(searchQual)
+      );
+    }
+
+    setFilteredTeachers(results);
+  }, [teachers, nameFilter, subjectFilter, statusFilter, qualificationFilter]);
+
+  const clearFilters = () => {
+    setNameFilter("");
+    setSubjectFilter("");
+    setStatusFilter("");
+    setQualificationFilter("");
+  };
 
   const handleOpen = (teacher = null) => {
     setSelectedTeacher(teacher);
@@ -92,31 +183,73 @@ const Teachers = () => {
     setSuccess(null);
   };
 
-  const handleSubmit = async (values, { setSubmitting, resetForm }) => {
+  const handleSubmit = async (
+    values,
+    { setSubmitting, resetForm, setErrors }
+  ) => {
     try {
       const subjectIds = Array.isArray(values.subjects)
         ? values.subjects.filter((id) => id && id.trim() !== "")
         : [];
 
+      // Format date properly - ensure we have a valid date
+      let formattedJoiningDate = null;
+      if (values.joiningDate) {
+        const date = new Date(values.joiningDate);
+        if (!isNaN(date.getTime())) {
+          formattedJoiningDate = date.toISOString();
+        }
+      }
+
+      // Prepare data for submission
       const formData = {
         ...values,
         subjects: subjectIds,
         status: values.status || "active",
+        joiningDate: formattedJoiningDate,
       };
 
+      // For updates, only include password if it's provided and not empty
       if (selectedTeacher) {
-        await dispatch(
+        if (!values.password || values.password.trim() === "") {
+          delete formData.password;
+        }
+      }
+
+      console.log("Submitting teacher data:", formData);
+
+      let result;
+      if (selectedTeacher) {
+        console.log(`Updating teacher with ID ${selectedTeacher._id}`);
+        result = await dispatch(
           updateTeacher({ id: selectedTeacher._id, data: formData })
         ).unwrap();
+        console.log("Update result:", result);
         setSuccess("Teacher updated successfully");
       } else {
-        await dispatch(createTeacher(formData)).unwrap();
-          setSuccess("Teacher added successfully");
+        console.log("Creating new teacher");
+        result = await dispatch(createTeacher(formData)).unwrap();
+        console.log("Create result:", result);
+        setSuccess("Teacher added successfully");
       }
+
+      // Refresh teacher list to ensure we have the latest data
+      dispatch(fetchTeachers());
       handleClose();
       resetForm();
     } catch (err) {
-      setError(err.message || "Failed to save teacher");
+      console.error("Error saving teacher:", err);
+
+      // Handle backend validation errors
+      if (err.response?.data?.errors) {
+        const backendErrors = err.response.data.errors.reduce((acc, error) => {
+          acc[error.param] = error.msg;
+          return acc;
+        }, {});
+        setErrors(backendErrors);
+      } else {
+        setError(err.message || "Failed to save teacher");
+      }
     } finally {
       setSubmitting(false);
     }
@@ -128,6 +261,7 @@ const Teachers = () => {
         await dispatch(deleteTeacher(id)).unwrap();
         setSuccess("Teacher deleted successfully");
       } catch (err) {
+        console.error("Error deleting teacher:", err);
         setError(err.message || "Failed to delete teacher");
       }
     }
@@ -171,9 +305,9 @@ const Teachers = () => {
         </Button>
       </Box>
 
-      {error && (
+      {(error || reduxError) && (
         <Alert severity="error" sx={{ mb: 2 }}>
-          {error}
+          {error || reduxError}
         </Alert>
       )}
 
@@ -182,6 +316,154 @@ const Teachers = () => {
           {success}
         </Alert>
       )}
+
+      {/* Filter Section */}
+      <Accordion
+        expanded={filterExpanded}
+        onChange={() => setFilterExpanded(!filterExpanded)}
+        sx={{ mb: 2 }}
+      >
+        <AccordionSummary
+          expandIcon={<ExpandMoreIcon />}
+          aria-controls="filter-panel-content"
+          id="filter-panel-header"
+        >
+          <Box sx={{ display: "flex", alignItems: "center" }}>
+            <FilterIcon sx={{ mr: 1 }} />
+            <Typography>Filter Teachers</Typography>
+            {(nameFilter ||
+              subjectFilter ||
+              statusFilter ||
+              qualificationFilter) && (
+              <Chip
+                label={`${
+                  Object.values([
+                    nameFilter,
+                    subjectFilter,
+                    statusFilter,
+                    qualificationFilter,
+                  ]).filter(Boolean).length
+                } active`}
+                size="small"
+                color="primary"
+                sx={{ ml: 1 }}
+              />
+            )}
+          </Box>
+        </AccordionSummary>
+        <AccordionDetails>
+          <Grid container spacing={2} alignItems="center">
+            <Grid item xs={12} sm={3}>
+              <TextField
+                fullWidth
+                label="Search by Name/Email"
+                value={nameFilter}
+                onChange={(e) => setNameFilter(e.target.value)}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon />
+                    </InputAdornment>
+                  ),
+                  endAdornment: nameFilter && (
+                    <InputAdornment position="end">
+                      <IconButton
+                        size="small"
+                        onClick={() => setNameFilter("")}
+                      >
+                        <ClearIcon fontSize="small" />
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
+              />
+            </Grid>
+            <Grid item xs={12} sm={3}>
+              <TextField
+                select
+                fullWidth
+                label="Filter by Subject"
+                value={subjectFilter}
+                onChange={(e) => setSubjectFilter(e.target.value)}
+              >
+                <MenuItem value="">All Subjects</MenuItem>
+                {subjects.map((subject) => (
+                  <MenuItem key={subject._id} value={subject._id}>
+                    {subject.name}
+                  </MenuItem>
+                ))}
+              </TextField>
+            </Grid>
+            <Grid item xs={12} sm={2}>
+              <TextField
+                select
+                fullWidth
+                label="Status"
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+              >
+                <MenuItem value="">All Status</MenuItem>
+                <MenuItem value="active">Active</MenuItem>
+                <MenuItem value="inactive">Inactive</MenuItem>
+              </TextField>
+            </Grid>
+            <Grid item xs={12} sm={3}>
+              <TextField
+                fullWidth
+                label="Qualification"
+                value={qualificationFilter}
+                onChange={(e) => setQualificationFilter(e.target.value)}
+                InputProps={{
+                  endAdornment: qualificationFilter && (
+                    <InputAdornment position="end">
+                      <IconButton
+                        size="small"
+                        onClick={() => setQualificationFilter("")}
+                      >
+                        <ClearIcon fontSize="small" />
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
+              />
+            </Grid>
+            <Grid item xs={12} sm={1}>
+              <Button
+                variant="outlined"
+                onClick={clearFilters}
+                fullWidth
+                disabled={
+                  !nameFilter &&
+                  !subjectFilter &&
+                  !statusFilter &&
+                  !qualificationFilter
+                }
+              >
+                Clear
+              </Button>
+            </Grid>
+          </Grid>
+        </AccordionDetails>
+      </Accordion>
+
+      {/* Results count */}
+      <Box
+        sx={{
+          mb: 2,
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
+        <Typography variant="body2" color="text.secondary">
+          Showing {filteredTeachers.length} of {teachers.length} teachers
+        </Typography>
+        {filteredTeachers.length === 0 && teachers.length > 0 && (
+          <Alert severity="info" sx={{ py: 0 }}>
+            No teachers match your filter criteria
+          </Alert>
+        )}
+      </Box>
 
       <TableContainer component={Paper}>
         <Table>
@@ -196,7 +478,7 @@ const Teachers = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {teachers.map((teacher) => (
+            {filteredTeachers.map((teacher) => (
               <TableRow key={teacher._id}>
                 <TableCell>
                   <Box>
@@ -229,8 +511,8 @@ const Teachers = () => {
                     </Typography>
                   </Box>
                 </TableCell>
-                  <TableCell>
-                    <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
+                <TableCell>
+                  <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
                     {teacher.subjects?.map((subjectId) => {
                       const subject = subjects.find((s) => s._id === subjectId);
                       return (
@@ -243,16 +525,16 @@ const Teachers = () => {
                         />
                       );
                     })}
-                    </Box>
-                  </TableCell>
-                  <TableCell>
-                    <Chip
-                      label={teacher.status}
+                  </Box>
+                </TableCell>
+                <TableCell>
+                  <Chip
+                    label={teacher.status}
                     color={teacher.status === "active" ? "success" : "error"}
-                      size="small"
-                    />
-                  </TableCell>
-                  <TableCell>
+                    size="small"
+                  />
+                </TableCell>
+                <TableCell>
                   <Box sx={{ display: "flex", gap: 1 }}>
                     <IconButton
                       color="primary"
@@ -269,8 +551,8 @@ const Teachers = () => {
                       <DeleteIcon />
                     </IconButton>
                   </Box>
-                  </TableCell>
-                </TableRow>
+                </TableCell>
+              </TableRow>
             ))}
           </TableBody>
         </Table>
@@ -309,12 +591,12 @@ const Teachers = () => {
                       .split("T")[0]
                   : "",
               }}
-              validationSchema={validationSchema}
+              validationSchema={validationSchema(!!selectedTeacher)}
               validateOnChange={true}
               validateOnBlur={true}
               onSubmit={handleSubmit}
-              context={{ isEdit: !!selectedTeacher }}
-              enableReinitialize={true} // Add this to update form when selectedTeacher changes
+              validateOnMount={false}
+              enableReinitialize={true} // Update form when selectedTeacher changes
             >
               {({
                 values,
@@ -325,6 +607,8 @@ const Teachers = () => {
                 handleSubmit,
                 isSubmitting,
                 setFieldValue,
+                isValid,
+                dirty,
               }) => (
                 <form onSubmit={handleSubmit}>
                   <Grid container spacing={2}>
@@ -359,23 +643,23 @@ const Teachers = () => {
                         helperText={touched.email && errors.email}
                       />
                     </Grid>
-                      <Grid item xs={12} sm={6}>
-                        <TextField
-                          fullWidth
-                          name="password"
+                    <Grid item xs={12} sm={6}>
+                      <TextField
+                        fullWidth
+                        name="password"
                         label={
                           selectedTeacher
                             ? "New Password (Optional)"
                             : "Password"
                         }
-                          type="password"
-                          value={values.password}
-                          onChange={handleChange}
-                          onBlur={handleBlur}
-                          error={touched.password && Boolean(errors.password)}
-                          helperText={touched.password && errors.password}
-                        />
-                      </Grid>
+                        type="password"
+                        value={values.password}
+                        onChange={handleChange}
+                        onBlur={handleBlur}
+                        error={touched.password && Boolean(errors.password)}
+                        helperText={touched.password && errors.password}
+                      />
+                    </Grid>
                     <Grid item xs={12} sm={6}>
                       <TextField
                         fullWidth
@@ -519,7 +803,7 @@ const Teachers = () => {
                         name="joiningDate"
                         label="Joining Date"
                         type="date"
-                        value={values.joiningDate}
+                        value={values.joiningDate || ""}
                         onChange={handleChange}
                         onBlur={handleBlur}
                         error={
@@ -554,7 +838,13 @@ const Teachers = () => {
                       color="primary"
                       disabled={isSubmitting}
                     >
-                      {selectedTeacher ? "Update" : "Add"}
+                      {isSubmitting ? (
+                        <CircularProgress size={24} />
+                      ) : selectedTeacher ? (
+                        "Update"
+                      ) : (
+                        "Add"
+                      )}
                     </Button>
                   </DialogActions>
                 </form>

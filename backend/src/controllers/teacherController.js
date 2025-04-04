@@ -158,6 +158,7 @@ export const updateTeacher = async (req, res) => {
       salary,
       status,
       gender,
+      password,
     } = req.body;
 
     // Find the teacher
@@ -192,6 +193,12 @@ export const updateTeacher = async (req, res) => {
         user.phone = phone || user.phone;
         user.address = address || user.address;
         user.gender = gender || user.gender;
+        
+        // Only update password if provided
+        if (password) {
+          user.password = password;
+        }
+        
         await user.save();
       }
     }
