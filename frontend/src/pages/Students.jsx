@@ -924,23 +924,31 @@ const Students = () => {
                       <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
                         {selected.map((value) => {
                           // Try to find the batch in filtered batches
-                          let batchName = value;
+                          let batchDisplay = value;
                           const filteredBatch = filteredBatches.find(
                             (b) => b._id === value
                           );
 
                           if (filteredBatch) {
-                            batchName = filteredBatch.name;
+                            batchDisplay = `${filteredBatch.name} (${
+                              filteredBatch.teacher?.name || "Unassigned"
+                            })`;
                           } else {
                             // If not found in filtered batches, try to find in all batches
                             const batch = batches.find((b) => b._id === value);
                             if (batch) {
-                              batchName = batch.name;
+                              batchDisplay = `${batch.name} (${
+                                batch.teacher?.name || "Unassigned"
+                              })`;
                             }
                           }
 
                           return (
-                            <Chip key={value} label={batchName} size="small" />
+                            <Chip
+                              key={value}
+                              label={batchDisplay}
+                              size="small"
+                            />
                           );
                         })}
                       </Box>
@@ -1027,7 +1035,18 @@ const Students = () => {
                                     sx={{ padding: "4px", marginRight: "4px" }}
                                     onClick={(e) => e.stopPropagation()} // Prevent double toggle
                                   />
-                                  {batch.name || "Unnamed Batch"}
+                                  <Box>
+                                    <Typography variant="body2">
+                                      {batch.name || "Unnamed Batch"}
+                                    </Typography>
+                                    <Typography
+                                      variant="caption"
+                                      color="text.secondary"
+                                    >
+                                      Teacher:{" "}
+                                      {batch.teacher?.name || "Unassigned"}
+                                    </Typography>
+                                  </Box>
                                 </MenuItem>
                               ))}
                             </React.Fragment>
@@ -1124,8 +1143,24 @@ const Students = () => {
                                           }}
                                           onClick={(e) => e.stopPropagation()}
                                         />
-                                        {batch.name} (
-                                        {subject?.name || "Unknown Subject"})
+                                        <Box>
+                                          <Typography
+                                            variant="body2"
+                                            color="warning.main"
+                                          >
+                                            {batch.name} (
+                                            {subject?.name || "Unknown Subject"}
+                                            )
+                                          </Typography>
+                                          <Typography
+                                            variant="caption"
+                                            color="text.secondary"
+                                          >
+                                            Teacher:{" "}
+                                            {batch.teacher?.name ||
+                                              "Unassigned"}
+                                          </Typography>
+                                        </Box>
                                       </MenuItem>
                                     );
                                   })}
