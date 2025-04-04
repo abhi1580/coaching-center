@@ -32,7 +32,12 @@ import { Formik, Form } from "formik";
 import * as Yup from "yup";
 import { teacherService } from "../services/api";
 import { fetchSubjects } from "../store/slices/subjectSlice";
-import { updateTeacher, createTeacher } from "../store/slices/teacherSlice";
+import {
+  fetchTeachers,
+  updateTeacher,
+  createTeacher,
+  deleteTeacher,
+} from "../store/slices/teacherSlice";
 
 const validationSchema = Yup.object({
   name: Yup.string().required("Name is required"),
@@ -66,66 +71,31 @@ const validationSchema = Yup.object({
 const Teachers = () => {
   const dispatch = useDispatch();
   const { subjects } = useSelector((state) => state.subjects);
-  const [teachers, setTeachers] = useState([]);
+  const { teachers, loading, error } = useSelector((state) => state.teachers);
   const [open, setOpen] = useState(false);
   const [selectedTeacher, setSelectedTeacher] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
 
   useEffect(() => {
-    fetchTeachers();
+    dispatch(fetchTeachers());
     dispatch(fetchSubjects());
   }, [dispatch]);
 
-  const fetchTeachers = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const response = await teacherService.getAll();
-      console.log("Teachers API Response:", response);
-
-      let teachersData = [];
-      if (response.data) {
-        if (Array.isArray(response.data)) {
-          teachersData = response.data;
-        } else if (Array.isArray(response.data.teachers)) {
-          teachersData = response.data.teachers;
-        } else if (response.data.data && Array.isArray(response.data.data)) {
-          teachersData = response.data.data;
-        }
-      }
-
-      console.log("Processed Teachers Data:", teachersData);
-      setTeachers(teachersData);
-    } catch (error) {
-      console.error("Error fetching teachers:", error);
-      setError(error.response?.data?.message || "Failed to fetch teachers");
-      setTeachers([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleOpen = (teacher = null) => {
-    console.log("Opening form with teacher:", teacher);
     setSelectedTeacher(teacher);
     setOpen(true);
   };
 
   const handleClose = () => {
-    console.log("Closing form");
     setSelectedTeacher(null);
     setOpen(false);
-    setError(null);
     setSuccess(null);
   };
 
   const handleSubmit = async (values, { setSubmitting, resetForm }) => {
     try {
-      // Ensure subjects is an array of valid IDs
       const subjectIds = Array.isArray(values.subjects)
-        ? values.subjects.filter((id) => id && id.trim() !== "") // Filter out empty/null values
+        ? values.subjects.filter((id) => id && id.trim() !== "")
         : [];
 
       const formData = {
@@ -138,13 +108,15 @@ const Teachers = () => {
         await dispatch(
           updateTeacher({ id: selectedTeacher._id, data: formData })
         ).unwrap();
+        setSuccess("Teacher updated successfully");
       } else {
         await dispatch(createTeacher(formData)).unwrap();
+          setSuccess("Teacher added successfully");
       }
       handleClose();
       resetForm();
     } catch (err) {
-      console.error("Error saving teacher:", err);
+      setError(err.message || "Failed to save teacher");
     } finally {
       setSubmitting(false);
     }
@@ -153,12 +125,10 @@ const Teachers = () => {
   const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this teacher?")) {
       try {
-        await teacherService.delete(id);
+        await dispatch(deleteTeacher(id)).unwrap();
         setSuccess("Teacher deleted successfully");
-        fetchTeachers();
-      } catch (error) {
-        console.error("Error deleting teacher:", error);
-        setError(error.response?.data?.message || "Failed to delete teacher");
+      } catch (err) {
+        setError(err.message || "Failed to delete teacher");
       }
     }
   };
@@ -259,8 +229,8 @@ const Teachers = () => {
                     </Typography>
                   </Box>
                 </TableCell>
-                <TableCell>
-                  <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
+                  <TableCell>
+                    <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
                     {teacher.subjects?.map((subjectId) => {
                       const subject = subjects.find((s) => s._id === subjectId);
                       return (
@@ -273,16 +243,16 @@ const Teachers = () => {
                         />
                       );
                     })}
-                  </Box>
-                </TableCell>
-                <TableCell>
-                  <Chip
-                    label={teacher.status}
+                    </Box>
+                  </TableCell>
+                  <TableCell>
+                    <Chip
+                      label={teacher.status}
                     color={teacher.status === "active" ? "success" : "error"}
-                    size="small"
-                  />
-                </TableCell>
-                <TableCell>
+                      size="small"
+                    />
+                  </TableCell>
+                  <TableCell>
                   <Box sx={{ display: "flex", gap: 1 }}>
                     <IconButton
                       color="primary"
@@ -299,8 +269,8 @@ const Teachers = () => {
                       <DeleteIcon />
                     </IconButton>
                   </Box>
-                </TableCell>
-              </TableRow>
+                  </TableCell>
+                </TableRow>
             ))}
           </TableBody>
         </Table>
@@ -389,23 +359,23 @@ const Teachers = () => {
                         helperText={touched.email && errors.email}
                       />
                     </Grid>
-                    <Grid item xs={12} sm={6}>
-                      <TextField
-                        fullWidth
-                        name="password"
+                      <Grid item xs={12} sm={6}>
+                        <TextField
+                          fullWidth
+                          name="password"
                         label={
                           selectedTeacher
                             ? "New Password (Optional)"
                             : "Password"
                         }
-                        type="password"
-                        value={values.password}
-                        onChange={handleChange}
-                        onBlur={handleBlur}
-                        error={touched.password && Boolean(errors.password)}
-                        helperText={touched.password && errors.password}
-                      />
-                    </Grid>
+                          type="password"
+                          value={values.password}
+                          onChange={handleChange}
+                          onBlur={handleBlur}
+                          error={touched.password && Boolean(errors.password)}
+                          helperText={touched.password && errors.password}
+                        />
+                      </Grid>
                     <Grid item xs={12} sm={6}>
                       <TextField
                         fullWidth

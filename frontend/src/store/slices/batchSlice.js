@@ -1,15 +1,29 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import { api } from "../../services/api";
+import { batchService } from "../../services/api";
 
 // Async thunks
 export const fetchBatches = createAsyncThunk(
   "batches/fetchBatches",
   async (_, { rejectWithValue }) => {
     try {
-      const response = await api.get("/batches");
+      const response = await batchService.getAll();
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data || "Failed to fetch batches");
+    }
+  }
+);
+
+export const fetchBatchesBySubject = createAsyncThunk(
+  "batches/fetchBatchesBySubject",
+  async ({ subjects, standard }, { rejectWithValue }) => {
+    try {
+      const response = await batchService.getBySubject(subjects, standard);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data || "Failed to fetch batches by subject"
+      );
     }
   }
 );
@@ -18,7 +32,7 @@ export const createBatch = createAsyncThunk(
   "batches/createBatch",
   async (batchData, { rejectWithValue }) => {
     try {
-      const response = await api.post("/batches", batchData);
+      const response = await batchService.create(batchData);
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data || "Failed to create batch");
@@ -30,7 +44,7 @@ export const updateBatch = createAsyncThunk(
   "batches/updateBatch",
   async ({ id, batchData }, { rejectWithValue }) => {
     try {
-      const response = await api.put(`/batches/${id}`, batchData);
+      const response = await batchService.update(id, batchData);
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data || "Failed to update batch");
@@ -42,7 +56,7 @@ export const deleteBatch = createAsyncThunk(
   "batches/deleteBatch",
   async (id, { rejectWithValue }) => {
     try {
-      await api.delete(`/batches/${id}`);
+      await batchService.delete(id);
       return id;
     } catch (error) {
       return rejectWithValue(error.response?.data || "Failed to delete batch");
@@ -78,6 +92,19 @@ const batchSlice = createSlice({
         state.batches = action.payload;
       })
       .addCase(fetchBatches.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      // Fetch batches by subject
+      .addCase(fetchBatchesBySubject.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchBatchesBySubject.fulfilled, (state, action) => {
+        state.loading = false;
+        state.batches = action.payload;
+      })
+      .addCase(fetchBatchesBySubject.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       })

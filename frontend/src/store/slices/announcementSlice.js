@@ -1,15 +1,15 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import { announcementService } from "../../services/api";
+import axios from "axios";
 
 // Async thunks
 export const fetchAnnouncements = createAsyncThunk(
-  "announcements/fetchAll",
+  "announcements/fetchAnnouncements",
   async (_, { rejectWithValue }) => {
     try {
-      const response = await announcementService.getAll();
+      const response = await axios.get("/api/announcements");
       return response.data;
     } catch (error) {
-      return rejectWithValue(error.response?.data || error.message);
+      return rejectWithValue(error.response.data);
     }
   }
 );
@@ -18,7 +18,7 @@ export const fetchAnnouncement = createAsyncThunk(
   "announcements/fetchOne",
   async (id, { rejectWithValue }) => {
     try {
-      const response = await announcementService.getById(id);
+      const response = await axios.get(`/api/announcements/${id}`);
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data || error.message);
@@ -27,43 +27,49 @@ export const fetchAnnouncement = createAsyncThunk(
 );
 
 export const createAnnouncement = createAsyncThunk(
-  "announcements/create",
+  "announcements/createAnnouncement",
   async (announcementData, { rejectWithValue }) => {
     try {
-      const response = await announcementService.create(announcementData);
+      const response = await axios.post("/api/announcements", announcementData);
       return response.data;
     } catch (error) {
-      return rejectWithValue(error.response?.data || error.message);
+      return rejectWithValue(error.response.data);
     }
   }
 );
 
 export const updateAnnouncement = createAsyncThunk(
-  "announcements/update",
+  "announcements/updateAnnouncement",
   async ({ id, data }, { rejectWithValue }) => {
     try {
-      const response = await announcementService.update(id, data);
+      const response = await axios.put(`/api/announcements/${id}`, data);
       return response.data;
     } catch (error) {
-      return rejectWithValue(error.response?.data || error.message);
+      return rejectWithValue(error.response.data);
     }
   }
 );
 
 export const deleteAnnouncement = createAsyncThunk(
-  "announcements/delete",
+  "announcements/deleteAnnouncement",
   async (id, { rejectWithValue }) => {
     try {
-      await announcementService.delete(id);
+      await axios.delete(`/api/announcements/${id}`);
       return id;
     } catch (error) {
-      return rejectWithValue(error.response?.data || error.message);
+      return rejectWithValue(error.response.data);
     }
   }
 );
 
 const initialState = {
-  announcements: [],
+  data: [],
+  counts: {
+    total: 0,
+    active: 0,
+    scheduled: 0,
+    expired: 0,
+  },
   currentAnnouncement: null,
   loading: false,
   error: null,
@@ -89,7 +95,8 @@ const announcementSlice = createSlice({
       })
       .addCase(fetchAnnouncements.fulfilled, (state, action) => {
         state.loading = false;
-        state.announcements = action.payload;
+        state.data = action.payload.data;
+        state.counts = action.payload.counts;
       })
       .addCase(fetchAnnouncements.rejected, (state, action) => {
         state.loading = false;
@@ -117,10 +124,15 @@ const announcementSlice = createSlice({
       .addCase(createAnnouncement.fulfilled, (state, action) => {
         state.loading = false;
         state.success = true;
-        if (!Array.isArray(state.announcements.data)) {
-          state.announcements = { data: [] };
+        state.data.unshift(action.payload.data);
+        state.counts.total += 1;
+        if (action.payload.data.status === "Active") {
+          state.counts.active += 1;
+        } else if (action.payload.data.status === "Scheduled") {
+          state.counts.scheduled += 1;
+        } else if (action.payload.data.status === "Expired") {
+          state.counts.expired += 1;
         }
-        state.announcements.data.unshift(action.payload);
       })
       .addCase(createAnnouncement.rejected, (state, action) => {
         state.loading = false;
@@ -135,13 +147,25 @@ const announcementSlice = createSlice({
       .addCase(updateAnnouncement.fulfilled, (state, action) => {
         state.loading = false;
         state.success = true;
-        if (Array.isArray(state.announcements.data)) {
-          const index = state.announcements.data.findIndex(
-            (a) => a._id === action.payload._id
-          );
-          if (index !== -1) {
-            state.announcements.data[index] = action.payload;
+        const index = state.data.findIndex(
+          (a) => a._id === action.payload.data._id
+        );
+        if (index !== -1) {
+          const oldStatus = state.data[index].status;
+          const newStatus = action.payload.data.status;
+
+          // Update counts based on status change
+          if (oldStatus !== newStatus) {
+            if (oldStatus === "Active") state.counts.active -= 1;
+            else if (oldStatus === "Scheduled") state.counts.scheduled -= 1;
+            else if (oldStatus === "Expired") state.counts.expired -= 1;
+
+            if (newStatus === "Active") state.counts.active += 1;
+            else if (newStatus === "Scheduled") state.counts.scheduled += 1;
+            else if (newStatus === "Expired") state.counts.expired += 1;
           }
+
+          state.data[index] = action.payload.data;
         }
       })
       .addCase(updateAnnouncement.rejected, (state, action) => {
@@ -157,10 +181,15 @@ const announcementSlice = createSlice({
       .addCase(deleteAnnouncement.fulfilled, (state, action) => {
         state.loading = false;
         state.success = true;
-        if (Array.isArray(state.announcements.data)) {
-          state.announcements.data = state.announcements.data.filter(
-            (a) => a._id !== action.payload
-          );
+        const index = state.data.findIndex((a) => a._id === action.payload);
+        if (index !== -1) {
+          const announcement = state.data[index];
+          state.counts.total -= 1;
+          if (announcement.status === "Active") state.counts.active -= 1;
+          else if (announcement.status === "Scheduled")
+            state.counts.scheduled -= 1;
+          else if (announcement.status === "Expired") state.counts.expired -= 1;
+          state.data.splice(index, 1);
         }
       })
       .addCase(deleteAnnouncement.rejected, (state, action) => {

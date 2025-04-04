@@ -52,7 +52,6 @@ const DAYS_OF_WEEK = [
 ];
 
 const STATUS_OPTIONS = ["upcoming", "active", "completed", "cancelled"];
-const FEE_FREQUENCY = ["monthly", "quarterly", "annually"];
 
 const Batches = () => {
   const dispatch = useDispatch();
@@ -65,6 +64,8 @@ const Batches = () => {
 
   const [open, setOpen] = useState(false);
   const [selectedBatch, setSelectedBatch] = useState(null);
+  const [filteredSubjects, setFilteredSubjects] = useState([]);
+  const [filteredTeachers, setFilteredTeachers] = useState([]);
   const [formData, setFormData] = useState({
     name: "",
     standard: "",
@@ -77,39 +78,133 @@ const Batches = () => {
       endTime: "",
     },
     capacity: "",
-    fees: {
-      amount: "",
-      frequency: "monthly",
-    },
+    fees: "",
     status: "upcoming",
     description: "",
     teacher: "",
   });
 
+  // Helper function to format error message
+  const formatErrorMessage = (error) => {
+    if (typeof error === "string") return error;
+    if (error?.message) return error.message;
+    if (error?.errors) {
+      if (Array.isArray(error.errors)) return error.errors.join(", ");
+      if (typeof error.errors === "object")
+        return Object.values(error.errors).join(", ");
+    }
+    return "An error occurred";
+  };
+
   useEffect(() => {
-    dispatch(fetchBatches());
+    const fetchData = async () => {
+      try {
+        const result = await dispatch(fetchBatches()).unwrap();
+        console.log("Fetched batches:", result);
+      } catch (err) {
+        console.error("Error fetching batches:", err);
+      }
+    };
+
+    fetchData();
     dispatch(fetchStandards());
     dispatch(fetchSubjects());
     dispatch(fetchTeachers());
   }, [dispatch]);
 
+  // Add debug logging for batches
+  useEffect(() => {
+    console.log("Current batches:", batches);
+  }, [batches]);
+
   useEffect(() => {
     if (success) {
       handleClose();
+      // Refresh the batches data after successful operation
+      dispatch(fetchBatches());
       dispatch(resetStatus());
     }
   }, [success, dispatch]);
 
+  // Add debug logging for related data
+  useEffect(() => {
+    console.log("Standards:", standards);
+    console.log("Subjects:", subjects);
+    console.log("Teachers:", teachers);
+  }, [standards, subjects, teachers]);
+
   const handleOpen = (batch = null) => {
     if (batch) {
+      console.log("Opening edit form with batch:", batch);
       setSelectedBatch(batch);
+
+      // Filter subjects based on the batch's standard
+      const relatedStandard = standards.find(
+        (s) => s._id === batch.standard?._id || s._id === batch.standard
+      );
+      const standardSubjects = relatedStandard
+        ? subjects.filter((subject) =>
+            relatedStandard.subjects?.some((s) => (s._id || s) === subject._id)
+          )
+        : [];
+      setFilteredSubjects(standardSubjects);
+
+      // Filter teachers for the batch's subject
+      const subjectId = batch.subject?._id || batch.subject;
+      const subjectTeachers = teachers.filter((teacher) =>
+        teacher.subjects?.some((s) => (s._id || s) === subjectId)
+      );
+      setFilteredTeachers(subjectTeachers);
+
+      // Format the dates properly
+      const startDate = batch.startDate
+        ? new Date(batch.startDate).toISOString().split("T")[0]
+        : "";
+      const endDate = batch.endDate
+        ? new Date(batch.endDate).toISOString().split("T")[0]
+        : "";
+
+      // Set the form data with proper formatting
       setFormData({
-        ...batch,
-        startDate: batch.startDate.split("T")[0],
-        endDate: batch.endDate.split("T")[0],
+        name: batch.name || "",
+        standard: batch.standard?._id || batch.standard || "",
+        subject: batch.subject?._id || batch.subject || "",
+        startDate: startDate,
+        endDate: endDate,
+        schedule: {
+          days: batch.schedule?.days || [],
+          startTime: batch.schedule?.startTime || "",
+          endTime: batch.schedule?.endTime || "",
+        },
+        capacity: batch.capacity || "",
+        fees: batch.fees || "",
+        status: batch.status || "upcoming",
+        description: batch.description || "",
+        teacher: batch.teacher?._id || batch.teacher || "",
+      });
+
+      console.log("Set form data for editing:", {
+        name: batch.name,
+        standard: batch.standard?._id || batch.standard,
+        subject: batch.subject?._id || batch.subject,
+        startDate,
+        endDate,
+        schedule: {
+          days: batch.schedule?.days,
+          startTime: batch.schedule?.startTime,
+          endTime: batch.schedule?.endTime,
+        },
+        capacity: batch.capacity,
+        fees: batch.fees,
+        status: batch.status,
+        description: batch.description,
+        teacher: batch.teacher?._id || batch.teacher,
       });
     } else {
+      // Reset everything for new batch
       setSelectedBatch(null);
+      setFilteredSubjects([]);
+      setFilteredTeachers([]);
       setFormData({
         name: "",
         standard: "",
@@ -122,10 +217,7 @@ const Batches = () => {
           endTime: "",
         },
         capacity: "",
-        fees: {
-          amount: "",
-          frequency: "monthly",
-        },
+        fees: "",
         status: "upcoming",
         description: "",
         teacher: "",
@@ -149,22 +241,25 @@ const Batches = () => {
         endTime: "",
       },
       capacity: "",
-      fees: {
-        amount: "",
-        frequency: "monthly",
-      },
+      fees: "",
       status: "upcoming",
       description: "",
       teacher: "",
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (selectedBatch) {
-      dispatch(updateBatch({ id: selectedBatch._id, batchData: formData }));
-    } else {
-      dispatch(createBatch(formData));
+    try {
+      if (selectedBatch) {
+        await dispatch(
+          updateBatch({ id: selectedBatch._id, batchData: formData })
+        ).unwrap();
+      } else {
+        await dispatch(createBatch(formData)).unwrap();
+      }
+    } catch (err) {
+      console.error("Batch operation failed:", err);
     }
   };
 
@@ -176,7 +271,42 @@ const Batches = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    if (name.includes(".")) {
+    if (name === "standard") {
+      const selectedStandard = standards.find((s) => s._id === value);
+      const standardSubjects = selectedStandard
+        ? subjects.filter((subject) =>
+            selectedStandard.subjects.some((s) => s._id === subject._id)
+          )
+        : [];
+      setFilteredSubjects(standardSubjects);
+      setFilteredTeachers([]); // Reset filtered teachers when standard changes
+      setFormData((prev) => ({
+        ...prev,
+        standard: value,
+        subject: "",
+        teacher: "",
+      }));
+    } else if (name === "subject") {
+      // Filter teachers when subject is selected
+      const subjectTeachers = teachers.filter((teacher) => {
+        // Handle case where teacher.subjects might be array of IDs or array of objects
+        const teacherSubjects =
+          teacher.subjects?.map((s) => (typeof s === "string" ? s : s._id)) ||
+          [];
+        return teacherSubjects.includes(value);
+      });
+
+      console.log("Subject ID:", value);
+      console.log("Available Teachers:", teachers);
+      console.log("Filtered Teachers:", subjectTeachers);
+
+      setFilteredTeachers(subjectTeachers);
+      setFormData((prev) => ({
+        ...prev,
+        subject: value,
+        teacher: "",
+      }));
+    } else if (name.includes(".")) {
       const [parent, child] = name.split(".");
       setFormData((prev) => ({
         ...prev,
@@ -208,6 +338,24 @@ const Batches = () => {
     }
   };
 
+  // Add data validation helper
+  const getBatchesArray = (batchesData) => {
+    if (!batchesData) return [];
+    if (Array.isArray(batchesData)) return batchesData;
+    if (batchesData.data && Array.isArray(batchesData.data))
+      return batchesData.data;
+    return [];
+  };
+
+  // Helper function to safely get related data
+  const getRelatedData = (id, array) => {
+    if (!id || !array) return null;
+    // Handle both string IDs and object IDs
+    return array.find(
+      (item) => item._id === id || item._id === id._id || item === id
+    );
+  };
+
   if (loading) {
     return (
       <Box sx={{ p: 3 }}>
@@ -231,7 +379,7 @@ const Batches = () => {
 
       {error && (
         <Alert severity="error" sx={{ mb: 2 }}>
-          {error}
+          {formatErrorMessage(error)}
         </Alert>
       )}
 
@@ -244,43 +392,146 @@ const Batches = () => {
               <TableCell>Subject</TableCell>
               <TableCell>Teacher</TableCell>
               <TableCell>Schedule</TableCell>
+              <TableCell>Duration</TableCell>
               <TableCell>Capacity</TableCell>
+              <TableCell>Fees</TableCell>
               <TableCell>Status</TableCell>
+              <TableCell>Description</TableCell>
               <TableCell>Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {Array.isArray(batches) &&
-              batches.map((batch) => (
+            {loading ? (
+              <TableRow>
+                <TableCell colSpan={11} align="center">
+                  Loading batches...
+                </TableCell>
+              </TableRow>
+            ) : !batches || getBatchesArray(batches).length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={11} align="center">
+                  No batches found
+                </TableCell>
+              </TableRow>
+            ) : (
+              getBatchesArray(batches).map((batch) => (
                 <TableRow key={batch._id}>
                   <TableCell>{batch.name}</TableCell>
                   <TableCell>
-                    {batch.standard?.name} ({batch.standard?.level})
+                    {(() => {
+                      const standard = getRelatedData(
+                        batch.standard,
+                        standards
+                      );
+                      console.log(
+                        "Batch standard:",
+                        batch.standard,
+                        "Found:",
+                        standard
+                      );
+                      return standard ? standard.name : "N/A";
+                    })()}
                   </TableCell>
-                  <TableCell>{batch.subject?.name}</TableCell>
-                  <TableCell>{batch.teacher?.name}</TableCell>
                   <TableCell>
-                    {batch.schedule?.days?.join(", ")} (
-                    {batch.schedule?.startTime} - {batch.schedule?.endTime})
+                    {(() => {
+                      const subject = getRelatedData(batch.subject, subjects);
+                      console.log(
+                        "Batch subject:",
+                        batch.subject,
+                        "Found:",
+                        subject
+                      );
+                      return subject ? subject.name : "N/A";
+                    })()}
                   </TableCell>
-                  <TableCell>{batch.capacity}</TableCell>
+                  <TableCell>
+                    {(() => {
+                      const teacher = getRelatedData(batch.teacher, teachers);
+                      console.log(
+                        "Batch teacher:",
+                        batch.teacher,
+                        "Found:",
+                        teacher
+                      );
+                      return teacher ? teacher.name : "N/A";
+                    })()}
+                  </TableCell>
+                  <TableCell>
+                    <Box>
+                      <Typography variant="body2" sx={{ fontWeight: "bold" }}>
+                        Days: {batch.schedule?.days?.join(", ") || "N/A"}
+                      </Typography>
+                      <Typography variant="body2">
+                        Time: {batch.schedule?.startTime || "N/A"} -{" "}
+                        {batch.schedule?.endTime || "N/A"}
+                      </Typography>
+                    </Box>
+                  </TableCell>
+                  <TableCell>
+                    <Box>
+                      <Typography variant="body2">
+                        Start: {new Date(batch.startDate).toLocaleDateString()}
+                      </Typography>
+                      <Typography variant="body2">
+                        End: {new Date(batch.endDate).toLocaleDateString()}
+                      </Typography>
+                    </Box>
+                  </TableCell>
+                  <TableCell align="center">
+                    {batch.capacity || "N/A"}
+                  </TableCell>
+                  <TableCell>
+                    <Typography variant="body2" sx={{ fontWeight: "bold" }}>
+                      ₹{batch.fees?.toLocaleString() || "N/A"}
+                    </Typography>
+                  </TableCell>
                   <TableCell>
                     <Chip
-                      label={batch.status}
+                      label={
+                        batch.status?.charAt(0).toUpperCase() +
+                          batch.status?.slice(1) || "N/A"
+                      }
                       color={getStatusColor(batch.status)}
                       size="small"
                     />
                   </TableCell>
                   <TableCell>
-                    <IconButton onClick={() => handleOpen(batch)}>
-                      <EditIcon />
-                    </IconButton>
-                    <IconButton onClick={() => handleDelete(batch._id)}>
-                      <DeleteIcon />
-                    </IconButton>
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        maxWidth: 200,
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
+                      title={batch.description || "No description"}
+                    >
+                      {batch.description || "No description"}
+                    </Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Box sx={{ display: "flex", gap: 1 }}>
+                      <IconButton
+                        onClick={() => handleOpen(batch)}
+                        color="primary"
+                        size="small"
+                        title="Edit"
+                      >
+                        <EditIcon />
+                      </IconButton>
+                      <IconButton
+                        onClick={() => handleDelete(batch._id)}
+                        color="error"
+                        size="small"
+                        title="Delete"
+                      >
+                        <DeleteIcon />
+                      </IconButton>
+                    </Box>
                   </TableCell>
                 </TableRow>
-              ))}
+              ))
+            )}
           </TableBody>
         </Table>
       </TableContainer>
@@ -311,9 +562,9 @@ const Batches = () => {
                     onChange={handleChange}
                     label="Standard"
                   >
-                    {standards?.map((standard) => (
+                    {standards.map((standard) => (
                       <MenuItem key={standard._id} value={standard._id}>
-                        {standard.name} ({standard.level})
+                        {standard.name}
                       </MenuItem>
                     ))}
                   </Select>
@@ -329,13 +580,11 @@ const Batches = () => {
                     label="Subject"
                     disabled={!formData.standard}
                   >
-                    {subjects
-                      ?.filter((subject) => subject.standard === formData.standard)
-                      .map((subject) => (
-                        <MenuItem key={subject._id} value={subject._id}>
-                          {subject.name}
-                        </MenuItem>
-                      ))}
+                    {filteredSubjects.map((subject) => (
+                      <MenuItem key={subject._id} value={subject._id}>
+                        {subject.name}
+                      </MenuItem>
+                    ))}
                   </Select>
                 </FormControl>
               </Grid>
@@ -424,8 +673,9 @@ const Batches = () => {
                     value={formData.teacher}
                     onChange={handleChange}
                     label="Teacher"
+                    disabled={!formData.subject} // Disable if no subject is selected
                   >
-                    {teachers?.map((teacher) => (
+                    {filteredTeachers.map((teacher) => (
                       <MenuItem key={teacher._id} value={teacher._id}>
                         {teacher.name}
                       </MenuItem>
@@ -436,30 +686,17 @@ const Batches = () => {
               <Grid item xs={12} md={6}>
                 <TextField
                   fullWidth
-                  label="Fee Amount"
-                  name="fees.amount"
+                  label="Batch Fee"
+                  name="fees"
                   type="number"
-                  value={formData.fees.amount}
+                  value={formData.fees}
                   onChange={handleChange}
                   required
+                  InputProps={{
+                    startAdornment: "₹",
+                  }}
+                  helperText="One-time fee for the batch"
                 />
-              </Grid>
-              <Grid item xs={12} md={6}>
-                <FormControl fullWidth required>
-                  <InputLabel>Fee Frequency</InputLabel>
-                  <Select
-                    name="fees.frequency"
-                    value={formData.fees.frequency}
-                    onChange={handleChange}
-                    label="Fee Frequency"
-                  >
-                    {FEE_FREQUENCY.map((frequency) => (
-                      <MenuItem key={frequency} value={frequency}>
-                        {frequency.charAt(0).toUpperCase() + frequency.slice(1)}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
               </Grid>
               <Grid item xs={12}>
                 <FormControl fullWidth>

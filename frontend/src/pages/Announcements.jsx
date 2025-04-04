@@ -26,6 +26,7 @@ import {
   Chip,
   Grid,
   Divider,
+  DialogContentText,
 } from "@mui/material";
 import {
   Add as AddIcon,
@@ -44,42 +45,34 @@ import {
 } from "../store/slices/announcementSlice";
 
 const validationSchema = Yup.object({
-  title: Yup.string()
-    .required("Title is required")
-    .min(3, "Title must be at least 3 characters")
-    .max(100, "Title must not exceed 100 characters")
-    .trim(),
-  content: Yup.string()
-    .required("Content is required")
-    .min(10, "Content must be at least 10 characters"),
+  title: Yup.string().required("Title is required"),
+  content: Yup.string().required("Content is required"),
   type: Yup.string()
-    .required("Type is required")
-    .oneOf(
-      ["General", "Academic", "Event", "Holiday", "Emergency"],
-      "Invalid type"
-    ),
+    .oneOf(["General", "Event", "Emergency"], "Invalid type")
+    .required("Type is required"),
   priority: Yup.string()
-    .required("Priority is required")
-    .oneOf(["Low", "Medium", "High"], "Invalid priority"),
+    .oneOf(["High", "Medium", "Low"], "Invalid priority")
+    .required("Priority is required"),
   targetAudience: Yup.string()
-    .required("Target audience is required")
-    .oneOf(["All", "Students", "Teachers", "Staff"], "Invalid target audience"),
-  startDate: Yup.date()
-    .required("Start date is required")
-    .min(new Date(), "Start date cannot be in the past"),
-  endDate: Yup.date()
-    .required("End date is required")
-    .min(Yup.ref("startDate"), "End date must be after start date"),
-  status: Yup.string()
-    .required("Status is required")
-    .oneOf(["Active", "Inactive"], "Invalid status"),
+    .oneOf(
+      ["All", "Students", "Teachers", "Parents"],
+      "Invalid target audience"
+    )
+    .required("Target audience is required"),
+  startDate: Yup.string().required("Start date is required"),
+  startTime: Yup.string().required("Start time is required"),
+  endDate: Yup.string().required("End date is required"),
+  endTime: Yup.string().required("End time is required"),
 });
 
 const Announcements = () => {
   const dispatch = useDispatch();
-  const { announcements, loading, error, success } = useSelector(
-    (state) => state.announcements
-  );
+  const {
+    data: announcements,
+    loading,
+    error,
+    success,
+  } = useSelector((state) => state.announcements);
   const [open, setOpen] = useState(false);
   const [editingAnnouncement, setEditingAnnouncement] = useState(null);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
@@ -88,6 +81,12 @@ const Announcements = () => {
   useEffect(() => {
     dispatch(fetchAnnouncements());
   }, [dispatch]);
+
+  useEffect(() => {
+    console.log("Current announcements state:", announcements);
+    console.log("Loading state:", loading);
+    console.log("Error state:", error);
+  }, [announcements, loading, error]);
 
   useEffect(() => {
     if (success) {
@@ -102,23 +101,46 @@ const Announcements = () => {
     initialValues: {
       title: "",
       content: "",
-      type: "",
+      type: "General",
       priority: "Medium",
       targetAudience: "All",
       startDate: "",
+      startTime: "",
       endDate: "",
-      status: "Active",
+      endTime: "",
     },
     validationSchema,
     onSubmit: async (values) => {
       try {
+        const announcementData = {
+          title: values.title,
+          content: values.content,
+          type: values.type,
+          priority: values.priority,
+          targetAudience: values.targetAudience,
+          startDate: values.startDate,
+          startTime: values.startTime,
+          endDate: values.endDate,
+          endTime: values.endTime,
+          createdBy: "65f1a2b3c4d5e6f7g8h9i0j1",
+        };
+
+        console.log("Submitting announcement data:", announcementData);
+
         if (editingAnnouncement) {
           await dispatch(
-            updateAnnouncement({ id: editingAnnouncement._id, data: values })
+            updateAnnouncement({
+              id: editingAnnouncement._id,
+              data: announcementData,
+            })
           ).unwrap();
         } else {
-          await dispatch(createAnnouncement(values)).unwrap();
+          await dispatch(createAnnouncement(announcementData)).unwrap();
         }
+
+        setOpen(false);
+        formik.resetForm();
+        dispatch(fetchAnnouncements());
       } catch (error) {
         console.error("Error submitting form:", error);
       }
@@ -128,15 +150,40 @@ const Announcements = () => {
   const handleOpen = (announcement = null) => {
     if (announcement) {
       setEditingAnnouncement(announcement);
+      let startDate = new Date(announcement.startTime);
+      let endDate = new Date(announcement.endTime);
+
+      if (isNaN(startDate.getTime())) {
+        startDate = new Date();
+        console.warn(
+          "Invalid start date detected, using current date as fallback"
+        );
+      }
+      if (isNaN(endDate.getTime())) {
+        endDate = new Date();
+        console.warn(
+          "Invalid end date detected, using current date as fallback"
+        );
+      }
+
       formik.setValues({
-        title: announcement.title,
-        content: announcement.content,
-        type: announcement.type,
-        priority: announcement.priority,
-        targetAudience: announcement.targetAudience,
-        startDate: new Date(announcement.startDate).toISOString().split("T")[0],
-        endDate: new Date(announcement.endDate).toISOString().split("T")[0],
-        status: announcement.status,
+        title: announcement.title || "",
+        content: announcement.content || "",
+        type: announcement.type || "General",
+        priority: announcement.priority || "Medium",
+        targetAudience: announcement.targetAudience || "All",
+        startDate: startDate.toISOString().split("T")[0],
+        startTime: startDate.toLocaleTimeString("en-US", {
+          hour12: false,
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+        endDate: endDate.toISOString().split("T")[0],
+        endTime: endDate.toLocaleTimeString("en-US", {
+          hour12: false,
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
       });
     } else {
       setEditingAnnouncement(null);
@@ -156,9 +203,19 @@ const Announcements = () => {
     setViewDialogOpen(true);
   };
 
-  const handleDelete = (id) => {
-    if (window.confirm("Are you sure you want to delete this announcement?")) {
-      dispatch(deleteAnnouncement(id));
+  const handleDelete = async (id) => {
+    setSelectedAnnouncement(announcements.find((a) => a._id === id));
+    setViewDialogOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    try {
+      await dispatch(deleteAnnouncement(selectedAnnouncement._id)).unwrap();
+      setViewDialogOpen(false);
+      setSelectedAnnouncement(null);
+      dispatch(fetchAnnouncements());
+    } catch (error) {
+      console.error("Error deleting announcement:", error);
     }
   };
 
@@ -227,10 +284,8 @@ const Announcements = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {announcements &&
-            announcements.data &&
-            announcements.data.length > 0 ? (
-              announcements.data.map((announcement) => (
+            {announcements && announcements.length > 0 ? (
+              announcements.map((announcement) => (
                 <TableRow
                   key={
                     announcement._id || Math.random().toString(36).substr(2, 9)
@@ -266,10 +321,16 @@ const Announcements = () => {
                   </TableCell>
                   <TableCell>{announcement.targetAudience}</TableCell>
                   <TableCell>
-                    {new Date(announcement.startDate).toLocaleDateString()}
+                    {announcement.startTime
+                      ? new Date(announcement.startTime).toLocaleString() ||
+                        "Invalid Date"
+                      : "Not set"}
                   </TableCell>
                   <TableCell>
-                    {new Date(announcement.endDate).toLocaleDateString()}
+                    {announcement.endTime
+                      ? new Date(announcement.endTime).toLocaleString() ||
+                        "Invalid Date"
+                      : "Not set"}
                   </TableCell>
                   <TableCell>
                     <Chip
@@ -315,16 +376,27 @@ const Announcements = () => {
         </Table>
       </TableContainer>
 
-      {/* View Dialog */}
+      {/* View/Delete Dialog */}
       <Dialog
         open={viewDialogOpen}
-        onClose={() => setViewDialogOpen(false)}
+        onClose={() => {
+          setViewDialogOpen(false);
+          setSelectedAnnouncement(null);
+        }}
         maxWidth="md"
         fullWidth
       >
         {selectedAnnouncement && (
           <>
-            <DialogTitle>{selectedAnnouncement.title}</DialogTitle>
+            <DialogTitle>
+              {selectedAnnouncement.title}
+              <IconButton
+                onClick={() => handleOpen(selectedAnnouncement)}
+                sx={{ position: "absolute", right: 8, top: 8 }}
+              >
+                <EditIcon />
+              </IconButton>
+            </DialogTitle>
             <DialogContent>
               <Box sx={{ mb: 2 }}>
                 <Typography variant="subtitle1" color="text.secondary">
@@ -341,13 +413,18 @@ const Announcements = () => {
                 </Typography>
                 <Typography variant="subtitle1" color="text.secondary">
                   Start Date:{" "}
-                  {new Date(
-                    selectedAnnouncement.startDate
-                  ).toLocaleDateString()}
+                  {selectedAnnouncement.startTime
+                    ? new Date(
+                        selectedAnnouncement.startTime
+                      ).toLocaleString() || "Invalid Date"
+                    : "Not set"}
                 </Typography>
                 <Typography variant="subtitle1" color="text.secondary">
                   End Date:{" "}
-                  {new Date(selectedAnnouncement.endDate).toLocaleDateString()}
+                  {selectedAnnouncement.endTime
+                    ? new Date(selectedAnnouncement.endTime).toLocaleString() ||
+                      "Invalid Date"
+                    : "Not set"}
                 </Typography>
                 <Typography variant="subtitle1" color="text.secondary">
                   Created By:{" "}
@@ -355,7 +432,11 @@ const Announcements = () => {
                 </Typography>
                 <Typography variant="subtitle1" color="text.secondary">
                   Created At:{" "}
-                  {new Date(selectedAnnouncement.createdAt).toLocaleString()}
+                  {selectedAnnouncement.createdAt
+                    ? new Date(
+                        selectedAnnouncement.createdAt
+                      ).toLocaleString() || "Invalid Date"
+                    : "Not set"}
                 </Typography>
               </Box>
               <Divider sx={{ my: 2 }} />
@@ -363,6 +444,23 @@ const Announcements = () => {
                 {selectedAnnouncement.content}
               </Typography>
             </DialogContent>
+            <DialogActions>
+              <Button
+                onClick={() => {
+                  setViewDialogOpen(false);
+                  setSelectedAnnouncement(null);
+                }}
+              >
+                Close
+              </Button>
+              <Button
+                color="error"
+                onClick={handleConfirmDelete}
+                startIcon={<DeleteIcon />}
+              >
+                Delete
+              </Button>
+            </DialogActions>
           </>
         )}
       </Dialog>
@@ -374,145 +472,177 @@ const Announcements = () => {
         </DialogTitle>
         <form onSubmit={formik.handleSubmit}>
           <DialogContent>
-            <Grid container spacing={2}>
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  name="title"
-                  label="Title"
-                  value={formik.values.title}
-                  onChange={formik.handleChange}
-                  error={formik.touched.title && Boolean(formik.errors.title)}
-                  helperText={formik.touched.title && formik.errors.title}
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  name="content"
-                  label="Content"
-                  multiline
-                  rows={4}
-                  value={formik.values.content}
-                  onChange={formik.handleChange}
-                  error={
-                    formik.touched.content && Boolean(formik.errors.content)
-                  }
-                  helperText={formik.touched.content && formik.errors.content}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <FormControl fullWidth>
-                  <InputLabel>Type</InputLabel>
-                  <Select
+            <Box sx={{ mt: 2 }}>
+              <Grid container spacing={2}>
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    name="title"
+                    label="Title"
+                    value={formik.values.title}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
+                    error={formik.touched.title && Boolean(formik.errors.title)}
+                    helperText={formik.touched.title && formik.errors.title}
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    name="content"
+                    label="Content"
+                    multiline
+                    rows={4}
+                    value={formik.values.content}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
+                    error={
+                      formik.touched.content && Boolean(formik.errors.content)
+                    }
+                    helperText={formik.touched.content && formik.errors.content}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    select
                     name="type"
+                    label="Type"
                     value={formik.values.type}
                     onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
                     error={formik.touched.type && Boolean(formik.errors.type)}
+                    helperText={formik.touched.type && formik.errors.type}
                   >
                     <MenuItem value="General">General</MenuItem>
-                    <MenuItem value="Academic">Academic</MenuItem>
                     <MenuItem value="Event">Event</MenuItem>
-                    <MenuItem value="Holiday">Holiday</MenuItem>
                     <MenuItem value="Emergency">Emergency</MenuItem>
-                  </Select>
-                </FormControl>
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <FormControl fullWidth>
-                  <InputLabel>Priority</InputLabel>
-                  <Select
+                  </TextField>
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    select
                     name="priority"
+                    label="Priority"
                     value={formik.values.priority}
                     onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
                     error={
                       formik.touched.priority && Boolean(formik.errors.priority)
                     }
+                    helperText={
+                      formik.touched.priority && formik.errors.priority
+                    }
                   >
-                    <MenuItem value="Low">Low</MenuItem>
-                    <MenuItem value="Medium">Medium</MenuItem>
                     <MenuItem value="High">High</MenuItem>
-                  </Select>
-                </FormControl>
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <FormControl fullWidth>
-                  <InputLabel>Target Audience</InputLabel>
-                  <Select
+                    <MenuItem value="Medium">Medium</MenuItem>
+                    <MenuItem value="Low">Low</MenuItem>
+                  </TextField>
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    select
                     name="targetAudience"
+                    label="Target Audience"
                     value={formik.values.targetAudience}
                     onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
                     error={
                       formik.touched.targetAudience &&
                       Boolean(formik.errors.targetAudience)
+                    }
+                    helperText={
+                      formik.touched.targetAudience &&
+                      formik.errors.targetAudience
                     }
                   >
                     <MenuItem value="All">All</MenuItem>
                     <MenuItem value="Students">Students</MenuItem>
                     <MenuItem value="Teachers">Teachers</MenuItem>
-                    <MenuItem value="Staff">Staff</MenuItem>
-                  </Select>
-                </FormControl>
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <FormControl fullWidth>
-                  <InputLabel>Status</InputLabel>
-                  <Select
-                    name="status"
-                    value={formik.values.status}
+                    <MenuItem value="Parents">Parents</MenuItem>
+                  </TextField>
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    name="startDate"
+                    label="Start Date"
+                    type="date"
+                    value={formik.values.startDate}
                     onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
                     error={
-                      formik.touched.status && Boolean(formik.errors.status)
+                      formik.touched.startDate &&
+                      Boolean(formik.errors.startDate)
                     }
-                  >
-                    <MenuItem value="Active">Active</MenuItem>
-                    <MenuItem value="Inactive">Inactive</MenuItem>
-                  </Select>
-                </FormControl>
+                    helperText={
+                      formik.touched.startDate && formik.errors.startDate
+                    }
+                    InputLabelProps={{ shrink: true }}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    name="startTime"
+                    label="Start Time"
+                    type="time"
+                    value={formik.values.startTime}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
+                    error={
+                      formik.touched.startTime &&
+                      Boolean(formik.errors.startTime)
+                    }
+                    helperText={
+                      formik.touched.startTime && formik.errors.startTime
+                    }
+                    InputLabelProps={{ shrink: true }}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    name="endDate"
+                    label="End Date"
+                    type="date"
+                    value={formik.values.endDate}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
+                    error={
+                      formik.touched.endDate && Boolean(formik.errors.endDate)
+                    }
+                    helperText={formik.touched.endDate && formik.errors.endDate}
+                    InputLabelProps={{ shrink: true }}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    name="endTime"
+                    label="End Time"
+                    type="time"
+                    value={formik.values.endTime}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
+                    error={
+                      formik.touched.endTime && Boolean(formik.errors.endTime)
+                    }
+                    helperText={formik.touched.endTime && formik.errors.endTime}
+                    InputLabelProps={{ shrink: true }}
+                  />
+                </Grid>
               </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  name="startDate"
-                  label="Start Date"
-                  type="date"
-                  value={formik.values.startDate}
-                  onChange={formik.handleChange}
-                  error={
-                    formik.touched.startDate && Boolean(formik.errors.startDate)
-                  }
-                  helperText={
-                    formik.touched.startDate && formik.errors.startDate
-                  }
-                  InputLabelProps={{
-                    shrink: true,
-                  }}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  name="endDate"
-                  label="End Date"
-                  type="date"
-                  value={formik.values.endDate}
-                  onChange={formik.handleChange}
-                  error={
-                    formik.touched.endDate && Boolean(formik.errors.endDate)
-                  }
-                  helperText={formik.touched.endDate && formik.errors.endDate}
-                  InputLabelProps={{
-                    shrink: true,
-                  }}
-                />
-              </Grid>
-            </Grid>
+            </Box>
           </DialogContent>
           <DialogActions>
             <Button onClick={handleClose}>Cancel</Button>
             <Button
               type="submit"
               variant="contained"
+              color="primary"
               disabled={formik.isSubmitting}
             >
               {editingAnnouncement ? "Update" : "Add"}

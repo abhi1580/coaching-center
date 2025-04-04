@@ -1,28 +1,23 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import axios from "axios";
-
-// Initialize axios default header if token exists
-const token = localStorage.getItem("token");
-if (token) {
-  axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-}
+import { authService } from "../../services/api";
 
 // Async thunk for login
 export const login = createAsyncThunk(
   "auth/login",
   async (credentials, { rejectWithValue }) => {
     try {
-      const response = await axios.post("/api/auth/login", credentials);
+      const response = await authService.login(credentials);
       const { token, user } = response.data;
+
+      if (!user || !user.role) {
+        return rejectWithValue({ message: "Invalid user data received" });
+      }
 
       // Store token and user data in localStorage
       localStorage.setItem("token", token);
       localStorage.setItem("user", JSON.stringify(user));
 
-      // Set default authorization header for future requests
-      axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-
-      return response.data;
+      return { token, user };
     } catch (error) {
       return rejectWithValue(
         error.response?.data || { message: "Login failed" }
@@ -33,7 +28,13 @@ export const login = createAsyncThunk(
 
 // Initialize state from localStorage if available
 const initialState = {
-  user: JSON.parse(localStorage.getItem("user")) || null,
+  user: (() => {
+    try {
+      return JSON.parse(localStorage.getItem("user"));
+    } catch {
+      return null;
+    }
+  })(),
   isAuthenticated: !!localStorage.getItem("token"),
   loading: false,
   error: null,
@@ -44,20 +45,30 @@ const authSlice = createSlice({
   initialState,
   reducers: {
     logout: (state) => {
+      authService.logout(); // This will handle token removal and headers
       state.user = null;
       state.isAuthenticated = false;
       state.error = null;
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
-      delete axios.defaults.headers.common["Authorization"];
     },
     initializeAuth: (state) => {
       const token = localStorage.getItem("token");
-      const user = JSON.parse(localStorage.getItem("user"));
-      if (token && user) {
-        state.user = user;
-        state.isAuthenticated = true;
-        axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+      const userStr = localStorage.getItem("user");
+      try {
+        const user = JSON.parse(userStr);
+        if (token && user && user.role) {
+          state.user = user;
+          state.isAuthenticated = true;
+        } else {
+          state.user = null;
+          state.isAuthenticated = false;
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
+        }
+      } catch {
+        state.user = null;
+        state.isAuthenticated = false;
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
       }
     },
   },
@@ -76,6 +87,8 @@ const authSlice = createSlice({
       .addCase(login.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload?.message || "Login failed";
+        state.user = null;
+        state.isAuthenticated = false;
       });
   },
 });

@@ -71,19 +71,6 @@ const Standards = () => {
   }, [dispatch]);
 
   useEffect(() => {
-    if (subjects) {
-      console.log(
-        "Available subjects:",
-        subjects.map((s) => ({
-          id: s._id,
-          name: s.name,
-          status: s.status,
-        }))
-      );
-    }
-  }, [subjects]);
-
-  useEffect(() => {
     if (success) {
       setOpen(false);
       setEditingStandard(null);
@@ -101,7 +88,6 @@ const Standards = () => {
     validationSchema: validationSchema,
     onSubmit: async (values) => {
       try {
-        // Ensure subjects is an array of valid IDs
         const formData = {
           ...values,
           subjects: Array.isArray(values.subjects)
@@ -110,33 +96,12 @@ const Standards = () => {
           level: Number(values.level),
         };
 
-        console.log("Form submission details:");
-        console.log(
-          "Available subjects:",
-          subjects?.map((s) => ({
-            id: s._id,
-            name: s.name,
-            status: s.status,
-          }))
-        );
-        console.log("Selected subject IDs:", formData.subjects);
-        console.log(
-          "Selected subject names:",
-          formData.subjects.map((id) => {
-            const subject = subjects?.find((s) => s._id === id);
-            return subject ? subject.name : "Unknown";
-          })
-        );
-        console.log("Full form data:", formData);
-
-        // Validate that all selected subjects exist and are active
         const invalidSubjects = formData.subjects.filter((id) => {
           const subject = subjects?.find((s) => s._id === id);
           return !subject || subject.status !== "active";
         });
 
         if (invalidSubjects.length > 0) {
-          console.error("Invalid subjects found:", invalidSubjects);
           formik.setFieldError("subjects", "Please select valid subjects");
           return;
         }
@@ -149,7 +114,6 @@ const Standards = () => {
           await dispatch(createStandard(formData)).unwrap();
         }
       } catch (error) {
-        console.error("Error submitting form:", error);
         if (error.invalidSubjects) {
           formik.setFieldError("subjects", "Please select valid subjects");
         } else {
@@ -165,19 +129,11 @@ const Standards = () => {
   const handleOpen = (standard = null) => {
     if (standard) {
       setEditingStandard(standard);
-      console.log("Editing standard:", standard);
-      console.log("Standard subjects:", standard.subjects);
-
-      // Ensure we're getting the correct subject IDs
       const subjectIds =
         standard.subjects?.map((subject) => {
-          // If subject is already an ID, use it
           if (typeof subject === "string") return subject;
-          // If subject is an object, get its ID
           return subject._id;
         }) || [];
-
-      console.log("Mapped subject IDs:", subjectIds);
 
       formik.setValues({
         name: standard.name,
@@ -272,14 +228,31 @@ const Standards = () => {
                   <TableCell>{standard.level}</TableCell>
                   <TableCell>{standard.description}</TableCell>
                   <TableCell>
-                    {standard.subjects
-                      ?.map((subject) => {
-                        const foundSubject = subjects?.find(
-                          (s) => s._id === subject._id
-                        );
-                        return foundSubject?.name || "Unknown Subject";
-                      })
-                      .join(", ") || "No subjects"}
+                    {standard.subjects?.map((subject) => {
+                      const subjectId = typeof subject === 'string' ? subject : subject._id;
+                      const foundSubject = subjects?.find(s => s._id === subjectId);
+                      return foundSubject ? (
+                        <Chip
+                          key={foundSubject._id}
+                          label={foundSubject.name}
+                          size="small"
+                          sx={{ m: 0.5 }}
+                        />
+                      ) : null;
+                    }).filter(Boolean).length > 0 
+                      ? standard.subjects?.map((subject) => {
+                          const subjectId = typeof subject === 'string' ? subject : subject._id;
+                          const foundSubject = subjects?.find(s => s._id === subjectId);
+                          return foundSubject ? (
+                            <Chip
+                              key={foundSubject._id}
+                              label={foundSubject.name}
+                              size="small"
+                              sx={{ m: 0.5 }}
+                            />
+                          ) : null;
+                        })
+                      : "No subjects"}
                   </TableCell>
                   <TableCell>
                     <IconButton
@@ -359,7 +332,6 @@ const Standards = () => {
                 value={formik.values.subjects}
                 onChange={(event) => {
                   const value = event.target.value;
-                  console.log("Selected subjects:", value);
                   formik.setFieldValue("subjects", value);
                 }}
                 error={

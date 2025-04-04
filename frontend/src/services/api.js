@@ -18,7 +18,7 @@ api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("token");
     if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+      config.headers["Authorization"] = `Bearer ${token}`;
     }
     return config;
   },
@@ -30,7 +30,7 @@ api.interceptors.request.use(
 // Add a response interceptor to handle errors
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error) => {
     if (error.response?.status === 401) {
       // Handle unauthorized access
       localStorage.removeItem("token");
@@ -79,6 +79,7 @@ export const teacherService = {
 export const subjectService = {
   getAll: () => api.get("/subjects"),
   getById: (id) => api.get(`/subjects/${id}`),
+  getByStandard: (standardId) => api.get(`/subjects?standard=${standardId}`),
   create: (data) => api.post("/subjects", data),
   update: (id, data) => api.put(`/subjects/${id}`, data),
   delete: (id) => api.delete(`/subjects/${id}`),
@@ -97,6 +98,31 @@ export const standardService = {
 export const batchService = {
   getAll: () => api.get("/batches"),
   getById: (id) => api.get(`/batches/${id}`),
+  getBySubject: (subjects, standard) => {
+    // Convert subjects array to query params
+    let queryParams = "";
+
+    if (Array.isArray(subjects)) {
+      // If array has multiple items, send as comma-separated string
+      if (subjects.length > 1) {
+        queryParams = `subjects=${subjects.join(",")}`;
+      } else if (subjects.length === 1) {
+        // If array has one item
+        queryParams = `subjects=${subjects[0]}`;
+      }
+    } else if (subjects) {
+      // Handle single subject that's not in an array
+      queryParams = `subjects=${subjects}`;
+    }
+
+    // Add standard if provided
+    if (standard) {
+      queryParams += `${queryParams ? "&" : ""}standard=${standard}`;
+    }
+
+    console.log(`Calling batch API with query: ${queryParams}`);
+    return api.get(`/batches/by-subject?${queryParams}`);
+  },
   create: (data) => api.post("/batches", data),
   update: (id, data) => api.put(`/batches/${id}`, data),
   delete: (id) => api.delete(`/batches/${id}`),
