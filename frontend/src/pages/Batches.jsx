@@ -251,11 +251,11 @@ const Batches = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      if (selectedBatch) {
+    if (selectedBatch) {
         await dispatch(
           updateBatch({ id: selectedBatch._id, batchData: formData })
         ).unwrap();
-      } else {
+    } else {
         await dispatch(createBatch(formData)).unwrap();
       }
     } catch (err) {
@@ -517,16 +517,16 @@ const Batches = () => {
                         size="small"
                         title="Edit"
                       >
-                        <EditIcon />
-                      </IconButton>
+                      <EditIcon />
+                    </IconButton>
                       <IconButton
                         onClick={() => handleDelete(batch._id)}
                         color="error"
                         size="small"
                         title="Delete"
                       >
-                        <DeleteIcon />
-                      </IconButton>
+                      <DeleteIcon />
+                    </IconButton>
                     </Box>
                   </TableCell>
                 </TableRow>
@@ -581,10 +581,10 @@ const Batches = () => {
                     disabled={!formData.standard}
                   >
                     {filteredSubjects.map((subject) => (
-                      <MenuItem key={subject._id} value={subject._id}>
-                        {subject.name}
-                      </MenuItem>
-                    ))}
+                        <MenuItem key={subject._id} value={subject._id}>
+                          {subject.name}
+                        </MenuItem>
+                      ))}
                   </Select>
                 </FormControl>
               </Grid>

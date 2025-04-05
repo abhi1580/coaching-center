@@ -149,11 +149,11 @@ function Dashboard() {
 
   // Show login prompt if not logged in
   if (error && error.includes("not logged in")) {
-    return (
+  return (
       <Box sx={{ p: 4, textAlign: "center" }}>
         <Typography variant="h5" sx={{ mb: 2 }}>
           {error}
-        </Typography>
+      </Typography>
         <Button
           variant="contained"
           startIcon={<LoginIcon />}
@@ -174,12 +174,12 @@ function Dashboard() {
     color = "primary",
     onClick,
   }) => (
-    <Paper
-      sx={{
-        p: 2,
-        textAlign: "center",
+          <Paper
+            sx={{
+              p: 2,
+              textAlign: "center",
         bgcolor: `${color}.light`,
-        color: "white",
+              color: "white",
         cursor: "pointer",
         transition: "transform 0.2s, box-shadow 0.2s",
         "&:hover": {
@@ -192,7 +192,7 @@ function Dashboard() {
       <Icon sx={{ fontSize: 40, mb: 1 }} />
       <Typography variant="h4">{value.toLocaleString()}</Typography>
       <Typography variant="subtitle1">{title}</Typography>
-    </Paper>
+          </Paper>
   );
 
   return (
@@ -271,8 +271,8 @@ function Dashboard() {
               color="error"
               onClick={() => navigate("/app/staff")}
             />
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
             <StatCard
               icon={PaymentIcon}
               title="Payments"
@@ -280,8 +280,8 @@ function Dashboard() {
               color="success"
               onClick={() => navigate("/app/payments")}
             />
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
             <Box
               ref={announcementRef}
               onMouseEnter={() => setAnnouncementPopoverOpen(true)}
@@ -333,22 +333,22 @@ function Dashboard() {
                         </Typography>
                         <Typography
                           variant="caption"
-                          sx={{
+            sx={{
                             color: "primary.main",
                             display: "block",
                             mb: 0.5,
                           }}
                         >
                           Starts: {formatDateTime(announcement.startTime)}
-                        </Typography>
+            </Typography>
                         <Typography
                           variant="body2"
                           sx={{ color: "text.secondary" }}
                         >
                           {announcement.content?.substring(0, 100) || ""}
                           {announcement.content?.length > 100 ? "..." : ""}
-                        </Typography>
-                      </Box>
+              </Typography>
+            </Box>
                       {index < stats.upcomingAnnouncements.length - 1 && (
                         <Divider sx={{ my: 1 }} />
                       )}
@@ -357,9 +357,9 @@ function Dashboard() {
                 ) : (
                   <Typography variant="body2" color="text.secondary">
                     No upcoming announcements
-                  </Typography>
+            </Typography>
                 )}
-              </Box>
+            </Box>
             </Popover>
           </Grid>
         </Grid>

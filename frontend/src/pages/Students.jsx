@@ -555,7 +555,7 @@ const Students = () => {
             .finally(() => {
               setFormLoading(false);
             });
-        });
+      });
     } else {
       setEditingStudent(null);
       setFilteredSubjects([]);
@@ -605,9 +605,9 @@ const Students = () => {
         }}
       >
         <Box>
-          <Typography variant="h4" component="h1">
-            Students
-          </Typography>
+        <Typography variant="h4" component="h1">
+          Students
+        </Typography>
           {statsLoading ? (
             <CircularProgress size={20} sx={{ ml: 1 }} />
           ) : (
@@ -840,9 +840,9 @@ const Students = () => {
                       <MenuItem disabled>Loading standards...</MenuItem>
                     ) : standards?.length > 0 ? (
                       standards.map((standard) => (
-                        <MenuItem key={standard._id} value={standard._id}>
-                          {standard.name} ({standard.level})
-                        </MenuItem>
+                      <MenuItem key={standard._id} value={standard._id}>
+                        {standard.name} ({standard.level})
+                      </MenuItem>
                       ))
                     ) : (
                       <MenuItem disabled>No standards available</MenuItem>
@@ -1047,8 +1047,8 @@ const Students = () => {
                                       {batch.teacher?.name || "Unassigned"}
                                     </Typography>
                                   </Box>
-                                </MenuItem>
-                              ))}
+                        </MenuItem>
+                      ))}
                             </React.Fragment>
                           ) : null;
                         })}

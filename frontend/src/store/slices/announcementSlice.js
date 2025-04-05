@@ -1,15 +1,17 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import axios from "axios";
+import { api } from "../../services/api";
 
 // Async thunks
 export const fetchAnnouncements = createAsyncThunk(
   "announcements/fetchAnnouncements",
   async (_, { rejectWithValue }) => {
     try {
-      const response = await axios.get("/api/announcements");
+      const response = await api.get("/announcements");
       return response.data;
     } catch (error) {
-      return rejectWithValue(error.response.data);
+      return rejectWithValue(
+        error.response?.data || { message: error.message }
+      );
     }
   }
 );
@@ -18,10 +20,12 @@ export const fetchAnnouncement = createAsyncThunk(
   "announcements/fetchOne",
   async (id, { rejectWithValue }) => {
     try {
-      const response = await axios.get(`/api/announcements/${id}`);
+      const response = await api.get(`/announcements/${id}`);
       return response.data;
     } catch (error) {
-      return rejectWithValue(error.response?.data || error.message);
+      return rejectWithValue(
+        error.response?.data || { message: error.message }
+      );
     }
   }
 );
@@ -30,10 +34,12 @@ export const createAnnouncement = createAsyncThunk(
   "announcements/createAnnouncement",
   async (announcementData, { rejectWithValue }) => {
     try {
-      const response = await axios.post("/api/announcements", announcementData);
+      const response = await api.post("/announcements", announcementData);
       return response.data;
     } catch (error) {
-      return rejectWithValue(error.response.data);
+      return rejectWithValue(
+        error.response?.data || { message: error.message }
+      );
     }
   }
 );
@@ -42,10 +48,12 @@ export const updateAnnouncement = createAsyncThunk(
   "announcements/updateAnnouncement",
   async ({ id, data }, { rejectWithValue }) => {
     try {
-      const response = await axios.put(`/api/announcements/${id}`, data);
+      const response = await api.put(`/announcements/${id}`, data);
       return response.data;
     } catch (error) {
-      return rejectWithValue(error.response.data);
+      return rejectWithValue(
+        error.response?.data || { message: error.message }
+      );
     }
   }
 );
@@ -54,10 +62,12 @@ export const deleteAnnouncement = createAsyncThunk(
   "announcements/deleteAnnouncement",
   async (id, { rejectWithValue }) => {
     try {
-      await axios.delete(`/api/announcements/${id}`);
+      await api.delete(`/announcements/${id}`);
       return id;
     } catch (error) {
-      return rejectWithValue(error.response.data);
+      return rejectWithValue(
+        error.response?.data || { message: error.message }
+      );
     }
   }
 );
