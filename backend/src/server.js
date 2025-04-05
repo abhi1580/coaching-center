@@ -25,26 +25,21 @@ const app = express();
 connectDB();
 
 // Middleware
-//cors setup
-const allowedOrigins = [
-  process.env.FRONTEND_URL,
-  // "https://your-production-domain.com",
-];
 
-const corsOptions = {
-  origin: function (origin, callback) {
-    if (origin && allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    } else {
-      return callback(new Error("Not allowed by CORS"));
-    }
-  },
-  credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
-};
-
-app.use(cors(corsOptions));
+app.use(
+  cors({
+    origin: process.env.CLIENT_BASE_URL,
+    methods: ["GET", "POST", "DELETE", "PUT"],
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+      "Cache-Control",
+      "Expires",
+      "Pragma",
+    ],
+    credentials: true,
+  })
+);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
