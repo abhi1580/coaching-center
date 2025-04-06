@@ -3,16 +3,24 @@ import mongoose from "mongoose";
 import cors from "cors";
 import dotenv from "dotenv";
 import connectDB from "./config/db.js";
-import authRoutes from "./routes/auth.js";
-import studentRoutes from "./routes/students.js";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+
+// Import route files with standardized naming convention
+import authRoutes from "./routes/authRoutes.js";
+import studentRoutes from "./routes/studentRoutes.js";
 import batchRoutes from "./routes/batchRoutes.js";
-import paymentRoutes from "./routes/payments.js";
-import announcementRoutes from "./routes/announcements.js";
-import staffRoutes from "./routes/staff.js";
-import teacherRoutes from "./routes/teachers.js";
+import classRoutes from "./routes/classRoutes.js";
 import subjectRoutes from "./routes/subjectRoutes.js";
 import standardRoutes from "./routes/standardRoutes.js";
-import dashboardRoutes from "./routes/dashboard.js";
+import userRoutes from "./routes/userRoutes.js";
+import paymentRoutes from "./routes/paymentRoutes.js";
+import announcementRoutes from "./routes/announcementRoutes.js";
+import staffRoutes from "./routes/staffRoutes.js";
+import teacherRoutes from "./routes/teacherRoutes.js";
+import dashboardRoutes from "./routes/dashboardRoutes.js";
+
 import cron from "node-cron";
 import { checkAndExpireAnnouncements } from "./utils/announcementExpiry.js";
 
@@ -45,8 +53,6 @@ app.use(express.urlencoded({ extended: true }));
 
 // Request logging middleware
 app.use((req, res, next) => {
-  console.log(`${req.method} ${req.url}`);
-  console.log("Request Body:", req.body);
   next();
 });
 
@@ -77,7 +83,6 @@ app.use((req, res) => {
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-  console.error("Error:", err);
   res.status(500).json({
     success: false,
     message: "Something went wrong!",

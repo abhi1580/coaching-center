@@ -27,11 +27,34 @@ import {
   Chip,
   ListSubheader,
   Checkbox,
+  Divider,
+  Avatar,
+  Card,
+  CardContent,
+  CardActions,
+  useMediaQuery,
+  useTheme,
+  Stack,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+  InputAdornment,
+  Tooltip,
 } from "@mui/material";
 import {
   Add as AddIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
+  Visibility as VisibilityIcon,
+  FilterList as FilterIcon,
+  ExpandMore as ExpandMoreIcon,
+  Search as SearchIcon,
+  Clear as ClearIcon,
+  Phone as PhoneIcon,
+  Email as EmailIcon,
+  School as SchoolIcon,
+  Person as PersonIcon,
+  Home as HomeIcon,
 } from "@mui/icons-material";
 import { useFormik } from "formik";
 import * as Yup from "yup";
@@ -53,6 +76,7 @@ import {
   batchService,
   dashboardService,
 } from "../services/api";
+import RefreshButton from "../components/RefreshButton";
 
 const validationSchema = Yup.object({
   name: Yup.string().required("Name is required"),
@@ -100,6 +124,78 @@ const Students = () => {
   const [formLoading, setFormLoading] = useState(false);
   const [totalStudentCount, setTotalStudentCount] = useState(0);
   const [statsLoading, setStatsLoading] = useState(false);
+  const [viewStudent, setViewStudent] = useState(null);
+  const [viewDialogOpen, setViewDialogOpen] = useState(false);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const isTablet = useMediaQuery(theme.breakpoints.down("md"));
+
+  // Filter state
+  const [nameFilter, setNameFilter] = useState("");
+  const [standardFilter, setStandardFilter] = useState("");
+  const [subjectFilter, setSubjectFilter] = useState("");
+  const [genderFilter, setGenderFilter] = useState("");
+  const [filteredStudentsList, setFilteredStudentsList] = useState([]);
+  const [filterExpanded, setFilterExpanded] = useState(false);
+
+  // Apply filters whenever students data or filter values change
+  useEffect(() => {
+    if (!students || students.length === 0) {
+      setFilteredStudentsList([]);
+      return;
+    }
+
+    let results = [...students];
+
+    // Filter by name/email/phone
+    if (nameFilter) {
+      const searchTerm = nameFilter.toLowerCase();
+      results = results.filter(
+        (student) =>
+          student.name.toLowerCase().includes(searchTerm) ||
+          student.email.toLowerCase().includes(searchTerm) ||
+          student.phone.includes(searchTerm) ||
+          student.parentName?.toLowerCase().includes(searchTerm)
+      );
+    }
+
+    // Filter by standard
+    if (standardFilter) {
+      results = results.filter(
+        (student) =>
+          student.standard?._id === standardFilter ||
+          student.standard === standardFilter
+      );
+    }
+
+    // Filter by subject
+    if (subjectFilter) {
+      results = results.filter((student) =>
+        student.subjects?.some(
+          (subj) => subj._id === subjectFilter || subj === subjectFilter
+        )
+      );
+    }
+
+    // Filter by gender
+    if (genderFilter) {
+      results = results.filter((student) => student.gender === genderFilter);
+    }
+
+    setFilteredStudentsList(results);
+  }, [students, nameFilter, standardFilter, subjectFilter, genderFilter]);
+
+  const clearFilters = () => {
+    setNameFilter("");
+    setStandardFilter("");
+    setSubjectFilter("");
+    setGenderFilter("");
+  };
+
+  // Initialize filtered students when students data loads
+  useEffect(() => {
+    setFilteredStudentsList(students || []);
+  }, [students]);
 
   // Function to load all required data
   const loadAllData = useCallback(() => {
@@ -308,7 +404,9 @@ const Students = () => {
 
         // Get all batches for the remaining subjects
         batchService
-          .getBySubject(selectedSubjectIds, formik.values.standard)
+          .getBySubject(selectedSubjectIds, formik.values.standard, {
+            populateEnrolledStudents: true,
+          })
           .then((response) => {
             console.log("Fetched updated batches:", response.data);
 
@@ -347,7 +445,9 @@ const Students = () => {
 
       // Use service directly for simpler error handling
       batchService
-        .getBySubject(selectedSubjectIds, formik.values.standard)
+        .getBySubject(selectedSubjectIds, formik.values.standard, {
+          populateEnrolledStudents: true,
+        })
         .then((response) => {
           console.log("Fetched batches from API:", response.data);
           // Handle different response formats
@@ -520,7 +620,9 @@ const Students = () => {
           // Only fetch batches after subjects are loaded
           // Load batches for these subjects
           batchService
-            .getBySubject(studentSubjectIds, studentStandardId)
+            .getBySubject(studentSubjectIds, studentStandardId, {
+              populateEnrolledStudents: true,
+            })
             .then((response) => {
               console.log("Fetched batches for student:", response.data);
               // Handle different response formats
@@ -555,7 +657,7 @@ const Students = () => {
             .finally(() => {
               setFormLoading(false);
             });
-      });
+        });
     } else {
       setEditingStudent(null);
       setFilteredSubjects([]);
@@ -579,6 +681,62 @@ const Students = () => {
     }
   };
 
+  const handleViewStudent = (student) => {
+    setViewStudent(student);
+    setViewDialogOpen(true);
+  };
+
+  const handleCloseViewDialog = () => {
+    setViewDialogOpen(false);
+    setViewStudent(null);
+  };
+
+  // Date formatting function
+  const formatDate = (dateString) => {
+    if (!dateString) return "N/A";
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  };
+
+  // Format batch status with appropriate color
+  const getBatchStatusColor = (status) => {
+    switch (status?.toLowerCase()) {
+      case "active":
+        return "success.main";
+      case "upcoming":
+        return "info.main";
+      case "completed":
+        return "warning.main";
+      case "cancelled":
+        return "error.main";
+      default:
+        return "text.secondary";
+    }
+  };
+
+  // Format time for display
+  const formatTime = (timeString) => {
+    if (!timeString) return "";
+    try {
+      // Handle different formats
+      if (timeString.includes(":")) {
+        const [hours, minutes] = timeString.split(":");
+        const hour = parseInt(hours, 10);
+        const ampm = hour >= 12 ? "PM" : "AM";
+        const hour12 = hour % 12 || 12; // Convert 0 to 12 for 12 AM
+        return `${hour12}:${minutes} ${ampm}`;
+      }
+      return timeString;
+    } catch (error) {
+      console.error("Error formatting time:", error);
+      return timeString;
+    }
+  };
+
   if (loading) {
     return (
       <Box
@@ -595,37 +753,55 @@ const Students = () => {
   }
 
   return (
-    <Box sx={{ p: 3 }}>
+    <Box sx={{ p: { xs: 1, sm: 2, md: 3 } }}>
       <Box
         sx={{
           display: "flex",
+          flexDirection: { xs: "column", sm: "row" },
           justifyContent: "space-between",
-          alignItems: "center",
+          alignItems: { xs: "flex-start", sm: "center" },
           mb: 3,
+          gap: { xs: 1, sm: 0 },
         }}
       >
-        <Box>
-        <Typography variant="h4" component="h1">
-          Students
-        </Typography>
-          {statsLoading ? (
-            <CircularProgress size={20} sx={{ ml: 1 }} />
-          ) : (
-            <Typography variant="subtitle1" color="text.secondary">
-              Total: {totalStudentCount} students{" "}
-              {students &&
-                students.length !== totalStudentCount &&
-                `(${students.length} loaded)`}
-            </Typography>
-          )}
+        <Box sx={{ display: "flex", alignItems: "center" }}>
+          <Typography
+            variant="h4"
+            component="h1"
+            sx={{ fontSize: { xs: "1.5rem", sm: "2rem", md: "2.125rem" } }}
+          >
+            Students
+          </Typography>
+          <RefreshButton
+            onRefresh={loadAllData}
+            tooltip="Refresh students data"
+            sx={{ ml: 1 }}
+          />
         </Box>
         <Button
           variant="contained"
           startIcon={<AddIcon />}
           onClick={() => handleOpen()}
+          sx={{ alignSelf: { xs: "flex-start", sm: "auto" } }}
         >
           Add Student
         </Button>
+      </Box>
+
+      {/* Stats row */}
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          mb: 2,
+          flexWrap: "wrap",
+          gap: 1,
+        }}
+      >
+        <Typography variant="subtitle1">
+          Total Students: {statsLoading ? "Loading..." : totalStudentCount}
+        </Typography>
       </Box>
 
       {error && (
@@ -636,141 +812,455 @@ const Students = () => {
 
       {success && (
         <Alert severity="success" sx={{ mb: 2 }}>
-          Operation completed successfully
+          {success}
         </Alert>
       )}
 
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Name</TableCell>
-              <TableCell>Contact Info</TableCell>
-              <TableCell>Standard</TableCell>
-              <TableCell>Subjects & Batches</TableCell>
-              <TableCell>Parent Info</TableCell>
-              <TableCell>School</TableCell>
-              <TableCell>Joining Date</TableCell>
-              <TableCell>Actions</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {students && students.length > 0 ? (
-              students.map((student) => (
-                <TableRow key={student._id}>
-                  <TableCell>
-                    <Typography fontWeight="medium">{student.name}</Typography>
-                    <Typography
-                      variant="caption"
-                      display="block"
-                      color="text.secondary"
-                    >
-                      {student.gender || ""}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant="body2">{student.email}</Typography>
-                    <Typography variant="body2">{student.phone}</Typography>
-                  </TableCell>
-                  <TableCell>
-                    {standards.find((s) => s._id === student.standard?._id)
-                      ?.name || ""}
-                  </TableCell>
-                  <TableCell>
-                    {/* Subjects */}
-                    <Box sx={{ mb: 1 }}>
-                      {student.subjects?.length > 0 ? (
-                        student.subjects?.map((subject) => (
-                          <Chip
-                            key={subject._id}
-                            label={subject.name}
-                            size="small"
-                            color="secondary"
-                            sx={{ mr: 0.5, mb: 0.5 }}
-                          />
-                        ))
-                      ) : (
-                        <Typography variant="caption" color="text.secondary">
-                          No subjects
-                        </Typography>
-                      )}
-                    </Box>
+      {/* Filter Accordion */}
+      <Accordion
+        expanded={filterExpanded}
+        onChange={() => setFilterExpanded(!filterExpanded)}
+        sx={{ mb: 2 }}
+      >
+        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <FilterIcon color="primary" />
+            <Typography>Filters</Typography>
+            {(nameFilter ||
+              standardFilter ||
+              subjectFilter ||
+              genderFilter) && (
+              <Chip
+                label={`${[
+                  nameFilter ? 1 : 0,
+                  standardFilter ? 1 : 0,
+                  subjectFilter ? 1 : 0,
+                  genderFilter ? 1 : 0,
+                ].reduce((a, b) => a + b, 0)} active`}
+                size="small"
+                color="primary"
+              />
+            )}
+          </Box>
+        </AccordionSummary>
+        <AccordionDetails>
+          <Grid container spacing={2}>
+            <Grid item xs={12} sm={6} md={3}>
+              <TextField
+                fullWidth
+                label="Search by Name/Email/Phone"
+                value={nameFilter}
+                onChange={(e) => setNameFilter(e.target.value)}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon />
+                    </InputAdornment>
+                  ),
+                  endAdornment: nameFilter && (
+                    <InputAdornment position="end">
+                      <IconButton
+                        size="small"
+                        onClick={() => setNameFilter("")}
+                      >
+                        <ClearIcon />
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <TextField
+                select
+                fullWidth
+                label="Filter by Standard"
+                value={standardFilter}
+                onChange={(e) => setStandardFilter(e.target.value)}
+              >
+                <MenuItem value="">All Standards</MenuItem>
+                {standards.map((standard) => (
+                  <MenuItem key={standard._id} value={standard._id}>
+                    {standard.name}
+                  </MenuItem>
+                ))}
+              </TextField>
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <TextField
+                select
+                fullWidth
+                label="Filter by Subject"
+                value={subjectFilter}
+                onChange={(e) => setSubjectFilter(e.target.value)}
+              >
+                <MenuItem value="">All Subjects</MenuItem>
+                {subjects.map((subject) => (
+                  <MenuItem key={subject._id} value={subject._id}>
+                    {subject.name}
+                  </MenuItem>
+                ))}
+              </TextField>
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <TextField
+                select
+                fullWidth
+                label="Filter by Gender"
+                value={genderFilter}
+                onChange={(e) => setGenderFilter(e.target.value)}
+              >
+                <MenuItem value="">All Genders</MenuItem>
+                <MenuItem value="male">Male</MenuItem>
+                <MenuItem value="female">Female</MenuItem>
+                <MenuItem value="other">Other</MenuItem>
+              </TextField>
+            </Grid>
+            <Grid item xs={12}>
+              <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
+                <Button
+                  variant="outlined"
+                  startIcon={<ClearIcon />}
+                  onClick={clearFilters}
+                  disabled={
+                    !nameFilter &&
+                    !standardFilter &&
+                    !subjectFilter &&
+                    !genderFilter
+                  }
+                >
+                  Clear Filters
+                </Button>
+              </Box>
+            </Grid>
+          </Grid>
+        </AccordionDetails>
+      </Accordion>
 
-                    {/* Batches */}
-                    <Box>
-                      {student.batches?.length > 0 ? (
-                        student.batches?.map((batch) => (
-                          <Chip
-                            key={batch._id}
-                            label={batch.name}
-                            size="small"
-                            color="primary"
-                            sx={{ mr: 0.5, mb: 0.5 }}
-                          />
-                        ))
-                      ) : (
-                        <Typography variant="caption" color="text.secondary">
-                          No batches
+      {/* Results count */}
+      <Box
+        sx={{
+          mb: 2,
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
+        <Typography variant="body2" color="text.secondary">
+          Showing {filteredStudentsList.length} of {students.length} students
+        </Typography>
+        {filteredStudentsList.length === 0 && students.length > 0 && (
+          <Alert severity="info" sx={{ py: 0 }}>
+            No students match your filter criteria
+          </Alert>
+        )}
+      </Box>
+
+      {isMobile ? (
+        // Mobile card view
+        <Stack spacing={2}>
+          {filteredStudentsList.length > 0 ? (
+            filteredStudentsList.map((student) => (
+              <Card key={student._id} sx={{ width: "100%" }}>
+                <CardContent>
+                  <Typography variant="h6" component="div">
+                    {student.name}
+                  </Typography>
+                  <Typography
+                    variant="subtitle2"
+                    color="text.secondary"
+                    sx={{ mb: 1 }}
+                  >
+                    {student.gender || ""}
+                  </Typography>
+
+                  <Grid container spacing={1} sx={{ mt: 1 }}>
+                    <Grid item xs={6}>
+                      <Typography variant="subtitle2" color="text.secondary">
+                        Contact
+                      </Typography>
+                      <Box
+                        sx={{ display: "flex", alignItems: "center", mt: 0.5 }}
+                      >
+                        <EmailIcon
+                          fontSize="small"
+                          color="action"
+                          sx={{ mr: 1 }}
+                        />
+                        <Typography variant="body2">{student.email}</Typography>
+                      </Box>
+                      <Box
+                        sx={{ display: "flex", alignItems: "center", mt: 0.5 }}
+                      >
+                        <PhoneIcon
+                          fontSize="small"
+                          color="action"
+                          sx={{ mr: 1 }}
+                        />
+                        <Typography variant="body2">{student.phone}</Typography>
+                      </Box>
+                    </Grid>
+                    <Grid item xs={6}>
+                      <Typography variant="subtitle2" color="text.secondary">
+                        Standard
+                      </Typography>
+                      <Box
+                        sx={{ display: "flex", alignItems: "center", mt: 0.5 }}
+                      >
+                        <SchoolIcon
+                          fontSize="small"
+                          color="action"
+                          sx={{ mr: 1 }}
+                        />
+                        <Typography variant="body2">
+                          {standards.find(
+                            (s) => s._id === student.standard?._id
+                          )?.name || ""}
                         </Typography>
-                      )}
-                    </Box>
+                      </Box>
+                    </Grid>
+                    <Grid item xs={12} sx={{ mt: 1 }}>
+                      <Typography variant="subtitle2" color="text.secondary">
+                        Subjects
+                      </Typography>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          flexWrap: "wrap",
+                          gap: 0.5,
+                          mt: 0.5,
+                        }}
+                      >
+                        {student.subjects?.length > 0 ? (
+                          student.subjects?.map((subject) => (
+                            <Chip
+                              key={subject._id}
+                              label={subject.name}
+                              size="small"
+                              color="secondary"
+                              sx={{ mb: 0.5 }}
+                            />
+                          ))
+                        ) : (
+                          <Typography variant="caption" color="text.secondary">
+                            No subjects
+                          </Typography>
+                        )}
+                      </Box>
+                    </Grid>
+                    <Grid item xs={12}>
+                      <Typography variant="subtitle2" color="text.secondary">
+                        Parent
+                      </Typography>
+                      <Box
+                        sx={{ display: "flex", alignItems: "center", mt: 0.5 }}
+                      >
+                        <PersonIcon
+                          fontSize="small"
+                          color="action"
+                          sx={{ mr: 1 }}
+                        />
+                        <Typography variant="body2">
+                          {student.parentName}
+                        </Typography>
+                      </Box>
+                    </Grid>
+                  </Grid>
+                </CardContent>
+                <CardActions>
+                  <Button
+                    size="small"
+                    onClick={() => handleViewStudent(student)}
+                    color="primary"
+                  >
+                    View Details
+                  </Button>
+                </CardActions>
+              </Card>
+            ))
+          ) : (
+            <Typography align="center" sx={{ my: 4 }}>
+              No students found
+            </Typography>
+          )}
+        </Stack>
+      ) : (
+        // Desktop table view
+        <TableContainer
+          component={Paper}
+          sx={{ borderRadius: 2, overflow: "hidden" }}
+        >
+          <Table size={isTablet ? "small" : "medium"}>
+            <TableHead>
+              <TableRow sx={{ backgroundColor: theme.palette.primary.main }}>
+                <TableCell sx={{ color: "white", fontWeight: "bold" }}>
+                  Name
+                </TableCell>
+                <TableCell sx={{ color: "white", fontWeight: "bold" }}>
+                  Contact Info
+                </TableCell>
+                <TableCell sx={{ color: "white", fontWeight: "bold" }}>
+                  Standard
+                </TableCell>
+                <TableCell sx={{ color: "white", fontWeight: "bold" }}>
+                  Subjects & Batches
+                </TableCell>
+                {!isTablet && (
+                  <TableCell sx={{ color: "white", fontWeight: "bold" }}>
+                    Parent Info
                   </TableCell>
-                  <TableCell>
-                    <Typography variant="body2" fontWeight="medium">
-                      {student.parentName}
-                    </Typography>
-                    <Typography variant="caption" display="block">
-                      {student.parentPhone}
-                    </Typography>
-                    <Typography
-                      variant="caption"
-                      display="block"
-                      sx={{ fontSize: "0.7rem" }}
-                    >
-                      {student.parentEmail}
-                    </Typography>
+                )}
+                {!isTablet && (
+                  <TableCell sx={{ color: "white", fontWeight: "bold" }}>
+                    School
                   </TableCell>
-                  <TableCell>
-                    <Typography variant="body2">
-                      {student.schoolName || ""}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      {student.board || ""}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    {student.joiningDate
-                      ? new Date(student.joiningDate).toLocaleDateString()
-                      : ""}
-                  </TableCell>
-                  <TableCell>
-                    <IconButton
-                      color="primary"
-                      onClick={() => handleOpen(student)}
-                    >
-                      <EditIcon />
-                    </IconButton>
-                    <IconButton
-                      color="error"
-                      onClick={() => handleDelete(student._id)}
-                    >
-                      <DeleteIcon />
-                    </IconButton>
-                  </TableCell>
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={8} align="center">
-                  No students found
+                )}
+                <TableCell sx={{ color: "white", fontWeight: "bold" }}>
+                  Joining Date
+                </TableCell>
+                <TableCell
+                  align="right"
+                  sx={{ color: "white", fontWeight: "bold" }}
+                >
+                  Actions
                 </TableCell>
               </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
+            </TableHead>
+            <TableBody>
+              {filteredStudentsList.length > 0 ? (
+                filteredStudentsList.map((student) => (
+                  <TableRow key={student._id}>
+                    <TableCell>
+                      <Typography fontWeight="medium">
+                        {student.name || "—"}
+                      </Typography>
+                      <Typography
+                        variant="caption"
+                        display="block"
+                        color="text.secondary"
+                      >
+                        {student.gender || "—"}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="body2">
+                        {student.email || "—"}
+                      </Typography>
+                      <Typography variant="body2">
+                        {student.phone || "—"}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      {standards.find((s) => s._id === student.standard?._id)
+                        ?.name || "—"}
+                    </TableCell>
+                    <TableCell>
+                      {/* Subjects */}
+                      <Box sx={{ mb: 1 }}>
+                        {student.subjects?.length > 0 ? (
+                          student.subjects?.map((subject) => (
+                            <Chip
+                              key={subject._id}
+                              label={subject.name}
+                              size="small"
+                              color="secondary"
+                              sx={{ mr: 0.5, mb: 0.5 }}
+                            />
+                          ))
+                        ) : (
+                          <Typography variant="caption" color="text.secondary">
+                            No subjects
+                          </Typography>
+                        )}
+                      </Box>
 
-      <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
+                      {/* Batches */}
+                      <Box>
+                        {student.batches?.length > 0 ? (
+                          student.batches?.map((batch) => (
+                            <Chip
+                              key={batch._id}
+                              label={batch.name}
+                              size="small"
+                              color="primary"
+                              sx={{ mr: 0.5, mb: 0.5 }}
+                            />
+                          ))
+                        ) : (
+                          <Typography variant="caption" color="text.secondary">
+                            No batches
+                          </Typography>
+                        )}
+                      </Box>
+                    </TableCell>
+                    {!isTablet && (
+                      <TableCell>
+                        <Typography variant="body2" fontWeight="medium">
+                          {student.parentName || "—"}
+                        </Typography>
+                        <Typography variant="caption" display="block">
+                          {student.parentPhone || "—"}
+                        </Typography>
+                        <Typography
+                          variant="caption"
+                          display="block"
+                          sx={{ fontSize: "0.7rem" }}
+                        >
+                          {student.parentEmail || "—"}
+                        </Typography>
+                      </TableCell>
+                    )}
+                    {!isTablet && (
+                      <TableCell>
+                        <Typography variant="body2">
+                          {student.schoolName || "—"}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {student.board || "—"}
+                        </Typography>
+                      </TableCell>
+                    )}
+                    <TableCell>
+                      {student.joiningDate
+                        ? new Date(student.joiningDate).toLocaleDateString()
+                        : "—"}
+                    </TableCell>
+                    <TableCell align="right">
+                      <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
+                        <IconButton
+                          size="small"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleViewStudent(student);
+                          }}
+                          title="View Details"
+                          sx={{ mr: 0.5 }}
+                        >
+                          <VisibilityIcon fontSize="small" />
+                        </IconButton>
+                      </Box>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={isTablet ? 6 : 8} align="center">
+                    No students found
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      )}
+
+      <Dialog
+        open={open}
+        onClose={handleClose}
+        maxWidth="md"
+        fullWidth
+        fullScreen={isMobile}
+      >
         <DialogTitle>
           {editingStudent ? "Edit Student" : "Add New Student"}
         </DialogTitle>
@@ -778,13 +1268,13 @@ const Students = () => {
           <DialogContent>
             <Grid container spacing={2}>
               {/* Debug only - show current form values */}
-              <Grid item xs={12}>
+              <Grid item xs={12} sx={{ display: "none" }}>
                 <Typography variant="caption" color="text.secondary">
                   Selected batches: {formik.values.batches.length} -{" "}
                   {JSON.stringify(formik.values.batches)}
                 </Typography>
               </Grid>
-              <Grid item xs={12}>
+              <Grid item xs={12} sx={{ display: "none" }}>
                 <Typography variant="caption" color="text.secondary">
                   Selected subjects: {formik.values.subjects.length} -{" "}
                   {JSON.stringify(formik.values.subjects)}
@@ -840,9 +1330,9 @@ const Students = () => {
                       <MenuItem disabled>Loading standards...</MenuItem>
                     ) : standards?.length > 0 ? (
                       standards.map((standard) => (
-                      <MenuItem key={standard._id} value={standard._id}>
-                        {standard.name} ({standard.level})
-                      </MenuItem>
+                        <MenuItem key={standard._id} value={standard._id}>
+                          {standard.name} ({standard.level})
+                        </MenuItem>
                       ))
                     ) : (
                       <MenuItem disabled>No standards available</MenuItem>
@@ -1024,7 +1514,7 @@ const Students = () => {
                                   sx={{
                                     paddingLeft: 1,
                                     display: "flex",
-                                    alignItems: "center",
+                                    alignItems: "flex-start",
                                   }}
                                 >
                                   <Checkbox
@@ -1035,20 +1525,78 @@ const Students = () => {
                                     sx={{ padding: "4px", marginRight: "4px" }}
                                     onClick={(e) => e.stopPropagation()} // Prevent double toggle
                                   />
-                                  <Box>
-                                    <Typography variant="body2">
+                                  <Box sx={{ flexGrow: 1 }}>
+                                    <Typography
+                                      variant="body2"
+                                      fontWeight="medium"
+                                    >
                                       {batch.name || "Unnamed Batch"}
                                     </Typography>
-                                    <Typography
-                                      variant="caption"
-                                      color="text.secondary"
+                                    <Box
+                                      sx={{
+                                        display: "flex",
+                                        flexDirection: "column",
+                                        mt: 0.5,
+                                      }}
                                     >
-                                      Teacher:{" "}
-                                      {batch.teacher?.name || "Unassigned"}
-                                    </Typography>
+                                      <Typography
+                                        variant="caption"
+                                        sx={{
+                                          color: getBatchStatusColor(
+                                            batch.status
+                                          ),
+                                        }}
+                                      >
+                                        Status:{" "}
+                                        {batch.status
+                                          ? batch.status
+                                              .charAt(0)
+                                              .toUpperCase() +
+                                            batch.status.slice(1)
+                                          : "Unknown"}
+                                      </Typography>
+                                      <Typography
+                                        variant="caption"
+                                        color="text.secondary"
+                                      >
+                                        Teacher:{" "}
+                                        {batch.teacher?.name || "Unassigned"}
+                                      </Typography>
+                                      <Typography
+                                        variant="caption"
+                                        color="text.secondary"
+                                      >
+                                        Starts:{" "}
+                                        {batch.startDate
+                                          ? formatDate(batch.startDate)
+                                          : "Not set"}
+                                      </Typography>
+                                      <Typography
+                                        variant="caption"
+                                        color="text.secondary"
+                                      >
+                                        Time:{" "}
+                                        {batch.schedule?.startTime &&
+                                        batch.schedule?.endTime
+                                          ? `${formatTime(
+                                              batch.schedule.startTime
+                                            )} - ${formatTime(
+                                              batch.schedule.endTime
+                                            )}`
+                                          : "Not set"}
+                                      </Typography>
+                                      <Typography
+                                        variant="caption"
+                                        color="text.secondary"
+                                      >
+                                        Days:{" "}
+                                        {batch.schedule?.days?.join(", ") ||
+                                          "Not set"}
+                                      </Typography>
+                                    </Box>
                                   </Box>
-                        </MenuItem>
-                      ))}
+                                </MenuItem>
+                              ))}
                             </React.Fragment>
                           ) : null;
                         })}
@@ -1148,18 +1696,75 @@ const Students = () => {
                                             variant="body2"
                                             color="warning.main"
                                           >
-                                            {batch.name} (
-                                            {subject?.name || "Unknown Subject"}
-                                            )
+                                            {batch?.name ||
+                                              `Batch from ${
+                                                subject?.name || "Unknown"
+                                              }`}
                                           </Typography>
-                                          <Typography
-                                            variant="caption"
-                                            color="text.secondary"
+                                          <Box
+                                            sx={{
+                                              display: "flex",
+                                              flexDirection: "column",
+                                              mt: 0.5,
+                                            }}
                                           >
-                                            Teacher:{" "}
-                                            {batch.teacher?.name ||
-                                              "Unassigned"}
-                                          </Typography>
+                                            <Typography
+                                              variant="caption"
+                                              sx={{
+                                                color: getBatchStatusColor(
+                                                  batch.status
+                                                ),
+                                              }}
+                                            >
+                                              Status:{" "}
+                                              {batch.status
+                                                ? batch.status
+                                                    .charAt(0)
+                                                    .toUpperCase() +
+                                                  batch.status.slice(1)
+                                                : "Unknown"}
+                                            </Typography>
+                                            <Typography
+                                              variant="caption"
+                                              color="text.secondary"
+                                            >
+                                              Teacher:{" "}
+                                              {batch.teacher?.name ||
+                                                "Unassigned"}
+                                            </Typography>
+                                            <Typography
+                                              variant="caption"
+                                              color="text.secondary"
+                                            >
+                                              Starts:{" "}
+                                              {batch.startDate
+                                                ? formatDate(batch.startDate)
+                                                : "Not set"}
+                                            </Typography>
+                                            <Typography
+                                              variant="caption"
+                                              color="text.secondary"
+                                            >
+                                              Time:{" "}
+                                              {batch.schedule?.startTime &&
+                                              batch.schedule?.endTime
+                                                ? `${formatTime(
+                                                    batch.schedule.startTime
+                                                  )} - ${formatTime(
+                                                    batch.schedule.endTime
+                                                  )}`
+                                                : "Not set"}
+                                            </Typography>
+                                            <Typography
+                                              variant="caption"
+                                              color="text.secondary"
+                                            >
+                                              Days:{" "}
+                                              {batch.schedule?.days?.join(
+                                                ", "
+                                              ) || "Not set"}
+                                            </Typography>
+                                          </Box>
                                         </Box>
                                       </MenuItem>
                                     );
@@ -1392,13 +1997,321 @@ const Students = () => {
               </Grid>
             </Grid>
           </DialogContent>
-          <DialogActions>
+          <DialogActions sx={{ px: { xs: 2, sm: 3 }, pb: { xs: 2, sm: 2 } }}>
             <Button onClick={handleClose}>Cancel</Button>
-            <Button type="submit" variant="contained" color="primary">
-              {editingStudent ? "Update" : "Create"}
+            <Button
+              type="submit"
+              variant="contained"
+              color="primary"
+              disabled={formik.isSubmitting}
+            >
+              {formik.isSubmitting ? (
+                <CircularProgress size={24} />
+              ) : editingStudent ? (
+                "Update"
+              ) : (
+                "Create"
+              )}
             </Button>
           </DialogActions>
         </form>
+      </Dialog>
+
+      {/* View Student Dialog */}
+      <Dialog
+        open={viewDialogOpen}
+        onClose={handleCloseViewDialog}
+        maxWidth="md"
+        fullWidth
+        fullScreen={isMobile}
+        sx={{
+          "& .MuiDialog-paper": {
+            width: "100%",
+            margin: { xs: 0, sm: 3 },
+            maxHeight: { xs: "100vh", sm: "85vh" },
+          },
+        }}
+      >
+        {viewStudent && (
+          <>
+            <DialogTitle sx={{ pb: 1, pt: { xs: 2, sm: 2 } }}>
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                <Typography
+                  variant="h5"
+                  component="div"
+                  sx={{ fontSize: { xs: "1.25rem", sm: "1.5rem" } }}
+                >
+                  Student Profile
+                </Typography>
+                {isMobile && (
+                  <IconButton
+                    edge="end"
+                    color="inherit"
+                    onClick={handleCloseViewDialog}
+                    aria-label="close"
+                    size="small"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <line x1="18" y1="6" x2="6" y2="18"></line>
+                      <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                  </IconButton>
+                )}
+              </Box>
+              {/* <Typography variant="subtitle2" color="text.secondary">
+                {viewStudent._id}
+              </Typography> */}
+            </DialogTitle>
+            <DialogContent sx={{ p: { xs: 2, sm: 3 } }}>
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                {/* Personal Information */}
+                <Box>
+                  <Typography variant="h6" color="primary" gutterBottom>
+                    Personal Information
+                  </Typography>
+                  <Grid container spacing={{ xs: 2, sm: 2 }}>
+                    <Grid item xs={12} sm={6} md={4}>
+                      <Typography variant="subtitle2" color="text.secondary">
+                        Name
+                      </Typography>
+                      <Typography variant="body1">
+                        {viewStudent.name}
+                      </Typography>
+                    </Grid>
+                    <Grid item xs={12} sm={6} md={4}>
+                      <Typography variant="subtitle2" color="text.secondary">
+                        Email
+                      </Typography>
+                      <Typography variant="body1">
+                        {viewStudent.email}
+                      </Typography>
+                    </Grid>
+                    <Grid item xs={12} sm={6} md={4}>
+                      <Typography variant="subtitle2" color="text.secondary">
+                        Phone
+                      </Typography>
+                      <Typography variant="body1">
+                        {viewStudent.phone || "N/A"}
+                      </Typography>
+                    </Grid>
+                    <Grid item xs={12} sm={6} md={4}>
+                      <Typography variant="subtitle2" color="text.secondary">
+                        Gender
+                      </Typography>
+                      <Typography variant="body1">
+                        {viewStudent.gender
+                          ? viewStudent.gender.charAt(0).toUpperCase() +
+                            viewStudent.gender.slice(1)
+                          : "N/A"}
+                      </Typography>
+                    </Grid>
+                    <Grid item xs={12} sm={6} md={4}>
+                      <Typography variant="subtitle2" color="text.secondary">
+                        Date of Birth
+                      </Typography>
+                      <Typography variant="body1">
+                        {formatDate(viewStudent.dateOfBirth)}
+                      </Typography>
+                    </Grid>
+                    <Grid item xs={12} sm={6} md={4}>
+                      <Typography variant="subtitle2" color="text.secondary">
+                        Joining Date
+                      </Typography>
+                      <Typography variant="body1">
+                        {formatDate(viewStudent.joiningDate)}
+                      </Typography>
+                    </Grid>
+                  </Grid>
+                </Box>
+
+                <Divider />
+
+                {/* Academic Information */}
+                <Box>
+                  <Typography variant="h6" color="primary" gutterBottom>
+                    Academic Information
+                  </Typography>
+                  <Grid container spacing={{ xs: 2, sm: 2 }}>
+                    <Grid item xs={12} sm={6} md={4}>
+                      <Typography variant="subtitle2" color="text.secondary">
+                        School
+                      </Typography>
+                      <Typography variant="body1">
+                        {viewStudent.schoolName || "N/A"}
+                      </Typography>
+                    </Grid>
+                    <Grid item xs={12} sm={6} md={4}>
+                      <Typography variant="subtitle2" color="text.secondary">
+                        Standard
+                      </Typography>
+                      <Typography variant="body1">
+                        {viewStudent.standard?.name || "N/A"}
+                      </Typography>
+                    </Grid>
+                    <Grid item xs={12} sm={6} md={4}>
+                      <Typography variant="subtitle2" color="text.secondary">
+                        Address
+                      </Typography>
+                      <Typography variant="body1">
+                        {viewStudent.address || "N/A"}
+                      </Typography>
+                    </Grid>
+                  </Grid>
+                </Box>
+
+                <Divider />
+
+                {/* Parent Information */}
+                <Box>
+                  <Typography variant="h6" color="primary" gutterBottom>
+                    Parent Information
+                  </Typography>
+                  <Grid container spacing={{ xs: 2, sm: 2 }}>
+                    <Grid item xs={12} sm={6}>
+                      <Typography variant="subtitle2" color="text.secondary">
+                        Parent Name
+                      </Typography>
+                      <Typography variant="body1">
+                        {viewStudent.parentName || "N/A"}
+                      </Typography>
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                      <Typography variant="subtitle2" color="text.secondary">
+                        Parent Phone
+                      </Typography>
+                      <Typography variant="body1">
+                        {viewStudent.parentPhone || "N/A"}
+                      </Typography>
+                    </Grid>
+                  </Grid>
+                </Box>
+
+                <Divider />
+
+                {/* Subjects & Batches */}
+                <Box>
+                  <Typography variant="h6" color="primary" gutterBottom>
+                    Enrolled Subjects & Batches
+                  </Typography>
+                  <Grid container spacing={{ xs: 2, sm: 2 }}>
+                    <Grid item xs={12} md={6}>
+                      <Typography
+                        variant="subtitle2"
+                        color="text.secondary"
+                        gutterBottom
+                      >
+                        Subjects
+                      </Typography>
+                      <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+                        {viewStudent.subjects &&
+                        viewStudent.subjects.length > 0 ? (
+                          viewStudent.subjects.map((subject) => (
+                            <Chip
+                              key={subject._id}
+                              label={subject.name}
+                              color="primary"
+                              variant="outlined"
+                              size="small"
+                            />
+                          ))
+                        ) : (
+                          <Typography variant="body2" color="text.secondary">
+                            No subjects enrolled
+                          </Typography>
+                        )}
+                      </Box>
+                    </Grid>
+                    <Grid item xs={12} md={6}>
+                      <Typography
+                        variant="subtitle2"
+                        color="text.secondary"
+                        gutterBottom
+                      >
+                        Batches
+                      </Typography>
+                      <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+                        {viewStudent.batches &&
+                        viewStudent.batches.length > 0 ? (
+                          viewStudent.batches.map((batch) => (
+                            <Chip
+                              key={batch._id}
+                              label={batch.name}
+                              color="secondary"
+                              variant="outlined"
+                              size="small"
+                            />
+                          ))
+                        ) : (
+                          <Typography variant="body2" color="text.secondary">
+                            No batches assigned
+                          </Typography>
+                        )}
+                      </Box>
+                    </Grid>
+                  </Grid>
+                </Box>
+              </Box>
+            </DialogContent>
+            <DialogActions sx={{ px: 3, pb: 2, flexWrap: "wrap", gap: 1 }}>
+              <Button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleOpen(viewStudent);
+                  handleCloseViewDialog();
+                }}
+                color="primary"
+                variant="outlined"
+                startIcon={<EditIcon />}
+                size={isMobile ? "small" : "medium"}
+              >
+                Edit
+              </Button>
+              <Button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (
+                    window.confirm(
+                      "Are you sure you want to delete this student?"
+                    )
+                  ) {
+                    handleDelete(viewStudent._id);
+                    handleCloseViewDialog();
+                  }
+                }}
+                color="error"
+                variant="outlined"
+                startIcon={<DeleteIcon />}
+                size={isMobile ? "small" : "medium"}
+              >
+                Delete
+              </Button>
+              <Button
+                onClick={handleCloseViewDialog}
+                color="primary"
+                variant="contained"
+                size={isMobile ? "small" : "medium"}
+              >
+                Close
+              </Button>
+            </DialogActions>
+          </>
+        )}
       </Dialog>
     </Box>
   );

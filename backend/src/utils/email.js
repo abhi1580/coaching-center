@@ -2,38 +2,46 @@ import nodemailer from "nodemailer";
 
 export const sendEmail = async (options) => {
   try {
-    // Validate required environment variables
-    if (!process.env.EMAIL_SERVICE || !process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-      throw new Error("Email configuration is missing. Please check your .env file.");
+    // Create test transporter using ethereal email if no SMTP config
+    let transporter;
+    if (!process.env.EMAIL_HOST) {
+      const testAccount = await nodemailer.createTestAccount();
+      transporter = nodemailer.createTransport({
+        host: "smtp.ethereal.email",
+        port: 587,
+        secure: false,
+        auth: {
+          user: testAccount.user,
+          pass: testAccount.pass,
+        },
+      });
+    } else {
+      // Create reusable transporter using the configured SMTP server
+      transporter = nodemailer.createTransport({
+        host: process.env.EMAIL_HOST,
+        port: process.env.EMAIL_PORT,
+        secure: process.env.EMAIL_SECURE === "true",
+        auth: {
+          user: process.env.EMAIL_USERNAME,
+          pass: process.env.EMAIL_PASSWORD,
+        },
+      });
     }
 
-    // Create transporter
-    const transporter = nodemailer.createTransport({
-      service: process.env.EMAIL_SERVICE,
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-    });
-
-    // Verify transporter configuration
-    await transporter.verify();
-
-    // Define email options
-    const message = {
-      from: `${process.env.EMAIL_FROM_NAME || 'Coaching Center'} <${process.env.EMAIL_USER}>`,
+    // Set email options
+    const mailOptions = {
+      from: process.env.EMAIL_FROM || "admin@coachingcenter.com",
       to: options.email,
       subject: options.subject,
       text: options.message,
-      html: options.html || options.message, // Support HTML content if provided
+      html: options.html,
     };
 
     // Send email
-    const info = await transporter.sendMail(message);
-    console.log("Email sent successfully:", info.messageId);
+    const info = await transporter.sendMail(mailOptions);
+
     return info;
   } catch (error) {
-    console.error("Error sending email:", error);
-    throw new Error(`Failed to send email: ${error.message}`);
+    throw error;
   }
-}; 
+};

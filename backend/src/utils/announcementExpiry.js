@@ -3,19 +3,16 @@ import Announcement from "../models/Announcement.js";
 export const checkAndExpireAnnouncements = async () => {
   try {
     const now = new Date();
-    const expiredAnnouncements = await Announcement.find({
-      endTime: { $lt: now },
-      status: "Active",
-    });
 
-    if (expiredAnnouncements.length > 0) {
-      await Announcement.updateMany(
-        { _id: { $in: expiredAnnouncements.map((a) => a._id) } },
-        { $set: { status: "Expired" } }
-      );
-      console.log(`Expired ${expiredAnnouncements.length} announcements`);
-    }
+    // Find announcements that have passed their end date
+    const expiredAnnouncements = await Announcement.updateMany(
+      {
+        endDate: { $lt: now },
+        status: { $ne: "expired" },
+      },
+      { $set: { status: "expired" } }
+    );
   } catch (error) {
-    console.error("Error in checking announcement expiry:", error);
+    // Error handled silently
   }
 };

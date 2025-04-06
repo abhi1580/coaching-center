@@ -103,8 +103,14 @@ announcementSchema.statics.updateAnnouncementStatuses = async function () {
 
 // Pre-find middleware to update statuses before querying
 announcementSchema.pre("find", function (next) {
-  this.model.updateAnnouncementStatuses().catch(console.error);
+  this.model.updateAnnouncementStatuses().catch(() => {});
   next();
+});
+
+// Update announcement statuses on save
+announcementSchema.post("save", function () {
+  // Update statuses silently
+  this.model.updateAnnouncementStatuses().catch(() => {});
 });
 
 const Announcement = mongoose.model("Announcement", announcementSchema);

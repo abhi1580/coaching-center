@@ -1,41 +1,31 @@
 const errorHandler = (err, req, res, next) => {
-  let error = { ...err };
-  error.message = err.message;
+  // Set default status code to 500
+  let statusCode = err.statusCode || 500;
+  let message = err.message || "Server Error";
 
-  // Log error for development
-  console.error(err);
-
+  // Handle specific error types
   // Mongoose bad ObjectId
   if (err.name === "CastError") {
-    error.message = "Resource not found";
-    return res.status(404).json({
-      success: false,
-      message: error.message,
-    });
+    message = "Resource not found";
+    statusCode = 404;
   }
 
   // Mongoose duplicate key
   if (err.code === 11000) {
-    error.message = "Duplicate field value entered";
-    return res.status(400).json({
-      success: false,
-      message: error.message,
-    });
+    message = "Duplicate field value entered";
+    statusCode = 400;
   }
 
   // Mongoose validation error
   if (err.name === "ValidationError") {
-    error.message = Object.values(err.errors).map((val) => val.message);
-    return res.status(400).json({
-      success: false,
-      message: error.message,
-    });
+    message = Object.values(err.errors).map((val) => val.message);
+    statusCode = 400;
   }
 
-  // Default error
-  res.status(error.statusCode || 500).json({
+  res.status(statusCode).json({
     success: false,
-    message: error.message || "Server Error",
+    message,
+    ...(process.env.NODE_ENV === "development" && { stack: err.stack }),
   });
 };
 

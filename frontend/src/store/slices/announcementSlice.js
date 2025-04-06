@@ -6,12 +6,41 @@ export const fetchAnnouncements = createAsyncThunk(
   "announcements/fetchAnnouncements",
   async (_, { rejectWithValue }) => {
     try {
+      console.log("Fetching announcements...");
       const response = await api.get("/announcements");
+      console.log("Raw response:", response);
+
+      // If the API returned no data or empty data, provide a fallback structure
+      if (
+        !response.data ||
+        (response.data && Object.keys(response.data).length === 0)
+      ) {
+        console.log("No data returned from API, using fallback");
+        return {
+          data: [],
+          counts: {
+            total: 0,
+            active: 0,
+            scheduled: 0,
+            expired: 0,
+          },
+        };
+      }
+
       return response.data;
     } catch (error) {
-      return rejectWithValue(
-        error.response?.data || { message: error.message }
-      );
+      console.error("Error in fetchAnnouncements:", error);
+
+      // Provide a more detailed error message
+      const errorMessage =
+        error.response?.data?.message ||
+        error.message ||
+        "Failed to fetch announcements";
+
+      return rejectWithValue({
+        message: errorMessage,
+        status: error.response?.status || 500,
+      });
     }
   }
 );
@@ -105,8 +134,40 @@ const announcementSlice = createSlice({
       })
       .addCase(fetchAnnouncements.fulfilled, (state, action) => {
         state.loading = false;
-        state.data = action.payload.data;
-        state.counts = action.payload.counts;
+
+        // Handle different response formats
+        if (action.payload && action.payload.data) {
+          // API returns { data: [...], counts: {...} }
+          state.data = action.payload.data;
+          state.counts = action.payload.counts || {
+            total: action.payload.data.length,
+            active: 0,
+            scheduled: 0,
+            expired: 0,
+          };
+        } else if (Array.isArray(action.payload)) {
+          // API returns array directly
+          state.data = action.payload;
+          state.counts = {
+            total: action.payload.length,
+            active: 0,
+            scheduled: 0,
+            expired: 0,
+          };
+        } else {
+          // Fallback
+          state.data = [];
+          state.counts = {
+            total: 0,
+            active: 0,
+            scheduled: 0,
+            expired: 0,
+          };
+        }
+
+        // Log for debugging
+        console.log("Received announcements data:", action.payload);
+        console.log("Processed data:", state.data);
       })
       .addCase(fetchAnnouncements.rejected, (state, action) => {
         state.loading = false;

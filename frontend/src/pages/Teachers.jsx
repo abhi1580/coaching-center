@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   Box,
@@ -26,6 +26,12 @@ import {
   AccordionSummary,
   AccordionDetails,
   InputAdornment,
+  Card,
+  CardContent,
+  CardActions,
+  Stack,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 import {
   Add as AddIcon,
@@ -35,6 +41,9 @@ import {
   Search as SearchIcon,
   ExpandMore as ExpandMoreIcon,
   Clear as ClearIcon,
+  Phone as PhoneIcon,
+  Email as EmailIcon,
+  School as SchoolIcon,
 } from "@mui/icons-material";
 import { Formik, Form } from "formik";
 import * as Yup from "yup";
@@ -46,6 +55,7 @@ import {
   createTeacher,
   deleteTeacher,
 } from "../store/slices/teacherSlice";
+import RefreshButton from "../components/RefreshButton";
 
 const validationSchema = (isEdit) =>
   Yup.object({
@@ -85,6 +95,9 @@ const validationSchema = (isEdit) =>
 
 const Teachers = () => {
   const dispatch = useDispatch();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const isTablet = useMediaQuery(theme.breakpoints.down("md"));
   const { subjects } = useSelector((state) => state.subjects);
   const {
     teachers,
@@ -95,6 +108,7 @@ const Teachers = () => {
   const [selectedTeacher, setSelectedTeacher] = useState(null);
   const [success, setSuccess] = useState(null);
   const [error, setError] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
 
   // Filter state
   const [nameFilter, setNameFilter] = useState("");
@@ -103,6 +117,12 @@ const Teachers = () => {
   const [qualificationFilter, setQualificationFilter] = useState("");
   const [filteredTeachers, setFilteredTeachers] = useState([]);
   const [filterExpanded, setFilterExpanded] = useState(false);
+
+  // Add loadAllData function for refresh button
+  const loadAllData = useCallback(() => {
+    dispatch(fetchTeachers());
+    dispatch(fetchSubjects());
+  }, [dispatch]);
 
   useEffect(() => {
     dispatch(fetchTeachers());
@@ -188,6 +208,8 @@ const Teachers = () => {
     { setSubmitting, resetForm, setErrors }
   ) => {
     try {
+      setSubmitting(true);
+
       const subjectIds = Array.isArray(values.subjects)
         ? values.subjects.filter((id) => id && id.trim() !== "")
         : [];
@@ -201,55 +223,38 @@ const Teachers = () => {
         }
       }
 
-      // Prepare data for submission
-      const formData = {
+      // Create the payload
+      const payload = {
         ...values,
         subjects: subjectIds,
-        status: values.status || "active",
         joiningDate: formattedJoiningDate,
       };
 
-      // For updates, only include password if it's provided and not empty
-      if (selectedTeacher) {
-        if (!values.password || values.password.trim() === "") {
-          delete formData.password;
-        }
+      // Remove password if it's empty in edit mode
+      if (selectedTeacher && !values.password) {
+        delete payload.password;
       }
 
-      console.log("Submitting teacher data:", formData);
-
-      let result;
       if (selectedTeacher) {
-        console.log(`Updating teacher with ID ${selectedTeacher._id}`);
-        result = await dispatch(
-          updateTeacher({ id: selectedTeacher._id, data: formData })
+        await dispatch(
+          updateTeacher({ id: selectedTeacher._id, data: payload })
         ).unwrap();
-        console.log("Update result:", result);
         setSuccess("Teacher updated successfully");
       } else {
-        console.log("Creating new teacher");
-        result = await dispatch(createTeacher(formData)).unwrap();
-        console.log("Create result:", result);
-        setSuccess("Teacher added successfully");
+        await dispatch(createTeacher(payload)).unwrap();
+        setSuccess("Teacher created successfully");
+        resetForm();
       }
 
-      // Refresh teacher list to ensure we have the latest data
-      dispatch(fetchTeachers());
+      // Close the dialog
       handleClose();
-      resetForm();
     } catch (err) {
       console.error("Error saving teacher:", err);
-
-      // Handle backend validation errors
-      if (err.response?.data?.errors) {
-        const backendErrors = err.response.data.errors.reduce((acc, error) => {
-          acc[error.param] = error.msg;
-          return acc;
-        }, {});
-        setErrors(backendErrors);
-      } else {
-        setError(err.message || "Failed to save teacher");
-      }
+      setError(
+        err.response?.data?.message ||
+          err.message ||
+          "Error saving teacher. Please try again."
+      );
     } finally {
       setSubmitting(false);
     }
@@ -283,23 +288,37 @@ const Teachers = () => {
   }
 
   return (
-    <Box sx={{ p: 3 }}>
+    <Box sx={{ p: { xs: 1, sm: 2, md: 3 } }}>
       <Box
         sx={{
           display: "flex",
+          flexDirection: { xs: "column", sm: "row" },
           justifyContent: "space-between",
-          alignItems: "center",
+          alignItems: { xs: "flex-start", sm: "center" },
           mb: 3,
+          gap: { xs: 1, sm: 0 },
         }}
       >
-        <Typography variant="h4" component="h1">
-          Teachers
-        </Typography>
+        <Box sx={{ display: "flex", alignItems: "center" }}>
+          <Typography
+            variant="h4"
+            component="h1"
+            sx={{ fontSize: { xs: "1.5rem", sm: "2rem", md: "2.125rem" } }}
+          >
+            Teachers
+          </Typography>
+          <RefreshButton
+            onRefresh={loadAllData}
+            tooltip="Refresh teachers data"
+            sx={{ ml: 1 }}
+          />
+        </Box>
         <Button
           variant="contained"
           color="primary"
           startIcon={<AddIcon />}
           onClick={() => handleOpen()}
+          sx={{ alignSelf: { xs: "flex-start", sm: "auto" } }}
         >
           Add Teacher
         </Button>
@@ -317,43 +336,36 @@ const Teachers = () => {
         </Alert>
       )}
 
-      {/* Filter Section */}
+      {/* Filter Accordion */}
       <Accordion
         expanded={filterExpanded}
         onChange={() => setFilterExpanded(!filterExpanded)}
         sx={{ mb: 2 }}
       >
-        <AccordionSummary
-          expandIcon={<ExpandMoreIcon />}
-          aria-controls="filter-panel-content"
-          id="filter-panel-header"
-        >
-          <Box sx={{ display: "flex", alignItems: "center" }}>
-            <FilterIcon sx={{ mr: 1 }} />
-            <Typography>Filter Teachers</Typography>
+        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <FilterIcon color="primary" />
+            <Typography>Filters</Typography>
             {(nameFilter ||
               subjectFilter ||
               statusFilter ||
               qualificationFilter) && (
               <Chip
-                label={`${
-                  Object.values([
-                    nameFilter,
-                    subjectFilter,
-                    statusFilter,
-                    qualificationFilter,
-                  ]).filter(Boolean).length
-                } active`}
+                label={`${[
+                  nameFilter ? 1 : 0,
+                  subjectFilter ? 1 : 0,
+                  statusFilter ? 1 : 0,
+                  qualificationFilter ? 1 : 0,
+                ].reduce((a, b) => a + b, 0)} active`}
                 size="small"
                 color="primary"
-                sx={{ ml: 1 }}
               />
             )}
           </Box>
         </AccordionSummary>
         <AccordionDetails>
-          <Grid container spacing={2} alignItems="center">
-            <Grid item xs={12} sm={3}>
+          <Grid container spacing={2}>
+            <Grid item xs={12} sm={6} md={3}>
               <TextField
                 fullWidth
                 label="Search by Name/Email"
@@ -371,14 +383,14 @@ const Teachers = () => {
                         size="small"
                         onClick={() => setNameFilter("")}
                       >
-                        <ClearIcon fontSize="small" />
+                        <ClearIcon />
                       </IconButton>
                     </InputAdornment>
                   ),
                 }}
               />
             </Grid>
-            <Grid item xs={12} sm={3}>
+            <Grid item xs={12} sm={6} md={3}>
               <TextField
                 select
                 fullWidth
@@ -394,23 +406,23 @@ const Teachers = () => {
                 ))}
               </TextField>
             </Grid>
-            <Grid item xs={12} sm={2}>
+            <Grid item xs={12} sm={6} md={3}>
               <TextField
                 select
                 fullWidth
-                label="Status"
+                label="Filter by Status"
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
               >
-                <MenuItem value="">All Status</MenuItem>
+                <MenuItem value="">All Statuses</MenuItem>
                 <MenuItem value="active">Active</MenuItem>
                 <MenuItem value="inactive">Inactive</MenuItem>
               </TextField>
             </Grid>
-            <Grid item xs={12} sm={3}>
+            <Grid item xs={12} sm={6} md={3}>
               <TextField
                 fullWidth
-                label="Qualification"
+                label="Filter by Qualification"
                 value={qualificationFilter}
                 onChange={(e) => setQualificationFilter(e.target.value)}
                 InputProps={{
@@ -420,27 +432,29 @@ const Teachers = () => {
                         size="small"
                         onClick={() => setQualificationFilter("")}
                       >
-                        <ClearIcon fontSize="small" />
+                        <ClearIcon />
                       </IconButton>
                     </InputAdornment>
                   ),
                 }}
               />
             </Grid>
-            <Grid item xs={12} sm={1}>
-              <Button
-                variant="outlined"
-                onClick={clearFilters}
-                fullWidth
-                disabled={
-                  !nameFilter &&
-                  !subjectFilter &&
-                  !statusFilter &&
-                  !qualificationFilter
-                }
-              >
-                Clear
-              </Button>
+            <Grid item xs={12}>
+              <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
+                <Button
+                  variant="outlined"
+                  startIcon={<ClearIcon />}
+                  onClick={clearFilters}
+                  disabled={
+                    !nameFilter &&
+                    !subjectFilter &&
+                    !statusFilter &&
+                    !qualificationFilter
+                  }
+                >
+                  Clear Filters
+                </Button>
+              </Box>
             </Grid>
           </Grid>
         </AccordionDetails>
@@ -465,393 +479,525 @@ const Teachers = () => {
         )}
       </Box>
 
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Name</TableCell>
-              <TableCell>Contact</TableCell>
-              <TableCell>Professional Info</TableCell>
-              <TableCell>Subjects</TableCell>
-              <TableCell>Status</TableCell>
-              <TableCell>Actions</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {filteredTeachers.map((teacher) => (
-              <TableRow key={teacher._id}>
-                <TableCell>
-                  <Box>
-                    <Typography variant="subtitle1" fontWeight="bold">
-                      {teacher.name}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {teacher.email}
-                    </Typography>
-                  </Box>
-                </TableCell>
-                <TableCell>
-                  <Box>
-                    <Typography variant="body2">{teacher.phone}</Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {teacher.address}
-                    </Typography>
-                  </Box>
-                </TableCell>
-                <TableCell>
-                  <Box>
-                    <Typography variant="body2">
-                      {teacher.qualification}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {teacher.experience} years exp.
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      ₹{teacher.salary}/month
-                    </Typography>
-                  </Box>
-                </TableCell>
-                <TableCell>
-                  <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
-                    {teacher.subjects?.map((subjectId) => {
-                      const subject = subjects.find((s) => s._id === subjectId);
-                      return (
-                        <Chip
-                          key={subjectId}
-                          label={subject?.name || subjectId}
-                          size="small"
-                          color="primary"
-                          variant="outlined"
-                        />
-                      );
-                    })}
-                  </Box>
-                </TableCell>
-                <TableCell>
-                  <Chip
-                    label={teacher.status}
-                    color={teacher.status === "active" ? "success" : "error"}
-                    size="small"
-                  />
-                </TableCell>
-                <TableCell>
-                  <Box sx={{ display: "flex", gap: 1 }}>
-                    <IconButton
-                      color="primary"
-                      onClick={() => handleOpen(teacher)}
-                      size="small"
-                    >
-                      <EditIcon />
-                    </IconButton>
-                    <IconButton
-                      color="error"
-                      onClick={() => handleDelete(teacher._id)}
-                      size="small"
-                    >
-                      <DeleteIcon />
-                    </IconButton>
-                  </Box>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+      )}
 
+      {success && (
+        <Alert severity="success" sx={{ mb: 2 }}>
+          {success}
+        </Alert>
+      )}
+
+      {loading && filteredTeachers.length === 0 ? (
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            minHeight: "60vh",
+          }}
+        >
+          <CircularProgress />
+        </Box>
+      ) : (
+        <>
+          {isMobile ? (
+            // Mobile card view
+            <Stack spacing={2}>
+              {filteredTeachers.length > 0 ? (
+                filteredTeachers.map((teacher) => (
+                  <Card key={teacher._id} sx={{ width: "100%" }}>
+                    <CardContent>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          mb: 2,
+                        }}
+                      >
+                        <Typography variant="h6" component="div">
+                          {teacher.name}
+                        </Typography>
+                        <Chip
+                          label={teacher.status}
+                          color={
+                            teacher.status === "active" ? "success" : "default"
+                          }
+                          size="small"
+                        />
+                      </Box>
+
+                      <Box
+                        sx={{ display: "flex", alignItems: "center", mb: 1 }}
+                      >
+                        <PhoneIcon
+                          fontSize="small"
+                          color="action"
+                          sx={{ mr: 1 }}
+                        />
+                        <Typography variant="body2">{teacher.phone}</Typography>
+                      </Box>
+
+                      <Box
+                        sx={{ display: "flex", alignItems: "center", mb: 1 }}
+                      >
+                        <EmailIcon
+                          fontSize="small"
+                          color="action"
+                          sx={{ mr: 1 }}
+                        />
+                        <Typography variant="body2">{teacher.email}</Typography>
+                      </Box>
+
+                      <Box sx={{ mt: 2 }}>
+                        <Typography
+                          variant="subtitle2"
+                          color="text.secondary"
+                          gutterBottom
+                        >
+                          Subjects
+                        </Typography>
+                        <Box
+                          sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}
+                        >
+                          {teacher.subjects?.length > 0 ? (
+                            teacher.subjects.map((subjectId) => {
+                              const subject = subjects.find(
+                                (s) =>
+                                  s._id === subjectId || s._id === subjectId._id
+                              );
+                              return subject ? (
+                                <Chip
+                                  key={subject._id}
+                                  label={subject.name}
+                                  size="small"
+                                  sx={{ mr: 0.5, mb: 0.5 }}
+                                />
+                              ) : null;
+                            })
+                          ) : (
+                            <Typography variant="body2" color="text.secondary">
+                              No subjects assigned
+                            </Typography>
+                          )}
+                        </Box>
+                      </Box>
+
+                      <Box sx={{ mt: 1 }}>
+                        <Typography variant="subtitle2" color="text.secondary">
+                          Qualification
+                        </Typography>
+                        <Typography variant="body2">
+                          {teacher.qualification} ({teacher.experience} years
+                          experience)
+                        </Typography>
+                      </Box>
+                    </CardContent>
+                    <CardActions>
+                      <Button
+                        size="small"
+                        startIcon={<EditIcon />}
+                        onClick={() => handleOpen(teacher)}
+                      >
+                        Edit
+                      </Button>
+                      <Button
+                        size="small"
+                        color="error"
+                        startIcon={<DeleteIcon />}
+                        onClick={() => handleDelete(teacher._id)}
+                      >
+                        Delete
+                      </Button>
+                    </CardActions>
+                  </Card>
+                ))
+              ) : (
+                <Typography align="center" sx={{ py: 3 }}>
+                  No teachers found
+                </Typography>
+              )}
+            </Stack>
+          ) : (
+            // Desktop table view
+            <TableContainer component={Paper}>
+              <Table size={isTablet ? "small" : "medium"}>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Name</TableCell>
+                    <TableCell>Contact</TableCell>
+                    <TableCell>Subjects</TableCell>
+                    {!isTablet && <TableCell>Qualification</TableCell>}
+                    {!isTablet && <TableCell>Experience</TableCell>}
+                    <TableCell>Status</TableCell>
+                    <TableCell align="right">Actions</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {filteredTeachers.length > 0 ? (
+                    filteredTeachers.map((teacher) => (
+                      <TableRow key={teacher._id}>
+                        <TableCell>{teacher.name}</TableCell>
+                        <TableCell>
+                          <Typography variant="body2">
+                            {teacher.email}
+                          </Typography>
+                          <Typography variant="body2">
+                            {teacher.phone}
+                          </Typography>
+                        </TableCell>
+                        <TableCell>
+                          <Box
+                            sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}
+                          >
+                            {teacher.subjects?.length > 0 ? (
+                              teacher.subjects.map((subjectId) => {
+                                const subject = subjects.find(
+                                  (s) =>
+                                    s._id === subjectId ||
+                                    s._id === subjectId._id
+                                );
+                                return subject ? (
+                                  <Chip
+                                    key={subject._id}
+                                    label={subject.name}
+                                    size="small"
+                                    sx={{ mr: 0.5, mb: 0.5 }}
+                                  />
+                                ) : null;
+                              })
+                            ) : (
+                              <Typography variant="caption">
+                                No subjects
+                              </Typography>
+                            )}
+                          </Box>
+                        </TableCell>
+                        {!isTablet && (
+                          <TableCell>{teacher.qualification}</TableCell>
+                        )}
+                        {!isTablet && (
+                          <TableCell>{teacher.experience} years</TableCell>
+                        )}
+                        <TableCell>
+                          <Chip
+                            label={teacher.status}
+                            color={
+                              teacher.status === "active"
+                                ? "success"
+                                : "default"
+                            }
+                            size="small"
+                          />
+                        </TableCell>
+                        <TableCell align="right">
+                          <IconButton
+                            color="primary"
+                            size="small"
+                            onClick={() => handleOpen(teacher)}
+                            sx={{ mr: 1 }}
+                          >
+                            <EditIcon fontSize="small" />
+                          </IconButton>
+                          <IconButton
+                            color="error"
+                            size="small"
+                            onClick={() => handleDelete(teacher._id)}
+                          >
+                            <DeleteIcon fontSize="small" />
+                          </IconButton>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={isTablet ? 5 : 7} align="center">
+                        No teachers found
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
+        </>
+      )}
+
+      {/* Add/Edit Dialog */}
       <Dialog
         open={open}
         onClose={handleClose}
         maxWidth="md"
         fullWidth
-        PaperProps={{
-          sx: { minHeight: "50vh" },
-        }}
+        fullScreen={isMobile}
       >
         <DialogTitle>
           {selectedTeacher ? "Edit Teacher" : "Add New Teacher"}
         </DialogTitle>
-        <DialogContent>
-          <Box sx={{ mt: 2 }}>
-            <Formik
-              initialValues={{
-                name: selectedTeacher?.name || "",
-                email: selectedTeacher?.email || "",
-                password: "", // Always start with empty password
-                phone: selectedTeacher?.phone || "",
-                gender: selectedTeacher?.gender || "male",
-                address: selectedTeacher?.address || "",
-                subjects: selectedTeacher?.subjects || [],
-                qualification: selectedTeacher?.qualification || "",
-                experience: selectedTeacher?.experience || "",
-                status: selectedTeacher?.status || "active",
-                salary: selectedTeacher?.salary || "",
-                joiningDate: selectedTeacher?.joiningDate
-                  ? new Date(selectedTeacher.joiningDate)
-                      .toISOString()
-                      .split("T")[0]
-                  : "",
-              }}
-              validationSchema={validationSchema(!!selectedTeacher)}
-              validateOnChange={true}
-              validateOnBlur={true}
-              onSubmit={handleSubmit}
-              validateOnMount={false}
-              enableReinitialize={true} // Update form when selectedTeacher changes
-            >
-              {({
-                values,
-                errors,
-                touched,
-                handleChange,
-                handleBlur,
-                handleSubmit,
-                isSubmitting,
-                setFieldValue,
-                isValid,
-                dirty,
-              }) => (
-                <form onSubmit={handleSubmit}>
-                  <Grid container spacing={2}>
-                    {/* Personal Information Section */}
-                    <Grid item xs={12}>
-                      <Typography variant="h6" color="primary" gutterBottom>
-                        Personal Information
-                      </Typography>
-                    </Grid>
-                    <Grid item xs={12} sm={6}>
-                      <TextField
-                        fullWidth
-                        name="name"
-                        label="Name"
-                        value={values.name}
-                        onChange={handleChange}
-                        onBlur={handleBlur}
-                        error={touched.name && Boolean(errors.name)}
-                        helperText={touched.name && errors.name}
-                      />
-                    </Grid>
-                    <Grid item xs={12} sm={6}>
-                      <TextField
-                        fullWidth
-                        name="email"
-                        label="Email"
-                        type="email"
-                        value={values.email}
-                        onChange={handleChange}
-                        onBlur={handleBlur}
-                        error={touched.email && Boolean(errors.email)}
-                        helperText={touched.email && errors.email}
-                      />
-                    </Grid>
-                    <Grid item xs={12} sm={6}>
-                      <TextField
-                        fullWidth
-                        name="password"
-                        label={
-                          selectedTeacher
-                            ? "New Password (Optional)"
-                            : "Password"
-                        }
-                        type="password"
-                        value={values.password}
-                        onChange={handleChange}
-                        onBlur={handleBlur}
-                        error={touched.password && Boolean(errors.password)}
-                        helperText={touched.password && errors.password}
-                      />
-                    </Grid>
-                    <Grid item xs={12} sm={6}>
-                      <TextField
-                        fullWidth
-                        name="phone"
-                        label="Phone"
-                        value={values.phone}
-                        onChange={handleChange}
-                        onBlur={handleBlur}
-                        error={touched.phone && Boolean(errors.phone)}
-                        helperText={touched.phone && errors.phone}
-                      />
-                    </Grid>
-                    <Grid item xs={12} sm={6}>
-                      <TextField
-                        fullWidth
-                        select
-                        name="gender"
-                        label="Gender"
-                        value={values.gender}
-                        onChange={handleChange}
-                        onBlur={handleBlur}
-                        error={touched.gender && Boolean(errors.gender)}
-                        helperText={touched.gender && errors.gender}
-                      >
-                        <MenuItem value="male">Male</MenuItem>
-                        <MenuItem value="female">Female</MenuItem>
-                        <MenuItem value="other">Other</MenuItem>
-                      </TextField>
-                    </Grid>
-                    <Grid item xs={12}>
-                      <TextField
-                        fullWidth
-                        name="address"
-                        label="Address"
-                        multiline
-                        rows={2}
-                        value={values.address}
-                        onChange={handleChange}
-                        onBlur={handleBlur}
-                        error={touched.address && Boolean(errors.address)}
-                        helperText={touched.address && errors.address}
-                      />
-                    </Grid>
-
-                    {/* Professional Information Section */}
-                    <Grid item xs={12}>
-                      <Typography
-                        variant="h6"
-                        color="primary"
-                        gutterBottom
-                        sx={{ mt: 2 }}
-                      >
-                        Professional Information
-                      </Typography>
-                    </Grid>
-                    <Grid item xs={12}>
-                      <TextField
-                        select
-                        fullWidth
-                        name="subjects"
-                        label="Subjects"
-                        value={values.subjects}
-                        onChange={handleChange}
-                        error={touched.subjects && Boolean(errors.subjects)}
-                        helperText={touched.subjects && errors.subjects}
-                        SelectProps={{
-                          multiple: true,
-                          renderValue: (selected) => (
-                            <Box
-                              sx={{
-                                display: "flex",
-                                flexWrap: "wrap",
-                                gap: 0.5,
-                              }}
-                            >
-                              {selected.map((value) => (
-                                <Chip
-                                  key={value}
-                                  label={
-                                    subjects.find((s) => s._id === value)
-                                      ?.name || value
-                                  }
-                                />
-                              ))}
-                            </Box>
-                          ),
-                        }}
-                      >
-                        {subjects.map((subject) => (
-                          <MenuItem key={subject._id} value={subject._id}>
-                            {subject.name}
-                          </MenuItem>
-                        ))}
-                      </TextField>
-                    </Grid>
-                    <Grid item xs={12} sm={6}>
-                      <TextField
-                        fullWidth
-                        name="qualification"
-                        label="Qualification"
-                        value={values.qualification}
-                        onChange={handleChange}
-                        onBlur={handleBlur}
-                        error={
-                          touched.qualification && Boolean(errors.qualification)
-                        }
-                        helperText={
-                          touched.qualification && errors.qualification
-                        }
-                      />
-                    </Grid>
-                    <Grid item xs={12} sm={6}>
-                      <TextField
-                        fullWidth
-                        name="experience"
-                        label="Experience (years)"
-                        type="number"
-                        value={values.experience}
-                        onChange={handleChange}
-                        onBlur={handleBlur}
-                        error={touched.experience && Boolean(errors.experience)}
-                        helperText={touched.experience && errors.experience}
-                      />
-                    </Grid>
-                    <Grid item xs={12} sm={6}>
-                      <TextField
-                        fullWidth
-                        name="salary"
-                        label="Salary"
-                        type="number"
-                        value={values.salary}
-                        onChange={handleChange}
-                        onBlur={handleBlur}
-                        error={touched.salary && Boolean(errors.salary)}
-                        helperText={touched.salary && errors.salary}
-                      />
-                    </Grid>
-                    <Grid item xs={12} sm={6}>
-                      <TextField
-                        fullWidth
-                        name="joiningDate"
-                        label="Joining Date"
-                        type="date"
-                        value={values.joiningDate || ""}
-                        onChange={handleChange}
-                        onBlur={handleBlur}
-                        error={
-                          touched.joiningDate && Boolean(errors.joiningDate)
-                        }
-                        helperText={touched.joiningDate && errors.joiningDate}
-                        InputLabelProps={{ shrink: true }}
-                      />
-                    </Grid>
-                    <Grid item xs={12} sm={6}>
-                      <TextField
-                        fullWidth
-                        select
-                        name="status"
-                        label="Status"
-                        value={values.status}
-                        onChange={handleChange}
-                        onBlur={handleBlur}
-                        error={touched.status && Boolean(errors.status)}
-                        helperText={touched.status && errors.status}
-                      >
-                        <MenuItem value="active">Active</MenuItem>
-                        <MenuItem value="inactive">Inactive</MenuItem>
-                      </TextField>
-                    </Grid>
+        <Formik
+          initialValues={{
+            name: selectedTeacher?.name || "",
+            email: selectedTeacher?.email || "",
+            password: "", // Don't prefill password for security
+            phone: selectedTeacher?.phone || "",
+            gender: selectedTeacher?.gender || "",
+            address: selectedTeacher?.address || "",
+            subjects: selectedTeacher?.subjects
+              ? Array.isArray(selectedTeacher.subjects)
+                ? selectedTeacher.subjects.map((s) =>
+                    typeof s === "object" && s._id ? s._id : s
+                  )
+                : []
+              : [],
+            qualification: selectedTeacher?.qualification || "",
+            experience: selectedTeacher?.experience || 0,
+            joiningDate: selectedTeacher?.joiningDate
+              ? new Date(selectedTeacher.joiningDate)
+                  .toISOString()
+                  .split("T")[0]
+              : "",
+            salary: selectedTeacher?.salary || 0,
+            status: selectedTeacher?.status || "active",
+          }}
+          validationSchema={validationSchema(!!selectedTeacher)}
+          onSubmit={handleSubmit}
+        >
+          {({
+            values,
+            errors,
+            touched,
+            handleChange,
+            handleBlur,
+            handleSubmit,
+            isSubmitting,
+            setFieldValue,
+          }) => (
+            <Form onSubmit={handleSubmit}>
+              <DialogContent>
+                <Grid container spacing={2}>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      fullWidth
+                      label="Name"
+                      name="name"
+                      value={values.name}
+                      onChange={handleChange}
+                      onBlur={handleBlur}
+                      error={touched.name && Boolean(errors.name)}
+                      helperText={touched.name && errors.name}
+                      margin="dense"
+                    />
                   </Grid>
-                  <DialogActions sx={{ mt: 2 }}>
-                    <Button onClick={handleClose}>Cancel</Button>
-                    <Button
-                      type="submit"
-                      variant="contained"
-                      color="primary"
-                      disabled={isSubmitting}
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      fullWidth
+                      label="Email"
+                      name="email"
+                      type="email"
+                      value={values.email}
+                      onChange={handleChange}
+                      onBlur={handleBlur}
+                      error={touched.email && Boolean(errors.email)}
+                      helperText={touched.email && errors.email}
+                      margin="dense"
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      fullWidth
+                      label={
+                        selectedTeacher ? "New Password (optional)" : "Password"
+                      }
+                      name="password"
+                      type="password"
+                      value={values.password}
+                      onChange={handleChange}
+                      onBlur={handleBlur}
+                      error={touched.password && Boolean(errors.password)}
+                      helperText={
+                        (touched.password && errors.password) ||
+                        (selectedTeacher &&
+                          "Leave blank to keep current password")
+                      }
+                      margin="dense"
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      fullWidth
+                      label="Phone"
+                      name="phone"
+                      value={values.phone}
+                      onChange={handleChange}
+                      onBlur={handleBlur}
+                      error={touched.phone && Boolean(errors.phone)}
+                      helperText={touched.phone && errors.phone}
+                      margin="dense"
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      select
+                      fullWidth
+                      label="Gender"
+                      name="gender"
+                      value={values.gender}
+                      onChange={handleChange}
+                      onBlur={handleBlur}
+                      error={touched.gender && Boolean(errors.gender)}
+                      helperText={touched.gender && errors.gender}
+                      margin="dense"
                     >
-                      {isSubmitting ? (
-                        <CircularProgress size={24} />
-                      ) : selectedTeacher ? (
-                        "Update"
-                      ) : (
-                        "Add"
-                      )}
-                    </Button>
-                  </DialogActions>
-                </form>
-              )}
-            </Formik>
-          </Box>
-        </DialogContent>
+                      <MenuItem value="male">Male</MenuItem>
+                      <MenuItem value="female">Female</MenuItem>
+                      <MenuItem value="other">Other</MenuItem>
+                    </TextField>
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      fullWidth
+                      label="Address"
+                      name="address"
+                      value={values.address}
+                      onChange={handleChange}
+                      onBlur={handleBlur}
+                      error={touched.address && Boolean(errors.address)}
+                      helperText={touched.address && errors.address}
+                      margin="dense"
+                    />
+                  </Grid>
+                  <Grid item xs={12}>
+                    <TextField
+                      select
+                      fullWidth
+                      SelectProps={{ multiple: true }}
+                      label="Subjects"
+                      name="subjects"
+                      value={values.subjects}
+                      onChange={handleChange}
+                      onBlur={handleBlur}
+                      error={touched.subjects && Boolean(errors.subjects)}
+                      helperText={touched.subjects && errors.subjects}
+                      margin="dense"
+                    >
+                      {subjects.map((subject) => (
+                        <MenuItem key={subject._id} value={subject._id}>
+                          {subject.name}
+                        </MenuItem>
+                      ))}
+                    </TextField>
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      fullWidth
+                      label="Qualification"
+                      name="qualification"
+                      value={values.qualification}
+                      onChange={handleChange}
+                      onBlur={handleBlur}
+                      error={
+                        touched.qualification && Boolean(errors.qualification)
+                      }
+                      helperText={touched.qualification && errors.qualification}
+                      margin="dense"
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      fullWidth
+                      label="Experience (Years)"
+                      name="experience"
+                      type="number"
+                      value={values.experience}
+                      onChange={handleChange}
+                      onBlur={handleBlur}
+                      error={touched.experience && Boolean(errors.experience)}
+                      helperText={touched.experience && errors.experience}
+                      inputProps={{ min: 0 }}
+                      margin="dense"
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      fullWidth
+                      label="Joining Date"
+                      name="joiningDate"
+                      type="date"
+                      value={values.joiningDate}
+                      onChange={handleChange}
+                      onBlur={handleBlur}
+                      error={touched.joiningDate && Boolean(errors.joiningDate)}
+                      helperText={touched.joiningDate && errors.joiningDate}
+                      InputLabelProps={{ shrink: true }}
+                      margin="dense"
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      fullWidth
+                      label="Salary"
+                      name="salary"
+                      type="number"
+                      value={values.salary}
+                      onChange={handleChange}
+                      onBlur={handleBlur}
+                      error={touched.salary && Boolean(errors.salary)}
+                      helperText={touched.salary && errors.salary}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">₹</InputAdornment>
+                        ),
+                      }}
+                      inputProps={{ min: 0 }}
+                      margin="dense"
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      select
+                      fullWidth
+                      label="Status"
+                      name="status"
+                      value={values.status}
+                      onChange={handleChange}
+                      onBlur={handleBlur}
+                      error={touched.status && Boolean(errors.status)}
+                      helperText={touched.status && errors.status}
+                      margin="dense"
+                    >
+                      <MenuItem value="active">Active</MenuItem>
+                      <MenuItem value="inactive">Inactive</MenuItem>
+                    </TextField>
+                  </Grid>
+                </Grid>
+              </DialogContent>
+              <DialogActions
+                sx={{ px: { xs: 2, sm: 3 }, pb: { xs: 2, sm: 2 } }}
+              >
+                <Button onClick={handleClose} disabled={submitting}>
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  variant="contained"
+                  color="primary"
+                  disabled={submitting}
+                >
+                  {submitting ? (
+                    <CircularProgress size={24} />
+                  ) : selectedTeacher ? (
+                    "Update"
+                  ) : (
+                    "Create"
+                  )}
+                </Button>
+              </DialogActions>
+            </Form>
+          )}
+        </Formik>
       </Dialog>
     </Box>
   );

@@ -1,7 +1,12 @@
 import express from "express";
-import { register, login, getCurrentUser } from "../controllers/userController.js";
-import { validateRegistration } from "../validators/userValidators.js";
-import { authenticate, authorize } from "../middleware/auth.js";
+import {
+  register,
+  login,
+  getCurrentUser,
+} from "../controllers/userController.js";
+import { createUserValidator } from "../middleware/validators/userValidators.js";
+import { protect, authorize } from "../middleware/auth.js";
+import { validate } from "../middleware/validate.js";
 
 const router = express.Router();
 
@@ -9,15 +14,16 @@ const router = express.Router();
 router.post("/login", login);
 
 // Protected routes
-router.get("/me", authenticate, getCurrentUser);
+router.get("/me", protect, getCurrentUser);
 
 // Admin only routes
 router.post(
   "/register",
-  authenticate,
+  protect,
   authorize(["admin"]),
-  validateRegistration,
+  createUserValidator,
+  validate,
   register
 );
 
-export default router; 
+export default router;

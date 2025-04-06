@@ -2,19 +2,25 @@ import React from "react";
 import {
   Container,
   Typography,
-  Grid,
-  Paper,
   Box,
+  Paper,
+  Grid,
   Card,
   CardContent,
   CardMedia,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 import SchoolIcon from "@mui/icons-material/School";
 import GroupsIcon from "@mui/icons-material/Groups";
 import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
 import PsychologyIcon from "@mui/icons-material/Psychology";
 
-function AboutUs() {
+const AboutUs = () => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const isTablet = useMediaQuery(theme.breakpoints.down("md"));
+
   const features = [
     {
       icon: <SchoolIcon sx={{ fontSize: 40 }} />,
@@ -42,90 +48,248 @@ function AboutUs() {
     },
   ];
 
+  const teamMembers = [
+    {
+      name: "John Doe",
+      role: "Founder & CEO",
+      image: "https://via.placeholder.com/150",
+      bio: "John has over 15 years of experience in education and believes in transforming the traditional coaching methods through technology.",
+    },
+    {
+      name: "Jane Smith",
+      role: "Academic Director",
+      image: "https://via.placeholder.com/150",
+      bio: "With a PhD in Education, Jane oversees all academic programs and ensures quality teaching across all courses.",
+    },
+    {
+      name: "Mike Johnson",
+      role: "Technology Head",
+      image: "https://via.placeholder.com/150",
+      bio: "Mike leads our technology initiatives, ensuring seamless digital experiences for students and teachers alike.",
+    },
+  ];
+
   return (
-    <Container maxWidth="lg" sx={{ py: 8 }}>
-      {/* Hero Section */}
-      <Box sx={{ mb: 8, textAlign: "center" }}>
-        <Typography variant="h3" component="h1" gutterBottom>
+    <Box sx={{ py: { xs: 4, md: 8 } }}>
+      <Container maxWidth="lg">
+        <Typography
+          variant="h2"
+          component="h1"
+          align="center"
+          gutterBottom
+          sx={{
+            fontSize: { xs: "2rem", sm: "2.5rem", md: "3rem" },
+            mb: { xs: 3, md: 6 },
+            fontWeight: 700,
+          }}
+        >
           About Our Coaching Center
         </Typography>
-        <Typography variant="h6" color="text.secondary" paragraph>
-          Empowering minds, shaping futures, and building tomorrow's leaders
-        </Typography>
-      </Box>
 
-      {/* Mission and Vision */}
-      <Grid container spacing={4} sx={{ mb: 8 }}>
-        <Grid item xs={12} md={6}>
-          <Paper elevation={3} sx={{ p: 4, height: "100%" }}>
-            <Typography variant="h4" gutterBottom color="primary">
+        <Box sx={{ mb: { xs: 4, md: 8 } }}>
+          <Paper
+            elevation={2}
+            sx={{
+              p: { xs: 2, sm: 3, md: 4 },
+              borderRadius: 2,
+              backgroundColor: theme.palette.background.paper,
+            }}
+          >
+            <Typography
+              variant="h5"
+              component="h2"
+              gutterBottom
+              sx={{
+                mb: 2,
+                fontSize: { xs: "1.25rem", sm: "1.5rem" },
+                fontWeight: 600,
+              }}
+            >
               Our Mission
             </Typography>
-            <Typography paragraph>
-              To provide quality education and guidance to students, helping
-              them achieve academic excellence and personal growth. We strive to
-              create an environment that fosters learning, creativity, and
-              critical thinking.
+
+            <Typography
+              paragraph
+              sx={{
+                mb: 3,
+                fontSize: { xs: "0.9rem", sm: "1rem" },
+                lineHeight: 1.7,
+              }}
+            >
+              We are dedicated to providing exceptional educational coaching
+              that empowers students to achieve academic excellence. Our
+              personalized approach focuses on developing critical thinking
+              skills, building confidence, and fostering a lifelong love for
+              learning.
             </Typography>
-          </Paper>
-        </Grid>
-        <Grid item xs={12} md={6}>
-          <Paper elevation={3} sx={{ p: 4, height: "100%" }}>
-            <Typography variant="h4" gutterBottom color="primary">
+
+            <Typography
+              variant="h5"
+              component="h2"
+              gutterBottom
+              sx={{
+                mb: 2,
+                fontSize: { xs: "1.25rem", sm: "1.5rem" },
+                fontWeight: 600,
+              }}
+            >
               Our Vision
             </Typography>
-            <Typography paragraph>
-              To be the leading coaching center that sets the standard for
-              excellence in education, known for producing well-rounded
-              individuals who are prepared for the challenges of tomorrow.
+
+            <Typography
+              paragraph
+              sx={{
+                mb: 3,
+                fontSize: { xs: "0.9rem", sm: "1rem" },
+                lineHeight: 1.7,
+              }}
+            >
+              To be the leading educational institution that transforms students
+              into confident, knowledgeable individuals prepared for future
+              academic and career challenges. We strive to create an inclusive
+              learning environment that adapts to each student's needs.
+            </Typography>
+
+            <Typography
+              variant="h5"
+              component="h2"
+              gutterBottom
+              sx={{
+                mb: 2,
+                fontSize: { xs: "1.25rem", sm: "1.5rem" },
+                fontWeight: 600,
+              }}
+            >
+              Our Approach
+            </Typography>
+
+            <Typography
+              paragraph
+              sx={{
+                fontSize: { xs: "0.9rem", sm: "1rem" },
+                lineHeight: 1.7,
+              }}
+            >
+              We believe that every student has unique abilities and learning
+              styles. Our coaching methodology combines traditional teaching
+              with modern technology to deliver customized learning experiences.
+              We focus on conceptual understanding rather than memorization,
+              enabling students to apply their knowledge effectively.
             </Typography>
           </Paper>
-        </Grid>
-      </Grid>
+        </Box>
 
-      {/* Features */}
-      <Typography variant="h4" gutterBottom align="center" sx={{ mb: 4 }}>
-        Why Choose Us
-      </Typography>
-      <Grid container spacing={4}>
-        {features.map((feature, index) => (
-          <Grid item xs={12} sm={6} md={3} key={index}>
-            <Card sx={{ height: "100%" }}>
-              <CardContent sx={{ textAlign: "center" }}>
-                <Box sx={{ color: "primary.main", mb: 2 }}>{feature.icon}</Box>
-                <Typography variant="h6" gutterBottom>
-                  {feature.title}
-                </Typography>
-                <Typography color="text.secondary">
-                  {feature.description}
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-        ))}
-      </Grid>
-
-      {/* History Section */}
-      <Box sx={{ mt: 8 }}>
-        <Typography variant="h4" gutterBottom align="center" sx={{ mb: 4 }}>
-          Our Journey
+        <Typography
+          variant="h3"
+          component="h2"
+          align="center"
+          gutterBottom
+          sx={{
+            fontSize: { xs: "1.75rem", sm: "2rem", md: "2.5rem" },
+            mb: { xs: 3, md: 4 },
+            fontWeight: 600,
+          }}
+        >
+          Our Team
         </Typography>
-        <Paper elevation={3} sx={{ p: 4 }}>
-          <Typography paragraph>
-            Founded in 2010, our coaching center has grown from a small tutoring
-            center to a comprehensive educational institution. Over the years,
-            we have helped thousands of students achieve their academic goals
-            and develop into confident individuals.
+
+        <Grid container spacing={3} justifyContent="center">
+          {teamMembers.map((member, index) => (
+            <Grid item xs={12} sm={6} md={4} key={index}>
+              <Card
+                elevation={2}
+                sx={{
+                  height: "100%",
+                  display: "flex",
+                  flexDirection: "column",
+                  borderRadius: 2,
+                  transition: "transform 0.3s ease",
+                  "&:hover": {
+                    transform: "translateY(-5px)",
+                  },
+                }}
+              >
+                <CardMedia
+                  component="img"
+                  height={isMobile ? "180" : "200"}
+                  image={member.image}
+                  alt={member.name}
+                  sx={{ objectFit: "cover" }}
+                />
+                <CardContent sx={{ flexGrow: 1, p: { xs: 2, sm: 3 } }}>
+                  <Typography
+                    variant="h6"
+                    component="h3"
+                    gutterBottom
+                    sx={{
+                      fontSize: { xs: "1.1rem", sm: "1.25rem" },
+                      fontWeight: 600,
+                    }}
+                  >
+                    {member.name}
+                  </Typography>
+                  <Typography
+                    variant="subtitle1"
+                    color="text.secondary"
+                    gutterBottom
+                    sx={{
+                      fontSize: { xs: "0.85rem", sm: "0.95rem" },
+                      mb: 1.5,
+                    }}
+                  >
+                    {member.role}
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      fontSize: { xs: "0.8rem", sm: "0.9rem" },
+                      lineHeight: 1.6,
+                    }}
+                  >
+                    {member.bio}
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+          ))}
+        </Grid>
+
+        <Box
+          sx={{
+            mt: { xs: 4, md: 8 },
+            p: { xs: 2, sm: 3, md: 4 },
+            backgroundColor: theme.palette.primary.main,
+            color: "white",
+            borderRadius: 2,
+          }}
+        >
+          <Typography
+            variant="h4"
+            component="h2"
+            align="center"
+            gutterBottom
+            sx={{
+              fontSize: { xs: "1.5rem", sm: "1.75rem", md: "2rem" },
+              fontWeight: 600,
+            }}
+          >
+            Join Our Coaching Center
           </Typography>
-          <Typography paragraph>
-            Our success is built on the dedication of our experienced teachers,
-            the hard work of our students, and the trust of parents who have
-            chosen us as their educational partner.
+          <Typography
+            align="center"
+            sx={{
+              fontSize: { xs: "0.9rem", sm: "1rem" },
+              lineHeight: 1.7,
+            }}
+          >
+            Experience excellence in education with our personalized coaching
+            programs. We are committed to helping you achieve your academic
+            goals through quality teaching and innovative learning strategies.
           </Typography>
-        </Paper>
-      </Box>
-    </Container>
+        </Box>
+      </Container>
+    </Box>
   );
-}
+};
 
 export default AboutUs;

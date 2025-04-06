@@ -6,19 +6,18 @@ import {
   updateAnnouncement,
   deleteAnnouncement,
 } from "../controllers/announcementController.js";
-import { protect, admin } from "../middleware/authMiddleware.js";
+import { protect } from "../middleware/auth.js";
+import { validateAnnouncement } from "../middleware/validators/announcementValidators.js";
 
 const router = express.Router();
 
-router
-  .route("/")
-  .get(protect, getAnnouncements)
-  .post(protect, admin, createAnnouncement);
+// Public routes
+router.get("/", getAnnouncements);
+router.get("/:id", getAnnouncement);
 
-router
-  .route("/:id")
-  .get(protect, getAnnouncement)
-  .put(protect, admin, updateAnnouncement)
-  .delete(protect, admin, deleteAnnouncement);
+// Protected routes
+router.post("/", protect, validateAnnouncement, createAnnouncement);
+router.put("/:id", protect, validateAnnouncement, updateAnnouncement);
+router.delete("/:id", protect, deleteAnnouncement);
 
 export default router;

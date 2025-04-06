@@ -16,6 +16,8 @@ import {
   Popover,
   Divider,
   Button,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 import {
   Person as PersonIcon,
@@ -37,6 +39,9 @@ import {
 
 function Dashboard() {
   const navigate = useNavigate();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const isTablet = useMediaQuery(theme.breakpoints.down("md"));
   const [stats, setStats] = useState({
     totalStudents: 0,
     totalTeachers: 0,
@@ -149,11 +154,14 @@ function Dashboard() {
 
   // Show login prompt if not logged in
   if (error && error.includes("not logged in")) {
-  return (
-      <Box sx={{ p: 4, textAlign: "center" }}>
-        <Typography variant="h5" sx={{ mb: 2 }}>
+    return (
+      <Box sx={{ p: { xs: 2, sm: 4 }, textAlign: "center" }}>
+        <Typography
+          variant="h5"
+          sx={{ mb: 2, fontSize: { xs: "1.2rem", sm: "1.5rem" } }}
+        >
           {error}
-      </Typography>
+        </Typography>
         <Button
           variant="contained"
           startIcon={<LoginIcon />}
@@ -174,195 +182,375 @@ function Dashboard() {
     color = "primary",
     onClick,
   }) => (
-          <Paper
-            sx={{
-              p: 2,
-              textAlign: "center",
+    <Paper
+      sx={{
+        p: { xs: 1.5, sm: 2 },
+        textAlign: "center",
         bgcolor: `${color}.light`,
-              color: "white",
+        color: "white",
         cursor: "pointer",
         transition: "transform 0.2s, box-shadow 0.2s",
         "&:hover": {
           transform: "translateY(-4px)",
           boxShadow: 4,
         },
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "center",
       }}
       onClick={onClick}
     >
-      <Icon sx={{ fontSize: 40, mb: 1 }} />
-      <Typography variant="h4">{value.toLocaleString()}</Typography>
-      <Typography variant="subtitle1">{title}</Typography>
-          </Paper>
+      <Icon sx={{ fontSize: { xs: 30, sm: 40 }, mb: 1 }} />
+      <Typography
+        variant="h4"
+        sx={{ fontSize: { xs: "1.5rem", sm: "2rem", md: "2.125rem" } }}
+      >
+        {value.toLocaleString()}
+      </Typography>
+      <Typography
+        variant="subtitle1"
+        sx={{ fontSize: { xs: "0.8rem", sm: "0.875rem" } }}
+      >
+        {title}
+      </Typography>
+    </Paper>
   );
 
   return (
-    <Box>
-      <Box sx={{ display: "flex", justifyContent: "space-between", mb: 4 }}>
-        <Typography variant="h4">Dashboard</Typography>
-        <Tooltip title="Refresh data">
-          <IconButton onClick={fetchStats} disabled={loading}>
-            <RefreshIcon />
-          </IconButton>
-        </Tooltip>
+    <Box sx={{ p: { xs: 1, sm: 2, md: 3 } }}>
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: { xs: "column", sm: "row" },
+          justifyContent: "space-between",
+          alignItems: { xs: "flex-start", sm: "center" },
+          mb: { xs: 2, sm: 4 },
+          gap: { xs: 1, sm: 0 },
+        }}
+      >
+        <Typography
+          variant="h4"
+          component="h1"
+          sx={{ fontSize: { xs: "1.5rem", sm: "2rem", md: "2.125rem" } }}
+        >
+          Dashboard
+        </Typography>
+        <Box sx={{ display: "flex", gap: 1 }}>
+          <Tooltip title="Refresh Data">
+            <IconButton
+              onClick={fetchStats}
+              disabled={loading}
+              sx={{ bgcolor: "background.paper" }}
+            >
+              <RefreshIcon />
+            </IconButton>
+          </Tooltip>
+        </Box>
       </Box>
 
-      {error && (
+      {error && error !== "You are not logged in." && (
         <Typography color="error" sx={{ mb: 2 }}>
           {error}
         </Typography>
       )}
 
       {loading ? (
-        <LinearProgress sx={{ mb: 3 }} />
+        <LinearProgress sx={{ my: 4 }} />
       ) : (
-        <Grid container spacing={3}>
-          <Grid item xs={12} sm={6} md={3}>
-            <StatCard
-              icon={PersonIcon}
-              title="Teachers"
-              value={stats.totalTeachers || 0}
-              color="primary"
-              onClick={() => navigate("/app/teachers")}
-            />
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <StatCard
-              icon={SchoolIcon}
-              title="Students"
-              value={
-                stats.totalStudents !== undefined ? stats.totalStudents : 0
-              }
-              color="secondary"
-              onClick={() => navigate("/app/students")}
-            />
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <StatCard
-              icon={ClassIcon}
-              title="Batches"
-              value={stats.totalBatches}
-              color="success"
-              onClick={() => navigate("/app/batches")}
-            />
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <StatCard
-              icon={BookIcon}
-              title="Subjects"
-              value={stats.totalSubjects}
-              color="info"
-              onClick={() => navigate("/app/subjects")}
-            />
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <StatCard
-              icon={GradeIcon}
-              title="Standards"
-              value={stats.totalStandards}
-              color="warning"
-              onClick={() => navigate("/app/standards")}
-            />
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <StatCard
-              icon={PeopleIcon}
-              title="Staff"
-              value={stats.totalStaff}
-              color="error"
-              onClick={() => navigate("/app/staff")}
-            />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-            <StatCard
-              icon={PaymentIcon}
-              title="Payments"
-              value={stats.totalPayments}
-              color="success"
-              onClick={() => navigate("/app/payments")}
-            />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-            <Box
-              ref={announcementRef}
-              onMouseEnter={() => setAnnouncementPopoverOpen(true)}
-              onMouseLeave={() => setAnnouncementPopoverOpen(false)}
-            >
+        <>
+          <Grid
+            container
+            spacing={{ xs: 1, sm: 2, md: 3 }}
+            sx={{ mb: { xs: 2, sm: 4 } }}
+          >
+            <Grid item xs={6} sm={4} md={3}>
+              <StatCard
+                icon={PersonIcon}
+                title="Students"
+                value={stats.totalStudents}
+                color="primary"
+                onClick={() => navigate("/app/students")}
+              />
+            </Grid>
+            <Grid item xs={6} sm={4} md={3}>
+              <StatCard
+                icon={SchoolIcon}
+                title="Teachers"
+                value={stats.totalTeachers}
+                color="secondary"
+                onClick={() => navigate("/app/teachers")}
+              />
+            </Grid>
+            <Grid item xs={6} sm={4} md={3}>
+              <StatCard
+                icon={ClassIcon}
+                title="Batches"
+                value={stats.totalBatches}
+                color="info"
+                onClick={() => navigate("/app/batches")}
+              />
+            </Grid>
+            <Grid item xs={6} sm={4} md={3}>
+              <StatCard
+                icon={GradeIcon}
+                title="Standards"
+                value={stats.totalStandards}
+                color="success"
+                onClick={() => navigate("/app/standards")}
+              />
+            </Grid>
+            <Grid item xs={6} sm={4} md={3}>
+              <StatCard
+                icon={BookIcon}
+                title="Subjects"
+                value={stats.totalSubjects}
+                color="warning"
+                onClick={() => navigate("/app/subjects")}
+              />
+            </Grid>
+            <Grid item xs={6} sm={4} md={3}>
+              <StatCard
+                icon={PeopleIcon}
+                title="Staff"
+                value={stats.totalStaff}
+                color="error"
+                onClick={() => navigate("/app/staff")}
+              />
+            </Grid>
+            <Grid item xs={6} sm={4} md={3}>
+              <StatCard
+                icon={PaymentIcon}
+                title="Payments"
+                value={stats.totalPayments}
+                color="info"
+                onClick={() => navigate("/app/payments")}
+              />
+            </Grid>
+            <Grid item xs={6} sm={4} md={3}>
               <StatCard
                 icon={AnnouncementIcon}
-                title="Upcoming Announcements"
-                value={stats.upcomingAnnouncements.length}
-                color="primary"
+                title="Announcements"
+                value={stats.totalAnnouncements}
+                color="secondary"
                 onClick={() => navigate("/app/announcements")}
               />
-            </Box>
+            </Grid>
+          </Grid>
 
-            <Popover
-              open={announcementPopoverOpen}
-              anchorEl={announcementRef.current}
-              onClose={() => setAnnouncementPopoverOpen(false)}
-              disableRestoreFocus
-              anchorOrigin={{
-                vertical: "center",
-                horizontal: "right",
-              }}
-              transformOrigin={{
-                vertical: "center",
-                horizontal: "left",
-              }}
-              sx={{ pointerEvents: "none" }}
-              slotProps={{
-                paper: {
-                  onMouseEnter: () => setAnnouncementPopoverOpen(true),
-                  onMouseLeave: () => setAnnouncementPopoverOpen(false),
-                },
-              }}
-            >
-              <Box sx={{ p: 2, maxWidth: 300 }}>
-                <Typography variant="h6" sx={{ mb: 1 }}>
+          {/* Upcoming Announcements Section */}
+          <Box sx={{ mt: { xs: 3, sm: 4 } }}>
+            <Paper sx={{ p: { xs: 1.5, sm: 2, md: 3 } }} elevation={2}>
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  mb: 2,
+                }}
+              >
+                <Typography
+                  variant="h5"
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    fontSize: { xs: "1.2rem", sm: "1.5rem" },
+                  }}
+                >
+                  <AnnouncementIcon sx={{ mr: 1 }} />
                   Upcoming Announcements
                 </Typography>
-                {stats.upcomingAnnouncements.length > 0 ? (
-                  stats.upcomingAnnouncements.map((announcement, index) => (
-                    <Box key={announcement._id || index}>
-                      <Box sx={{ mb: 1 }}>
-                        <Typography
-                          variant="subtitle1"
-                          sx={{ fontWeight: "bold" }}
-                        >
-                          {announcement.title}
-                        </Typography>
-                        <Typography
-                          variant="caption"
-            sx={{
-                            color: "primary.main",
-                            display: "block",
-                            mb: 0.5,
-                          }}
-                        >
-                          Starts: {formatDateTime(announcement.startTime)}
-            </Typography>
+                <Button
+                  variant="outlined"
+                  size={isMobile ? "small" : "medium"}
+                  onClick={() => navigate("/app/announcements")}
+                >
+                  View All
+                </Button>
+              </Box>
+
+              {stats.upcomingAnnouncements &&
+              stats.upcomingAnnouncements.length > 0 ? (
+                <List>
+                  {stats.upcomingAnnouncements.map((announcement, index) => (
+                    <React.Fragment key={announcement._id}>
+                      <ListItem
+                        sx={{
+                          flexDirection: { xs: "column", sm: "row" },
+                          alignItems: { xs: "flex-start", sm: "center" },
+                        }}
+                      >
+                        <ListItemText
+                          primary={
+                            <Typography
+                              variant="subtitle1"
+                              fontWeight="bold"
+                              sx={{ fontSize: { xs: "0.9rem", sm: "1rem" } }}
+                            >
+                              {announcement.title}
+                            </Typography>
+                          }
+                          secondary={
+                            <Box
+                              sx={{
+                                display: "flex",
+                                flexDirection: { xs: "column", sm: "row" },
+                                gap: { xs: 0.5, sm: 1 },
+                                mt: { xs: 0.5, sm: 0 },
+                              }}
+                            >
+                              <Typography
+                                variant="body2"
+                                color="text.secondary"
+                                sx={{
+                                  fontSize: { xs: "0.75rem", sm: "0.875rem" },
+                                }}
+                              >
+                                {formatDateTime(announcement.startTime)}
+                              </Typography>
+                              <Typography
+                                variant="body2"
+                                color="text.secondary"
+                                sx={{
+                                  fontSize: { xs: "0.75rem", sm: "0.875rem" },
+                                  display: { xs: "none", sm: "block" },
+                                }}
+                              >
+                                •
+                              </Typography>
+                              <Typography
+                                variant="body2"
+                                color="text.secondary"
+                                sx={{
+                                  fontSize: { xs: "0.75rem", sm: "0.875rem" },
+                                }}
+                              >
+                                {announcement.type}
+                              </Typography>
+                            </Box>
+                          }
+                        />
+                        <Tooltip title="View Details">
+                          <Button
+                            variant="text"
+                            size="small"
+                            color="primary"
+                            onClick={() => navigate(`/app/announcements`)}
+                            sx={{ mt: { xs: 1, sm: 0 } }}
+                          >
+                            Details
+                          </Button>
+                        </Tooltip>
+                      </ListItem>
+                      {index < stats.upcomingAnnouncements.length - 1 && (
+                        <Divider />
+                      )}
+                    </React.Fragment>
+                  ))}
+                </List>
+              ) : (
+                <Typography
+                  variant="body1"
+                  color="text.secondary"
+                  align="center"
+                  sx={{ py: 2 }}
+                >
+                  No upcoming announcements
+                </Typography>
+              )}
+            </Paper>
+          </Box>
+
+          {/* Revenue Overview Section */}
+          <Box sx={{ mt: { xs: 3, sm: 4 } }}>
+            <Paper sx={{ p: { xs: 1.5, sm: 2, md: 3 } }} elevation={2}>
+              <Typography
+                variant="h5"
+                sx={{
+                  mb: 2,
+                  display: "flex",
+                  alignItems: "center",
+                  fontSize: { xs: "1.2rem", sm: "1.5rem" },
+                }}
+              >
+                <PaymentIcon sx={{ mr: 1 }} />
+                Revenue Overview
+              </Typography>
+
+              <Grid container spacing={2}>
+                <Grid item xs={12} sm={6}>
+                  <Card>
+                    <CardContent>
+                      <Typography
+                        variant="h6"
+                        color="text.secondary"
+                        sx={{ fontSize: { xs: "1rem", sm: "1.25rem" } }}
+                      >
+                        Total Revenue
+                      </Typography>
+                      <Typography
+                        variant="h4"
+                        sx={{
+                          my: 1,
+                          fontSize: { xs: "1.5rem", sm: "2.125rem" },
+                        }}
+                      >
+                        ₹{stats.totalRevenue.toLocaleString()}
+                      </Typography>
+                      <Box sx={{ display: "flex", alignItems: "center" }}>
                         <Typography
                           variant="body2"
-                          sx={{ color: "text.secondary" }}
+                          color={
+                            stats.revenueGrowth >= 0
+                              ? "success.main"
+                              : "error.main"
+                          }
                         >
-                          {announcement.content?.substring(0, 100) || ""}
-                          {announcement.content?.length > 100 ? "..." : ""}
-              </Typography>
-            </Box>
-                      {index < stats.upcomingAnnouncements.length - 1 && (
-                        <Divider sx={{ my: 1 }} />
-                      )}
-                    </Box>
-                  ))
-                ) : (
-                  <Typography variant="body2" color="text.secondary">
-                    No upcoming announcements
-            </Typography>
-                )}
-            </Box>
-            </Popover>
-          </Grid>
-        </Grid>
+                          {stats.revenueGrowth >= 0 ? "+" : ""}
+                          {stats.revenueGrowth}%
+                        </Typography>
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          sx={{ ml: 1 }}
+                        >
+                          vs. last month
+                        </Typography>
+                      </Box>
+                    </CardContent>
+                  </Card>
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <Card>
+                    <CardContent>
+                      <Typography
+                        variant="h6"
+                        color="text.secondary"
+                        sx={{ fontSize: { xs: "1rem", sm: "1.25rem" } }}
+                      >
+                        Student Growth
+                      </Typography>
+                      <Typography
+                        variant="h4"
+                        sx={{
+                          my: 1,
+                          fontSize: { xs: "1.5rem", sm: "2.125rem" },
+                        }}
+                      >
+                        {stats.studentGrowth}%
+                      </Typography>
+                      <Box>
+                        <Typography variant="body2" color="text.secondary">
+                          Compared to last month
+                        </Typography>
+                      </Box>
+                    </CardContent>
+                  </Card>
+                </Grid>
+              </Grid>
+            </Paper>
+          </Box>
+        </>
       )}
     </Box>
   );

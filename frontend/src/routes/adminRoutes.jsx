@@ -5,7 +5,7 @@ import Teachers from "../pages/Teachers";
 import Students from "../pages/Students";
 import Classes from "../pages/Classes";
 import Standards from "../pages/Standards";
-import Layout from "../components/Layout";
+import Layout from "../components/layout/Layout";
 
 const AdminRoutes = () => {
   return (

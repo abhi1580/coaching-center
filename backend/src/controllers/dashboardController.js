@@ -16,8 +16,6 @@ export const getStats = async (req, res) => {
     if (user.role === "admin") {
       // Get total students
       const totalStudents = await User.countDocuments({ role: "student" });
-      console.log("Total students count from DB:", totalStudents);
-
       // Get total teachers
       const totalTeachers = await User.countDocuments({ role: "teacher" });
 
@@ -91,7 +89,6 @@ export const getStats = async (req, res) => {
 
     res.json(stats);
   } catch (error) {
-    console.error("Error fetching dashboard stats:", error);
     res.status(500).json({ message: "Error fetching dashboard statistics" });
   }
 };
@@ -106,7 +103,6 @@ export const getRecentActivities = async (req, res) => {
 
     res.json(activities);
   } catch (error) {
-    console.error("Error fetching recent activities:", error);
     res.status(500).json({ message: "Error fetching recent activities" });
   }
 };
@@ -133,7 +129,6 @@ export const getUpcomingClasses = async (req, res) => {
 
     res.json(upcomingClasses);
   } catch (error) {
-    console.error("Error fetching upcoming classes:", error);
     res.status(500).json({ message: "Error fetching upcoming classes" });
   }
 };
@@ -209,11 +204,4 @@ const calculateRevenueGrowth = async () => {
 
   if (lastMonthRevenue === 0) return 100;
   return ((currentRevenue - lastMonthRevenue) / lastMonthRevenue) * 100;
-};
-
-// Create a default export that includes all the named exports for backward compatibility
-export default {
-  getStats,
-  getRecentActivities,
-  getUpcomingClasses,
 };

@@ -15,6 +15,7 @@ import {
   useTheme,
   useMediaQuery,
   Button,
+  ListItemButton,
 } from "@mui/material";
 import {
   Menu as MenuIcon,
@@ -52,6 +53,7 @@ const menuItems = [
 const Layout = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const isTablet = useMediaQuery(theme.breakpoints.between("sm", "md"));
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
@@ -75,7 +77,7 @@ const Layout = () => {
 
   const drawer = (
     <div>
-      <Toolbar>
+      <Toolbar sx={{ minHeight: { xs: 56, sm: 64 } }}>
         <Typography variant="h6" noWrap component="div">
           Coaching Center
         </Typography>
@@ -83,13 +85,31 @@ const Layout = () => {
       <Divider />
       <List>
         {menuItems.map((item) => (
-          <ListItem
-            button
-            key={item.text}
-            onClick={() => handleNavigation(item.path)}
-          >
-            <ListItemIcon>{item.icon}</ListItemIcon>
-            <ListItemText primary={item.text} />
+          <ListItem key={item.text} disablePadding sx={{ display: "block" }}>
+            <ListItemButton
+              onClick={() => handleNavigation(item.path)}
+              sx={{
+                minHeight: { xs: 48, sm: 48 },
+                px: 2.5,
+              }}
+            >
+              <ListItemIcon
+                sx={{
+                  minWidth: 0,
+                  mr: 3,
+                  justifyContent: "center",
+                }}
+              >
+                {item.icon}
+              </ListItemIcon>
+              <ListItemText
+                primary={item.text}
+                primaryTypographyProps={{
+                  fontSize: { xs: 14, sm: 16 },
+                  fontWeight: "medium",
+                }}
+              />
+            </ListItemButton>
           </ListItem>
         ))}
       </List>
@@ -105,25 +125,42 @@ const Layout = () => {
           ml: { sm: `${drawerWidth}px` },
         }}
       >
-        <Toolbar>
+        <Toolbar sx={{ minHeight: { xs: 56, sm: 64 } }}>
           <IconButton
             color="inherit"
             aria-label="open drawer"
             edge="start"
             onClick={handleDrawerToggle}
-            sx={{ mr: 2, display: { sm: "none" } }}
+            sx={{
+              mr: 2,
+              display: { sm: "none" },
+              padding: { xs: "8px" },
+            }}
           >
             <MenuIcon />
           </IconButton>
-          <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
+          <Typography
+            variant="h6"
+            noWrap
+            component="div"
+            sx={{
+              flexGrow: 1,
+              fontSize: { xs: "1rem", sm: "1.25rem" },
+            }}
+          >
             {user?.name || "Coaching Center"}
           </Typography>
           <Button
             color="inherit"
             startIcon={<LogoutIcon />}
             onClick={handleLogout}
+            sx={{
+              fontSize: { xs: "0.8rem", sm: "0.875rem" },
+              py: { xs: 0.5, sm: 0.75 },
+              minWidth: { xs: 0, sm: 64 },
+            }}
           >
-            Logout
+            {!isMobile && "Logout"}
           </Button>
         </Toolbar>
       </AppBar>
@@ -169,9 +206,9 @@ const Layout = () => {
         component="main"
         sx={{
           flexGrow: 1,
-          p: 3,
+          p: { xs: 1.5, sm: 2, md: 3 },
           width: { sm: `calc(100% - ${drawerWidth}px)` },
-          mt: 8,
+          mt: { xs: 7, sm: 8 },
         }}
       >
         <Outlet />

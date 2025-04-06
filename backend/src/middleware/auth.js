@@ -39,7 +39,6 @@ export const authorize = (...roles) => {
   return (req, res, next) => {
     try {
       if (!req.user || !req.user.role) {
-        console.log("Authorization failed: User role not found");
         return res.status(403).json({
           success: false,
           message: "User role not found",
@@ -50,24 +49,15 @@ export const authorize = (...roles) => {
       const userRole = String(req.user.role).toLowerCase();
       const allowedRoles = roles.map((role) => String(role).toLowerCase());
 
-      console.log("User role:", userRole);
-      console.log("Allowed roles:", allowedRoles);
-      console.log("Check result:", allowedRoles.includes(userRole));
-
       if (!allowedRoles.includes(userRole)) {
-        console.log(
-          `Authorization failed: Role ${req.user.role} not authorized`
-        );
         return res.status(403).json({
           success: false,
           message: `User role ${req.user.role} is not authorized to access this route`,
         });
       }
 
-      console.log("Authorization successful for role:", userRole);
       next();
     } catch (error) {
-      console.error("Authorization error:", error);
       return res.status(500).json({
         success: false,
         message: "Error checking authorization",

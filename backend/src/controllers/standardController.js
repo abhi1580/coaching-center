@@ -68,33 +68,16 @@ export const createStandard = async (req, res) => {
     // Validate subjects if provided
     if (req.body.subjects && req.body.subjects.length > 0) {
       try {
-        console.log("Validating subjects:", req.body.subjects);
-
         const subjects = await Subject.find({
           _id: { $in: req.body.subjects },
           status: "active",
         });
-
-        console.log(
-          "Found subjects:",
-          subjects.map((s) => ({
-            id: s._id,
-            name: s.name,
-            status: s.status,
-          }))
-        );
 
         if (subjects.length !== req.body.subjects.length) {
           const foundIds = subjects.map((s) => s._id.toString());
           const invalidIds = req.body.subjects.filter(
             (id) => !foundIds.includes(id)
           );
-
-          console.log("Subject validation failed:", {
-            providedIds: req.body.subjects,
-            foundIds,
-            invalidIds,
-          });
 
           return res.status(400).json({
             success: false,
@@ -104,7 +87,6 @@ export const createStandard = async (req, res) => {
           });
         }
       } catch (error) {
-        console.error("Error validating subjects:", error);
         return res.status(400).json({
           success: false,
           message: "Error validating subjects",
@@ -121,7 +103,6 @@ export const createStandard = async (req, res) => {
       data: standard,
     });
   } catch (error) {
-    console.error("Error creating standard:", error);
     res.status(500).json({
       success: false,
       message: "Error in creating standard",
@@ -143,11 +124,9 @@ export const updateStandard = async (req, res) => {
       });
     }
 
-    // Validate subjects if provided
+    // Validate subjects if provided for update
     if (req.body.subjects && req.body.subjects.length > 0) {
       try {
-        console.log("Validating subjects for update:", req.body.subjects);
-
         // First, check if the standard exists
         const existingStandard = await Standard.findById(req.params.id);
         if (!existingStandard) {
@@ -163,26 +142,11 @@ export const updateStandard = async (req, res) => {
           status: "active",
         });
 
-        console.log(
-          "Found subjects for update:",
-          subjects.map((s) => ({
-            id: s._id,
-            name: s.name,
-            status: s.status,
-          }))
-        );
-
         if (subjects.length !== req.body.subjects.length) {
           const foundIds = subjects.map((s) => s._id.toString());
           const invalidIds = req.body.subjects.filter(
             (id) => !foundIds.includes(id)
           );
-
-          console.log("Subject validation failed for update:", {
-            providedIds: req.body.subjects,
-            foundIds,
-            invalidIds,
-          });
 
           return res.status(400).json({
             success: false,
@@ -192,7 +156,6 @@ export const updateStandard = async (req, res) => {
           });
         }
       } catch (error) {
-        console.error("Error validating subjects for update:", error);
         return res.status(400).json({
           success: false,
           message: "Error validating subjects",
@@ -218,7 +181,6 @@ export const updateStandard = async (req, res) => {
       data: standard,
     });
   } catch (error) {
-    console.error("Error updating standard:", error);
     res.status(500).json({
       success: false,
       message: "Error in updating standard",

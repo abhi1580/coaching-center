@@ -6,10 +6,25 @@ import Subject from "../models/Subject.js";
 // Get all batches
 export const getAllBatches = async (req, res) => {
   try {
-    const batches = await Batch.find()
+    // Check if we should populate enrolledStudents
+    const { populate } = req.query;
+    const shouldPopulateEnrolledStudents =
+      populate && populate.includes("enrolledStudents");
+
+    // Create a query and apply populate operations
+    let query = Batch.find()
       .populate("standard", "name level")
       .populate("subject", "name")
       .populate("teacher", "name");
+
+    // Conditionally populate enrolledStudents with student details
+    if (shouldPopulateEnrolledStudents) {
+      query = query.populate("enrolledStudents", "name email phone");
+    }
+
+    // Execute the query
+    const batches = await query;
+
     res.json(batches);
   } catch (error) {
     res.status(500).json({
@@ -57,13 +72,7 @@ export const createBatch = async (req, res) => {
       return res.status(404).json({ message: "Subject not found" });
     }
 
-    // Ensure fees is a number
-    const batchData = {
-      ...req.body,
-      fees: Number(req.body.fees),
-    };
-
-    const batch = new Batch(batchData);
+    const batch = new Batch(req.body);
     const newBatch = await batch.save();
 
     const populatedBatch = await Batch.findById(newBatch._id)
@@ -108,13 +117,7 @@ export const updateBatch = async (req, res) => {
       return res.status(404).json({ message: "Batch not found" });
     }
 
-    // Ensure fees is a number if provided
-    const updateData = { ...req.body };
-    if (updateData.fees) {
-      updateData.fees = Number(updateData.fees);
-    }
-
-    Object.assign(batch, updateData);
+    Object.assign(batch, req.body);
     await batch.save();
 
     const updatedBatch = await Batch.findById(batch._id)
@@ -145,9 +148,7 @@ export const deleteBatch = async (req, res) => {
 // Get batches by subject
 export const getBatchesBySubject = async (req, res) => {
   try {
-    let { subjects, standard } = req.query;
-    console.log("Get batches by subject request:", { subjects, standard });
-
+    let { subjects, standard, populate } = req.query;
     // Validate query parameters
     if (!subjects) {
       return res.status(400).json({
@@ -165,9 +166,6 @@ export const getBatchesBySubject = async (req, res) => {
         subjects = [subjects];
       }
     }
-
-    console.log("Processed subjects:", subjects);
-
     // Build the query
     let query = { subject: { $in: subjects } };
 
@@ -176,18 +174,24 @@ export const getBatchesBySubject = async (req, res) => {
       query.standard = standard;
     }
 
-    console.log("Query for batches:", query);
-
-    const batches = await Batch.find(query)
+    // Create a query and apply populate operations
+    let batchQuery = Batch.find(query)
       .populate("standard", "name level")
       .populate("subject", "name")
       .populate("teacher", "name");
 
-    console.log(`Found ${batches.length} batches`);
+    // Conditionally populate enrolledStudents with student details
+    const shouldPopulateEnrolledStudents =
+      populate && populate.includes("enrolledStudents");
+    if (shouldPopulateEnrolledStudents) {
+      batchQuery = batchQuery.populate("enrolledStudents", "name email phone");
+    }
+
+    // Execute the query
+    const batches = await batchQuery;
 
     res.json(batches);
   } catch (error) {
-    console.error("Error in getBatchesBySubject:", error);
     res.status(500).json({
       success: false,
       message: error.message,

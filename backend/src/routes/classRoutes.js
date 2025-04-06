@@ -6,12 +6,12 @@ import {
   updateClass,
   deleteClass,
 } from "../controllers/classController.js";
-import { authenticateToken } from "../middleware/auth.js";
+import { protect } from "../middleware/auth.js";
 
 const router = express.Router();
 
 // Apply authentication middleware to all routes
-router.use(authenticateToken);
+router.use(protect);
 
 // Get all classes
 router.get("/", getClasses);

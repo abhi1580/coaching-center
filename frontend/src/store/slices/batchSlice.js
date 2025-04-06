@@ -4,9 +4,10 @@ import { batchService } from "../../services/api";
 // Async thunks
 export const fetchBatches = createAsyncThunk(
   "batches/fetchBatches",
-  async (_, { rejectWithValue }) => {
+  async (params = {}, { rejectWithValue }) => {
     try {
-      const response = await batchService.getAll();
+      const { populateEnrolledStudents = false } = params;
+      const response = await batchService.getAll(populateEnrolledStudents);
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data || "Failed to fetch batches");
@@ -42,9 +43,9 @@ export const createBatch = createAsyncThunk(
 
 export const updateBatch = createAsyncThunk(
   "batches/updateBatch",
-  async ({ id, batchData }, { rejectWithValue }) => {
+  async ({ id, data }, { rejectWithValue }) => {
     try {
-      const response = await batchService.update(id, batchData);
+      const response = await batchService.update(id, data);
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data || "Failed to update batch");

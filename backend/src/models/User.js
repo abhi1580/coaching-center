@@ -55,42 +55,26 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-// Hash password before saving
+// User schema pre-save hook for password hashing
 userSchema.pre("save", async function (next) {
   try {
-    console.log("Pre-save hook triggered");
-    console.log("Is password modified?", this.isModified("password"));
-
     if (!this.isModified("password")) {
-      console.log("Password not modified, skipping hash");
       return next();
     }
 
-    console.log("Starting password hash process...");
     const salt = await bcrypt.genSalt(10);
-    console.log("Salt generated");
-
     this.password = await bcrypt.hash(this.password, salt);
-    console.log("Password hashed successfully");
-
     next();
   } catch (error) {
-    console.error("Error in pre-save hook:", error);
-    console.error("Error details:", {
-      name: error.name,
-      message: error.message,
-      stack: error.stack,
-    });
     next(error);
   }
 });
 
-// Compare password
+// Method to compare user entered password with stored hash
 userSchema.methods.comparePassword = async function (enteredPassword) {
   try {
     return await bcrypt.compare(enteredPassword, this.password);
   } catch (error) {
-    console.error("Error comparing passwords:", error);
     throw error;
   }
 };
@@ -112,7 +96,6 @@ userSchema.methods.getResetPasswordToken = function () {
 
     return resetToken;
   } catch (error) {
-    console.error("Error generating reset token:", error);
     throw error;
   }
 };

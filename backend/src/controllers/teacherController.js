@@ -193,12 +193,12 @@ export const updateTeacher = async (req, res) => {
         user.phone = phone || user.phone;
         user.address = address || user.address;
         user.gender = gender || user.gender;
-        
+
         // Only update password if provided
         if (password) {
           user.password = password;
         }
-        
+
         await user.save();
       }
     }
@@ -208,7 +208,6 @@ export const updateTeacher = async (req, res) => {
       data: updatedTeacher,
     });
   } catch (error) {
-    console.error("Teacher update error:", error);
     res.status(500).json({
       success: false,
       message: "Error in updating teacher",

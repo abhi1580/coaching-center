@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Box,
   Typography,
@@ -19,6 +19,8 @@ import {
   Grid,
   MenuItem,
   Chip,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 import {
   Add as AddIcon,
@@ -29,6 +31,7 @@ import {
 import { Formik, Form } from "formik";
 import * as Yup from "yup";
 import { paymentService, studentService, batchService } from "../services/api";
+import RefreshButton from "../components/RefreshButton";
 
 const validationSchema = Yup.object({
   studentId: Yup.string().required("Student is required"),
@@ -50,6 +53,9 @@ function Payments() {
   const [students, setStudents] = useState([]);
   const [classes, setClasses] = useState([]);
   const [error, setError] = useState(null);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const isTablet = useMediaQuery(theme.breakpoints.down("md"));
 
   useEffect(() => {
     fetchPayments();
@@ -185,14 +191,44 @@ function Payments() {
     }
   };
 
+  // Add loadAllData function for refresh button
+  const loadAllData = useCallback(() => {
+    fetchPayments();
+    fetchStudents();
+    fetchClasses();
+  }, []);
+
   return (
-    <Box>
-      <Box sx={{ display: "flex", justifyContent: "space-between", mb: 3 }}>
-        <Typography variant="h4">Payments</Typography>
+    <Box sx={{ p: { xs: 1, sm: 2, md: 3 } }}>
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: { xs: "column", sm: "row" },
+          justifyContent: "space-between",
+          alignItems: { xs: "flex-start", sm: "center" },
+          mb: 3,
+          gap: { xs: 1, sm: 0 },
+        }}
+      >
+        <Box sx={{ display: "flex", alignItems: "center" }}>
+          <Typography
+            variant="h4"
+            component="h1"
+            sx={{ fontSize: { xs: "1.5rem", sm: "2rem", md: "2.125rem" } }}
+          >
+            Payments
+          </Typography>
+          <RefreshButton
+            onRefresh={loadAllData}
+            tooltip="Refresh payments data"
+            sx={{ ml: 1 }}
+          />
+        </Box>
         <Button
           variant="contained"
           startIcon={<AddIcon />}
           onClick={() => handleOpen()}
+          sx={{ alignSelf: { xs: "flex-start", sm: "auto" } }}
         >
           Add Payment
         </Button>

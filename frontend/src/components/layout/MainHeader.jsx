@@ -21,8 +21,8 @@ import { logout } from "../../store/slices/authSlice";
 
 const pages = [
   { name: "Home", path: "/" },
-  { name: "About Us", path: "/about" },
-  { name: "Contact Us", path: "/contact" },
+  { name: "About", path: "/about" },
+  { name: "Contact", path: "/contact" },
 ];
 
 const MainHeader = () => {
@@ -30,6 +30,7 @@ const MainHeader = () => {
   const [anchorElUser, setAnchorElUser] = useState(null);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+  const isSmallMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { user, isAuthenticated } = useSelector((state) => state.auth);
@@ -56,20 +57,44 @@ const MainHeader = () => {
 
   return (
     <AppBar position="static">
-      <Container maxWidth="xl">
-        <Toolbar disableGutters>
+      <Container maxWidth="xl" sx={{ px: { xs: 1, sm: 2, md: 3 } }}>
+        <Toolbar disableGutters sx={{ minHeight: { xs: 56, sm: 64 } }}>
           {isMobile ? (
             <>
-              <IconButton
-                size="large"
-                aria-label="menu"
-                aria-controls="menu-appbar"
-                aria-haspopup="true"
-                onClick={handleOpenNavMenu}
-                color="inherit"
+              <Box
+                sx={{ display: "flex", alignItems: "center", width: "100%" }}
               >
-                <MenuIcon />
-              </IconButton>
+                <IconButton
+                  size="large"
+                  aria-label="menu"
+                  aria-controls="menu-appbar"
+                  aria-haspopup="true"
+                  onClick={handleOpenNavMenu}
+                  color="inherit"
+                  sx={{
+                    p: { xs: 1 },
+                    mr: { xs: 1 },
+                  }}
+                >
+                  <MenuIcon />
+                </IconButton>
+
+                <Typography
+                  variant="h6"
+                  noWrap
+                  component="div"
+                  sx={{
+                    flexGrow: 1,
+                    fontFamily: "monospace",
+                    fontWeight: 700,
+                    fontSize: { xs: "1rem", sm: "1.2rem" },
+                    letterSpacing: ".1rem",
+                  }}
+                >
+                  COACHING CENTER
+                </Typography>
+              </Box>
+
               <Menu
                 id="menu-appbar"
                 anchorEl={anchorElNav}
@@ -84,6 +109,14 @@ const MainHeader = () => {
                 }}
                 open={Boolean(anchorElNav)}
                 onClose={handleCloseNavMenu}
+                sx={{
+                  "& .MuiMenu-list": {
+                    py: 0.5,
+                  },
+                  "& .MuiMenuItem-root": {
+                    py: 1.5,
+                  },
+                }}
               >
                 {pages.map((page) => (
                   <MenuItem
@@ -123,26 +156,43 @@ const MainHeader = () => {
               <Button
                 key={page.name}
                 onClick={() => navigate(page.path)}
-                sx={{ my: 2, color: "white", display: "block" }}
+                sx={{ my: 2, color: "white", display: "block", mx: 1 }}
               >
                 {page.name}
               </Button>
             ))}
           </Box>
 
-          <Box sx={{ flexGrow: 0 }}>
+          <Box sx={{ flexGrow: isMobile ? 0 : 0, ml: isMobile ? 1 : 0 }}>
             {isAuthenticated ? (
               <>
                 <Tooltip title="Open settings">
-                  <IconButton onClick={handleOpenUserMenu} sx={{ p: 0 }}>
+                  <IconButton
+                    onClick={handleOpenUserMenu}
+                    sx={{
+                      p: { xs: 0.5, sm: 1 },
+                    }}
+                  >
                     <Avatar
                       alt={user?.name}
                       src="/static/images/avatar/2.jpg"
+                      sx={{
+                        width: { xs: 32, sm: 40 },
+                        height: { xs: 32, sm: 40 },
+                      }}
                     />
                   </IconButton>
                 </Tooltip>
                 <Menu
-                  sx={{ mt: "45px" }}
+                  sx={{
+                    mt: "45px",
+                    "& .MuiMenu-list": {
+                      py: 0.5,
+                    },
+                    "& .MuiMenuItem-root": {
+                      py: 1.5,
+                    },
+                  }}
                   id="menu-appbar"
                   anchorEl={anchorElUser}
                   anchorOrigin={{
@@ -169,7 +219,12 @@ const MainHeader = () => {
               <Button
                 color="inherit"
                 onClick={() => navigate("/login")}
-                sx={{ ml: 2 }}
+                sx={{
+                  ml: 2,
+                  fontSize: { xs: "0.8rem", sm: "0.875rem" },
+                  py: { xs: 0.5, sm: 0.75 },
+                  px: { xs: 1.5, sm: 2 },
+                }}
               >
                 Login
               </Button>

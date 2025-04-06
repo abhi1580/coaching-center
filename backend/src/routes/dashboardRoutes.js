@@ -1,6 +1,10 @@
 import express from "express";
 import { protect } from "../middleware/auth.js";
-import dashboardController from "../controllers/dashboardController.js";
+import {
+  getStats,
+  getRecentActivities,
+  getUpcomingClasses,
+} from "../controllers/dashboardController.js";
 
 const router = express.Router();
 
@@ -8,12 +12,12 @@ const router = express.Router();
 router.use(protect);
 
 // Dashboard statistics
-router.get("/stats", dashboardController.getStats);
+router.get("/stats", getStats);
 
 // Recent activities (payments, enrollments, etc.)
-router.get("/recent-activities", dashboardController.getRecentActivities);
+router.get("/recent-activities", getRecentActivities);
 
 // Upcoming classes
-router.get("/upcoming-classes", dashboardController.getUpcomingClasses);
+router.get("/upcoming-classes", getUpcomingClasses);
 
 export default router;

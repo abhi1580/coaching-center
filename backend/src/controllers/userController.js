@@ -82,7 +82,6 @@ export const register = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Registration error:", error);
     res.status(500).json({
       success: false,
       message: "Error registering user",
@@ -139,7 +138,6 @@ export const login = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Login error:", error);
     res.status(500).json({
       success: false,
       message: "Error logging in",
@@ -164,7 +162,6 @@ export const getCurrentUser = async (req, res) => {
       data: user,
     });
   } catch (error) {
-    console.error("Get current user error:", error);
     res.status(500).json({
       success: false,
       message: "Error getting current user",

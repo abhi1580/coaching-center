@@ -1,7 +1,10 @@
 import axios from "axios";
 
+// Fallback to localhost if VITE_API_URL is not defined
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+
 export const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL,
+  baseURL: API_URL,
   headers: {
     "Content-Type": "application/json",
   },
@@ -27,10 +30,29 @@ api.interceptors.request.use(
   }
 );
 
-// Add a response interceptor to handle errors
+// Add a response interceptor to handle errors and log responses
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // Log successful responses for debugging
+    console.log(
+      `API Response [${response.config.method.toUpperCase()} ${
+        response.config.url
+      }]:`,
+      response.status,
+      response.data
+    );
+    return response;
+  },
   async (error) => {
+    // Log error responses
+    console.error(
+      `API Error [${error.config?.method?.toUpperCase()} ${
+        error.config?.url
+      }]:`,
+      error.response?.status,
+      error.response?.data
+    );
+
     if (error.response?.status === 401) {
       // Handle unauthorized access
       localStorage.removeItem("token");
@@ -96,9 +118,14 @@ export const standardService = {
 
 // Batch services
 export const batchService = {
-  getAll: () => api.get("/batches"),
+  getAll: (populateEnrolledStudents = false) => {
+    const queryParams = populateEnrolledStudents
+      ? "?populate=enrolledStudents"
+      : "";
+    return api.get(`/batches${queryParams}`);
+  },
   getById: (id) => api.get(`/batches/${id}`),
-  getBySubject: (subjects, standard) => {
+  getBySubject: (subjects, standard, options = {}) => {
     // Convert subjects array to query params
     let queryParams = "";
 
@@ -118,6 +145,11 @@ export const batchService = {
     // Add standard if provided
     if (standard) {
       queryParams += `${queryParams ? "&" : ""}standard=${standard}`;
+    }
+
+    // Add populate parameter if specified
+    if (options.populateEnrolledStudents) {
+      queryParams += `${queryParams ? "&" : ""}populate=enrolledStudents`;
     }
 
     console.log(`Calling batch API with query: ${queryParams}`);
@@ -148,7 +180,19 @@ export const paymentService = {
 
 // Announcement services
 export const announcementService = {
-  getAll: () => api.get("/announcements"),
+  getAll: () => {
+    console.log("Fetching all announcements from:", `${API_URL}/announcements`);
+    return api.get("/announcements").catch((error) => {
+      console.error("Error fetching announcements:", error);
+      // Return a default structure to prevent UI errors
+      return {
+        data: {
+          data: [],
+          counts: { total: 0, active: 0, scheduled: 0, expired: 0 },
+        },
+      };
+    });
+  },
   getById: (id) => api.get(`/announcements/${id}`),
   create: (data) => api.post("/announcements", data),
   update: (id, data) => api.put(`/announcements/${id}`, data),

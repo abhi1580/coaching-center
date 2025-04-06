@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Box,
   Typography,
@@ -19,6 +19,8 @@ import {
   Grid,
   MenuItem,
   Chip,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 import {
   Add as AddIcon,
@@ -28,6 +30,7 @@ import {
 import { Formik, Form } from "formik";
 import * as Yup from "yup";
 import { staffService } from "../services/api";
+import RefreshButton from "../components/RefreshButton";
 
 const validationSchema = Yup.object({
   name: Yup.string().required("Name is required"),
@@ -45,12 +48,36 @@ const validationSchema = Yup.object({
 });
 
 const staffRoles = [
-  { value: "admin", label: "Administrator", description: "Full system access and management" },
-  { value: "receptionist", label: "Receptionist", description: "Front desk and student management" },
-  { value: "accountant", label: "Accountant", description: "Financial management and billing" },
-  { value: "maintenance", label: "Maintenance", description: "Facility and equipment maintenance" },
-  { value: "librarian", label: "Librarian", description: "Library and resource management" },
-  { value: "counselor", label: "Counselor", description: "Student guidance and support" },
+  {
+    value: "admin",
+    label: "Administrator",
+    description: "Full system access and management",
+  },
+  {
+    value: "receptionist",
+    label: "Receptionist",
+    description: "Front desk and student management",
+  },
+  {
+    value: "accountant",
+    label: "Accountant",
+    description: "Financial management and billing",
+  },
+  {
+    value: "maintenance",
+    label: "Maintenance",
+    description: "Facility and equipment maintenance",
+  },
+  {
+    value: "librarian",
+    label: "Librarian",
+    description: "Library and resource management",
+  },
+  {
+    value: "counselor",
+    label: "Counselor",
+    description: "Student guidance and support",
+  },
 ];
 
 const departments = [
@@ -61,7 +88,7 @@ const departments = [
   "Student Services",
   "Library",
   "IT",
-  "HR"
+  "HR",
 ];
 
 const permissions = [
@@ -73,7 +100,7 @@ const permissions = [
   "Edit Payments",
   "View Reports",
   "Manage Staff",
-  "Manage Settings"
+  "Manage Settings",
 ];
 
 function Staff() {
@@ -82,6 +109,9 @@ function Staff() {
   const [selectedStaff, setSelectedStaff] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const isTablet = useMediaQuery(theme.breakpoints.down("md"));
 
   useEffect(() => {
     fetchStaff();
@@ -154,14 +184,42 @@ function Staff() {
     }
   };
 
+  // Add loadAllData function for refresh button
+  const loadAllData = useCallback(() => {
+    fetchStaff();
+  }, []);
+
   return (
-    <Box>
-      <Box sx={{ display: "flex", justifyContent: "space-between", mb: 3 }}>
-        <Typography variant="h4">Staff Management</Typography>
+    <Box sx={{ p: { xs: 1, sm: 2, md: 3 } }}>
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: { xs: "column", sm: "row" },
+          justifyContent: "space-between",
+          alignItems: { xs: "flex-start", sm: "center" },
+          mb: 3,
+          gap: { xs: 1, sm: 0 },
+        }}
+      >
+        <Box sx={{ display: "flex", alignItems: "center" }}>
+          <Typography
+            variant="h4"
+            component="h1"
+            sx={{ fontSize: { xs: "1.5rem", sm: "2rem", md: "2.125rem" } }}
+          >
+            Staff Management
+          </Typography>
+          <RefreshButton
+            onRefresh={loadAllData}
+            tooltip="Refresh staff data"
+            sx={{ ml: 1 }}
+          />
+        </Box>
         <Button
           variant="contained"
           startIcon={<AddIcon />}
           onClick={() => handleOpen()}
+          sx={{ alignSelf: { xs: "flex-start", sm: "auto" } }}
         >
           Add Staff Member
         </Button>
@@ -202,10 +260,14 @@ function Staff() {
                   <TableCell>
                     <Box>
                       <Typography variant="body2">
-                        {staffRoles.find(r => r.value === staffMember.role)?.label || staffMember.role}
+                        {staffRoles.find((r) => r.value === staffMember.role)
+                          ?.label || staffMember.role}
                       </Typography>
                       <Typography variant="caption" color="text.secondary">
-                        {staffRoles.find(r => r.value === staffMember.role)?.description}
+                        {
+                          staffRoles.find((r) => r.value === staffMember.role)
+                            ?.description
+                        }
                       </Typography>
                     </Box>
                   </TableCell>
@@ -219,7 +281,9 @@ function Staff() {
                   <TableCell>
                     <Chip
                       label={staffMember.status}
-                      color={staffMember.status === "active" ? "success" : "default"}
+                      color={
+                        staffMember.status === "active" ? "success" : "default"
+                      }
                       size="small"
                     />
                   </TableCell>
@@ -263,7 +327,14 @@ function Staff() {
             validationSchema={validationSchema}
             onSubmit={handleSubmit}
           >
-            {({ values, errors, touched, handleChange, handleBlur, isSubmitting }) => (
+            {({
+              values,
+              errors,
+              touched,
+              handleChange,
+              handleBlur,
+              isSubmitting,
+            }) => (
               <Form>
                 <Grid container spacing={2}>
                   <Grid item xs={12} sm={6}>
@@ -293,8 +364,13 @@ function Staff() {
                       {staffRoles.map((role) => (
                         <MenuItem key={role.value} value={role.value}>
                           <Box>
-                            <Typography variant="body2">{role.label}</Typography>
-                            <Typography variant="caption" color="text.secondary">
+                            <Typography variant="body2">
+                              {role.label}
+                            </Typography>
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                            >
                               {role.description}
                             </Typography>
                           </Box>

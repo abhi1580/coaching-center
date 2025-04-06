@@ -139,7 +139,6 @@ export const createUser = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("User creation error:", error);
     res.status(500).json({
       success: false,
       message: "Error in creating user",
@@ -155,32 +154,24 @@ export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    console.log(`Login attempt for email: ${email}`);
-
     // Check if user exists
     const user = await User.findOne({ email }).select("+password");
 
     if (!user) {
-      console.log(`User not found for email: ${email}`);
       return res.status(401).json({
         success: false,
         message: "Invalid credentials",
       });
     }
-
-    console.log(`User found with role: ${user.role}`);
 
     // Check password
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
-      console.log(`Password mismatch for user: ${email}`);
       return res.status(401).json({
         success: false,
         message: "Invalid credentials",
       });
     }
-
-    console.log(`Login successful for user: ${email}, role: ${user.role}`);
 
     // Generate token with role
     const token = generateToken(user._id, user.role);
@@ -196,7 +187,6 @@ export const login = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Login error:", error);
     res.status(500).json({
       success: false,
       message: "Error in login",
@@ -328,125 +318,77 @@ export const resetPassword = async (req, res) => {
   }
 };
 
-// @desc    Create admin user (Super admin only or first admin)
+// @desc    Create admin user (special case for first admin)
 // @route   POST /api/auth/create-admin
-// @access  Private (Super admin only) or Public (for first admin)
+// @access  Public or Admin only after first admin
 export const createAdmin = async (req, res) => {
   try {
-    console.log("Starting admin user creation process...");
-    console.log("Request body:", JSON.stringify(req.body, null, 2));
-
-    // Check if any admin exists
-    console.log("Checking for existing admin users...");
+    // Check if admin users already exist
     const adminExists = await User.findOne({ role: "admin" });
-    console.log("Admin exists:", !!adminExists);
 
-    // If admin exists, require authentication
+    // After first admin, only admin can create more admins
     if (adminExists) {
-      // For the first admin creation, we need to check if there's token in the header
-      // NOTE: This route is public so req.user might not be set by any middleware
-      // We need to manually check the authorization header
-      console.log("Authorization header:", req.headers.authorization);
+      // Get token from header
+      const token = req.headers.authorization?.split(" ")[1];
 
-      const authHeader = req.headers.authorization;
-      if (!authHeader) {
-        console.log(
-          "No authorization header found for subsequent admin creation"
-        );
-        // Allow creation if this is potentially the first admin (if adminExists was stale)
-        const doubleCheck = await User.countDocuments({ role: "admin" });
-        if (doubleCheck > 0) {
-          return res.status(401).json({
-            success: false,
-            message: "Authentication required to create additional admin users",
-          });
-        } else {
-          console.log(
-            "Double-check confirmed no admins exist, allowing creation"
-          );
-        }
-      } else {
-        try {
-          // Extract and verify token
-          const token = authHeader.split(" ")[1];
-          const decoded = jwt.verify(token, process.env.JWT_SECRET);
-          const user = await User.findById(decoded.id);
-
-          if (!user || user.role !== "admin") {
-            console.log("Unauthorized attempt to create admin");
-            return res.status(403).json({
-              success: false,
-              message: "Only existing admins can create other admin users",
-            });
-          }
-        } catch (err) {
-          console.log("Token verification failed:", err.message);
-          return res.status(401).json({
-            success: false,
-            message: "Invalid authentication token",
-          });
-        }
+      if (!token) {
+        return res.status(401).json({
+          success: false,
+          message: "Unauthorized - No token provided",
+        });
       }
-    } else {
-      console.log(
-        "No admin users exist yet, allowing creation without authentication"
-      );
+
+      try {
+        // Verify token
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const user = await User.findById(decoded.id);
+
+        if (!user || user.role !== "admin") {
+          return res.status(401).json({
+            success: false,
+            message: "Unauthorized - Only admins can create other admins",
+          });
+        }
+      } catch (err) {
+        return res.status(401).json({
+          success: false,
+          message: "Unauthorized - Invalid token",
+          error: err.message,
+        });
+      }
     }
 
-    const { firstName, lastName, email, password, phone, address, gender } =
-      req.body;
-
-    console.log("Validating required fields...");
-    // Validate required fields
-    if (
-      !firstName ||
-      !lastName ||
-      !email ||
-      !password ||
-      !phone ||
-      !address ||
-      !gender
-    ) {
-      console.log("Missing required fields:", {
-        firstName: !!firstName,
-        lastName: !!lastName,
-        email: !!email,
-        password: !!password,
-        phone: !!phone,
-        address: !!address,
-        gender: !!gender,
-      });
-      return res.status(400).json({
-        success: false,
-        message: "Please provide all required fields",
-      });
-    }
-
-    // Check if user exists
-    console.log("Checking if user exists with email:", email);
-    const userExists = await User.findOne({ email });
-    if (userExists) {
-      console.log("User already exists with email:", email);
-      return res.status(400).json({
-        success: false,
-        message: "User already exists",
-      });
-    }
-
-    console.log("Creating new admin user...");
-    console.log("Preparing user data:", {
-      name: `${firstName} ${lastName}`,
+    // Extract data from request body
+    const {
+      firstName,
+      lastName,
       email,
+      password,
       phone,
       address,
-      gender,
-      role: "admin",
-      status: "active",
-    });
+      gender = "male",
+    } = req.body;
 
-    // Create admin user
-    console.log("Attempting to save user to database...");
-    const admin = await User.create({
+    // Validate required fields
+    if (!firstName || !lastName || !email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: "Missing required fields",
+        requiredFields: ["firstName", "lastName", "email", "password"],
+      });
+    }
+
+    // Check if user already exists
+    const userExists = await User.findOne({ email });
+    if (userExists) {
+      return res.status(400).json({
+        success: false,
+        message: "User with this email already exists",
+      });
+    }
+
+    // Create user with admin role
+    const user = await User.create({
       name: `${firstName} ${lastName}`,
       email,
       password,
@@ -454,51 +396,29 @@ export const createAdmin = async (req, res) => {
       address,
       gender,
       role: "admin",
-      status: "active",
-    });
-    console.log("User saved successfully to database");
-
-    console.log("Admin user created successfully:", {
-      id: admin._id,
-      name: admin.name,
-      email: admin.email,
-      role: admin.role,
     });
 
-    // Verify the user was actually created in the database
-    console.log("Verifying user in database...");
-    const verifyUser = await User.findById(admin._id);
-    console.log("Verification result:", verifyUser ? "Success" : "Failed");
-    if (verifyUser) {
-      console.log("Verified user details:", {
-        id: verifyUser._id,
-        name: verifyUser.name,
-        email: verifyUser.email,
-        role: verifyUser.role,
-      });
-    }
+    // Generate token
+    const token = generateToken(user._id, "admin");
+
+    // Verify user was created
+    const verifyUser = await User.findById(user._id);
 
     res.status(201).json({
       success: true,
       message: "Admin created successfully",
-      admin: {
-        id: admin._id,
-        name: admin.name,
-        email: admin.email,
-        role: admin.role,
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
       },
     });
   } catch (error) {
-    console.error("Admin creation error:", {
-      name: error.name,
-      message: error.message,
-      code: error.code,
-      stack: error.stack,
-      details: error,
-    });
     res.status(500).json({
       success: false,
-      message: "Error in creating admin",
+      message: "Error creating admin",
       error: error.message,
     });
   }
@@ -515,7 +435,6 @@ export const logout = async (req, res) => {
       message: "Logged out successfully",
     });
   } catch (error) {
-    console.error("Logout error:", error);
     res.status(500).json({
       success: false,
       message: "Error during logout",

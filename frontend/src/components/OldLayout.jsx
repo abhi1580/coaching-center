@@ -29,7 +29,9 @@ import { logout } from "../store/slices/authSlice";
 
 const drawerWidth = 240;
 
-const Layout = () => {
+// IMPORTANT: This file is not being used. The active Layout component is in components/layout/Layout.jsx
+// This file should be deleted or renamed to avoid route conflicts
+const OldLayout = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -46,11 +48,11 @@ const Layout = () => {
 
   const menuItems = [
     { text: "Dashboard", icon: <DashboardIcon />, path: "/app/dashboard" },
-    { text: "Standards", icon: <SchoolIcon />, path: "/app/admin/standards" },
-    { text: "Subjects", icon: <SubjectIcon />, path: "/app/admin/subjects" },
-    { text: "Students", icon: <PeopleIcon />, path: "/app/admin/students" },
-    { text: "Teachers", icon: <PersonIcon />, path: "/app/admin/teachers" },
-    { text: "Batches", icon: <GroupsIcon />, path: "/app/admin/batches" },
+    { text: "Standards", icon: <SchoolIcon />, path: "/app/standards" },
+    { text: "Subjects", icon: <SubjectIcon />, path: "/app/subjects" },
+    { text: "Students", icon: <PeopleIcon />, path: "/app/students" },
+    { text: "Teachers", icon: <PersonIcon />, path: "/app/teachers" },
+    { text: "Batches", icon: <GroupsIcon />, path: "/app/batches" },
   ];
 
   const drawer = (
@@ -155,4 +157,4 @@ const Layout = () => {
   );
 };
 
-export default Layout;
+export default OldLayout;
