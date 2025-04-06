@@ -272,3 +272,9 @@ const announcementSlice = createSlice({
 
 export const { resetStatus } = announcementSlice.actions;
 export default announcementSlice.reducer;
+
+const validAnnouncementTypes = ["General", "Event", "Holiday", "Exam", "Emergency", "Other"];
+
+export const isValidAnnouncementType = (type) => {
+  return validAnnouncementTypes.includes(type);
+};

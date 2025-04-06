@@ -49,6 +49,10 @@ const validatePastDate = (dateTime) => {
 // @access  Private
 export const getAnnouncements = async (req, res) => {
   try {
+    // Update the status of all announcements first
+    await Announcement.updateAnnouncementStatuses();
+
+    // Then retrieve the announcements
     const announcements = await Announcement.find()
       .populate("createdBy", "name")
       .sort({ createdAt: -1 });

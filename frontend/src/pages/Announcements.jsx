@@ -55,7 +55,10 @@ const validationSchema = Yup.object({
   title: Yup.string().required("Title is required"),
   content: Yup.string().required("Content is required"),
   type: Yup.string()
-    .oneOf(["General", "Event", "Emergency"], "Invalid type")
+    .oneOf(
+      ["General", "Event", "Holiday", "Exam", "Emergency", "Other"],
+      "Invalid type"
+    )
     .required("Type is required"),
   priority: Yup.string()
     .oneOf(["High", "Medium", "Low"], "Invalid priority")
@@ -115,9 +118,9 @@ const Announcements = () => {
     initialValues: {
       title: "",
       content: "",
-      type: "General",
-      priority: "Medium",
-      targetAudience: "All",
+      type: "",
+      priority: "",
+      targetAudience: "",
       startDate: "",
       startTime: "",
       endDate: "",
@@ -129,9 +132,9 @@ const Announcements = () => {
         const announcementData = {
           title: values.title,
           content: values.content,
-          type: values.type,
-          priority: values.priority,
-          targetAudience: values.targetAudience,
+          type: values.type || "General",
+          priority: values.priority || "Medium",
+          targetAudience: values.targetAudience || "All",
           startDate: values.startDate,
           startTime: values.startTime,
           endDate: values.endDate,
@@ -183,9 +186,9 @@ const Announcements = () => {
       formik.setValues({
         title: announcement.title || "",
         content: announcement.content || "",
-        type: announcement.type || "General",
-        priority: announcement.priority || "Medium",
-        targetAudience: announcement.targetAudience || "All",
+        type: announcement.type || "",
+        priority: announcement.priority || "",
+        targetAudience: announcement.targetAudience || "",
         startDate: startDate.toISOString().split("T")[0],
         startTime: startDate.toLocaleTimeString("en-US", {
           hour12: false,
@@ -241,23 +244,31 @@ const Announcements = () => {
 
   const getTypeColor = (type) => {
     switch (type) {
+      case "General":
+        return "primary";
+      case "Event":
+        return "success";
+      case "Holiday":
+        return "secondary";
+      case "Exam":
+        return "warning";
       case "Emergency":
         return "error";
-      case "Event":
-        return "primary";
+      case "Other":
+        return "info";
       default:
-        return "default";
+        return "info";
     }
   };
 
   const getPriorityColor = (priority) => {
     switch (priority) {
       case "High":
-        return "error.main";
+        return "error";
       case "Medium":
-        return "warning.main";
+        return "warning";
       default:
-        return "success.main";
+        return "success";
     }
   };
 
@@ -359,16 +370,12 @@ const Announcements = () => {
                   </Box>
 
                   <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        mr: 1,
-                        color: getPriorityColor(announcement.priority),
-                        fontWeight: "bold",
-                      }}
-                    >
-                      {announcement.priority || "Medium"} Priority
-                    </Typography>
+                    <Chip
+                      label={`${announcement.priority || "Medium"} Priority`}
+                      size="small"
+                      color={getPriorityColor(announcement.priority)}
+                      sx={{ mr: 1 }}
+                    />
                     <Chip
                       label={`For: ${announcement.targetAudience}`}
                       size="small"
@@ -404,22 +411,27 @@ const Announcements = () => {
                 <CardActions sx={{ px: 2, pb: 2, pt: 0 }}>
                   <Button
                     size="small"
+                    variant="outlined"
                     startIcon={<VisibilityIcon />}
                     onClick={() => handleView(announcement)}
                     color="primary"
+                    sx={{ mr: 1 }}
                   >
                     View
                   </Button>
                   <Button
                     size="small"
+                    variant="outlined"
                     startIcon={<EditIcon />}
                     onClick={() => handleOpen(announcement)}
                     color="primary"
+                    sx={{ mr: 1 }}
                   >
                     Edit
                   </Button>
                   <Button
                     size="small"
+                    variant="outlined"
                     startIcon={<DeleteIcon />}
                     onClick={() => handleDelete(announcement._id)}
                     color="error"
@@ -504,14 +516,11 @@ const Announcements = () => {
                       </TableCell>
                     )}
                     <TableCell>
-                      <Typography
-                        sx={{
-                          color: getPriorityColor(announcement.priority),
-                          fontWeight: "bold",
-                        }}
-                      >
-                        {announcement.priority || "Medium"}
-                      </Typography>
+                      <Chip
+                        label={announcement.priority || "Medium"}
+                        size="small"
+                        color={getPriorityColor(announcement.priority)}
+                      />
                     </TableCell>
                     {!isTablet && (
                       <TableCell>{announcement.targetAudience}</TableCell>
@@ -540,6 +549,7 @@ const Announcements = () => {
                           color="primary"
                           onClick={() => handleView(announcement)}
                           size="small"
+                          title="View Details"
                         >
                           <VisibilityIcon fontSize="small" />
                         </IconButton>
@@ -547,6 +557,7 @@ const Announcements = () => {
                           color="primary"
                           onClick={() => handleOpen(announcement)}
                           size="small"
+                          title="Edit"
                         >
                           <EditIcon fontSize="small" />
                         </IconButton>
@@ -554,6 +565,7 @@ const Announcements = () => {
                           color="error"
                           onClick={() => handleDelete(announcement._id)}
                           size="small"
+                          title="Delete"
                         >
                           <DeleteIcon fontSize="small" />
                         </IconButton>
@@ -592,7 +604,7 @@ const Announcements = () => {
         {selectedAnnouncement && (
           <>
             <DialogTitle sx={{ pb: 1 }}>
-              <Box sx={{ pr: 4 }}>
+              <Box>
                 <Typography variant="h6" component="div">
                   {selectedAnnouncement.title}
                 </Typography>
@@ -601,139 +613,83 @@ const Announcements = () => {
                   {selectedAnnouncement.createdBy?.name || "Unknown"}
                 </Typography>
               </Box>
-              <IconButton
-                onClick={() => {
-                  setViewDialogOpen(false);
-                  handleOpen(selectedAnnouncement);
-                }}
-                sx={{ position: "absolute", right: 8, top: 8 }}
-                size={isMobile ? "medium" : "small"}
-              >
-                <EditIcon fontSize={isMobile ? "small" : "inherit"} />
-              </IconButton>
             </DialogTitle>
-            <DialogContent
-              dividers
-              sx={{ px: { xs: 2, sm: 3 }, py: { xs: 2, sm: 2 } }}
-            >
+            <DialogContent sx={{ p: 3 }}>
               <Grid container spacing={2}>
-                <Grid item xs={12} sm={6}>
-                  <Box sx={{ mb: 2 }}>
-                    <Typography
-                      variant="subtitle2"
-                      color="text.secondary"
-                      gutterBottom
-                    >
-                      Type
-                    </Typography>
-                    <Chip
-                      label={selectedAnnouncement.type}
-                      color={getTypeColor(selectedAnnouncement.type)}
-                      size="small"
-                    />
-                  </Box>
+                <Grid item xs={12} sm={6} md={4}>
+                  <Typography variant="subtitle2" color="text.secondary">
+                    Type
+                  </Typography>
+                  <Chip
+                    label={selectedAnnouncement.type}
+                    size="small"
+                    color={getTypeColor(selectedAnnouncement.type)}
+                    sx={{ mt: 0.5 }}
+                  />
                 </Grid>
-                <Grid item xs={12} sm={6}>
-                  <Box sx={{ mb: 2 }}>
-                    <Typography
-                      variant="subtitle2"
-                      color="text.secondary"
-                      gutterBottom
-                    >
-                      Priority
-                    </Typography>
-                    <Typography
-                      sx={{
-                        color: getPriorityColor(selectedAnnouncement.priority),
-                        fontWeight: "bold",
-                      }}
-                    >
-                      {selectedAnnouncement.priority || "Medium"}
-                    </Typography>
-                  </Box>
+                <Grid item xs={12} sm={6} md={4}>
+                  <Typography variant="subtitle2" color="text.secondary">
+                    Priority
+                  </Typography>
+                  <Chip
+                    label={selectedAnnouncement.priority}
+                    size="small"
+                    color={getPriorityColor(selectedAnnouncement.priority)}
+                    sx={{ mt: 0.5 }}
+                  />
                 </Grid>
-                <Grid item xs={12} sm={6}>
-                  <Box sx={{ mb: 2 }}>
-                    <Typography
-                      variant="subtitle2"
-                      color="text.secondary"
-                      gutterBottom
-                    >
-                      Target Audience
-                    </Typography>
-                    <Typography>
-                      {selectedAnnouncement.targetAudience}
-                    </Typography>
-                  </Box>
+                <Grid item xs={12} sm={6} md={4}>
+                  <Typography variant="subtitle2" color="text.secondary">
+                    Target Audience
+                  </Typography>
+                  <Typography variant="body2" sx={{ mt: 0.5 }}>
+                    {selectedAnnouncement.targetAudience}
+                  </Typography>
                 </Grid>
-                <Grid item xs={12} sm={6}>
-                  <Box sx={{ mb: 2 }}>
-                    <Typography
-                      variant="subtitle2"
-                      color="text.secondary"
-                      gutterBottom
-                    >
-                      Status
-                    </Typography>
-                    <Chip
-                      label={selectedAnnouncement.status}
-                      color={
-                        selectedAnnouncement.status === "Active"
-                          ? "success"
-                          : "error"
-                      }
-                      size="small"
-                    />
-                  </Box>
+                <Grid item xs={12} sm={6} md={4}>
+                  <Typography variant="subtitle2" color="text.secondary">
+                    Start Date
+                  </Typography>
+                  <Typography variant="body2" sx={{ mt: 0.5 }}>
+                    {formatDate(selectedAnnouncement.startTime)}
+                  </Typography>
                 </Grid>
-                <Grid item xs={12} sm={6}>
-                  <Box sx={{ mb: 2 }}>
-                    <Typography
-                      variant="subtitle2"
-                      color="text.secondary"
-                      gutterBottom
-                    >
-                      Start Time
-                    </Typography>
-                    <Typography>
-                      {formatDate(selectedAnnouncement.startTime)}
-                    </Typography>
-                  </Box>
+                <Grid item xs={12} sm={6} md={4}>
+                  <Typography variant="subtitle2" color="text.secondary">
+                    End Date
+                  </Typography>
+                  <Typography variant="body2" sx={{ mt: 0.5 }}>
+                    {formatDate(selectedAnnouncement.endTime)}
+                  </Typography>
                 </Grid>
-                <Grid item xs={12} sm={6}>
-                  <Box sx={{ mb: 2 }}>
-                    <Typography
-                      variant="subtitle2"
-                      color="text.secondary"
-                      gutterBottom
-                    >
-                      End Time
-                    </Typography>
-                    <Typography>
-                      {formatDate(selectedAnnouncement.endTime)}
-                    </Typography>
-                  </Box>
+                <Grid item xs={12} sm={6} md={4}>
+                  <Typography variant="subtitle2" color="text.secondary">
+                    Status
+                  </Typography>
+                  <Chip
+                    label={selectedAnnouncement.status}
+                    size="small"
+                    color={
+                      selectedAnnouncement.status === "Active"
+                        ? "success"
+                        : "error"
+                    }
+                    sx={{ mt: 0.5 }}
+                  />
                 </Grid>
                 <Grid item xs={12}>
-                  <Divider sx={{ my: 1 }} />
-                  <Typography
-                    variant="subtitle2"
-                    color="text.secondary"
-                    gutterBottom
-                  >
+                  <Typography variant="subtitle2" color="text.secondary">
                     Content
                   </Typography>
                   <Paper
                     variant="outlined"
-                    sx={{
-                      p: 2,
-                      mt: 1,
-                      backgroundColor: "background.default",
-                      minHeight: "100px",
-                    }}
+                    sx={{ p: 2, mt: 0.5, minHeight: "100px" }}
                   >
-                    <Typography variant="body2" whiteSpace="pre-line">
-                      {selectedAnnouncement.content || "No content available"}
+                    <Typography
+                      variant="body2"
+                      style={{ whiteSpace: "pre-wrap" }}
+                    >
+                      {selectedAnnouncement.content}
                     </Typography>
                   </Paper>
                 </Grid>
@@ -748,6 +704,17 @@ const Announcements = () => {
                 color="primary"
               >
                 Close
+              </Button>
+              <Button
+                color="primary"
+                variant="outlined"
+                onClick={() => {
+                  setViewDialogOpen(false);
+                  handleOpen(selectedAnnouncement);
+                }}
+                startIcon={<EditIcon />}
+              >
+                Edit
               </Button>
               <Button
                 color="error"
@@ -801,70 +768,97 @@ const Announcements = () => {
                 />
               </Grid>
               <Grid item xs={12} sm={6}>
-                <TextField
+                <FormControl
                   fullWidth
-                  id="type"
-                  name="type"
-                  select
-                  label="Type"
-                  value={formik.values.type}
-                  onChange={formik.handleChange}
-                  error={formik.touched.type && Boolean(formik.errors.type)}
-                  helperText={formik.touched.type && formik.errors.type}
                   margin="normal"
                   size={isMobile ? "medium" : "small"}
+                  error={formik.touched.type && Boolean(formik.errors.type)}
                 >
-                  <MenuItem value="General">General</MenuItem>
-                  <MenuItem value="Event">Event</MenuItem>
-                  <MenuItem value="Emergency">Emergency</MenuItem>
-                </TextField>
+                  <InputLabel id="type-label">Type</InputLabel>
+                  <Select
+                    labelId="type-label"
+                    id="type"
+                    name="type"
+                    value={formik.values.type}
+                    onChange={formik.handleChange}
+                    label="Type"
+                  >
+                    <MenuItem value="General">General</MenuItem>
+                    <MenuItem value="Event">Event</MenuItem>
+                    <MenuItem value="Holiday">Holiday</MenuItem>
+                    <MenuItem value="Exam">Exam</MenuItem>
+                    <MenuItem value="Emergency">Emergency</MenuItem>
+                    <MenuItem value="Other">Other</MenuItem>
+                  </Select>
+                  {formik.touched.type && formik.errors.type && (
+                    <Typography variant="caption" color="error">
+                      {formik.errors.type}
+                    </Typography>
+                  )}
+                </FormControl>
               </Grid>
               <Grid item xs={12} sm={6}>
-                <TextField
+                <FormControl
                   fullWidth
-                  id="priority"
-                  name="priority"
-                  select
-                  label="Priority"
-                  value={formik.values.priority}
-                  onChange={formik.handleChange}
+                  margin="normal"
+                  size={isMobile ? "medium" : "small"}
                   error={
                     formik.touched.priority && Boolean(formik.errors.priority)
                   }
-                  helperText={formik.touched.priority && formik.errors.priority}
-                  margin="normal"
-                  size={isMobile ? "medium" : "small"}
                 >
-                  <MenuItem value="High">High</MenuItem>
-                  <MenuItem value="Medium">Medium</MenuItem>
-                  <MenuItem value="Low">Low</MenuItem>
-                </TextField>
+                  <InputLabel id="priority-label">Priority</InputLabel>
+                  <Select
+                    labelId="priority-label"
+                    id="priority"
+                    name="priority"
+                    value={formik.values.priority}
+                    onChange={formik.handleChange}
+                    label="Priority"
+                  >
+                    <MenuItem value="High">High</MenuItem>
+                    <MenuItem value="Medium">Medium</MenuItem>
+                    <MenuItem value="Low">Low</MenuItem>
+                  </Select>
+                  {formik.touched.priority && formik.errors.priority && (
+                    <Typography variant="caption" color="error">
+                      {formik.errors.priority}
+                    </Typography>
+                  )}
+                </FormControl>
               </Grid>
               <Grid item xs={12} sm={6}>
-                <TextField
+                <FormControl
                   fullWidth
-                  id="targetAudience"
-                  name="targetAudience"
-                  select
-                  label="Target Audience"
-                  value={formik.values.targetAudience}
-                  onChange={formik.handleChange}
+                  margin="normal"
+                  size={isMobile ? "medium" : "small"}
                   error={
                     formik.touched.targetAudience &&
                     Boolean(formik.errors.targetAudience)
                   }
-                  helperText={
-                    formik.touched.targetAudience &&
-                    formik.errors.targetAudience
-                  }
-                  margin="normal"
-                  size={isMobile ? "medium" : "small"}
                 >
-                  <MenuItem value="All">All</MenuItem>
-                  <MenuItem value="Students">Students</MenuItem>
-                  <MenuItem value="Teachers">Teachers</MenuItem>
-                  <MenuItem value="Parents">Parents</MenuItem>
-                </TextField>
+                  <InputLabel id="targetAudience-label">
+                    Target Audience
+                  </InputLabel>
+                  <Select
+                    labelId="targetAudience-label"
+                    id="targetAudience"
+                    name="targetAudience"
+                    value={formik.values.targetAudience}
+                    onChange={formik.handleChange}
+                    label="Target Audience"
+                  >
+                    <MenuItem value="All">All</MenuItem>
+                    <MenuItem value="Students">Students</MenuItem>
+                    <MenuItem value="Teachers">Teachers</MenuItem>
+                    <MenuItem value="Parents">Parents</MenuItem>
+                  </Select>
+                  {formik.touched.targetAudience &&
+                    formik.errors.targetAudience && (
+                      <Typography variant="caption" color="error">
+                        {formik.errors.targetAudience}
+                      </Typography>
+                    )}
+                </FormControl>
               </Grid>
               <Grid item xs={12} sm={6}>
                 {/* This can be left empty for alignment, or used for another field if needed */}

@@ -14,7 +14,7 @@ const announcementSchema = new mongoose.Schema(
     type: {
       type: String,
       required: [true, "Type is required"],
-      enum: ["General", "Event", "Holiday", "Exam", "Other"],
+      enum: ["General", "Event", "Holiday", "Exam", "Emergency", "Other"],
     },
     priority: {
       type: String,
@@ -70,47 +70,53 @@ announcementSchema.pre("save", function (next) {
 
 // Static method to update announcement statuses
 announcementSchema.statics.updateAnnouncementStatuses = async function () {
-  const now = new Date();
+  try {
+    const now = new Date();
+    const AnnouncementModel = this;
 
-  // Update expired announcements
-  await this.updateMany(
-    {
-      endTime: { $lt: now },
-      status: { $ne: "Expired" },
-    },
-    { status: "Expired" }
-  );
+    // Update expired announcements
+    await AnnouncementModel.updateMany(
+      {
+        endTime: { $lt: now },
+        status: { $ne: "Expired" },
+      },
+      { status: "Expired" }
+    );
 
-  // Update active announcements
-  await this.updateMany(
-    {
-      startTime: { $lte: now },
-      endTime: { $gt: now },
-      status: { $ne: "Active" },
-    },
-    { status: "Active" }
-  );
+    // Update active announcements
+    await AnnouncementModel.updateMany(
+      {
+        startTime: { $lte: now },
+        endTime: { $gt: now },
+        status: { $ne: "Active" },
+      },
+      { status: "Active" }
+    );
 
-  // Update scheduled announcements
-  await this.updateMany(
-    {
-      startTime: { $gt: now },
-      status: { $ne: "Scheduled" },
-    },
-    { status: "Scheduled" }
-  );
+    // Update scheduled announcements
+    await AnnouncementModel.updateMany(
+      {
+        startTime: { $gt: now },
+        status: { $ne: "Scheduled" },
+      },
+      { status: "Scheduled" }
+    );
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error updating announcement statuses:", error);
+    return { success: false, error: error.message };
+  }
 };
-
-// Pre-find middleware to update statuses before querying
-announcementSchema.pre("find", function (next) {
-  this.model.updateAnnouncementStatuses().catch(() => {});
-  next();
-});
 
 // Update announcement statuses on save
 announcementSchema.post("save", function () {
+  // Get the model constructor
+  const Model = mongoose.model("Announcement");
   // Update statuses silently
-  this.model.updateAnnouncementStatuses().catch(() => {});
+  Model.updateAnnouncementStatuses().catch((err) => {
+    console.error("Error updating announcement statuses after save:", err);
+  });
 });
 
 const Announcement = mongoose.model("Announcement", announcementSchema);
