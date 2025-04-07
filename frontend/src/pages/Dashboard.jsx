@@ -245,12 +245,14 @@ function Dashboard() {
       <Icon sx={{ fontSize: { xs: 30, sm: 40 }, mb: 1 }} />
       <Typography
         variant="h4"
+        component="div"
         sx={{ fontSize: { xs: "1.5rem", sm: "2rem", md: "2.125rem" } }}
       >
         {value.toLocaleString()}
       </Typography>
       <Typography
         variant="subtitle1"
+        component="div"
         sx={{ fontSize: { xs: "0.8rem", sm: "0.875rem" } }}
       >
         {title}
@@ -279,19 +281,21 @@ function Dashboard() {
         </Typography>
         <Box sx={{ display: "flex", gap: 1 }}>
           <Tooltip title="Refresh Data">
-            <IconButton
-              onClick={fetchStats}
-              disabled={loading}
-              sx={{ bgcolor: "background.paper" }}
-            >
-              <RefreshIcon />
-            </IconButton>
+            <span>
+              <IconButton
+                onClick={fetchStats}
+                disabled={loading}
+                sx={{ bgcolor: "background.paper" }}
+              >
+                <RefreshIcon />
+              </IconButton>
+            </span>
           </Tooltip>
         </Box>
       </Box>
 
       {error && error !== "You are not logged in." && (
-        <Typography color="error" sx={{ mb: 2 }}>
+        <Typography component="div" color="error" sx={{ mb: 2 }}>
           {error}
         </Typography>
       )}
@@ -389,6 +393,7 @@ function Dashboard() {
                   >
                     <Typography
                       variant="h5"
+                      component="div"
                       sx={{
                         display: "flex",
                         alignItems: "center",
@@ -419,6 +424,7 @@ function Dashboard() {
                             }}
                           >
                             <ListItemText
+                              component="div"
                               primary={
                                 <Typography
                                   variant="subtitle1"
@@ -446,6 +452,7 @@ function Dashboard() {
                                 >
                                   <Typography
                                     variant="body2"
+                                    component="span"
                                     color="text.secondary"
                                     sx={{
                                       fontSize: {
@@ -458,6 +465,7 @@ function Dashboard() {
                                   </Typography>
                                   <Typography
                                     variant="body2"
+                                    component="span"
                                     color="text.secondary"
                                     sx={{
                                       fontSize: {
@@ -505,6 +513,7 @@ function Dashboard() {
                   ) : (
                     <Typography
                       variant="body1"
+                      component="div"
                       color="text.secondary"
                       align="center"
                       sx={{ py: 2 }}
@@ -531,6 +540,7 @@ function Dashboard() {
                   >
                     <Typography
                       variant="h5"
+                      component="div"
                       sx={{
                         display: "flex",
                         alignItems: "center",
@@ -562,6 +572,7 @@ function Dashboard() {
                               }}
                             >
                               <ListItemText
+                                component="div"
                                 primary={
                                   <Typography
                                     variant="subtitle1"
@@ -592,6 +603,7 @@ function Dashboard() {
                                   >
                                     <Typography
                                       variant="body2"
+                                      component="span"
                                       color="text.secondary"
                                       sx={{
                                         fontSize: {
@@ -605,6 +617,7 @@ function Dashboard() {
                                     </Typography>
                                     <Typography
                                       variant="body2"
+                                      component="span"
                                       color="text.secondary"
                                       sx={{
                                         fontSize: {
@@ -654,6 +667,7 @@ function Dashboard() {
                   ) : (
                     <Typography
                       variant="body1"
+                      component="div"
                       color="text.secondary"
                       align="center"
                       sx={{ py: 2 }}

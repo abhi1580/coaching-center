@@ -33,6 +33,9 @@ import {
   CardContent,
   CardActions,
   Stack,
+  Hidden,
+  CardHeader,
+  Container,
 } from "@mui/material";
 import {
   Add as AddIcon,
@@ -92,6 +95,7 @@ const Announcements = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const isTablet = useMediaQuery(theme.breakpoints.down("md"));
+  const fullScreen = useMediaQuery(theme.breakpoints.down("md"));
 
   const loadAllData = useCallback(() => {
     dispatch(fetchAnnouncements());
@@ -253,7 +257,7 @@ const Announcements = () => {
 
   if (error) {
     return (
-      <Box p={3}>
+      <Box p={isMobile ? 2 : 3}>
         <Alert severity="error">
           {error.message || "Failed to load announcements"}
         </Alert>
@@ -262,71 +266,107 @@ const Announcements = () => {
   }
 
   return (
-    <Box p={3}>
+    <Box p={isMobile ? 2 : 3}>
+      {/* Responsive Header */}
       <Box
-        display="flex"
-        justifyContent="space-between"
-        alignItems="center"
-        mb={3}
+        sx={{
+          display: "flex",
+          flexDirection: { xs: "column", sm: "row" },
+          justifyContent: "space-between",
+          alignItems: { xs: "flex-start", sm: "center" },
+          mb: { xs: 2, sm: 3 },
+          gap: { xs: 2, sm: 0 },
+        }}
       >
-        <Typography variant="h4">Announcements</Typography>
-        <Box>
+        <Typography
+          variant="h4"
+          sx={{ fontSize: { xs: "1.5rem", sm: "2rem", md: "2.125rem" } }}
+        >
+          Announcements
+        </Typography>
+        <Box sx={{ display: "flex", width: { xs: "100%", sm: "auto" } }}>
           <Button
             variant="contained"
             color="primary"
             startIcon={<AddIcon />}
             onClick={() => handleOpen()}
-            sx={{ mr: 1 }}
+            sx={{
+              mr: 1,
+              flex: { xs: 1, sm: "none" },
+              fontSize: { xs: "0.8125rem", sm: "0.875rem" },
+            }}
+            size={isMobile ? "small" : "medium"}
           >
-            Add Announcement
+            {isMobile ? "Add" : "Add Announcement"}
           </Button>
-          <RefreshButton onClick={loadAllData} />
+          <RefreshButton
+            onClick={loadAllData}
+            size={isMobile ? "small" : "medium"}
+          />
         </Box>
       </Box>
 
-      {/* Stats Cards */}
-      <Grid container spacing={3} mb={3}>
-        <Grid item xs={12} sm={6} md={3}>
+      {/* Responsive Stats Cards */}
+      <Grid container spacing={isMobile ? 1 : 3} mb={isMobile ? 2 : 3}>
+        <Grid item xs={6} sm={6} md={3}>
           <Card>
-            <CardContent>
-              <Typography color="textSecondary" gutterBottom>
-                Total Announcements
+            <CardContent sx={{ p: isMobile ? 1.5 : 2 }}>
+              <Typography
+                color="textSecondary"
+                gutterBottom
+                variant={isMobile ? "body2" : "body1"}
+              >
+                Total
               </Typography>
-              <Typography variant="h4">{counts?.total || 0}</Typography>
+              <Typography variant={isMobile ? "h5" : "h4"}>
+                {counts?.total || 0}
+              </Typography>
             </CardContent>
           </Card>
         </Grid>
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid item xs={6} sm={6} md={3}>
           <Card>
-            <CardContent>
-              <Typography color="textSecondary" gutterBottom>
+            <CardContent sx={{ p: isMobile ? 1.5 : 2 }}>
+              <Typography
+                color="textSecondary"
+                gutterBottom
+                variant={isMobile ? "body2" : "body1"}
+              >
                 Active
               </Typography>
-              <Typography variant="h4" color="success.main">
+              <Typography variant={isMobile ? "h5" : "h4"} color="success.main">
                 {counts?.active || 0}
               </Typography>
             </CardContent>
           </Card>
         </Grid>
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid item xs={6} sm={6} md={3}>
           <Card>
-            <CardContent>
-              <Typography color="textSecondary" gutterBottom>
+            <CardContent sx={{ p: isMobile ? 1.5 : 2 }}>
+              <Typography
+                color="textSecondary"
+                gutterBottom
+                variant={isMobile ? "body2" : "body1"}
+              >
                 Scheduled
               </Typography>
-              <Typography variant="h4" color="warning.main">
+              <Typography variant={isMobile ? "h5" : "h4"} color="warning.main">
                 {counts?.scheduled || 0}
               </Typography>
             </CardContent>
           </Card>
         </Grid>
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid item xs={6} sm={6} md={3}>
           <Card>
-            <CardContent>
-              <Typography color="textSecondary" gutterBottom>
+            <CardContent sx={{ p: isMobile ? 1.5 : 2 }}>
+              <Typography
+                color="textSecondary"
+                gutterBottom
+                variant={isMobile ? "body2" : "body1"}
+              >
                 Expired
               </Typography>
-              <Typography variant="h4" color="error.main">
+              <Typography variant={isMobile ? "h5" : "h4"} color="error.main">
                 {counts?.expired || 0}
               </Typography>
             </CardContent>
@@ -334,80 +374,146 @@ const Announcements = () => {
         </Grid>
       </Grid>
 
-      {/* Announcements Table */}
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Title</TableCell>
-              <TableCell>Type</TableCell>
-              <TableCell>Priority</TableCell>
-              <TableCell>Target Audience</TableCell>
-              <TableCell>Start Date</TableCell>
-              <TableCell>End Date</TableCell>
-              <TableCell>Status</TableCell>
-              <TableCell>Actions</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {announcements?.map((announcement) => (
-              <TableRow key={announcement._id}>
-                <TableCell>
-                  {announcement.title.length > 30
-                    ? `${announcement.title.substring(0, 30)}...`
+      {/* Table for desktop, Cards for mobile */}
+      <Hidden smDown>
+        <TableContainer component={Paper}>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>Title</TableCell>
+                <TableCell>Type</TableCell>
+                <TableCell>Priority</TableCell>
+                <TableCell>Target Audience</TableCell>
+                <TableCell>Start Date</TableCell>
+                <TableCell>End Date</TableCell>
+                <TableCell>Status</TableCell>
+                <TableCell>Actions</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {announcements?.map((announcement) => (
+                <TableRow key={announcement._id}>
+                  <TableCell>
+                    {announcement.title.length > 30
+                      ? `${announcement.title.substring(0, 30)}...`
+                      : announcement.title}
+                  </TableCell>
+                  <TableCell>
+                    <Chip
+                      label={announcement.type}
+                      color={getTypeColor(announcement.type)}
+                      size="small"
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <Chip
+                      label={announcement.priority}
+                      color={getPriorityColor(announcement.priority)}
+                      size="small"
+                    />
+                  </TableCell>
+                  <TableCell>{announcement.targetAudience}</TableCell>
+                  <TableCell>{formatDate(announcement.startDate)}</TableCell>
+                  <TableCell>{formatDate(announcement.endDate)}</TableCell>
+                  <TableCell>
+                    <Chip
+                      label={announcement.status}
+                      color={getStatusColor(announcement.status)}
+                      size="small"
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <IconButton
+                      size="small"
+                      onClick={() => handleView(announcement)}
+                      color="primary"
+                      title="View Details"
+                    >
+                      <VisibilityIcon />
+                    </IconButton>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </Hidden>
+
+      {/* Card layout for mobile */}
+      <Hidden smUp>
+        <Stack spacing={2}>
+          {announcements?.map((announcement) => (
+            <Card key={announcement._id} sx={{ mb: 1 }}>
+              <CardContent sx={{ pb: 1 }}>
+                <Typography variant="h6" gutterBottom>
+                  {announcement.title.length > 40
+                    ? `${announcement.title.substring(0, 40)}...`
                     : announcement.title}
-                </TableCell>
-                <TableCell>
+                </Typography>
+
+                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mb: 1 }}>
                   <Chip
                     label={announcement.type}
                     color={getTypeColor(announcement.type)}
                     size="small"
                   />
-                </TableCell>
-                <TableCell>
                   <Chip
                     label={announcement.priority}
                     color={getPriorityColor(announcement.priority)}
                     size="small"
                   />
-                </TableCell>
-                <TableCell>{announcement.targetAudience}</TableCell>
-                <TableCell>{formatDate(announcement.startDate)}</TableCell>
-                <TableCell>{formatDate(announcement.endDate)}</TableCell>
-                <TableCell>
                   <Chip
                     label={announcement.status}
                     color={getStatusColor(announcement.status)}
                     size="small"
                   />
-                </TableCell>
-                <TableCell>
-                  <IconButton
-                    size="small"
-                    onClick={() => handleView(announcement)}
-                    color="primary"
-                    title="View Details"
-                  >
-                    <VisibilityIcon />
-                  </IconButton>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+                </Box>
 
-      {/* View Dialog */}
+                <Box sx={{ mt: 1.5 }}>
+                  <Typography variant="body2" color="text.secondary">
+                    Target: {announcement.targetAudience}
+                  </Typography>
+                  <Grid container spacing={1} sx={{ mt: 0.5 }}>
+                    <Grid item xs={6}>
+                      <Typography variant="body2" color="text.secondary">
+                        Start: {formatDate(announcement.startDate)}
+                      </Typography>
+                    </Grid>
+                    <Grid item xs={6}>
+                      <Typography variant="body2" color="text.secondary">
+                        End: {formatDate(announcement.endDate)}
+                      </Typography>
+                    </Grid>
+                  </Grid>
+                </Box>
+              </CardContent>
+              <CardActions>
+                <Button
+                  size="small"
+                  color="primary"
+                  onClick={() => handleView(announcement)}
+                  startIcon={<VisibilityIcon />}
+                >
+                  View Details
+                </Button>
+              </CardActions>
+            </Card>
+          ))}
+        </Stack>
+      </Hidden>
+
+      {/* Responsive View Dialog */}
       <Dialog
         open={viewDialogOpen}
         onClose={() => setViewDialogOpen(false)}
         maxWidth="md"
         fullWidth
+        fullScreen={fullScreen}
         PaperProps={{
           sx: {
-            borderRadius: 2,
+            borderRadius: fullScreen ? 0 : 2,
             minWidth: { sm: 500 },
-            maxHeight: "90vh",
+            maxHeight: fullScreen ? "100%" : "90vh",
           },
         }}
       >
@@ -417,7 +523,12 @@ const Announcements = () => {
             justifyContent="space-between"
             alignItems="center"
           >
-            <Typography variant="h6">Announcement Details</Typography>
+            <Typography
+              variant="h6"
+              sx={{ fontSize: { xs: "1.1rem", sm: "1.25rem" } }}
+            >
+              Announcement Details
+            </Typography>
             <Box>
               <IconButton
                 size="small"
@@ -445,14 +556,18 @@ const Announcements = () => {
         <DialogContent dividers>
           {selectedAnnouncement && (
             <Box>
-              <Typography variant="h6" gutterBottom>
+              <Typography
+                variant="h6"
+                gutterBottom
+                sx={{ fontSize: { xs: "1.1rem", sm: "1.25rem" } }}
+              >
                 {selectedAnnouncement.title}
               </Typography>
               <Typography variant="body1" paragraph>
                 {selectedAnnouncement.content}
               </Typography>
               <Grid container spacing={2}>
-                <Grid item xs={12} sm={6}>
+                <Grid item xs={6} sm={6}>
                   <Typography
                     variant="subtitle2"
                     color="textSecondary"
@@ -466,7 +581,7 @@ const Announcements = () => {
                     size="small"
                   />
                 </Grid>
-                <Grid item xs={12} sm={6}>
+                <Grid item xs={6} sm={6}>
                   <Typography
                     variant="subtitle2"
                     color="textSecondary"
@@ -480,7 +595,7 @@ const Announcements = () => {
                     size="small"
                   />
                 </Grid>
-                <Grid item xs={12} sm={6}>
+                <Grid item xs={6} sm={6}>
                   <Typography
                     variant="subtitle2"
                     color="textSecondary"
@@ -492,7 +607,7 @@ const Announcements = () => {
                     {selectedAnnouncement.targetAudience}
                   </Typography>
                 </Grid>
-                <Grid item xs={12} sm={6}>
+                <Grid item xs={6} sm={6}>
                   <Typography
                     variant="subtitle2"
                     color="textSecondary"
@@ -506,7 +621,7 @@ const Announcements = () => {
                     size="small"
                   />
                 </Grid>
-                <Grid item xs={12} sm={6}>
+                <Grid item xs={6} sm={6}>
                   <Typography
                     variant="subtitle2"
                     color="textSecondary"
@@ -518,7 +633,7 @@ const Announcements = () => {
                     {formatDate(selectedAnnouncement.startDate)}
                   </Typography>
                 </Grid>
-                <Grid item xs={12} sm={6}>
+                <Grid item xs={6} sm={6}>
                   <Typography
                     variant="subtitle2"
                     color="textSecondary"
@@ -534,31 +649,34 @@ const Announcements = () => {
             </Box>
           )}
         </DialogContent>
-        <DialogActions sx={{ px: 3, py: 2 }}>
+        <DialogActions sx={{ px: { xs: 2, sm: 3 }, py: { xs: 1.5, sm: 2 } }}>
           <Button onClick={() => setViewDialogOpen(false)}>Close</Button>
         </DialogActions>
       </Dialog>
 
-      {/* Add/Edit Dialog */}
+      {/* Responsive Add/Edit Dialog */}
       <Dialog
         open={open}
         onClose={handleClose}
         maxWidth="md"
         fullWidth
+        fullScreen={fullScreen}
         PaperProps={{
           sx: {
-            borderRadius: 2,
+            borderRadius: fullScreen ? 0 : 2,
             minWidth: { sm: 500 },
-            maxHeight: "90vh",
+            maxHeight: fullScreen ? "100%" : "90vh",
           },
         }}
       >
         <DialogTitle sx={{ pb: 1 }}>
-          {editingAnnouncement ? "Edit Announcement" : "Add Announcement"}
+          <Typography sx={{ fontSize: { xs: "1.1rem", sm: "1.25rem" } }}>
+            {editingAnnouncement ? "Edit Announcement" : "Add Announcement"}
+          </Typography>
         </DialogTitle>
         <form onSubmit={formik.handleSubmit}>
           <DialogContent dividers>
-            <Grid container spacing={2}>
+            <Grid container spacing={isMobile ? 1.5 : 2}>
               <Grid item xs={12}>
                 <TextField
                   fullWidth
@@ -568,13 +686,14 @@ const Announcements = () => {
                   onChange={formik.handleChange}
                   error={formik.touched.title && Boolean(formik.errors.title)}
                   helperText={formik.touched.title && formik.errors.title}
+                  size={isMobile ? "small" : "medium"}
                 />
               </Grid>
               <Grid item xs={12}>
                 <TextField
                   fullWidth
                   multiline
-                  rows={4}
+                  rows={isMobile ? 3 : 4}
                   label="Content"
                   name="content"
                   value={formik.values.content}
@@ -583,10 +702,11 @@ const Announcements = () => {
                     formik.touched.content && Boolean(formik.errors.content)
                   }
                   helperText={formik.touched.content && formik.errors.content}
+                  size={isMobile ? "small" : "medium"}
                 />
               </Grid>
               <Grid item xs={12} sm={6}>
-                <FormControl fullWidth>
+                <FormControl fullWidth size={isMobile ? "small" : "medium"}>
                   <InputLabel>Type</InputLabel>
                   <Select
                     name="type"
@@ -604,7 +724,7 @@ const Announcements = () => {
                 </FormControl>
               </Grid>
               <Grid item xs={12} sm={6}>
-                <FormControl fullWidth>
+                <FormControl fullWidth size={isMobile ? "small" : "medium"}>
                   <InputLabel>Priority</InputLabel>
                   <Select
                     name="priority"
@@ -621,7 +741,7 @@ const Announcements = () => {
                 </FormControl>
               </Grid>
               <Grid item xs={12} sm={6}>
-                <FormControl fullWidth>
+                <FormControl fullWidth size={isMobile ? "small" : "medium"}>
                   <InputLabel>Target Audience</InputLabel>
                   <Select
                     name="targetAudience"
@@ -654,6 +774,7 @@ const Announcements = () => {
                     formik.touched.startDate && formik.errors.startDate
                   }
                   InputLabelProps={{ shrink: true }}
+                  size={isMobile ? "small" : "medium"}
                 />
               </Grid>
               <Grid item xs={12} sm={6}>
@@ -669,13 +790,34 @@ const Announcements = () => {
                   }
                   helperText={formik.touched.endDate && formik.errors.endDate}
                   InputLabelProps={{ shrink: true }}
+                  size={isMobile ? "small" : "medium"}
                 />
               </Grid>
             </Grid>
           </DialogContent>
-          <DialogActions sx={{ px: 3, py: 2 }}>
-            <Button onClick={handleClose}>Cancel</Button>
-            <Button type="submit" variant="contained" color="primary">
+          <DialogActions
+            sx={{
+              px: { xs: 2, sm: 3 },
+              py: { xs: 1.5, sm: 2 },
+              flexDirection: isMobile ? "column" : "row",
+              alignItems: isMobile ? "stretch" : "center",
+            }}
+          >
+            <Button
+              onClick={handleClose}
+              fullWidth={isMobile}
+              sx={{ mb: isMobile ? 1 : 0 }}
+              size={isMobile ? "small" : "medium"}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              variant="contained"
+              color="primary"
+              fullWidth={isMobile}
+              size={isMobile ? "small" : "medium"}
+            >
               {editingAnnouncement ? "Update" : "Create"}
             </Button>
           </DialogActions>
