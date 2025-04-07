@@ -103,96 +103,46 @@ export const createStudent = async (req, res) => {
       name,
       email,
       phone,
-      gender,
-      address,
-      parentName,
-      parentPhone,
-      parentEmail,
       standard,
       subjects,
       batches,
+      parentName,
+      parentPhone,
+      address,
+      dateOfBirth,
+      gender,
       board,
       schoolName,
       previousPercentage,
-      dateOfBirth,
       joiningDate,
-      password,
     } = req.body;
 
-    // Check if email already exists
-    const existingStudent = await Student.findOne({ email });
-    if (existingStudent) {
-      return errorResponse(res, 400, "Email already registered");
-    }
-
-    // Check if a user with this email already exists
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return errorResponse(
-        res,
-        400,
-        "Email already registered for a user account"
-      );
-    }
-
-    // Create a user account first with role="student"
-    const user = await User.create({
-      name,
-      email,
-      password: password || "student123",
-      phone,
-      address,
-      role: "student",
-      gender,
-      status: "active",
-    });
-
-    const student = new Student({
+    const student = await Student.create({
       name,
       email,
       phone,
-      gender,
-      address,
-      parentName,
-      parentPhone,
-      parentEmail,
       standard,
       subjects,
       batches,
+      parentName,
+      parentPhone,
+      address,
+      dateOfBirth,
+      gender,
       board,
       schoolName,
       previousPercentage,
-      dateOfBirth,
       joiningDate,
-      user: user._id,
     });
 
-    const newStudent = await student.save();
-
-    // If batches are provided, add student to batches as well
-    if (batches && batches.length > 0) {
-      const Batch = (await import("../models/Batch.js")).default;
-      await Batch.updateMany(
-        { _id: { $in: batches } },
-        { $addToSet: { enrolledStudents: newStudent._id } }
-      );
-    }
-
-    // Populate the student with standard, subjects, and batches
-    const populatedStudent = await Student.findById(newStudent._id)
-      .populate("standard", "name level")
-      .populate("subjects", "name")
-      .populate("batches", "name subject");
-
-    return successResponse(
-      res,
-      201,
-      "Student created successfully",
-      populatedStudent
-    );
-  } catch (error) {
-    return errorResponse(res, 500, "Error creating student", {
-      error: error.message,
+    res.status(201).json({
+      success: true,
+      data: student,
+    });
+  } catch (err) {
+    res.status(400).json({
+      success: false,
+      message: err.message,
     });
   }
 };
@@ -202,114 +152,64 @@ export const createStudent = async (req, res) => {
 // @access  Private
 export const updateStudent = async (req, res) => {
   try {
-    const { id } = req.params;
-    if (!validateObjectId(id)) {
-      return errorResponse(res, 400, "Invalid student ID");
-    }
-
-    const student = await Student.findById(id);
-    if (!student) {
-      return errorResponse(res, 404, "Student not found");
-    }
-
-    // Extract fields from request body
     const {
       name,
       email,
       phone,
-      gender,
-      address,
-      parentName,
-      parentPhone,
-      parentEmail,
       standard,
       subjects,
       batches,
+      parentName,
+      parentPhone,
+      address,
+      dateOfBirth,
+      gender,
       board,
       schoolName,
       previousPercentage,
-      dateOfBirth,
       joiningDate,
-      status,
-      password,
     } = req.body;
 
-    // Update the user account associated with the student
-    if (student.user) {
-      const userUpdateData = {
-        name,
-        email,
-        phone,
-        gender,
-        address,
-        status,
-      };
-
-      // Only include password if it was provided
-      if (password) {
-        userUpdateData.password = password;
-      }
-
-      const user = await User.findByIdAndUpdate(student.user, userUpdateData, {
-        new: true,
-      });
-    }
-
-    // Update student document
-    const updatedStudent = await Student.findByIdAndUpdate(
-      id,
+    const student = await Student.findByIdAndUpdate(
+      req.params.id,
       {
         name,
         email,
         phone,
-        gender,
-        address,
-        parentName,
-        parentPhone,
-        parentEmail,
         standard,
         subjects,
         batches,
+        parentName,
+        parentPhone,
+        address,
+        dateOfBirth,
+        gender,
         board,
         schoolName,
         previousPercentage,
-        dateOfBirth,
         joiningDate,
-        status,
       },
-      { new: true }
-    )
-      .populate("standard", "name level")
-      .populate("subjects", "name")
-      .populate("batches", "name subject");
-
-    // Update student in batch enrollment if batches field is present
-    if (batches) {
-      const Batch = (await import("../models/Batch.js")).default;
-      // First remove student from all batches
-      await Batch.updateMany(
-        { enrolledStudents: id },
-        { $pull: { enrolledStudents: id } }
-      );
-
-      // Then add student to the selected batches
-      if (batches.length > 0) {
-        await Batch.updateMany(
-          { _id: { $in: batches } },
-          { $addToSet: { enrolledStudents: id } }
-        );
+      {
+        new: true,
+        runValidators: true,
       }
+    );
+
+    if (!student) {
+      return res.status(404).json({
+        success: false,
+        message: "Student not found",
+      });
     }
 
-    return successResponse(
-      res,
-      200,
-      "Student updated successfully",
-      updatedStudent
-    );
-  } catch (error) {
-    return errorResponse(res, 500, "Error updating student", {
-      error: error.message,
+    res.status(200).json({
+      success: true,
+      data: student,
+    });
+  } catch (err) {
+    res.status(400).json({
+      success: false,
+      message: err.message,
     });
   }
 };

@@ -26,21 +26,21 @@ const studentSchema = new mongoose.Schema(
     },
     address: {
       type: String,
-      required: true,
+      required: [true, "Address is required"],
     },
     parentName: {
       type: String,
-      required: true,
+      required: [true, "Parent name is required"],
     },
     parentPhone: {
       type: String,
-      required: true,
-    },
-    parentEmail: {
-      type: String,
-      required: true,
-      trim: true,
-      lowercase: true,
+      required: [true, "Parent phone number is required"],
+      validate: {
+        validator: function (v) {
+          return /^[0-9]{10}$/.test(v);
+        },
+        message: (props) => `${props.value} is not a valid phone number!`,
+      },
     },
     standard: {
       type: mongoose.Schema.Types.ObjectId,

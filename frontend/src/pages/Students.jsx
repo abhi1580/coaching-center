@@ -91,15 +91,15 @@ const validationSchema = Yup.object({
   parentPhone: Yup.string()
     .matches(/^[0-9]{10}$/, "Phone number must be 10 digits")
     .required("Parent phone number is required"),
-  parentEmail: Yup.string()
-    .email("Invalid email")
-    .required("Parent email is required"),
   address: Yup.string().required("Address is required"),
   dateOfBirth: Yup.date().required("Date of birth is required"),
   gender: Yup.string().required("Gender is required"),
   board: Yup.string().required("Board is required"),
   schoolName: Yup.string().required("School name is required"),
-  previousPercentage: Yup.number().min(0).max(100),
+  previousPercentage: Yup.number()
+    .min(1, "Percentage must be at least 1")
+    .max(100, "Percentage cannot exceed 100")
+    .required("Previous percentage is required"),
   joiningDate: Yup.date().required("Joining date is required"),
 });
 
@@ -243,7 +243,6 @@ const Students = () => {
       batches: [],
       parentName: "",
       parentPhone: "",
-      parentEmail: "",
       address: "",
       dateOfBirth: "",
       gender: "",
@@ -568,7 +567,6 @@ const Students = () => {
         batches: studentBatchIds,
         parentName: student.parentName || "",
         parentPhone: student.parentPhone || "",
-        parentEmail: student.parentEmail || "",
         address: student.address || "",
         dateOfBirth: dateOfBirth,
         gender: student.gender || "",
@@ -793,13 +791,13 @@ const Students = () => {
 
       {error && (
         <Alert severity="error" sx={{ mb: 2 }}>
-          {error}
+          {error.toString()}
         </Alert>
       )}
 
       {success && (
         <Alert severity="success" sx={{ mb: 2 }}>
-          {success}
+          {success.toString()}
         </Alert>
       )}
 
@@ -1187,13 +1185,6 @@ const Students = () => {
                         </Typography>
                         <Typography variant="caption" display="block">
                           {student.parentPhone || "—"}
-                        </Typography>
-                        <Typography
-                          variant="caption"
-                          display="block"
-                          sx={{ fontSize: "0.7rem" }}
-                        >
-                          {student.parentEmail || "—"}
                         </Typography>
                       </TableCell>
                     )}
@@ -1803,22 +1794,6 @@ const Students = () => {
                   }
                 />
               </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  name="parentEmail"
-                  label="Parent Email"
-                  value={formik.values.parentEmail}
-                  onChange={formik.handleChange}
-                  error={
-                    formik.touched.parentEmail &&
-                    Boolean(formik.errors.parentEmail)
-                  }
-                  helperText={
-                    formik.touched.parentEmail && formik.errors.parentEmail
-                  }
-                />
-              </Grid>
               <Grid item xs={12}>
                 <TextField
                   fullWidth
@@ -1927,11 +1902,25 @@ const Students = () => {
               <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
-                  name="previousPercentage"
                   label="Previous Percentage"
+                  name="previousPercentage"
                   type="number"
+                  min={1}
+                  max={100}
                   value={formik.values.previousPercentage}
-                  onChange={formik.handleChange}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    // Ensure value is between 1 and 100
+                    if (value === "") {
+                      formik.setFieldValue("previousPercentage", "");
+                    } else {
+                      const numValue = Math.max(
+                        1,
+                        Math.min(100, Number(value))
+                      );
+                      formik.setFieldValue("previousPercentage", numValue);
+                    }
+                  }}
                   error={
                     formik.touched.previousPercentage &&
                     Boolean(formik.errors.previousPercentage)
@@ -1940,6 +1929,7 @@ const Students = () => {
                     formik.touched.previousPercentage &&
                     formik.errors.previousPercentage
                   }
+                  sx={{ mb: 2 }}
                 />
               </Grid>
               <Grid item xs={12} sm={6}>
