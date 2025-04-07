@@ -549,23 +549,42 @@ const Batches = () => {
 
   // Get students count safely for a batch
   const getStudentsCount = (batch) => {
+    let enrolledCount = 0;
+
     // Check if enrolledStudents exists and is an array (main way students are tracked in batch model)
     if (batch.enrolledStudents && Array.isArray(batch.enrolledStudents)) {
-      return batch.enrolledStudents.length;
+      enrolledCount = batch.enrolledStudents.length;
     }
-
     // Check if students exists and is an array (secondary way)
-    if (batch.students && Array.isArray(batch.students)) {
-      return batch.students.length;
+    else if (batch.students && Array.isArray(batch.students)) {
+      enrolledCount = batch.students.length;
     }
-
     // Check if studentCount property exists (API might provide this)
-    if (typeof batch.studentCount === "number") {
-      return batch.studentCount;
+    else if (typeof batch.studentCount === "number") {
+      enrolledCount = batch.studentCount;
     }
 
-    // Default to 0 if no student data found
-    return 0;
+    const capacity = batch.capacity ? parseInt(batch.capacity, 10) : 0;
+    const remainingSeats = Math.max(0, capacity - enrolledCount);
+
+    return {
+      enrolled: enrolledCount,
+      capacity: capacity,
+      remaining: remainingSeats,
+    };
+  };
+
+  // Get color for remaining seats
+  const getRemainingSeatsColor = (batch) => {
+    const { remaining, capacity } = getStudentsCount(batch);
+
+    if (remaining === 0) return "error";
+    if (capacity > 0) {
+      const percentRemaining = (remaining / capacity) * 100;
+      if (percentRemaining <= 10) return "error";
+      if (percentRemaining <= 25) return "warning";
+    }
+    return "success";
   };
 
   if (loading && getBatchesArray(batches).length === 0) {
@@ -891,18 +910,30 @@ const Batches = () => {
                       >
                         Students:
                       </Typography>
-                      <Chip
-                        label={`${getStudentsCount(batch)} enrolled`}
-                        size="small"
-                        color={
-                          getStudentsCount(batch) > 0 ? "primary" : "default"
-                        }
+                      <Box
                         sx={{
                           display: "flex",
-                          alignItems: "center",
-                          height: 24,
+                          flexDirection: "column",
+                          gap: 0.5,
                         }}
-                      />
+                      >
+                        <Chip
+                          label={`${getStudentsCount(batch).enrolled} enrolled`}
+                          size="small"
+                          color={
+                            getStudentsCount(batch).enrolled > 0
+                              ? "primary"
+                              : "default"
+                          }
+                        />
+                        <Chip
+                          label={`${
+                            getStudentsCount(batch).remaining
+                          } seats remaining`}
+                          size="small"
+                          color={getRemainingSeatsColor(batch)}
+                        />
+                      </Box>
                     </Box>
                   </Box>
                 </CardContent>
@@ -1019,13 +1050,30 @@ const Batches = () => {
                       </TableCell>
                     )}
                     <TableCell sx={{ fontWeight: "medium" }}>
-                      <Chip
-                        label={`${getStudentsCount(batch)} enrolled`}
-                        size="small"
-                        color={
-                          getStudentsCount(batch) > 0 ? "primary" : "default"
-                        }
-                      />
+                      <Box
+                        sx={{
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: 0.5,
+                        }}
+                      >
+                        <Chip
+                          label={`${getStudentsCount(batch).enrolled} enrolled`}
+                          size="small"
+                          color={
+                            getStudentsCount(batch).enrolled > 0
+                              ? "primary"
+                              : "default"
+                          }
+                        />
+                        <Chip
+                          label={`${
+                            getStudentsCount(batch).remaining
+                          } seats remaining`}
+                          size="small"
+                          color={getRemainingSeatsColor(batch)}
+                        />
+                      </Box>
                     </TableCell>
                     <TableCell>
                       <Chip
@@ -1181,7 +1229,13 @@ const Batches = () => {
                           Capacity:
                         </Typography>
                         <Typography variant="body2" fontWeight="medium">
-                          {selectedBatch.capacity || "Not specified"}
+                          {selectedBatch.capacity
+                            ? `${getStudentsCount(selectedBatch).enrolled}/${
+                                selectedBatch.capacity
+                              } (${
+                                getStudentsCount(selectedBatch).remaining
+                              } seats remaining)`
+                            : "Not specified"}
                         </Typography>
                       </Box>
                       <Box
@@ -1301,7 +1355,7 @@ const Batches = () => {
                       gutterBottom
                       fontWeight="bold"
                     >
-                      Students ({getStudentsCount(selectedBatch)})
+                      Students ({getStudentsCount(selectedBatch).enrolled})
                     </Typography>
                     {selectedBatch.enrolledStudents &&
                     selectedBatch.enrolledStudents.length > 0 ? (
@@ -1574,13 +1628,16 @@ const Batches = () => {
               <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
-                  margin="dense"
+                  required
                   name="capacity"
                   label="Capacity"
                   type="number"
                   value={formData.capacity}
                   onChange={handleChange}
-                  required
+                  InputProps={{
+                    inputProps: { min: 1 },
+                  }}
+                  helperText="Maximum number of students that can be enrolled"
                 />
               </Grid>
               <Grid item xs={12} sm={6}>
