@@ -99,6 +99,8 @@ export const getStudent = async (req, res) => {
 // @access  Private
 export const createStudent = async (req, res) => {
   try {
+    console.log("Creating student with data:", req.body);
+
     const {
       name,
       email,
@@ -117,32 +119,73 @@ export const createStudent = async (req, res) => {
       joiningDate,
     } = req.body;
 
-    const student = await Student.create({
-      name,
-      email,
-      phone,
-      standard,
-      subjects,
-      batches,
-      parentName,
-      parentPhone,
-      address,
-      dateOfBirth,
-      gender,
-      board,
-      schoolName,
-      previousPercentage,
-      joiningDate,
-    });
+    // Validate required fields
+    const requiredFields = ["name", "email", "phone", "gender", "address"];
+    const missingFields = requiredFields.filter((field) => !req.body[field]);
 
-    res.status(201).json({
-      success: true,
-      data: student,
-    });
+    if (missingFields.length > 0) {
+      console.error("Missing required fields:", missingFields);
+      return res.status(400).json({
+        success: false,
+        message: "Missing required fields",
+        errors: missingFields.map((field) => `${field} is required`),
+      });
+    }
+
+    // Create user account for the student
+    const User = (await import("../models/User.js")).default;
+
+    // Create a simple password from phone number
+    const password = phone.slice(-6);
+
+    try {
+      const user = await User.create({
+        name,
+        email,
+        password,
+        role: "student",
+        gender,
+        address,
+        phone,
+      });
+
+      // Now create the student with the user reference
+      const student = await Student.create({
+        name,
+        email,
+        phone,
+        standard,
+        subjects: subjects || [],
+        batches: batches || [],
+        parentName,
+        parentPhone,
+        address,
+        dateOfBirth,
+        gender,
+        board,
+        schoolName,
+        previousPercentage,
+        joiningDate,
+        user: user._id, // Link to the created user
+      });
+
+      res.status(201).json({
+        success: true,
+        data: student,
+      });
+    } catch (userError) {
+      console.error("Error creating user/student:", userError);
+      return res.status(400).json({
+        success: false,
+        message: userError.message,
+      });
+    }
   } catch (err) {
+    console.error("Error in createStudent controller:", err);
     res.status(400).json({
       success: false,
       message: err.message,
+      stack: process.env.NODE_ENV === "production" ? null : err.stack,
     });
   }
 };

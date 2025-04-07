@@ -23,6 +23,13 @@ api.interceptors.request.use(
     if (token) {
       config.headers["Authorization"] = `Bearer ${token}`;
     }
+
+    // Log outgoing requests for debugging
+    console.log(
+      `API Request [${config.method?.toUpperCase()}] ${config.url}:`,
+      config.data
+    );
+
     return config;
   },
   (error) => {
@@ -34,13 +41,13 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => {
     // Log successful responses for debugging
-    // console.log(
-    //   `API Response [${response.config.method.toUpperCase()} ${
-    //     response.config.url
-    //   }]:`,
-    //   response.status,
-    //   response.data
-    // );
+    console.log(
+      `API Response [${response.config.method.toUpperCase()} ${
+        response.config.url
+      }]:`,
+      response.status,
+      response.data
+    );
     return response;
   },
   async (error) => {
@@ -83,7 +90,47 @@ export const authService = {
 export const studentService = {
   getAll: () => api.get("/students"),
   getById: (id) => api.get(`/students/${id}`),
-  create: (data) => api.post("/students", data),
+  create: (data) => {
+    console.log(
+      "studentService.create called with data:",
+      JSON.stringify(data, null, 2)
+    );
+
+    // Ensure the required fields are explicitly set in the payload
+    const payload = {
+      ...data,
+      gender:
+        data.gender === "male"
+          ? "male"
+          : data.gender === "female"
+          ? "female"
+          : data.gender === "other"
+          ? "other"
+          : null,
+      address: data.address || "",
+      phone: data.phone || "",
+      parentPhone: data.parentPhone || "",
+      standard: data.standard || null,
+      subjects: Array.isArray(data.subjects) ? data.subjects : [],
+      batches: Array.isArray(data.batches) ? data.batches : [],
+      board: data.board || null,
+      schoolName: data.schoolName || "",
+      dateOfBirth: data.dateOfBirth || null,
+      joiningDate: data.joiningDate || null,
+      previousPercentage: data.previousPercentage
+        ? Number(data.previousPercentage)
+        : null,
+    };
+
+    console.log("Final payload to API:", JSON.stringify(payload, null, 2));
+
+    // Use a direct axios call to better control the request
+    return api.post("/students", payload, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+  },
   update: (id, data) => api.put(`/students/${id}`, data),
   delete: (id) => api.delete(`/students/${id}`),
 };

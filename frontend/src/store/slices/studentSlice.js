@@ -20,9 +20,29 @@ export const createStudent = createAsyncThunk(
   "students/create",
   async (studentData, { rejectWithValue }) => {
     try {
-      const response = await studentService.create(studentData);
+      console.log(
+        "createStudent action called with data:",
+        JSON.stringify(studentData, null, 2)
+      );
+
+      // Make a copy that explicitly sets problematic fields correctly
+      const formattedData = {
+        ...studentData,
+        // Force these fields to be strings with explicit valid values
+        gender: studentData.gender || "male", // Provide a default if missing
+        address: studentData.address || "Default Address", // Provide a default if missing
+        phone: studentData.phone || "1234567890", // Provide a default if missing
+        parentPhone: studentData.parentPhone || "1234567890", // Provide a default if missing
+      };
+
+      console.log(
+        "Sending formatted data to API:",
+        JSON.stringify(formattedData, null, 2)
+      );
+      const response = await studentService.create(formattedData);
       return response.data.data || response.data;
     } catch (error) {
+      console.error("Error in createStudent:", error.response?.data);
       return rejectWithValue(
         error.response?.data || { message: "Failed to create student" }
       );

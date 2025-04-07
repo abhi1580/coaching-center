@@ -19,6 +19,7 @@ import {
   useMediaQuery,
   useTheme,
   Chip,
+  alpha,
 } from "@mui/material";
 import {
   Person as PersonIcon,
@@ -224,75 +225,163 @@ function Dashboard() {
     onClick,
   }) => (
     <Paper
+      elevation={3}
       sx={{
-        p: { xs: 1.5, sm: 2 },
-        textAlign: "center",
-        bgcolor: `${color}.light`,
-        color: "white",
+        p: { xs: 2, sm: 2.5 },
+        borderRadius: 2,
+        bgcolor: theme.palette.background.paper,
         cursor: "pointer",
-        transition: "transform 0.2s, box-shadow 0.2s",
+        transition: "all 0.3s ease",
         "&:hover": {
           transform: "translateY(-4px)",
-          boxShadow: 4,
+          boxShadow: 6,
+          bgcolor: `${color}.main`,
+          color: "white",
+          "& .MuiTypography-root": { color: "white" },
+          "& .MuiSvgIcon-root": { color: "white" },
         },
         height: "100%",
         display: "flex",
         flexDirection: "column",
         justifyContent: "center",
+        position: "relative",
+        overflow: "hidden",
+        border: `1px solid ${theme.palette.divider}`,
       }}
       onClick={onClick}
     >
-      <Icon sx={{ fontSize: { xs: 30, sm: 40 }, mb: 1 }} />
-      <Typography
-        variant="h4"
-        component="div"
-        sx={{ fontSize: { xs: "1.5rem", sm: "2rem", md: "2.125rem" } }}
+      <Box
+        sx={{
+          position: "absolute",
+          right: -10,
+          top: -10,
+          opacity: 0.1,
+          transform: "rotate(15deg)",
+        }}
       >
-        {value.toLocaleString()}
-      </Typography>
-      <Typography
-        variant="subtitle1"
-        component="div"
-        sx={{ fontSize: { xs: "0.8rem", sm: "0.875rem" } }}
-      >
-        {title}
-      </Typography>
+        <Icon sx={{ fontSize: 100, color: `${color}.main` }} />
+      </Box>
+      <Box sx={{ position: "relative", zIndex: 1 }}>
+        <Box sx={{ display: "flex", alignItems: "center", mb: 1.5 }}>
+          <Box
+            sx={{
+              bgcolor: `${color}.main`,
+              p: 1,
+              borderRadius: 1.5,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              mr: 1.5,
+            }}
+          >
+            <Icon sx={{ fontSize: 22, color: "white" }} />
+          </Box>
+          <Typography
+            variant="h6"
+            component="div"
+            sx={{
+              fontSize: { xs: "0.9rem", sm: "1rem" },
+              fontWeight: 600,
+              color: `${color}.main`,
+            }}
+          >
+            {title}
+          </Typography>
+        </Box>
+        <Typography
+          variant="h4"
+          component="div"
+          sx={{
+            fontSize: { xs: "1.8rem", sm: "2.2rem" },
+            fontWeight: 700,
+            color: "text.primary",
+            mb: 0.5,
+          }}
+        >
+          {value.toLocaleString()}
+        </Typography>
+        <Typography variant="body2" color="text.secondary">
+          View details
+        </Typography>
+      </Box>
     </Paper>
   );
 
   return (
-    <Box sx={{ p: { xs: 1, sm: 2, md: 3 } }}>
-      <Box
+    <Box sx={{ p: { xs: 2, sm: 3, md: 4 } }}>
+      <Paper
+        elevation={2}
         sx={{
-          display: "flex",
-          flexDirection: { xs: "column", sm: "row" },
-          justifyContent: "space-between",
-          alignItems: { xs: "flex-start", sm: "center" },
-          mb: { xs: 2, sm: 4 },
-          gap: { xs: 1, sm: 0 },
+          p: { xs: 2, sm: 3 },
+          mb: { xs: 3, sm: 4 },
+          borderRadius: 2,
+          backgroundImage: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
+          boxShadow: 3,
         }}
       >
-        <Typography
-          variant="h4"
-          component="h1"
-          sx={{ fontSize: { xs: "1.5rem", sm: "2rem", md: "2.125rem" } }}
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: { xs: "column", sm: "row" },
+            justifyContent: "space-between",
+            alignItems: { xs: "flex-start", sm: "center" },
+            gap: { xs: 2, sm: 0 },
+          }}
         >
-          Dashboard
-        </Typography>
-        <Box sx={{ display: "flex", gap: 1 }}>
-          <Tooltip title="Refresh Data">
-            <span>
-              <IconButton
-                onClick={fetchStats}
-                disabled={loading}
-                sx={{ bgcolor: "background.paper" }}
+          <Box sx={{ display: "flex", alignItems: "center" }}>
+            <Box
+              sx={{
+                bgcolor: "rgba(255, 255, 255, 0.2)",
+                borderRadius: "50%",
+                p: 1.5,
+                mr: 2,
+                display: { xs: "none", sm: "flex" },
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <ClassIcon sx={{ fontSize: 32, color: "white" }} />
+            </Box>
+            <Box>
+              <Typography
+                variant="h4"
+                component="h1"
+                sx={{
+                  fontSize: { xs: "1.8rem", sm: "2.2rem", md: "2.5rem" },
+                  fontWeight: 700,
+                  color: "white",
+                  mb: 0.5,
+                }}
               >
-                <RefreshIcon />
-              </IconButton>
-            </span>
-          </Tooltip>
+                Dashboard
+              </Typography>
+              <Typography
+                variant="subtitle1"
+                sx={{ color: "rgba(255, 255, 255, 0.8)" }}
+              >
+                Welcome to your coaching center overview
+              </Typography>
+            </Box>
+          </Box>
+          <Button
+            variant="outlined"
+            startIcon={<RefreshIcon />}
+            onClick={fetchStats}
+            disabled={loading}
+            sx={{
+              bgcolor: "rgba(255, 255, 255, 0.15)",
+              color: "white",
+              borderColor: "rgba(255, 255, 255, 0.3)",
+              "&:hover": {
+                bgcolor: "rgba(255, 255, 255, 0.25)",
+                borderColor: "rgba(255, 255, 255, 0.5)",
+              },
+            }}
+          >
+            Refresh
+          </Button>
         </Box>
-      </Box>
+      </Paper>
 
       {error && error !== "You are not logged in." && (
         <Typography component="div" color="error" sx={{ mb: 2 }}>
@@ -376,305 +465,456 @@ function Dashboard() {
 
           {/* Active and Scheduled Announcements Section */}
           <Box sx={{ mt: { xs: 3, sm: 4 } }}>
-            <Grid container spacing={2}>
+            <Typography
+              variant="h5"
+              component="h2"
+              sx={{
+                mb: 2.5,
+                fontWeight: 600,
+                display: "flex",
+                alignItems: "center",
+                "&::before": {
+                  content: '""',
+                  display: "block",
+                  width: 4,
+                  height: 24,
+                  backgroundColor: theme.palette.primary.main,
+                  mr: 1.5,
+                  borderRadius: 1,
+                },
+              }}
+            >
+              Announcements
+            </Typography>
+            <Grid container spacing={3}>
               {/* Active Announcements */}
               <Grid item xs={12} md={6}>
                 <Paper
-                  sx={{ p: { xs: 1.5, sm: 2, md: 3 }, height: "100%" }}
                   elevation={2}
+                  sx={{
+                    borderRadius: 2,
+                    overflow: "hidden",
+                    height: "100%",
+                    transition: "all 0.3s ease",
+                    "&:hover": {
+                      boxShadow: 4,
+                    },
+                  }}
                 >
                   <Box
                     sx={{
                       display: "flex",
                       justifyContent: "space-between",
                       alignItems: "center",
-                      mb: 2,
+                      bgcolor: alpha(theme.palette.success.main, 0.1),
+                      p: { xs: 1.5, sm: 2 },
+                      borderBottom: `1px solid ${alpha(
+                        theme.palette.success.main,
+                        0.2
+                      )}`,
                     }}
                   >
                     <Typography
-                      variant="h5"
+                      variant="h6"
                       component="div"
                       sx={{
                         display: "flex",
                         alignItems: "center",
-                        fontSize: { xs: "1.2rem", sm: "1.5rem" },
+                        fontSize: { xs: "1rem", sm: "1.1rem" },
+                        fontWeight: 600,
+                        color: "success.main",
                       }}
                     >
-                      <AnnouncementIcon sx={{ mr: 1, color: "success.main" }} />
+                      <AnnouncementIcon sx={{ mr: 1, fontSize: 20 }} />
                       Active Announcements
                     </Typography>
                     <Chip
                       label={`${stats.counts?.active || 0} Active`}
                       color="success"
                       size="small"
+                      sx={{ fontWeight: 500, px: 0.5 }}
                     />
                   </Box>
 
-                  {loading ? (
-                    <LinearProgress sx={{ my: 4 }} />
-                  ) : stats.activeAnnouncements &&
-                    stats.activeAnnouncements.length > 0 ? (
-                    <List>
-                      {stats.activeAnnouncements.map((announcement, index) => (
-                        <React.Fragment key={announcement._id}>
-                          <ListItem
-                            sx={{
-                              flexDirection: { xs: "column", sm: "row" },
-                              alignItems: { xs: "flex-start", sm: "center" },
-                            }}
-                          >
-                            <ListItemText
-                              component="div"
-                              primary={
-                                <Typography
-                                  variant="subtitle1"
-                                  fontWeight="bold"
-                                  sx={{
-                                    fontSize: { xs: "0.9rem", sm: "1rem" },
-                                  }}
-                                >
-                                  {announcement.title.length > 30
-                                    ? `${announcement.title.substring(
-                                        0,
-                                        30
-                                      )}...`
-                                    : announcement.title}
-                                </Typography>
-                              }
-                              secondary={
-                                <Box
-                                  sx={{
-                                    display: "flex",
-                                    flexDirection: { xs: "column", sm: "row" },
-                                    gap: { xs: 0.5, sm: 1 },
-                                    mt: { xs: 0.5, sm: 0 },
-                                  }}
-                                >
-                                  <Typography
-                                    variant="body2"
-                                    component="span"
-                                    color="text.secondary"
-                                    sx={{
-                                      fontSize: {
-                                        xs: "0.75rem",
-                                        sm: "0.875rem",
-                                      },
-                                    }}
-                                  >
-                                    Ends: {formatDateTime(announcement.endDate)}
-                                  </Typography>
-                                  <Typography
-                                    variant="body2"
-                                    component="span"
-                                    color="text.secondary"
-                                    sx={{
-                                      fontSize: {
-                                        xs: "0.75rem",
-                                        sm: "0.875rem",
-                                      },
-                                      display: { xs: "none", sm: "block" },
-                                    }}
-                                  >
-                                    •
-                                  </Typography>
-                                  <Chip
-                                    label={announcement.priority}
-                                    size="small"
-                                    color={
-                                      announcement.priority === "High"
-                                        ? "error"
-                                        : announcement.priority === "Medium"
-                                        ? "warning"
-                                        : "success"
-                                    }
-                                    sx={{ height: 20, fontSize: "0.7rem" }}
-                                  />
-                                </Box>
-                              }
-                            />
-                            <Tooltip title="View Details">
-                              <Button
-                                variant="text"
-                                size="small"
-                                color="primary"
-                                onClick={() => navigate(`/app/announcements`)}
-                                sx={{ mt: { xs: 1, sm: 0 } }}
+                  <Box sx={{ p: { xs: 0, sm: 0 } }}>
+                    {loading ? (
+                      <LinearProgress sx={{ my: 4 }} />
+                    ) : stats.activeAnnouncements &&
+                      stats.activeAnnouncements.length > 0 ? (
+                      <List sx={{ py: 0 }}>
+                        {stats.activeAnnouncements.map(
+                          (announcement, index) => (
+                            <React.Fragment key={announcement._id}>
+                              <ListItem
+                                sx={{
+                                  flexDirection: { xs: "column", sm: "row" },
+                                  alignItems: {
+                                    xs: "flex-start",
+                                    sm: "center",
+                                  },
+                                  px: { xs: 2, sm: 3 },
+                                  py: 2,
+                                  transition: "all 0.2s ease",
+                                  "&:hover": {
+                                    bgcolor: alpha(
+                                      theme.palette.primary.light,
+                                      0.05
+                                    ),
+                                  },
+                                }}
                               >
-                                Details
-                              </Button>
-                            </Tooltip>
-                          </ListItem>
-                          {index < stats.activeAnnouncements.length - 1 && (
-                            <Divider />
-                          )}
-                        </React.Fragment>
-                      ))}
-                    </List>
-                  ) : (
-                    <Typography
-                      variant="body1"
-                      component="div"
-                      color="text.secondary"
-                      align="center"
-                      sx={{ py: 2 }}
-                    >
-                      No active announcements
-                    </Typography>
-                  )}
+                                <ListItemText
+                                  component="div"
+                                  primary={
+                                    <Typography
+                                      variant="subtitle1"
+                                      fontWeight="600"
+                                      sx={{
+                                        fontSize: { xs: "0.95rem", sm: "1rem" },
+                                        color: "text.primary",
+                                      }}
+                                    >
+                                      {announcement.title.length > 30
+                                        ? `${announcement.title.substring(
+                                            0,
+                                            30
+                                          )}...`
+                                        : announcement.title}
+                                    </Typography>
+                                  }
+                                  secondary={
+                                    <Box
+                                      sx={{
+                                        display: "flex",
+                                        flexDirection: {
+                                          xs: "column",
+                                          sm: "row",
+                                        },
+                                        gap: { xs: 0.5, sm: 1 },
+                                        mt: { xs: 0.5, sm: 0 },
+                                        alignItems: {
+                                          xs: "flex-start",
+                                          sm: "center",
+                                        },
+                                      }}
+                                    >
+                                      <Typography
+                                        variant="body2"
+                                        component="span"
+                                        color="text.secondary"
+                                        sx={{
+                                          fontSize: {
+                                            xs: "0.75rem",
+                                            sm: "0.8rem",
+                                          },
+                                          display: "flex",
+                                          alignItems: "center",
+                                        }}
+                                      >
+                                        Ends:{" "}
+                                        {formatDateTime(announcement.endDate)}
+                                      </Typography>
+                                      <Typography
+                                        variant="body2"
+                                        component="span"
+                                        color="text.secondary"
+                                        sx={{
+                                          fontSize: {
+                                            xs: "0.75rem",
+                                            sm: "0.8rem",
+                                          },
+                                          display: { xs: "none", sm: "block" },
+                                        }}
+                                      >
+                                        •
+                                      </Typography>
+                                      <Chip
+                                        label={announcement.priority}
+                                        size="small"
+                                        color={
+                                          announcement.priority === "High"
+                                            ? "error"
+                                            : announcement.priority === "Medium"
+                                            ? "warning"
+                                            : "success"
+                                        }
+                                        sx={{
+                                          height: 20,
+                                          fontSize: "0.7rem",
+                                          fontWeight: 500,
+                                        }}
+                                      />
+                                    </Box>
+                                  }
+                                />
+                                <Button
+                                  variant="outlined"
+                                  size="small"
+                                  color="primary"
+                                  onClick={() => navigate(`/app/announcements`)}
+                                  sx={{
+                                    mt: { xs: 1, sm: 0 },
+                                    borderRadius: 1.5,
+                                    textTransform: "none",
+                                    px: 2,
+                                    minWidth: 80,
+                                  }}
+                                >
+                                  Details
+                                </Button>
+                              </ListItem>
+                              {index < stats.activeAnnouncements.length - 1 && (
+                                <Divider sx={{ mx: { xs: 2, sm: 3 } }} />
+                              )}
+                            </React.Fragment>
+                          )
+                        )}
+                      </List>
+                    ) : (
+                      <Box
+                        sx={{
+                          py: 4,
+                          px: 2,
+                          display: "flex",
+                          flexDirection: "column",
+                          alignItems: "center",
+                          bgcolor: alpha(theme.palette.background.default, 0.4),
+                        }}
+                      >
+                        <AnnouncementIcon
+                          sx={{
+                            fontSize: 40,
+                            color: alpha(theme.palette.text.secondary, 0.4),
+                            mb: 1,
+                          }}
+                        />
+                        <Typography
+                          variant="body1"
+                          component="div"
+                          color="text.secondary"
+                          align="center"
+                        >
+                          No active announcements
+                        </Typography>
+                      </Box>
+                    )}
+                  </Box>
                 </Paper>
               </Grid>
 
               {/* Scheduled Announcements */}
               <Grid item xs={12} md={6}>
                 <Paper
-                  sx={{ p: { xs: 1.5, sm: 2, md: 3 }, height: "100%" }}
                   elevation={2}
+                  sx={{
+                    borderRadius: 2,
+                    overflow: "hidden",
+                    height: "100%",
+                    transition: "all 0.3s ease",
+                    "&:hover": {
+                      boxShadow: 4,
+                    },
+                  }}
                 >
                   <Box
                     sx={{
                       display: "flex",
                       justifyContent: "space-between",
                       alignItems: "center",
-                      mb: 2,
+                      bgcolor: alpha(theme.palette.warning.main, 0.1),
+                      p: { xs: 1.5, sm: 2 },
+                      borderBottom: `1px solid ${alpha(
+                        theme.palette.warning.main,
+                        0.2
+                      )}`,
                     }}
                   >
                     <Typography
-                      variant="h5"
+                      variant="h6"
                       component="div"
                       sx={{
                         display: "flex",
                         alignItems: "center",
-                        fontSize: { xs: "1.2rem", sm: "1.5rem" },
+                        fontSize: { xs: "1rem", sm: "1.1rem" },
+                        fontWeight: 600,
+                        color: "warning.main",
                       }}
                     >
-                      <AnnouncementIcon sx={{ mr: 1, color: "warning.main" }} />
+                      <AnnouncementIcon sx={{ mr: 1, fontSize: 20 }} />
                       Scheduled Announcements
                     </Typography>
                     <Chip
                       label={`${stats.counts?.scheduled || 0} Scheduled`}
                       color="warning"
                       size="small"
+                      sx={{ fontWeight: 500, px: 0.5 }}
                     />
                   </Box>
 
-                  {loading ? (
-                    <LinearProgress sx={{ my: 4 }} />
-                  ) : stats.scheduledAnnouncements &&
-                    stats.scheduledAnnouncements.length > 0 ? (
-                    <List>
-                      {stats.scheduledAnnouncements.map(
-                        (announcement, index) => (
-                          <React.Fragment key={announcement._id}>
-                            <ListItem
-                              sx={{
-                                flexDirection: { xs: "column", sm: "row" },
-                                alignItems: { xs: "flex-start", sm: "center" },
-                              }}
-                            >
-                              <ListItemText
-                                component="div"
-                                primary={
-                                  <Typography
-                                    variant="subtitle1"
-                                    fontWeight="bold"
-                                    sx={{
-                                      fontSize: { xs: "0.9rem", sm: "1rem" },
-                                    }}
-                                  >
-                                    {announcement.title.length > 30
-                                      ? `${announcement.title.substring(
-                                          0,
-                                          30
-                                        )}...`
-                                      : announcement.title}
-                                  </Typography>
-                                }
-                                secondary={
-                                  <Box
-                                    sx={{
-                                      display: "flex",
-                                      flexDirection: {
-                                        xs: "column",
-                                        sm: "row",
-                                      },
-                                      gap: { xs: 0.5, sm: 1 },
-                                      mt: { xs: 0.5, sm: 0 },
-                                    }}
-                                  >
+                  <Box sx={{ p: { xs: 0, sm: 0 } }}>
+                    {loading ? (
+                      <LinearProgress sx={{ my: 4 }} />
+                    ) : stats.scheduledAnnouncements &&
+                      stats.scheduledAnnouncements.length > 0 ? (
+                      <List sx={{ py: 0 }}>
+                        {stats.scheduledAnnouncements.map(
+                          (announcement, index) => (
+                            <React.Fragment key={announcement._id}>
+                              <ListItem
+                                sx={{
+                                  flexDirection: { xs: "column", sm: "row" },
+                                  alignItems: {
+                                    xs: "flex-start",
+                                    sm: "center",
+                                  },
+                                  px: { xs: 2, sm: 3 },
+                                  py: 2,
+                                  transition: "all 0.2s ease",
+                                  "&:hover": {
+                                    bgcolor: alpha(
+                                      theme.palette.primary.light,
+                                      0.05
+                                    ),
+                                  },
+                                }}
+                              >
+                                <ListItemText
+                                  component="div"
+                                  primary={
                                     <Typography
-                                      variant="body2"
-                                      component="span"
-                                      color="text.secondary"
+                                      variant="subtitle1"
+                                      fontWeight="600"
                                       sx={{
-                                        fontSize: {
-                                          xs: "0.75rem",
-                                          sm: "0.875rem",
+                                        fontSize: { xs: "0.95rem", sm: "1rem" },
+                                        color: "text.primary",
+                                      }}
+                                    >
+                                      {announcement.title.length > 30
+                                        ? `${announcement.title.substring(
+                                            0,
+                                            30
+                                          )}...`
+                                        : announcement.title}
+                                    </Typography>
+                                  }
+                                  secondary={
+                                    <Box
+                                      sx={{
+                                        display: "flex",
+                                        flexDirection: {
+                                          xs: "column",
+                                          sm: "row",
+                                        },
+                                        gap: { xs: 0.5, sm: 1 },
+                                        mt: { xs: 0.5, sm: 0 },
+                                        alignItems: {
+                                          xs: "flex-start",
+                                          sm: "center",
                                         },
                                       }}
                                     >
-                                      Starts:{" "}
-                                      {formatDateTime(announcement.startDate)}
-                                    </Typography>
-                                    <Typography
-                                      variant="body2"
-                                      component="span"
-                                      color="text.secondary"
-                                      sx={{
-                                        fontSize: {
-                                          xs: "0.75rem",
-                                          sm: "0.875rem",
-                                        },
-                                        display: { xs: "none", sm: "block" },
-                                      }}
-                                    >
-                                      •
-                                    </Typography>
-                                    <Chip
-                                      label={announcement.type}
-                                      size="small"
-                                      color={
-                                        announcement.type === "Emergency"
-                                          ? "error"
-                                          : announcement.type === "Event"
-                                          ? "success"
-                                          : "primary"
-                                      }
-                                      sx={{ height: 20, fontSize: "0.7rem" }}
-                                    />
-                                  </Box>
-                                }
-                              />
-                              <Tooltip title="View Details">
+                                      <Typography
+                                        variant="body2"
+                                        component="span"
+                                        color="text.secondary"
+                                        sx={{
+                                          fontSize: {
+                                            xs: "0.75rem",
+                                            sm: "0.8rem",
+                                          },
+                                          display: "flex",
+                                          alignItems: "center",
+                                        }}
+                                      >
+                                        Starts:{" "}
+                                        {formatDateTime(announcement.startDate)}
+                                      </Typography>
+                                      <Typography
+                                        variant="body2"
+                                        component="span"
+                                        color="text.secondary"
+                                        sx={{
+                                          fontSize: {
+                                            xs: "0.75rem",
+                                            sm: "0.8rem",
+                                          },
+                                          display: { xs: "none", sm: "block" },
+                                        }}
+                                      >
+                                        •
+                                      </Typography>
+                                      <Chip
+                                        label={announcement.type}
+                                        size="small"
+                                        color={
+                                          announcement.type === "Emergency"
+                                            ? "error"
+                                            : announcement.type === "Event"
+                                            ? "success"
+                                            : "primary"
+                                        }
+                                        sx={{
+                                          height: 20,
+                                          fontSize: "0.7rem",
+                                          fontWeight: 500,
+                                        }}
+                                      />
+                                    </Box>
+                                  }
+                                />
                                 <Button
-                                  variant="text"
+                                  variant="outlined"
                                   size="small"
                                   color="primary"
                                   onClick={() => navigate(`/app/announcements`)}
-                                  sx={{ mt: { xs: 1, sm: 0 } }}
+                                  sx={{
+                                    mt: { xs: 1, sm: 0 },
+                                    borderRadius: 1.5,
+                                    textTransform: "none",
+                                    px: 2,
+                                    minWidth: 80,
+                                  }}
                                 >
                                   Details
                                 </Button>
-                              </Tooltip>
-                            </ListItem>
-                            {index <
-                              stats.scheduledAnnouncements.length - 1 && (
-                              <Divider />
-                            )}
-                          </React.Fragment>
-                        )
-                      )}
-                    </List>
-                  ) : (
-                    <Typography
-                      variant="body1"
-                      component="div"
-                      color="text.secondary"
-                      align="center"
-                      sx={{ py: 2 }}
-                    >
-                      No scheduled announcements
-                    </Typography>
-                  )}
+                              </ListItem>
+                              {index <
+                                stats.scheduledAnnouncements.length - 1 && (
+                                <Divider sx={{ mx: { xs: 2, sm: 3 } }} />
+                              )}
+                            </React.Fragment>
+                          )
+                        )}
+                      </List>
+                    ) : (
+                      <Box
+                        sx={{
+                          py: 4,
+                          px: 2,
+                          display: "flex",
+                          flexDirection: "column",
+                          alignItems: "center",
+                          bgcolor: alpha(theme.palette.background.default, 0.4),
+                        }}
+                      >
+                        <AnnouncementIcon
+                          sx={{
+                            fontSize: 40,
+                            color: alpha(theme.palette.text.secondary, 0.4),
+                            mb: 1,
+                          }}
+                        />
+                        <Typography
+                          variant="body1"
+                          component="div"
+                          color="text.secondary"
+                          align="center"
+                        >
+                          No scheduled announcements
+                        </Typography>
+                      </Box>
+                    )}
+                  </Box>
                 </Paper>
               </Grid>
             </Grid>
