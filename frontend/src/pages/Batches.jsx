@@ -59,6 +59,7 @@ import { fetchStandards } from "../store/slices/standardSlice";
 import { fetchSubjects } from "../store/slices/subjectSlice";
 import { fetchTeachers } from "../store/slices/teacherSlice";
 import RefreshButton from "../components/RefreshButton";
+import { alpha } from "@mui/material/styles";
 
 const DAYS_OF_WEEK = [
   "Monday",
@@ -802,10 +803,18 @@ const Batches = () => {
             filteredBatches.map((batch) => (
               <Card
                 key={batch._id}
-                sx={{ width: "100%", borderRadius: 2 }}
+                sx={{
+                  width: "100%",
+                  borderRadius: 2,
+                  transition: "all 0.3s ease",
+                  "&:hover": {
+                    boxShadow: 6,
+                    transform: "translateY(-2px)",
+                  },
+                }}
                 elevation={2}
               >
-                <CardContent>
+                <CardContent sx={{ pb: 1 }}>
                   <Box
                     sx={{
                       display: "flex",
@@ -817,12 +826,19 @@ const Batches = () => {
                     <Typography
                       variant="h6"
                       component="div"
-                      sx={{ fontSize: "1.1rem" }}
+                      sx={{
+                        fontSize: "1.1rem",
+                        fontWeight: 600,
+                        color: theme.palette.primary.main,
+                      }}
                     >
                       {batch.name}
                     </Typography>
                     <Chip
-                      label={batch.status}
+                      label={
+                        batch.status.charAt(0).toUpperCase() +
+                        batch.status.slice(1)
+                      }
                       size="small"
                       color={getStatusColor(batch.status)}
                       sx={{ ml: 1 }}
@@ -834,18 +850,18 @@ const Batches = () => {
                       mt: 2,
                       display: "flex",
                       flexDirection: "column",
-                      gap: 1,
+                      gap: 1.5,
                     }}
                   >
                     <Box sx={{ display: "flex", alignItems: "center" }}>
                       <Typography
                         variant="body2"
                         color="text.secondary"
-                        sx={{ mr: 1, fontWeight: 500, minWidth: "80px" }}
+                        sx={{ mr: 1, fontWeight: 600, minWidth: "80px" }}
                       >
                         Standard:
                       </Typography>
-                      <Typography variant="body2">
+                      <Typography variant="body2" fontWeight="medium">
                         {batch.standard?.name || "Not specified"}
                       </Typography>
                     </Box>
@@ -854,11 +870,11 @@ const Batches = () => {
                       <Typography
                         variant="body2"
                         color="text.secondary"
-                        sx={{ mr: 1, fontWeight: 500, minWidth: "80px" }}
+                        sx={{ mr: 1, fontWeight: 600, minWidth: "80px" }}
                       >
                         Subject:
                       </Typography>
-                      <Typography variant="body2">
+                      <Typography variant="body2" fontWeight="medium">
                         {batch.subject?.name || "Not specified"}
                       </Typography>
                     </Box>
@@ -867,7 +883,7 @@ const Batches = () => {
                       <Typography
                         variant="body2"
                         color="text.secondary"
-                        sx={{ mr: 1, fontWeight: 500, minWidth: "80px" }}
+                        sx={{ mr: 1, fontWeight: 600, minWidth: "80px" }}
                       >
                         Teacher:
                       </Typography>
@@ -887,11 +903,11 @@ const Batches = () => {
                       <Typography
                         variant="body2"
                         color="text.secondary"
-                        sx={{ mr: 1, fontWeight: 500, minWidth: "80px" }}
+                        sx={{ mr: 1, fontWeight: 600, minWidth: "80px" }}
                       >
                         Schedule:
                       </Typography>
-                      <Typography variant="body2">
+                      <Typography variant="body2" fontWeight="medium">
                         {batch.schedule
                           ? `${formatTime(
                               batch.schedule.startTime
@@ -906,7 +922,7 @@ const Batches = () => {
                       <Typography
                         variant="body2"
                         color="text.secondary"
-                        sx={{ mr: 1, fontWeight: 500, minWidth: "80px" }}
+                        sx={{ mr: 1, fontWeight: 600, minWidth: "80px" }}
                       >
                         Students:
                       </Typography>
@@ -914,7 +930,7 @@ const Batches = () => {
                         sx={{
                           display: "flex",
                           flexDirection: "column",
-                          gap: 0.5,
+                          gap: 0.8,
                         }}
                       >
                         <Chip
@@ -925,6 +941,7 @@ const Batches = () => {
                               ? "primary"
                               : "default"
                           }
+                          sx={{ fontWeight: 500 }}
                         />
                         <Chip
                           label={`${
@@ -932,18 +949,26 @@ const Batches = () => {
                           } seats remaining`}
                           size="small"
                           color={getRemainingSeatsColor(batch)}
+                          sx={{ fontWeight: 500 }}
                         />
                       </Box>
                     </Box>
                   </Box>
                 </CardContent>
-                <CardActions sx={{ px: 2, pb: 2, pt: 0 }}>
+                <CardActions
+                  sx={{
+                    px: 2,
+                    pb: 2,
+                    pt: 1,
+                    justifyContent: "flex-start",
+                    gap: 1,
+                  }}
+                >
                   <Button
                     size="small"
                     variant="outlined"
                     startIcon={<VisibilityIcon />}
                     onClick={() => handleViewDetails(batch)}
-                    sx={{ mr: 1 }}
                   >
                     View
                   </Button>
@@ -953,7 +978,6 @@ const Batches = () => {
                     color="primary"
                     startIcon={<EditIcon />}
                     onClick={() => handleOpen(batch)}
-                    sx={{ mr: 1 }}
                   >
                     Edit
                   </Button>
@@ -983,35 +1007,88 @@ const Batches = () => {
         >
           <Table size={isTablet ? "small" : "medium"}>
             <TableHead>
-              <TableRow sx={{ backgroundColor: theme.palette.primary.main }}>
-                <TableCell sx={{ color: "white", fontWeight: "bold" }}>
+              <TableRow
+                sx={{
+                  backgroundColor: theme.palette.primary.main,
+                  "&:hover": {
+                    backgroundColor: theme.palette.primary.main,
+                  },
+                }}
+              >
+                <TableCell
+                  sx={{
+                    color: "white",
+                    fontWeight: "bold",
+                    whiteSpace: "nowrap",
+                  }}
+                >
                   Name
                 </TableCell>
-                <TableCell sx={{ color: "white", fontWeight: "bold" }}>
+                <TableCell
+                  sx={{
+                    color: "white",
+                    fontWeight: "bold",
+                    whiteSpace: "nowrap",
+                  }}
+                >
                   Standard
                 </TableCell>
-                <TableCell sx={{ color: "white", fontWeight: "bold" }}>
+                <TableCell
+                  sx={{
+                    color: "white",
+                    fontWeight: "bold",
+                    whiteSpace: "nowrap",
+                  }}
+                >
                   Subject
                 </TableCell>
                 {!isTablet && (
-                  <TableCell sx={{ color: "white", fontWeight: "bold" }}>
+                  <TableCell
+                    sx={{
+                      color: "white",
+                      fontWeight: "bold",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
                     Teacher
                   </TableCell>
                 )}
                 {!isTablet && (
-                  <TableCell sx={{ color: "white", fontWeight: "bold" }}>
+                  <TableCell
+                    sx={{
+                      color: "white",
+                      fontWeight: "bold",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
                     Schedule
                   </TableCell>
                 )}
-                <TableCell sx={{ color: "white", fontWeight: "bold" }}>
+                <TableCell
+                  sx={{
+                    color: "white",
+                    fontWeight: "bold",
+                    whiteSpace: "nowrap",
+                  }}
+                >
                   Students
                 </TableCell>
-                <TableCell sx={{ color: "white", fontWeight: "bold" }}>
+                <TableCell
+                  sx={{
+                    color: "white",
+                    fontWeight: "bold",
+                    whiteSpace: "nowrap",
+                  }}
+                >
                   Status
                 </TableCell>
                 <TableCell
                   align="right"
-                  sx={{ color: "white", fontWeight: "bold" }}
+                  sx={{
+                    color: "white",
+                    fontWeight: "bold",
+                    whiteSpace: "nowrap",
+                  }}
                 >
                   Actions
                 </TableCell>
@@ -1020,8 +1097,25 @@ const Batches = () => {
             <TableBody>
               {filteredBatches.length > 0 ? (
                 filteredBatches.map((batch) => (
-                  <TableRow key={batch._id}>
-                    <TableCell>{batch.name || "—"}</TableCell>
+                  <TableRow
+                    key={batch._id}
+                    sx={{
+                      "&:nth-of-type(odd)": {
+                        backgroundColor: theme.palette.action.hover,
+                      },
+                      "&:hover": {
+                        backgroundColor: alpha(
+                          theme.palette.primary.light,
+                          0.1
+                        ),
+                      },
+                      cursor: "pointer",
+                    }}
+                    onClick={() => handleViewDetails(batch)}
+                  >
+                    <TableCell sx={{ fontWeight: 500, whiteSpace: "nowrap" }}>
+                      {batch.name || "—"}
+                    </TableCell>
                     <TableCell>{batch.standard?.name || "—"}</TableCell>
                     <TableCell>{batch.subject?.name || "—"}</TableCell>
                     {!isTablet && (
@@ -1054,7 +1148,7 @@ const Batches = () => {
                         sx={{
                           display: "flex",
                           flexDirection: "column",
-                          gap: 0.5,
+                          gap: 0.8,
                         }}
                       >
                         <Chip
@@ -1065,6 +1159,7 @@ const Batches = () => {
                               ? "primary"
                               : "default"
                           }
+                          sx={{ fontWeight: 500 }}
                         />
                         <Chip
                           label={`${
@@ -1072,24 +1167,85 @@ const Batches = () => {
                           } seats remaining`}
                           size="small"
                           color={getRemainingSeatsColor(batch)}
+                          sx={{ fontWeight: 500 }}
                         />
                       </Box>
                     </TableCell>
                     <TableCell>
                       <Chip
-                        label={batch.status}
+                        label={
+                          batch.status.charAt(0).toUpperCase() +
+                          batch.status.slice(1)
+                        }
                         size="small"
                         color={getStatusColor(batch.status)}
+                        sx={{ fontWeight: 500 }}
                       />
                     </TableCell>
                     <TableCell align="right">
-                      <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          justifyContent: "flex-end",
+                          gap: 1,
+                        }}
+                      >
                         <IconButton
                           size="small"
-                          onClick={() => handleViewDetails(batch)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleViewDetails(batch);
+                          }}
                           title="View Details"
+                          sx={{
+                            color: theme.palette.primary.main,
+                            "&:hover": {
+                              backgroundColor: alpha(
+                                theme.palette.primary.main,
+                                0.1
+                              ),
+                            },
+                          }}
                         >
                           <VisibilityIcon fontSize="small" />
+                        </IconButton>
+                        <IconButton
+                          size="small"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleOpen(batch);
+                          }}
+                          title="Edit Batch"
+                          sx={{
+                            color: theme.palette.primary.main,
+                            "&:hover": {
+                              backgroundColor: alpha(
+                                theme.palette.primary.main,
+                                0.1
+                              ),
+                            },
+                          }}
+                        >
+                          <EditIcon fontSize="small" />
+                        </IconButton>
+                        <IconButton
+                          size="small"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDelete(batch._id);
+                          }}
+                          title="Delete Batch"
+                          sx={{
+                            color: theme.palette.error.main,
+                            "&:hover": {
+                              backgroundColor: alpha(
+                                theme.palette.error.main,
+                                0.1
+                              ),
+                            },
+                          }}
+                        >
+                          <DeleteIcon fontSize="small" />
                         </IconButton>
                       </Box>
                     </TableCell>
@@ -1117,6 +1273,7 @@ const Batches = () => {
         PaperProps={{
           sx: {
             borderRadius: isMobile ? 0 : 2,
+            overflow: "hidden",
           },
         }}
       >
@@ -1129,31 +1286,59 @@ const Batches = () => {
                 alignItems: "center",
                 backgroundColor: theme.palette.primary.main,
                 color: "white",
+                p: 2,
               }}
             >
-              <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-                {selectedBatch.name}
-              </Typography>
+              <Box sx={{ display: "flex", alignItems: "center" }}>
+                <Typography
+                  variant="h6"
+                  component="div"
+                  sx={{ flexGrow: 1, fontWeight: 600 }}
+                >
+                  {selectedBatch.name}
+                </Typography>
+              </Box>
               <Chip
-                label={selectedBatch.status}
-                size="small"
-                color={
-                  selectedBatch.status === "active" ? "success" : "default"
+                label={
+                  selectedBatch.status.charAt(0).toUpperCase() +
+                  selectedBatch.status.slice(1)
                 }
+                size="small"
+                color={getStatusColor(selectedBatch.status)}
                 sx={{
                   color: "white",
                   backgroundColor: theme.palette.primary.dark,
+                  fontWeight: 500,
                 }}
               />
             </DialogTitle>
-            <DialogContent dividers>
+            <DialogContent dividers sx={{ p: { xs: 2, sm: 3 } }}>
               <Grid container spacing={3}>
                 <Grid item xs={12} sm={6}>
-                  <Paper elevation={1} sx={{ p: 2, borderRadius: 2 }}>
+                  <Paper
+                    elevation={1}
+                    sx={{
+                      p: 2.5,
+                      borderRadius: 2,
+                      height: "100%",
+                      border: `1px solid ${alpha(
+                        theme.palette.primary.main,
+                        0.1
+                      )}`,
+                    }}
+                  >
                     <Typography
                       variant="subtitle1"
                       gutterBottom
                       fontWeight="bold"
+                      color="primary"
+                      sx={{
+                        pb: 1,
+                        borderBottom: `1px solid ${alpha(
+                          theme.palette.primary.main,
+                          0.2
+                        )}`,
+                      }}
                     >
                       Batch Information
                     </Typography>
@@ -1162,16 +1347,26 @@ const Batches = () => {
                         mt: 2,
                         display: "flex",
                         flexDirection: "column",
-                        gap: 1.5,
+                        gap: 2,
                       }}
                     >
                       <Box
                         sx={{
                           display: "flex",
                           justifyContent: "space-between",
+                          alignItems: "center",
+                          pb: 1,
+                          borderBottom: `1px solid ${alpha(
+                            theme.palette.divider,
+                            0.3
+                          )}`,
                         }}
                       >
-                        <Typography variant="body2" color="text.secondary">
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          fontWeight={500}
+                        >
                           Standard:
                         </Typography>
                         <Typography variant="body2" fontWeight="medium">
@@ -1182,9 +1377,19 @@ const Batches = () => {
                         sx={{
                           display: "flex",
                           justifyContent: "space-between",
+                          alignItems: "center",
+                          pb: 1,
+                          borderBottom: `1px solid ${alpha(
+                            theme.palette.divider,
+                            0.3
+                          )}`,
                         }}
                       >
-                        <Typography variant="body2" color="text.secondary">
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          fontWeight={500}
+                        >
                           Subject:
                         </Typography>
                         <Typography variant="body2" fontWeight="medium">
@@ -1195,9 +1400,19 @@ const Batches = () => {
                         sx={{
                           display: "flex",
                           justifyContent: "space-between",
+                          alignItems: "center",
+                          pb: 1,
+                          borderBottom: `1px solid ${alpha(
+                            theme.palette.divider,
+                            0.3
+                          )}`,
                         }}
                       >
-                        <Typography variant="body2" color="text.secondary">
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          fontWeight={500}
+                        >
                           Teacher:
                         </Typography>
                         <Typography variant="body2" fontWeight="medium">
@@ -1208,9 +1423,19 @@ const Batches = () => {
                         sx={{
                           display: "flex",
                           justifyContent: "space-between",
+                          alignItems: "center",
+                          pb: 1,
+                          borderBottom: `1px solid ${alpha(
+                            theme.palette.divider,
+                            0.3
+                          )}`,
                         }}
                       >
-                        <Typography variant="body2" color="text.secondary">
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          fontWeight={500}
+                        >
                           Duration:
                         </Typography>
                         <Typography variant="body2" fontWeight="medium">
@@ -1223,28 +1448,60 @@ const Batches = () => {
                         sx={{
                           display: "flex",
                           justifyContent: "space-between",
+                          alignItems: "center",
+                          pb: 1,
+                          borderBottom: `1px solid ${alpha(
+                            theme.palette.divider,
+                            0.3
+                          )}`,
                         }}
                       >
-                        <Typography variant="body2" color="text.secondary">
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          fontWeight={500}
+                        >
                           Capacity:
                         </Typography>
-                        <Typography variant="body2" fontWeight="medium">
-                          {selectedBatch.capacity
-                            ? `${getStudentsCount(selectedBatch).enrolled}/${
-                                selectedBatch.capacity
-                              } (${
-                                getStudentsCount(selectedBatch).remaining
-                              } seats remaining)`
-                            : "Not specified"}
-                        </Typography>
+                        <Box>
+                          <Typography variant="body2" fontWeight="medium">
+                            {selectedBatch.capacity
+                              ? `${getStudentsCount(selectedBatch).enrolled}/${
+                                  selectedBatch.capacity
+                                }`
+                              : "Not specified"}
+                          </Typography>
+                          {selectedBatch.capacity && (
+                            <Box sx={{ mt: 0.5 }}>
+                              <Chip
+                                label={`${
+                                  getStudentsCount(selectedBatch).remaining
+                                } seats remaining`}
+                                size="small"
+                                color={getRemainingSeatsColor(selectedBatch)}
+                                sx={{ fontWeight: 500, fontSize: "0.7rem" }}
+                              />
+                            </Box>
+                          )}
+                        </Box>
                       </Box>
                       <Box
                         sx={{
                           display: "flex",
                           justifyContent: "space-between",
+                          alignItems: "center",
+                          pb: 1,
+                          borderBottom: `1px solid ${alpha(
+                            theme.palette.divider,
+                            0.3
+                          )}`,
                         }}
                       >
-                        <Typography variant="body2" color="text.secondary">
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          fontWeight={500}
+                        >
                           Fees:
                         </Typography>
                         <Typography variant="body2" fontWeight="medium">
@@ -1257,11 +1514,30 @@ const Batches = () => {
                   </Paper>
                 </Grid>
                 <Grid item xs={12} sm={6}>
-                  <Paper elevation={1} sx={{ p: 2, borderRadius: 2 }}>
+                  <Paper
+                    elevation={1}
+                    sx={{
+                      p: 2.5,
+                      borderRadius: 2,
+                      height: "100%",
+                      border: `1px solid ${alpha(
+                        theme.palette.primary.main,
+                        0.1
+                      )}`,
+                    }}
+                  >
                     <Typography
                       variant="subtitle1"
                       gutterBottom
                       fontWeight="bold"
+                      color="primary"
+                      sx={{
+                        pb: 1,
+                        borderBottom: `1px solid ${alpha(
+                          theme.palette.primary.main,
+                          0.2
+                        )}`,
+                      }}
                     >
                       Schedule
                     </Typography>
@@ -1270,16 +1546,26 @@ const Batches = () => {
                         mt: 2,
                         display: "flex",
                         flexDirection: "column",
-                        gap: 1.5,
+                        gap: 2,
                       }}
                     >
                       <Box
                         sx={{
                           display: "flex",
                           justifyContent: "space-between",
+                          alignItems: "flex-start",
+                          pb: 1,
+                          borderBottom: `1px solid ${alpha(
+                            theme.palette.divider,
+                            0.3
+                          )}`,
                         }}
                       >
-                        <Typography variant="body2" color="text.secondary">
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          fontWeight={500}
+                        >
                           Days:
                         </Typography>
                         <Box
@@ -1299,7 +1585,7 @@ const Batches = () => {
                                 size="small"
                                 color="primary"
                                 variant="outlined"
-                                sx={{ height: 24 }}
+                                sx={{ height: 24, fontWeight: 500 }}
                               />
                             ))
                           ) : (
@@ -1313,9 +1599,19 @@ const Batches = () => {
                         sx={{
                           display: "flex",
                           justifyContent: "space-between",
+                          alignItems: "center",
+                          pb: 1,
+                          borderBottom: `1px solid ${alpha(
+                            theme.palette.divider,
+                            0.3
+                          )}`,
                         }}
                       >
-                        <Typography variant="body2" color="text.secondary">
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          fontWeight={500}
+                        >
                           Time:
                         </Typography>
                         <Typography variant="body2" fontWeight="medium">
@@ -1334,43 +1630,102 @@ const Batches = () => {
                 </Grid>
                 {selectedBatch.description && (
                   <Grid item xs={12}>
-                    <Paper elevation={1} sx={{ p: 2, borderRadius: 2 }}>
+                    <Paper
+                      elevation={1}
+                      sx={{
+                        p: 2.5,
+                        borderRadius: 2,
+                        border: `1px solid ${alpha(
+                          theme.palette.primary.main,
+                          0.1
+                        )}`,
+                      }}
+                    >
                       <Typography
                         variant="subtitle1"
                         gutterBottom
                         fontWeight="bold"
+                        color="primary"
+                        sx={{
+                          pb: 1,
+                          borderBottom: `1px solid ${alpha(
+                            theme.palette.primary.main,
+                            0.2
+                          )}`,
+                        }}
                       >
                         Description
                       </Typography>
-                      <Typography variant="body2" sx={{ mt: 1 }}>
+                      <Typography variant="body2" sx={{ mt: 1.5 }}>
                         {selectedBatch.description}
                       </Typography>
                     </Paper>
                   </Grid>
                 )}
                 <Grid item xs={12}>
-                  <Paper elevation={1} sx={{ p: 2, borderRadius: 2 }}>
+                  <Paper
+                    elevation={1}
+                    sx={{
+                      p: 2.5,
+                      borderRadius: 2,
+                      border: `1px solid ${alpha(
+                        theme.palette.primary.main,
+                        0.1
+                      )}`,
+                    }}
+                  >
                     <Typography
                       variant="subtitle1"
                       gutterBottom
                       fontWeight="bold"
+                      color="primary"
+                      sx={{
+                        pb: 1,
+                        borderBottom: `1px solid ${alpha(
+                          theme.palette.primary.main,
+                          0.2
+                        )}`,
+                      }}
                     >
                       Students ({getStudentsCount(selectedBatch).enrolled})
                     </Typography>
                     {selectedBatch.enrolledStudents &&
                     selectedBatch.enrolledStudents.length > 0 ? (
-                      <TableContainer sx={{ mt: 1 }}>
+                      <TableContainer sx={{ mt: 1.5 }}>
                         <Table size="small">
                           <TableHead>
-                            <TableRow>
-                              <TableCell>Name</TableCell>
-                              <TableCell>Email</TableCell>
-                              <TableCell>Phone</TableCell>
+                            <TableRow
+                              sx={{
+                                backgroundColor: alpha(
+                                  theme.palette.primary.main,
+                                  0.1
+                                ),
+                              }}
+                            >
+                              <TableCell sx={{ fontWeight: 600 }}>
+                                Name
+                              </TableCell>
+                              <TableCell sx={{ fontWeight: 600 }}>
+                                Email
+                              </TableCell>
+                              <TableCell sx={{ fontWeight: 600 }}>
+                                Phone
+                              </TableCell>
                             </TableRow>
                           </TableHead>
                           <TableBody>
                             {selectedBatch.enrolledStudents.map((student) => (
-                              <TableRow key={student._id}>
+                              <TableRow
+                                key={student._id}
+                                sx={{
+                                  "&:hover": {
+                                    backgroundColor: alpha(
+                                      theme.palette.primary.light,
+                                      0.05
+                                    ),
+                                  },
+                                }}
+                              >
                                 <TableCell>
                                   {student.name ||
                                     `${student.firstName || ""} ${
@@ -1386,18 +1741,41 @@ const Batches = () => {
                       </TableContainer>
                     ) : selectedBatch.students &&
                       selectedBatch.students.length > 0 ? (
-                      <TableContainer sx={{ mt: 1 }}>
+                      <TableContainer sx={{ mt: 1.5 }}>
                         <Table size="small">
                           <TableHead>
-                            <TableRow>
-                              <TableCell>Name</TableCell>
-                              <TableCell>Email</TableCell>
-                              <TableCell>Phone</TableCell>
+                            <TableRow
+                              sx={{
+                                backgroundColor: alpha(
+                                  theme.palette.primary.main,
+                                  0.1
+                                ),
+                              }}
+                            >
+                              <TableCell sx={{ fontWeight: 600 }}>
+                                Name
+                              </TableCell>
+                              <TableCell sx={{ fontWeight: 600 }}>
+                                Email
+                              </TableCell>
+                              <TableCell sx={{ fontWeight: 600 }}>
+                                Phone
+                              </TableCell>
                             </TableRow>
                           </TableHead>
                           <TableBody>
                             {selectedBatch.students.map((student) => (
-                              <TableRow key={student._id}>
+                              <TableRow
+                                key={student._id}
+                                sx={{
+                                  "&:hover": {
+                                    backgroundColor: alpha(
+                                      theme.palette.primary.light,
+                                      0.05
+                                    ),
+                                  },
+                                }}
+                              >
                                 <TableCell>
                                   {student.name ||
                                     `${student.firstName || ""} ${
@@ -1412,12 +1790,26 @@ const Batches = () => {
                         </Table>
                       </TableContainer>
                     ) : (
-                      <Typography
-                        variant="body2"
-                        sx={{ mt: 1, color: "text.secondary" }}
+                      <Box
+                        sx={{
+                          mt: 2,
+                          p: 2,
+                          borderRadius: 1,
+                          backgroundColor: alpha(
+                            theme.palette.primary.light,
+                            0.05
+                          ),
+                          display: "flex",
+                          justifyContent: "center",
+                        }}
                       >
-                        No students enrolled in this batch yet.
-                      </Typography>
+                        <Typography
+                          variant="body2"
+                          sx={{ color: "text.secondary" }}
+                        >
+                          No students enrolled in this batch yet.
+                        </Typography>
+                      </Box>
                     )}
                   </Paper>
                 </Grid>
@@ -1432,7 +1824,7 @@ const Batches = () => {
                   setDetailsOpen(false);
                   handleOpen(selectedBatch);
                 }}
-                sx={{ mr: 1 }}
+                sx={{ borderRadius: 2 }}
               >
                 Edit
               </Button>
@@ -1444,13 +1836,14 @@ const Batches = () => {
                   setDetailsOpen(false);
                   handleDelete(selectedBatch._id);
                 }}
+                sx={{ borderRadius: 2 }}
               >
                 Delete
               </Button>
               <Button
                 onClick={() => setDetailsOpen(false)}
                 variant="contained"
-                sx={{ ml: "auto" }}
+                sx={{ ml: "auto", borderRadius: 2 }}
               >
                 Close
               </Button>
@@ -1469,34 +1862,66 @@ const Batches = () => {
         PaperProps={{
           sx: {
             borderRadius: isMobile ? 0 : 2,
+            overflow: "hidden",
           },
         }}
       >
-        <DialogTitle>
-          {selectedBatch ? "Edit Batch" : "Add New Batch"}
+        <DialogTitle
+          sx={{
+            backgroundColor: theme.palette.primary.main,
+            color: "white",
+            p: 2,
+          }}
+        >
+          <Typography variant="h6" fontWeight={600}>
+            {selectedBatch ? "Edit Batch" : "Add New Batch"}
+          </Typography>
         </DialogTitle>
         <form onSubmit={handleSubmit}>
-          <DialogContent>
-            <Grid container spacing={2}>
+          <DialogContent dividers sx={{ p: { xs: 2, sm: 3 } }}>
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="body2" color="text.secondary">
+                Fill in the details below to{" "}
+                {selectedBatch ? "update" : "create"} a batch. Fields marked
+                with * are required.
+              </Typography>
+            </Box>
+
+            <Grid container spacing={3}>
+              <Grid item xs={12}>
+                <Typography
+                  variant="subtitle1"
+                  color="primary"
+                  fontWeight={600}
+                  gutterBottom
+                >
+                  Basic Information
+                </Typography>
+              </Grid>
+
               <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
-                  margin="dense"
                   name="name"
                   label="Batch Name"
                   value={formData.name}
                   onChange={handleChange}
                   required
+                  variant="outlined"
+                  InputProps={{
+                    sx: { borderRadius: 1 },
+                  }}
                 />
               </Grid>
               <Grid item xs={12} sm={6}>
-                <FormControl fullWidth margin="dense" required>
+                <FormControl fullWidth required variant="outlined">
                   <InputLabel>Standard</InputLabel>
                   <Select
                     name="standard"
                     value={formData.standard}
                     onChange={handleChange}
                     label="Standard"
+                    sx={{ borderRadius: 1 }}
                   >
                     {standards.map((standard) => (
                       <MenuItem key={standard._id} value={standard._id}>
@@ -1509,9 +1934,9 @@ const Batches = () => {
               <Grid item xs={12} sm={6}>
                 <FormControl
                   fullWidth
-                  margin="dense"
                   required
                   disabled={!formData.standard}
+                  variant="outlined"
                 >
                   <InputLabel>Subject</InputLabel>
                   <Select
@@ -1519,6 +1944,7 @@ const Batches = () => {
                     value={formData.subject}
                     onChange={handleChange}
                     label="Subject"
+                    sx={{ borderRadius: 1 }}
                   >
                     {filteredSubjects.map((subject) => (
                       <MenuItem key={subject._id} value={subject._id}>
@@ -1531,8 +1957,8 @@ const Batches = () => {
               <Grid item xs={12} sm={6}>
                 <FormControl
                   fullWidth
-                  margin="dense"
                   disabled={!formData.subject}
+                  variant="outlined"
                 >
                   <InputLabel>Teacher</InputLabel>
                   <Select
@@ -1540,6 +1966,7 @@ const Batches = () => {
                     value={formData.teacher}
                     onChange={handleChange}
                     label="Teacher"
+                    sx={{ borderRadius: 1 }}
                   >
                     {filteredTeachers.map((teacher) => (
                       <MenuItem key={teacher._id} value={teacher._id}>
@@ -1549,10 +1976,21 @@ const Batches = () => {
                   </Select>
                 </FormControl>
               </Grid>
+
+              <Grid item xs={12} sx={{ mt: 1 }}>
+                <Typography
+                  variant="subtitle1"
+                  color="primary"
+                  fontWeight={600}
+                  gutterBottom
+                >
+                  Date and Time
+                </Typography>
+              </Grid>
+
               <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
-                  margin="dense"
                   name="startDate"
                   label="Start Date"
                   type="date"
@@ -1560,12 +1998,15 @@ const Batches = () => {
                   onChange={handleChange}
                   InputLabelProps={{ shrink: true }}
                   required
+                  variant="outlined"
+                  InputProps={{
+                    sx: { borderRadius: 1 },
+                  }}
                 />
               </Grid>
               <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
-                  margin="dense"
                   name="endDate"
                   label="End Date"
                   type="date"
@@ -1573,36 +2014,62 @@ const Batches = () => {
                   onChange={handleChange}
                   InputLabelProps={{ shrink: true }}
                   required
+                  variant="outlined"
+                  InputProps={{
+                    sx: { borderRadius: 1 },
+                  }}
                 />
               </Grid>
+
               <Grid item xs={12}>
-                <Typography variant="subtitle1" gutterBottom>
-                  Schedule
-                </Typography>
-                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mb: 2 }}>
-                  {DAYS_OF_WEEK.map((day) => (
-                    <Chip
-                      key={day}
-                      label={day}
-                      onClick={() => handleDayToggle(day)}
-                      color={
-                        formData.schedule.days.includes(day)
-                          ? "primary"
-                          : "default"
-                      }
-                      variant={
-                        formData.schedule.days.includes(day)
-                          ? "filled"
-                          : "outlined"
-                      }
-                    />
-                  ))}
+                <Box
+                  sx={{
+                    p: 2,
+                    borderRadius: 1,
+                    backgroundColor: alpha(theme.palette.primary.light, 0.05),
+                    border: `1px solid ${alpha(
+                      theme.palette.primary.main,
+                      0.1
+                    )}`,
+                    mb: 1,
+                  }}
+                >
+                  <Typography
+                    variant="subtitle2"
+                    color="primary"
+                    fontWeight={600}
+                    gutterBottom
+                  >
+                    Schedule Days
+                  </Typography>
+                  <Box
+                    sx={{ display: "flex", flexWrap: "wrap", gap: 1, mt: 1 }}
+                  >
+                    {DAYS_OF_WEEK.map((day) => (
+                      <Chip
+                        key={day}
+                        label={day}
+                        onClick={() => handleDayToggle(day)}
+                        color={
+                          formData.schedule.days.includes(day)
+                            ? "primary"
+                            : "default"
+                        }
+                        variant={
+                          formData.schedule.days.includes(day)
+                            ? "filled"
+                            : "outlined"
+                        }
+                        sx={{ fontWeight: 500 }}
+                      />
+                    ))}
+                  </Box>
                 </Box>
               </Grid>
+
               <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
-                  margin="dense"
                   name="schedule.startTime"
                   label="Start Time"
                   type="time"
@@ -1610,12 +2077,15 @@ const Batches = () => {
                   onChange={handleChange}
                   InputLabelProps={{ shrink: true }}
                   required
+                  variant="outlined"
+                  InputProps={{
+                    sx: { borderRadius: 1 },
+                  }}
                 />
               </Grid>
               <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
-                  margin="dense"
                   name="schedule.endTime"
                   label="End Time"
                   type="time"
@@ -1623,8 +2093,24 @@ const Batches = () => {
                   onChange={handleChange}
                   InputLabelProps={{ shrink: true }}
                   required
+                  variant="outlined"
+                  InputProps={{
+                    sx: { borderRadius: 1 },
+                  }}
                 />
               </Grid>
+
+              <Grid item xs={12} sx={{ mt: 1 }}>
+                <Typography
+                  variant="subtitle1"
+                  color="primary"
+                  fontWeight={600}
+                  gutterBottom
+                >
+                  Capacity and Fees
+                </Typography>
+              </Grid>
+
               <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
@@ -1634,8 +2120,10 @@ const Batches = () => {
                   type="number"
                   value={formData.capacity}
                   onChange={handleChange}
+                  variant="outlined"
                   InputProps={{
                     inputProps: { min: 1 },
+                    sx: { borderRadius: 1 },
                   }}
                   helperText="Maximum number of students that can be enrolled"
                 />
@@ -1643,23 +2131,42 @@ const Batches = () => {
               <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
-                  margin="dense"
                   name="fees"
                   label="Fees"
                   type="number"
                   value={formData.fees}
                   onChange={handleChange}
                   required
+                  variant="outlined"
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">$</InputAdornment>
+                    ),
+                    sx: { borderRadius: 1 },
+                  }}
                 />
               </Grid>
+
+              <Grid item xs={12} sx={{ mt: 1 }}>
+                <Typography
+                  variant="subtitle1"
+                  color="primary"
+                  fontWeight={600}
+                  gutterBottom
+                >
+                  Additional Information
+                </Typography>
+              </Grid>
+
               <Grid item xs={12} sm={6}>
-                <FormControl fullWidth margin="dense" required>
+                <FormControl fullWidth required variant="outlined">
                   <InputLabel>Status</InputLabel>
                   <Select
                     name="status"
                     value={formData.status}
                     onChange={handleChange}
                     label="Status"
+                    sx={{ borderRadius: 1 }}
                   >
                     {STATUS_OPTIONS.map((status) => (
                       <MenuItem key={status} value={status}>
@@ -1669,22 +2176,31 @@ const Batches = () => {
                   </Select>
                 </FormControl>
               </Grid>
+
               <Grid item xs={12}>
                 <TextField
                   fullWidth
-                  margin="dense"
                   name="description"
                   label="Description"
                   multiline
                   rows={3}
                   value={formData.description}
                   onChange={handleChange}
+                  variant="outlined"
+                  InputProps={{
+                    sx: { borderRadius: 1 },
+                  }}
+                  placeholder="Add any additional details about this batch"
                 />
               </Grid>
             </Grid>
           </DialogContent>
-          <DialogActions sx={{ px: { xs: 2, sm: 3 }, pb: { xs: 2, sm: 2 } }}>
-            <Button onClick={handleClose} disabled={submitting}>
+          <DialogActions sx={{ px: { xs: 2, sm: 3 }, py: 2 }}>
+            <Button
+              onClick={handleClose}
+              disabled={submitting}
+              sx={{ borderRadius: 2 }}
+            >
               Cancel
             </Button>
             <Button
@@ -1692,13 +2208,14 @@ const Batches = () => {
               variant="contained"
               color="primary"
               disabled={submitting}
+              sx={{ borderRadius: 2, px: 3 }}
             >
               {submitting ? (
                 <CircularProgress size={24} />
               ) : selectedBatch ? (
-                "Update"
+                "Update Batch"
               ) : (
-                "Create"
+                "Create Batch"
               )}
             </Button>
           </DialogActions>
