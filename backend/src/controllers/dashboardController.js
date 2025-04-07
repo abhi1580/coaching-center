@@ -4,7 +4,6 @@ import Payment from "../models/Payment.js";
 import Class from "../models/Class.js";
 import Batch from "../models/Batch.js";
 import Standard from "../models/Standard.js";
-import Staff from "../models/Staff.js";
 import Announcement from "../models/Announcement.js";
 
 // Export individual controller functions for easier imports
@@ -28,9 +27,6 @@ export const getStats = async (req, res) => {
       // Get total standards
       const totalStandards = await Standard.countDocuments();
 
-      // Get total staff
-      const totalStaff = await Staff.countDocuments();
-
       // Get total payments and revenue
       const paymentStats = await Payment.aggregate([
         {
@@ -51,7 +47,6 @@ export const getStats = async (req, res) => {
         totalBatches,
         totalSubjects,
         totalStandards,
-        totalStaff,
         totalPayments: paymentStats.totalPayments,
         totalRevenue: paymentStats.totalRevenue,
         totalAnnouncements,

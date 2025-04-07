@@ -26,7 +26,6 @@ import {
   Subject as SubjectIcon,
   Payment as PaymentIcon,
   Announcement as AnnouncementIcon,
-  Group as GroupIcon,
   Logout as LogoutIcon,
 } from "@mui/icons-material";
 import { useSelector, useDispatch } from "react-redux";
@@ -36,12 +35,11 @@ const drawerWidth = 240;
 
 const menuItems = [
   { text: "Dashboard", icon: <DashboardIcon />, path: "/app/dashboard" },
-  { text: "Students", icon: <SchoolIcon />, path: "/app/students" },
-  { text: "Teachers", icon: <PersonIcon />, path: "/app/teachers" },
-  { text: "Batches", icon: <ClassIcon />, path: "/app/batches" },
   { text: "Subjects", icon: <SubjectIcon />, path: "/app/subjects" },
   { text: "Standards", icon: <SchoolIcon />, path: "/app/standards" },
-  { text: "Staff", icon: <GroupIcon />, path: "/app/staff" },
+  { text: "Teachers", icon: <PersonIcon />, path: "/app/teachers" },
+  { text: "Batches", icon: <ClassIcon />, path: "/app/batches" },
+  { text: "Students", icon: <SchoolIcon />, path: "/app/students" },
   { text: "Payments", icon: <PaymentIcon />, path: "/app/payments" },
   {
     text: "Announcements",

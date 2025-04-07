@@ -17,7 +17,6 @@ import standardRoutes from "./routes/standardRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import paymentRoutes from "./routes/paymentRoutes.js";
 import announcementRoutes from "./routes/announcementRoutes.js";
-import staffRoutes from "./routes/staffRoutes.js";
 import teacherRoutes from "./routes/teacherRoutes.js";
 import dashboardRoutes from "./routes/dashboardRoutes.js";
 
@@ -67,7 +66,6 @@ app.use("/api/students", studentRoutes);
 app.use("/api/batches", batchRoutes);
 app.use("/api/payments", paymentRoutes);
 app.use("/api/announcements", announcementRoutes);
-app.use("/api/staff", staffRoutes);
 app.use("/api/teachers", teacherRoutes);
 app.use("/api/subjects", subjectRoutes);
 app.use("/api/standards", standardRoutes);

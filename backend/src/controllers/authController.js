@@ -2,7 +2,6 @@ import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 import Student from "../models/Student.js";
 import Teacher from "../models/Teacher.js";
-import Staff from "../models/Staff.js";
 import { sendEmail } from "../utils/email.js";
 import mongoose from "mongoose";
 
@@ -40,18 +39,13 @@ export const createUser = async (req, res) => {
       subjects,
       qualification,
       experience,
-      // Staff specific fields
-      department,
-      designation,
-      joiningDate,
-      salary,
     } = req.body;
 
     // Validate role
-    if (!["student", "teacher", "staff"].includes(role)) {
+    if (!["student", "teacher"].includes(role)) {
       return res.status(400).json({
         success: false,
-        message: "Invalid role. Can only create students, teachers, or staff",
+        message: "Invalid role. Can only create students or teachers",
       });
     }
 
@@ -109,21 +103,6 @@ export const createUser = async (req, res) => {
           subjects,
           qualification,
           experience,
-        });
-        break;
-      case "staff":
-        if (!department || !designation || !joiningDate || !salary) {
-          return res.status(400).json({
-            success: false,
-            message: "Please provide all required staff fields",
-          });
-        }
-        roleDoc = await Staff.create({
-          user: user._id,
-          department,
-          designation,
-          joiningDate,
-          salary,
         });
         break;
     }

@@ -27,7 +27,6 @@ import Home from "./pages/Home";
 import Register from "./pages/Register";
 import Payments from "./pages/Payments";
 import Announcements from "./pages/Announcements";
-import Staff from "./pages/Staff";
 
 function App() {
   const dispatch = useDispatch();
@@ -95,14 +94,6 @@ function App() {
               element={
                 <ProtectedRoute allowedRoles={["admin", "teacher"]}>
                   <Announcements />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="staff"
-              element={
-                <ProtectedRoute allowedRoles={["admin"]}>
-                  <Staff />
                 </ProtectedRoute>
               }
             />

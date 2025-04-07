@@ -49,7 +49,6 @@ function Dashboard() {
     totalBatches: 0,
     totalSubjects: 0,
     totalStandards: 0,
-    totalStaff: 0,
     totalPayments: 0,
     totalRevenue: 0,
     totalAnnouncements: 0,
@@ -148,7 +147,6 @@ function Dashboard() {
         totalBatches: responseData.totalBatches || 0,
         totalSubjects: responseData.totalSubjects || 0,
         totalStandards: responseData.totalStandards || 0,
-        totalStaff: responseData.totalStaff || 0,
         totalPayments: responseData.totalPayments || 0,
         totalRevenue: responseData.totalRevenue || 0,
         totalAnnouncements: announcementsData.length,
@@ -350,15 +348,6 @@ function Dashboard() {
                 value={stats.totalSubjects}
                 color="warning"
                 onClick={() => navigate("/app/subjects")}
-              />
-            </Grid>
-            <Grid item xs={6} sm={4} md={3}>
-              <StatCard
-                icon={PeopleIcon}
-                title="Staff"
-                value={stats.totalStaff}
-                color="error"
-                onClick={() => navigate("/app/staff")}
               />
             </Grid>
             <Grid item xs={6} sm={4} md={3}>
