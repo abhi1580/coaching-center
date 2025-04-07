@@ -455,6 +455,21 @@ const Batches = () => {
     }
   };
 
+  const getBatchStatusColor = (status) => {
+    switch (status) {
+      case "active":
+        return "success";
+      case "upcoming":
+        return "info";
+      case "completed":
+        return "warning";
+      case "cancelled":
+        return "error";
+      default:
+        return "default";
+    }
+  };
+
   const clearFilters = () => {
     setNameFilter("");
     setSubjectFilter("");
@@ -933,10 +948,10 @@ const Batches = () => {
                           gap: 0.8,
                         }}
                       >
-                        <Chip
+                      <Chip
                           label={`${getStudentsCount(batch).enrolled} enrolled`}
-                          size="small"
-                          color={
+                        size="small"
+                        color={
                             getStudentsCount(batch).enrolled > 0
                               ? "primary"
                               : "default"
@@ -1151,10 +1166,10 @@ const Batches = () => {
                           gap: 0.8,
                         }}
                       >
-                        <Chip
+                      <Chip
                           label={`${getStudentsCount(batch).enrolled} enrolled`}
-                          size="small"
-                          color={
+                        size="small"
+                        color={
                             getStudentsCount(batch).enrolled > 0
                               ? "primary"
                               : "default"
@@ -1274,6 +1289,10 @@ const Batches = () => {
           sx: {
             borderRadius: isMobile ? 0 : 2,
             overflow: "hidden",
+            height: isMobile ? "100%" : "auto",
+            display: "flex",
+            flexDirection: "column",
+            maxHeight: isMobile ? "100%" : "90vh",
           },
         }}
       >
@@ -1281,38 +1300,38 @@ const Batches = () => {
           <>
             <DialogTitle
               sx={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
                 backgroundColor: theme.palette.primary.main,
                 color: "white",
                 p: 2,
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                flexShrink: 0,
               }}
             >
-              <Box sx={{ display: "flex", alignItems: "center" }}>
-                <Typography
-                  variant="h6"
-                  component="div"
-                  sx={{ flexGrow: 1, fontWeight: 600 }}
-                >
-                  {selectedBatch.name}
-                </Typography>
-              </Box>
+              <Typography variant="h6" fontWeight={600}>
+                {selectedBatch.name}
+              </Typography>
               <Chip
                 label={
-                  selectedBatch.status.charAt(0).toUpperCase() +
-                  selectedBatch.status.slice(1)
+                  selectedBatch.status
+                    ? selectedBatch.status.charAt(0).toUpperCase() +
+                      selectedBatch.status.slice(1)
+                    : "Unknown"
                 }
+                color={getBatchStatusColor(selectedBatch.status)}
                 size="small"
-                color={getStatusColor(selectedBatch.status)}
-                sx={{
-                  color: "white",
-                  backgroundColor: theme.palette.primary.dark,
-                  fontWeight: 500,
-                }}
+                sx={{ fontWeight: 500 }}
               />
             </DialogTitle>
-            <DialogContent dividers sx={{ p: { xs: 2, sm: 3 } }}>
+            <DialogContent
+              dividers
+              sx={{
+                p: { xs: 2, sm: 3 },
+                overflowY: "auto",
+                flexGrow: 1,
+              }}
+            >
               <Grid container spacing={3}>
                 <Grid item xs={12} sm={6}>
                   <Paper
@@ -1464,13 +1483,13 @@ const Batches = () => {
                           Capacity:
                         </Typography>
                         <Box>
-                          <Typography variant="body2" fontWeight="medium">
+                        <Typography variant="body2" fontWeight="medium">
                             {selectedBatch.capacity
                               ? `${getStudentsCount(selectedBatch).enrolled}/${
                                   selectedBatch.capacity
                                 }`
                               : "Not specified"}
-                          </Typography>
+                        </Typography>
                           {selectedBatch.capacity && (
                             <Box sx={{ mt: 0.5 }}>
                               <Chip
@@ -1803,19 +1822,31 @@ const Batches = () => {
                           justifyContent: "center",
                         }}
                       >
-                        <Typography
-                          variant="body2"
+                      <Typography
+                        variant="body2"
                           sx={{ color: "text.secondary" }}
-                        >
-                          No students enrolled in this batch yet.
-                        </Typography>
+                      >
+                        No students enrolled in this batch yet.
+                      </Typography>
                       </Box>
                     )}
                   </Paper>
                 </Grid>
               </Grid>
             </DialogContent>
-            <DialogActions sx={{ px: { xs: 2, sm: 3 }, py: 2 }}>
+            <DialogActions
+              sx={{
+                px: { xs: 2, sm: 3 },
+                py: 2,
+                position: isMobile ? "sticky" : "relative",
+                bottom: 0,
+                backgroundColor: "background.paper",
+                borderTop: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+                zIndex: 1,
+                mt: "auto",
+                flexShrink: 0,
+              }}
+            >
               <Button
                 variant="outlined"
                 color="primary"
@@ -1824,7 +1855,6 @@ const Batches = () => {
                   setDetailsOpen(false);
                   handleOpen(selectedBatch);
                 }}
-                sx={{ borderRadius: 2 }}
               >
                 Edit
               </Button>
@@ -1832,18 +1862,14 @@ const Batches = () => {
                 variant="outlined"
                 color="error"
                 startIcon={<DeleteIcon />}
-                onClick={() => {
-                  setDetailsOpen(false);
-                  handleDelete(selectedBatch._id);
-                }}
-                sx={{ borderRadius: 2 }}
+                onClick={() => handleDelete(selectedBatch._id)}
               >
                 Delete
               </Button>
               <Button
                 onClick={() => setDetailsOpen(false)}
                 variant="contained"
-                sx={{ ml: "auto", borderRadius: 2 }}
+                sx={{ ml: "auto" }}
               >
                 Close
               </Button>
@@ -1863,6 +1889,10 @@ const Batches = () => {
           sx: {
             borderRadius: isMobile ? 0 : 2,
             overflow: "hidden",
+            height: isMobile ? "100%" : "auto",
+            display: "flex",
+            flexDirection: "column",
+            maxHeight: isMobile ? "100%" : "90vh",
           },
         }}
       >
@@ -1871,14 +1901,33 @@ const Batches = () => {
             backgroundColor: theme.palette.primary.main,
             color: "white",
             p: 2,
+            flexShrink: 0,
           }}
         >
           <Typography variant="h6" fontWeight={600}>
-            {selectedBatch ? "Edit Batch" : "Add New Batch"}
+          {selectedBatch ? "Edit Batch" : "Add New Batch"}
           </Typography>
         </DialogTitle>
-        <form onSubmit={handleSubmit}>
-          <DialogContent dividers sx={{ p: { xs: 2, sm: 3 } }}>
+        <form
+          onSubmit={handleSubmit}
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            height: isMobile ? "100%" : "auto",
+            overflow: "hidden",
+            flexGrow: 1,
+          }}
+        >
+          <DialogContent
+            dividers
+            sx={{
+              p: { xs: 2, sm: 3 },
+              overflowY: "auto",
+              flexGrow: 1,
+              display: "flex",
+              flexDirection: "column",
+            }}
+          >
             <Box sx={{ mb: 3 }}>
               <Typography variant="body2" color="text.secondary">
                 Fill in the details below to{" "}
@@ -2041,28 +2090,28 @@ const Batches = () => {
                     gutterBottom
                   >
                     Schedule Days
-                  </Typography>
+                </Typography>
                   <Box
                     sx={{ display: "flex", flexWrap: "wrap", gap: 1, mt: 1 }}
                   >
-                    {DAYS_OF_WEEK.map((day) => (
-                      <Chip
-                        key={day}
-                        label={day}
-                        onClick={() => handleDayToggle(day)}
-                        color={
-                          formData.schedule.days.includes(day)
-                            ? "primary"
-                            : "default"
-                        }
-                        variant={
-                          formData.schedule.days.includes(day)
-                            ? "filled"
-                            : "outlined"
-                        }
+                  {DAYS_OF_WEEK.map((day) => (
+                    <Chip
+                      key={day}
+                      label={day}
+                      onClick={() => handleDayToggle(day)}
+                      color={
+                        formData.schedule.days.includes(day)
+                          ? "primary"
+                          : "default"
+                      }
+                      variant={
+                        formData.schedule.days.includes(day)
+                          ? "filled"
+                          : "outlined"
+                      }
                         sx={{ fontWeight: 500 }}
-                      />
-                    ))}
+                    />
+                  ))}
                   </Box>
                 </Box>
               </Grid>
@@ -2195,12 +2244,20 @@ const Batches = () => {
               </Grid>
             </Grid>
           </DialogContent>
-          <DialogActions sx={{ px: { xs: 2, sm: 3 }, py: 2 }}>
-            <Button
-              onClick={handleClose}
-              disabled={submitting}
-              sx={{ borderRadius: 2 }}
-            >
+          <DialogActions
+            sx={{
+              px: { xs: 2, sm: 3 },
+              py: 2,
+              position: isMobile ? "sticky" : "relative",
+              bottom: 0,
+              backgroundColor: "background.paper",
+              borderTop: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+              zIndex: 1,
+              mt: "auto",
+              flexShrink: 0,
+            }}
+          >
+            <Button onClick={handleClose} disabled={submitting}>
               Cancel
             </Button>
             <Button
@@ -2208,14 +2265,13 @@ const Batches = () => {
               variant="contained"
               color="primary"
               disabled={submitting}
-              sx={{ borderRadius: 2, px: 3 }}
             >
               {submitting ? (
                 <CircularProgress size={24} />
               ) : selectedBatch ? (
                 "Update Batch"
               ) : (
-                "Create Batch"
+                "Save Batch"
               )}
             </Button>
           </DialogActions>

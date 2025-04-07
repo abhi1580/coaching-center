@@ -32,6 +32,14 @@ import {
   Stack,
   useMediaQuery,
   useTheme,
+  Avatar,
+  Tooltip,
+  Divider,
+  FormControlLabel,
+  Switch,
+  FormHelperText,
+  FormControl,
+  FormLabel,
 } from "@mui/material";
 import {
   Add as AddIcon,
@@ -44,6 +52,21 @@ import {
   Phone as PhoneIcon,
   Email as EmailIcon,
   School as SchoolIcon,
+  Person as PersonIcon,
+  Work as WorkIcon,
+  History as HistoryIcon,
+  Event as EventIcon,
+  AttachMoney as AttachMoneyIcon,
+  LocationOn as LocationOnIcon,
+  Male as MaleIcon,
+  Female as FemaleIcon,
+  MoreVert as MoreVertIcon,
+  Close as CloseIcon,
+  Save as SaveIcon,
+  Cancel as CancelIcon,
+  Refresh as RefreshIcon,
+  Warning as WarningIcon,
+  ErrorOutline as ErrorOutlineIcon,
 } from "@mui/icons-material";
 import { Formik, Form } from "formik";
 import * as Yup from "yup";
@@ -56,6 +79,7 @@ import {
   deleteTeacher,
 } from "../store/slices/teacherSlice";
 import RefreshButton from "../components/RefreshButton";
+import { alpha } from "@mui/material/styles";
 
 const validationSchema = (isEdit) =>
   Yup.object({
@@ -118,16 +142,30 @@ const Teachers = () => {
   const [filteredTeachers, setFilteredTeachers] = useState([]);
   const [filterExpanded, setFilterExpanded] = useState(false);
 
+  // Add state for delete confirmation
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [teacherToDelete, setTeacherToDelete] = useState(null);
+  const [deleting, setDeleting] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0); // Add state for triggering re-renders
+
+  // Clear error and success messages
+  const clearMessages = () => {
+    setError(null);
+    setSuccess(null);
+  };
+
   // Add loadAllData function for refresh button
   const loadAllData = useCallback(() => {
+    clearMessages();
     dispatch(fetchTeachers());
     dispatch(fetchSubjects());
+    setReloadKey((prevKey) => prevKey + 1); // Increment reload key to force re-render
   }, [dispatch]);
 
   useEffect(() => {
     dispatch(fetchTeachers());
     dispatch(fetchSubjects());
-  }, [dispatch]);
+  }, [dispatch, reloadKey]); // Add reloadKey as dependency to trigger refetch
 
   // Initialize filtered teachers when teachers data loads
   useEffect(() => {
@@ -137,6 +175,28 @@ const Teachers = () => {
       setError(reduxError);
     }
   }, [teachers, reduxError]);
+
+  // Auto-clear success messages after 3 seconds
+  useEffect(() => {
+    let timer;
+    if (success) {
+      timer = setTimeout(() => {
+        setSuccess(null);
+      }, 3000);
+    }
+    return () => clearTimeout(timer);
+  }, [success]);
+
+  // Auto-clear error messages after 5 seconds
+  useEffect(() => {
+    let timer;
+    if (error) {
+      timer = setTimeout(() => {
+        setError(null);
+      }, 5000);
+    }
+    return () => clearTimeout(timer);
+  }, [error]);
 
   // Apply filters whenever teachers data or filter values change
   useEffect(() => {
@@ -192,15 +252,16 @@ const Teachers = () => {
     setQualificationFilter("");
   };
 
+  // Handle dialog open with reset messages
   const handleOpen = (teacher = null) => {
     setSelectedTeacher(teacher);
+    clearMessages(); // Clear any existing messages when opening dialog
     setOpen(true);
   };
 
   const handleClose = () => {
     setSelectedTeacher(null);
     setOpen(false);
-    setSuccess(null);
   };
 
   const handleSubmit = async (
@@ -246,6 +307,11 @@ const Teachers = () => {
         resetForm();
       }
 
+      // Reload data to ensure UI is up-to-date
+      setTimeout(() => {
+        loadAllData();
+      }, 300);
+
       // Close the dialog
       handleClose();
     } catch (err) {
@@ -260,15 +326,30 @@ const Teachers = () => {
     }
   };
 
-  const handleDelete = async (id) => {
-    if (window.confirm("Are you sure you want to delete this teacher?")) {
-      try {
-        await dispatch(deleteTeacher(id)).unwrap();
-        setSuccess("Teacher deleted successfully");
-      } catch (err) {
-        console.error("Error deleting teacher:", err);
-        setError(err.message || "Failed to delete teacher");
-      }
+  const handleDelete = (teacher) => {
+    setTeacherToDelete(teacher);
+    setConfirmDelete(true);
+  };
+
+  const confirmDeleteTeacher = async () => {
+    if (!teacherToDelete || !teacherToDelete._id) return;
+
+    try {
+      setDeleting(true);
+      await dispatch(deleteTeacher(teacherToDelete._id)).unwrap();
+      setSuccess("Teacher deleted successfully");
+      setConfirmDelete(false);
+      setTeacherToDelete(null);
+
+      // Reload data to ensure UI is up-to-date
+      setTimeout(() => {
+        loadAllData();
+      }, 300);
+    } catch (err) {
+      console.error("Error deleting teacher:", err);
+      setError(err.message || "Failed to delete teacher");
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -289,63 +370,355 @@ const Teachers = () => {
 
   return (
     <Box sx={{ p: { xs: 1, sm: 2, md: 3 } }}>
-      <Box
+      {/* Enhanced Header with Gradient */}
+      <Paper
+        elevation={2}
         sx={{
-          display: "flex",
-          flexDirection: { xs: "column", sm: "row" },
-          justifyContent: "space-between",
-          alignItems: { xs: "flex-start", sm: "center" },
           mb: 3,
-          gap: { xs: 1, sm: 0 },
+          borderRadius: 2,
+          overflow: "hidden",
+          background: `linear-gradient(90deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
         }}
       >
-        <Box sx={{ display: "flex", alignItems: "center" }}>
-          <Typography
-            variant="h4"
-            component="h1"
-            sx={{ fontSize: { xs: "1.5rem", sm: "2rem", md: "2.125rem" } }}
-          >
-            Teachers
-          </Typography>
-          <RefreshButton
-            onRefresh={loadAllData}
-            tooltip="Refresh teachers data"
-            sx={{ ml: 1 }}
-          />
-        </Box>
-        <Button
-          variant="contained"
-          color="primary"
-          startIcon={<AddIcon />}
-          onClick={() => handleOpen()}
-          sx={{ alignSelf: { xs: "flex-start", sm: "auto" } }}
+        <Box
+          sx={{
+            p: { xs: 2, md: 3 },
+            display: "flex",
+            flexDirection: { xs: "column", sm: "row" },
+            justifyContent: "space-between",
+            alignItems: { xs: "flex-start", sm: "center" },
+            gap: { xs: 2, sm: 0 },
+          }}
         >
-          Add Teacher
-        </Button>
-      </Box>
+          <Box sx={{ display: "flex", alignItems: "center" }}>
+            <SchoolIcon
+              sx={{
+                color: "white",
+                mr: 2,
+                fontSize: { xs: 30, sm: 36, md: 40 },
+              }}
+            />
+            <Typography
+              variant="h4"
+              component="h1"
+              sx={{
+                fontSize: { xs: "1.5rem", sm: "1.8rem", md: "2.2rem" },
+                fontWeight: 600,
+                color: "white",
+              }}
+            >
+              Teachers
+            </Typography>
+            <RefreshButton
+              onRefresh={loadAllData}
+              tooltip="Refresh teachers data"
+              sx={{ ml: 1, color: "white" }}
+            />
+          </Box>
+          <Button
+            variant="contained"
+            color="secondary"
+            startIcon={<AddIcon />}
+            onClick={() => handleOpen()}
+            sx={{
+              px: 2,
+              py: 1,
+              borderRadius: 2,
+              boxShadow: 3,
+              bgcolor: alpha("#fff", 0.9),
+              color: theme.palette.primary.main,
+              fontWeight: 600,
+              "&:hover": {
+                bgcolor: "#fff",
+                boxShadow: 4,
+              },
+            }}
+          >
+            Add Teacher
+          </Button>
+        </Box>
+      </Paper>
+
+      {/* Statistics Cards */}
+      <Grid container spacing={2} sx={{ mb: 3 }}>
+        <Grid item xs={12} sm={6} md={3}>
+          <Paper
+            elevation={2}
+            sx={{
+              p: 2,
+              borderRadius: 2,
+              bgcolor: alpha(theme.palette.primary.light, 0.1),
+              border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
+              display: "flex",
+              flexDirection: "column",
+              height: "100%",
+              transition: "all 0.3s ease",
+              "&:hover": {
+                boxShadow: 4,
+                transform: "translateY(-3px)",
+              },
+            }}
+          >
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                mb: 1,
+              }}
+            >
+              <Avatar
+                sx={{
+                  bgcolor: alpha(theme.palette.primary.main, 0.8),
+                  width: 40,
+                  height: 40,
+                  mr: 1,
+                }}
+              >
+                <PersonIcon />
+              </Avatar>
+              <Typography variant="h6" fontWeight={600} color="primary">
+                Total Teachers
+              </Typography>
+            </Box>
+            <Typography
+              variant="h3"
+              component="div"
+              sx={{ fontWeight: 600, color: theme.palette.primary.main, mb: 1 }}
+            >
+              {teachers.length}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Total number of registered teachers
+            </Typography>
+          </Paper>
+        </Grid>
+
+        <Grid item xs={12} sm={6} md={3}>
+          <Paper
+            elevation={2}
+            sx={{
+              p: 2,
+              borderRadius: 2,
+              bgcolor: alpha(theme.palette.success.light, 0.1),
+              border: `1px solid ${alpha(theme.palette.success.main, 0.1)}`,
+              display: "flex",
+              flexDirection: "column",
+              height: "100%",
+              transition: "all 0.3s ease",
+              "&:hover": {
+                boxShadow: 4,
+                transform: "translateY(-3px)",
+              },
+            }}
+          >
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                mb: 1,
+              }}
+            >
+              <Avatar
+                sx={{
+                  bgcolor: alpha(theme.palette.success.main, 0.8),
+                  width: 40,
+                  height: 40,
+                  mr: 1,
+                }}
+              >
+                <WorkIcon />
+              </Avatar>
+              <Typography variant="h6" fontWeight={600} color="success.main">
+                Active
+              </Typography>
+            </Box>
+            <Typography
+              variant="h3"
+              component="div"
+              sx={{ fontWeight: 600, color: theme.palette.success.main, mb: 1 }}
+            >
+              {
+                teachers.filter((t) => t.status?.toLowerCase() === "active")
+                  .length
+              }
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Currently active teachers
+            </Typography>
+          </Paper>
+        </Grid>
+
+        <Grid item xs={12} sm={6} md={3}>
+          <Paper
+            elevation={2}
+            sx={{
+              p: 2,
+              borderRadius: 2,
+              bgcolor: alpha(theme.palette.warning.light, 0.1),
+              border: `1px solid ${alpha(theme.palette.warning.main, 0.1)}`,
+              display: "flex",
+              flexDirection: "column",
+              height: "100%",
+              transition: "all 0.3s ease",
+              "&:hover": {
+                boxShadow: 4,
+                transform: "translateY(-3px)",
+              },
+            }}
+          >
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                mb: 1,
+              }}
+            >
+              <Avatar
+                sx={{
+                  bgcolor: alpha(theme.palette.warning.main, 0.8),
+                  width: 40,
+                  height: 40,
+                  mr: 1,
+                }}
+              >
+                <HistoryIcon />
+              </Avatar>
+              <Typography variant="h6" fontWeight={600} color="warning.main">
+                Inactive
+              </Typography>
+            </Box>
+            <Typography
+              variant="h3"
+              component="div"
+              sx={{ fontWeight: 600, color: theme.palette.warning.main, mb: 1 }}
+            >
+              {
+                teachers.filter((t) => t.status?.toLowerCase() === "inactive")
+                  .length
+              }
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Currently inactive teachers
+            </Typography>
+          </Paper>
+        </Grid>
+
+        <Grid item xs={12} sm={6} md={3}>
+          <Paper
+            elevation={2}
+            sx={{
+              p: 2,
+              borderRadius: 2,
+              bgcolor: alpha(theme.palette.info.light, 0.1),
+              border: `1px solid ${alpha(theme.palette.info.main, 0.1)}`,
+              display: "flex",
+              flexDirection: "column",
+              height: "100%",
+              transition: "all 0.3s ease",
+              "&:hover": {
+                boxShadow: 4,
+                transform: "translateY(-3px)",
+              },
+            }}
+          >
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                mb: 1,
+              }}
+            >
+              <Avatar
+                sx={{
+                  bgcolor: alpha(theme.palette.info.main, 0.8),
+                  width: 40,
+                  height: 40,
+                  mr: 1,
+                }}
+              >
+                <FilterIcon />
+              </Avatar>
+              <Typography variant="h6" fontWeight={600} color="info.main">
+                Filtered
+              </Typography>
+            </Box>
+            <Typography
+              variant="h3"
+              component="div"
+              sx={{ fontWeight: 600, color: theme.palette.info.main, mb: 1 }}
+            >
+              {filteredTeachers.length}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Teachers matching current filters
+            </Typography>
+          </Paper>
+        </Grid>
+      </Grid>
 
       {(error || reduxError) && (
-        <Alert severity="error" sx={{ mb: 2 }}>
+        <Alert
+          severity="error"
+          sx={{
+            mb: 2,
+            borderRadius: 1,
+            animation: "fadeIn 0.3s",
+            "@keyframes fadeIn": {
+              "0%": { opacity: 0, transform: "translateY(-10px)" },
+              "100%": { opacity: 1, transform: "translateY(0)" },
+            },
+          }}
+          onClose={() => setError(null)}
+        >
           {error || reduxError}
         </Alert>
       )}
 
       {success && (
-        <Alert severity="success" sx={{ mb: 2 }}>
+        <Alert
+          severity="success"
+          sx={{
+            mb: 2,
+            borderRadius: 1,
+            animation: "fadeIn 0.3s",
+            "@keyframes fadeIn": {
+              "0%": { opacity: 0, transform: "translateY(-10px)" },
+              "100%": { opacity: 1, transform: "translateY(0)" },
+            },
+          }}
+          onClose={() => setSuccess(null)}
+        >
           {success}
         </Alert>
       )}
 
-      {/* Filter Accordion */}
+      {/* Enhanced Filter Accordion */}
       <Accordion
         expanded={filterExpanded}
         onChange={() => setFilterExpanded(!filterExpanded)}
-        sx={{ mb: 2 }}
+        sx={{
+          mb: 2,
+          borderRadius: 2,
+          overflow: "hidden",
+          boxShadow: filterExpanded ? 3 : 1,
+          "&:before": {
+            display: "none",
+          },
+          transition: "all 0.3s ease",
+        }}
       >
-        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+        <AccordionSummary
+          expandIcon={<ExpandMoreIcon />}
+          sx={{
+            backgroundColor: alpha(theme.palette.primary.light, 0.05),
+            "&:hover": {
+              backgroundColor: alpha(theme.palette.primary.light, 0.1),
+            },
+          }}
+        >
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
             <FilterIcon color="primary" />
-            <Typography>Filters</Typography>
+            <Typography fontWeight={500}>Filters</Typography>
             {(nameFilter ||
               subjectFilter ||
               statusFilter ||
@@ -359,11 +732,12 @@ const Teachers = () => {
                 ].reduce((a, b) => a + b, 0)} active`}
                 size="small"
                 color="primary"
+                sx={{ fontWeight: 500 }}
               />
             )}
           </Box>
         </AccordionSummary>
-        <AccordionDetails>
+        <AccordionDetails sx={{ p: { xs: 2, sm: 3 }, pt: 2 }}>
           <Grid container spacing={2}>
             <Grid item xs={12} sm={6} md={3}>
               <TextField
@@ -374,7 +748,7 @@ const Teachers = () => {
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
-                      <SearchIcon />
+                      <SearchIcon color="primary" />
                     </InputAdornment>
                   ),
                   endAdornment: nameFilter && (
@@ -382,12 +756,21 @@ const Teachers = () => {
                       <IconButton
                         size="small"
                         onClick={() => setNameFilter("")}
+                        sx={{
+                          bgcolor: alpha(theme.palette.primary.main, 0.05),
+                          "&:hover": {
+                            bgcolor: alpha(theme.palette.primary.main, 0.1),
+                          },
+                        }}
                       >
-                        <ClearIcon />
+                        <ClearIcon fontSize="small" />
                       </IconButton>
                     </InputAdornment>
                   ),
+                  sx: { borderRadius: 1 },
                 }}
+                variant="outlined"
+                size="small"
               />
             </Grid>
             <Grid item xs={12} sm={6} md={3}>
@@ -397,6 +780,11 @@ const Teachers = () => {
                 label="Filter by Subject"
                 value={subjectFilter}
                 onChange={(e) => setSubjectFilter(e.target.value)}
+                InputProps={{
+                  sx: { borderRadius: 1 },
+                }}
+                variant="outlined"
+                size="small"
               >
                 <MenuItem value="">All Subjects</MenuItem>
                 {subjects.map((subject) => (
@@ -413,6 +801,11 @@ const Teachers = () => {
                 label="Filter by Status"
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
+                InputProps={{
+                  sx: { borderRadius: 1 },
+                }}
+                variant="outlined"
+                size="small"
               >
                 <MenuItem value="">All Statuses</MenuItem>
                 <MenuItem value="active">Active</MenuItem>
@@ -426,17 +819,31 @@ const Teachers = () => {
                 value={qualificationFilter}
                 onChange={(e) => setQualificationFilter(e.target.value)}
                 InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SchoolIcon color="primary" />
+                    </InputAdornment>
+                  ),
                   endAdornment: qualificationFilter && (
                     <InputAdornment position="end">
                       <IconButton
                         size="small"
                         onClick={() => setQualificationFilter("")}
+                        sx={{
+                          bgcolor: alpha(theme.palette.primary.main, 0.05),
+                          "&:hover": {
+                            bgcolor: alpha(theme.palette.primary.main, 0.1),
+                          },
+                        }}
                       >
-                        <ClearIcon />
+                        <ClearIcon fontSize="small" />
                       </IconButton>
                     </InputAdornment>
                   ),
+                  sx: { borderRadius: 1 },
                 }}
+                variant="outlined"
+                size="small"
               />
             </Grid>
             <Grid item xs={12}>
@@ -451,6 +858,11 @@ const Teachers = () => {
                     !statusFilter &&
                     !qualificationFilter
                   }
+                  sx={{
+                    borderRadius: 1.5,
+                    color: theme.palette.primary.main,
+                  }}
+                  size="small"
                 >
                   Clear Filters
                 </Button>
@@ -460,36 +872,33 @@ const Teachers = () => {
         </AccordionDetails>
       </Accordion>
 
-      {/* Results count */}
+      {/* Results count - enhanced styling */}
       <Box
         sx={{
           mb: 2,
           display: "flex",
+          flexDirection: { xs: "column", sm: "row" },
           justifyContent: "space-between",
-          alignItems: "center",
+          alignItems: { xs: "flex-start", sm: "center" },
+          gap: { xs: 1, sm: 0 },
+          p: 1.5,
+          backgroundColor: alpha(theme.palette.primary.light, 0.05),
+          borderRadius: 2,
+          border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
         }}
       >
-        <Typography variant="body2" color="text.secondary">
+        <Typography variant="body2" color="text.secondary" fontWeight={500}>
           Showing {filteredTeachers.length} of {teachers.length} teachers
         </Typography>
         {filteredTeachers.length === 0 && teachers.length > 0 && (
-          <Alert severity="info" sx={{ py: 0 }}>
+          <Alert
+            severity="info"
+            sx={{ py: 0, width: { xs: "100%", sm: "auto" }, borderRadius: 1 }}
+          >
             No teachers match your filter criteria
           </Alert>
         )}
       </Box>
-
-      {error && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {error}
-        </Alert>
-      )}
-
-      {success && (
-        <Alert severity="success" sx={{ mb: 2 }}>
-          {success}
-        </Alert>
-      )}
 
       {loading && filteredTeachers.length === 0 ? (
         <Box
@@ -505,63 +914,154 @@ const Teachers = () => {
       ) : (
         <>
           {isMobile ? (
-            // Mobile card view
+            // Enhanced Mobile card view
             <Stack spacing={2}>
               {filteredTeachers.length > 0 ? (
                 filteredTeachers.map((teacher) => (
-                  <Card key={teacher._id} sx={{ width: "100%" }}>
-                    <CardContent>
+                  <Card
+                    key={teacher._id}
+                    sx={{
+                      width: "100%",
+                      borderRadius: 2,
+                      transition: "all 0.3s ease",
+                      "&:hover": {
+                        transform: "translateY(-2px)",
+                        boxShadow: 3,
+                      },
+                      overflow: "hidden",
+                    }}
+                    elevation={2}
+                  >
+                    <Box
+                      sx={{
+                        backgroundColor: theme.palette.primary.main,
+                        p: 1.5,
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                      }}
+                    >
+                      <Box sx={{ display: "flex", alignItems: "center" }}>
+                        <Avatar
+                          sx={{
+                            bgcolor: alpha("#fff", 0.2),
+                            color: "white",
+                            width: 32,
+                            height: 32,
+                            mr: 1.5,
+                            fontSize: 16,
+                          }}
+                        >
+                          {teacher.name
+                            ? teacher.name.charAt(0).toUpperCase()
+                            : "T"}
+                        </Avatar>
+                        <Typography
+                          variant="subtitle1"
+                          fontWeight={600}
+                          color="white"
+                        >
+                          {teacher.name}
+                        </Typography>
+                      </Box>
+                      <Chip
+                        label={teacher.status}
+                        color={
+                          teacher.status?.toLowerCase() === "active"
+                            ? "success"
+                            : "default"
+                        }
+                        size="small"
+                        sx={{
+                          fontWeight: 500,
+                          height: 24,
+                          "& .MuiChip-label": { px: 1 },
+                        }}
+                      />
+                    </Box>
+
+                    <CardContent sx={{ p: 2 }}>
                       <Box
                         sx={{
                           display: "flex",
-                          justifyContent: "space-between",
-                          mb: 2,
+                          alignItems: "center",
+                          mb: 1.5,
+                          pb: 1.5,
+                          borderBottom: `1px solid ${alpha(
+                            theme.palette.divider,
+                            0.1
+                          )}`,
                         }}
-                      >
-                        <Typography variant="h6" component="div">
-                          {teacher.name}
-                        </Typography>
-                        <Chip
-                          label={teacher.status}
-                          color={
-                            teacher.status === "active" ? "success" : "default"
-                          }
-                          size="small"
-                        />
-                      </Box>
-
-                      <Box
-                        sx={{ display: "flex", alignItems: "center", mb: 1 }}
                       >
                         <PhoneIcon
                           fontSize="small"
-                          color="action"
+                          color="primary"
                           sx={{ mr: 1 }}
                         />
-                        <Typography variant="body2">{teacher.phone}</Typography>
+                        <Typography variant="body2" fontWeight={500}>
+                          {teacher.phone}
+                        </Typography>
                       </Box>
 
                       <Box
-                        sx={{ display: "flex", alignItems: "center", mb: 1 }}
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          mb: 1.5,
+                          pb: 1.5,
+                          borderBottom: `1px solid ${alpha(
+                            theme.palette.divider,
+                            0.1
+                          )}`,
+                        }}
                       >
                         <EmailIcon
                           fontSize="small"
-                          color="action"
+                          color="primary"
                           sx={{ mr: 1 }}
                         />
-                        <Typography variant="body2">{teacher.email}</Typography>
+                        <Typography variant="body2" fontWeight={500}>
+                          {teacher.email}
+                        </Typography>
                       </Box>
 
-                      <Box sx={{ mt: 2 }}>
-                        <Typography
-                          variant="subtitle2"
-                          color="text.secondary"
-                          gutterBottom
-                        >
-                          Subjects
-                        </Typography>
+                      <Box
+                        sx={{
+                          mb: 1.5,
+                          pb: 1.5,
+                          borderBottom: `1px solid ${alpha(
+                            theme.palette.divider,
+                            0.1
+                          )}`,
+                        }}
+                      >
                         <Box
-                          sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            mb: 1,
+                          }}
+                        >
+                          <SchoolIcon
+                            fontSize="small"
+                            color="primary"
+                            sx={{ mr: 1 }}
+                          />
+                          <Typography
+                            variant="body2"
+                            fontWeight={600}
+                            color="primary"
+                          >
+                            Subjects
+                          </Typography>
+                        </Box>
+                        <Box
+                          sx={{
+                            display: "flex",
+                            flexWrap: "wrap",
+                            gap: 0.5,
+                            pl: 3.5,
+                          }}
                         >
                           {teacher.subjects?.length > 0 ? (
                             teacher.subjects.map((subjectId) => {
@@ -574,7 +1074,12 @@ const Teachers = () => {
                                   key={subject._id}
                                   label={subject.name}
                                   size="small"
-                                  sx={{ mr: 0.5, mb: 0.5 }}
+                                  sx={{
+                                    borderRadius: 1,
+                                    fontWeight: 500,
+                                  }}
+                                  color="primary"
+                                  variant="outlined"
                                 />
                               ) : null;
                             })
@@ -586,29 +1091,79 @@ const Teachers = () => {
                         </Box>
                       </Box>
 
-                      <Box sx={{ mt: 1 }}>
-                        <Typography variant="subtitle2" color="text.secondary">
-                          Qualification
-                        </Typography>
-                        <Typography variant="body2">
-                          {teacher.qualification} ({teacher.experience} years
-                          experience)
-                        </Typography>
+                      <Box>
+                        <Box
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            mb: 0.5,
+                          }}
+                        >
+                          <WorkIcon
+                            fontSize="small"
+                            color="primary"
+                            sx={{ mr: 1 }}
+                          />
+                          <Typography
+                            variant="body2"
+                            fontWeight={600}
+                            color="primary"
+                          >
+                            Qualification
+                          </Typography>
+                        </Box>
+                        <Box sx={{ pl: 3.5 }}>
+                          <Typography variant="body2">
+                            {teacher.qualification || "Not specified"}
+                          </Typography>
+                          <Typography
+                            variant="body2"
+                            sx={{
+                              mt: 0.5,
+                              display: "flex",
+                              alignItems: "center",
+                              color: alpha(theme.palette.text.primary, 0.7),
+                            }}
+                          >
+                            <HistoryIcon sx={{ mr: 0.5, fontSize: 16 }} />
+                            {teacher.experience || 0} years experience
+                          </Typography>
+                        </Box>
                       </Box>
                     </CardContent>
-                    <CardActions>
+
+                    <CardActions
+                      sx={{
+                        px: 2,
+                        pb: 2,
+                        pt: 0,
+                        borderTop: `1px solid ${alpha(
+                          theme.palette.divider,
+                          0.1
+                        )}`,
+                        justifyContent: "flex-end",
+                      }}
+                    >
                       <Button
                         size="small"
+                        variant="outlined"
                         startIcon={<EditIcon />}
                         onClick={() => handleOpen(teacher)}
+                        color="primary"
+                        sx={{
+                          mr: 1,
+                          borderRadius: 1.5,
+                        }}
                       >
                         Edit
                       </Button>
                       <Button
                         size="small"
-                        color="error"
+                        variant="outlined"
                         startIcon={<DeleteIcon />}
-                        onClick={() => handleDelete(teacher._id)}
+                        onClick={() => handleDelete(teacher)}
+                        color="error"
+                        sx={{ borderRadius: 1.5 }}
                       >
                         Delete
                       </Button>
@@ -616,150 +1171,462 @@ const Teachers = () => {
                   </Card>
                 ))
               ) : (
-                <Typography align="center" sx={{ py: 3 }}>
-                  No teachers found
-                </Typography>
+                <Box
+                  sx={{
+                    p: 3,
+                    textAlign: "center",
+                    backgroundColor: alpha(theme.palette.primary.light, 0.05),
+                    borderRadius: 2,
+                    border: `1px dashed ${alpha(
+                      theme.palette.primary.main,
+                      0.2
+                    )}`,
+                    mb: 3,
+                  }}
+                >
+                  <Typography
+                    variant="body1"
+                    color="text.secondary"
+                    fontWeight={500}
+                  >
+                    No teachers found
+                  </Typography>
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    startIcon={<AddIcon />}
+                    sx={{ mt: 2, borderRadius: 1.5 }}
+                    onClick={() => handleOpen()}
+                  >
+                    Add Teacher
+                  </Button>
+                </Box>
               )}
             </Stack>
           ) : (
-            // Desktop table view
-            <TableContainer component={Paper}>
-              <Table size={isTablet ? "small" : "medium"}>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Name</TableCell>
-                    <TableCell>Contact</TableCell>
-                    <TableCell>Subjects</TableCell>
-                    {!isTablet && <TableCell>Qualification</TableCell>}
-                    {!isTablet && <TableCell>Experience</TableCell>}
-                    <TableCell>Status</TableCell>
-                    <TableCell align="right">Actions</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {filteredTeachers.length > 0 ? (
-                    filteredTeachers.map((teacher) => (
-                      <TableRow key={teacher._id}>
-                        <TableCell>{teacher.name}</TableCell>
-                        <TableCell>
-                          <Typography variant="body2">
-                            {teacher.email}
-                          </Typography>
-                          <Typography variant="body2">
-                            {teacher.phone}
-                          </Typography>
-                        </TableCell>
-                        <TableCell>
-                          <Box
-                            sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}
-                          >
-                            {teacher.subjects?.length > 0 ? (
-                              teacher.subjects.map((subjectId) => {
-                                const subject = subjects.find(
-                                  (s) =>
-                                    s._id === subjectId ||
-                                    s._id === subjectId._id
-                                );
-                                return subject ? (
-                                  <Chip
-                                    key={subject._id}
-                                    label={subject.name}
-                                    size="small"
-                                    sx={{ mr: 0.5, mb: 0.5 }}
-                                  />
-                                ) : null;
-                              })
-                            ) : (
-                              <Typography variant="caption">
-                                No subjects
-                              </Typography>
-                            )}
-                          </Box>
-                        </TableCell>
-                        {!isTablet && (
-                          <TableCell>{teacher.qualification}</TableCell>
-                        )}
-                        {!isTablet && (
-                          <TableCell>{teacher.experience} years</TableCell>
-                        )}
-                        <TableCell>
-                          <Chip
-                            label={teacher.status}
-                            color={
-                              teacher.status === "active"
-                                ? "success"
-                                : "default"
-                            }
-                            size="small"
-                          />
-                        </TableCell>
-                        <TableCell align="right">
-                          <IconButton
-                            color="primary"
-                            size="small"
-                            onClick={() => handleOpen(teacher)}
-                            sx={{ mr: 1 }}
-                          >
-                            <EditIcon fontSize="small" />
-                          </IconButton>
-                          <IconButton
-                            color="error"
-                            size="small"
-                            onClick={() => handleDelete(teacher._id)}
-                          >
-                            <DeleteIcon fontSize="small" />
-                          </IconButton>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  ) : (
+            // Enhanced Desktop Table View
+            <Paper
+              elevation={2}
+              sx={{
+                overflow: "hidden",
+                borderRadius: 2,
+                transition: "all 0.3s ease",
+                mb: 2,
+                "&:hover": {
+                  boxShadow: 4,
+                },
+              }}
+            >
+              <TableContainer sx={{ maxHeight: 650, minHeight: 200 }}>
+                <Table stickyHeader>
+                  <TableHead>
                     <TableRow>
-                      <TableCell colSpan={isTablet ? 5 : 7} align="center">
-                        No teachers found
+                      <TableCell
+                        sx={{
+                          backgroundColor: theme.palette.primary.main,
+                          color: "white",
+                          fontWeight: 600,
+                          fontSize: "0.875rem",
+                        }}
+                      >
+                        Teacher
+                      </TableCell>
+                      <TableCell
+                        sx={{
+                          backgroundColor: theme.palette.primary.main,
+                          color: "white",
+                          fontWeight: 600,
+                          fontSize: "0.875rem",
+                        }}
+                      >
+                        Contact
+                      </TableCell>
+                      <TableCell
+                        sx={{
+                          backgroundColor: theme.palette.primary.main,
+                          color: "white",
+                          fontWeight: 600,
+                          fontSize: "0.875rem",
+                        }}
+                      >
+                        Subjects
+                      </TableCell>
+                      {!isTablet && (
+                        <TableCell
+                          sx={{
+                            backgroundColor: theme.palette.primary.main,
+                            color: "white",
+                            fontWeight: 600,
+                            fontSize: "0.875rem",
+                          }}
+                        >
+                          Qualification
+                        </TableCell>
+                      )}
+                      {!isTablet && (
+                        <TableCell
+                          sx={{
+                            backgroundColor: theme.palette.primary.main,
+                            color: "white",
+                            fontWeight: 600,
+                            fontSize: "0.875rem",
+                          }}
+                        >
+                          Experience
+                        </TableCell>
+                      )}
+                      <TableCell
+                        sx={{
+                          backgroundColor: theme.palette.primary.main,
+                          color: "white",
+                          fontWeight: 600,
+                          fontSize: "0.875rem",
+                        }}
+                      >
+                        Status
+                      </TableCell>
+                      <TableCell
+                        align="right"
+                        sx={{
+                          backgroundColor: theme.palette.primary.main,
+                          color: "white",
+                          fontWeight: 600,
+                          fontSize: "0.875rem",
+                        }}
+                      >
+                        Actions
                       </TableCell>
                     </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </TableContainer>
+                  </TableHead>
+                  <TableBody>
+                    {filteredTeachers.length > 0 ? (
+                      filteredTeachers.map((teacher, index) => (
+                        <TableRow
+                          key={teacher._id}
+                          sx={{
+                            "&:hover": {
+                              backgroundColor: alpha(
+                                theme.palette.primary.light,
+                                0.1
+                              ),
+                            },
+                            ...(index % 2
+                              ? {
+                                  bgcolor: alpha(
+                                    theme.palette.primary.light,
+                                    0.03
+                                  ),
+                                }
+                              : {}),
+                          }}
+                        >
+                          <TableCell
+                            sx={{ display: "flex", alignItems: "center" }}
+                          >
+                            <Avatar
+                              sx={{
+                                bgcolor: alpha(theme.palette.primary.main, 0.8),
+                                width: 32,
+                                height: 32,
+                                mr: 1.5,
+                                fontSize: 14,
+                              }}
+                            >
+                              {teacher.name
+                                ? teacher.name.charAt(0).toUpperCase()
+                                : "T"}
+                            </Avatar>
+                            <Typography fontWeight={500}>
+                              {teacher.name}
+                            </Typography>
+                          </TableCell>
+                          <TableCell>
+                            <Box
+                              sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                mb: 0.5,
+                              }}
+                            >
+                              <EmailIcon
+                                color="primary"
+                                fontSize="small"
+                                sx={{ mr: 0.5 }}
+                              />
+                              <Typography variant="body2">
+                                {teacher.email}
+                              </Typography>
+                            </Box>
+                            <Box sx={{ display: "flex", alignItems: "center" }}>
+                              <PhoneIcon
+                                color="primary"
+                                fontSize="small"
+                                sx={{ mr: 0.5 }}
+                              />
+                              <Typography variant="body2">
+                                {teacher.phone}
+                              </Typography>
+                            </Box>
+                          </TableCell>
+                          <TableCell>
+                            <Box
+                              sx={{
+                                display: "flex",
+                                flexWrap: "wrap",
+                                gap: 0.5,
+                              }}
+                            >
+                              {teacher.subjects?.length > 0 ? (
+                                teacher.subjects.map((subjectId) => {
+                                  const subject = subjects.find(
+                                    (s) =>
+                                      s._id === subjectId ||
+                                      s._id === subjectId._id
+                                  );
+                                  return subject ? (
+                                    <Chip
+                                      key={subject._id}
+                                      label={subject.name}
+                                      size="small"
+                                      color="primary"
+                                      variant="outlined"
+                                      sx={{
+                                        borderRadius: 1,
+                                        fontWeight: 500,
+                                      }}
+                                    />
+                                  ) : null;
+                                })
+                              ) : (
+                                <Typography
+                                  variant="caption"
+                                  color="text.secondary"
+                                >
+                                  No subjects
+                                </Typography>
+                              )}
+                            </Box>
+                          </TableCell>
+                          {!isTablet && (
+                            <TableCell>
+                              <Box
+                                sx={{ display: "flex", alignItems: "center" }}
+                              >
+                                <SchoolIcon
+                                  color="primary"
+                                  fontSize="small"
+                                  sx={{ mr: 0.5 }}
+                                />
+                                <Typography variant="body2" fontWeight={500}>
+                                  {teacher.qualification || "Not specified"}
+                                </Typography>
+                              </Box>
+                            </TableCell>
+                          )}
+                          {!isTablet && (
+                            <TableCell>
+                              <Box
+                                sx={{ display: "flex", alignItems: "center" }}
+                              >
+                                <HistoryIcon
+                                  color="primary"
+                                  fontSize="small"
+                                  sx={{ mr: 0.5 }}
+                                />
+                                <Typography variant="body2" fontWeight={500}>
+                                  {teacher.experience || "0"} years
+                                </Typography>
+                              </Box>
+                            </TableCell>
+                          )}
+                          <TableCell>
+                            <Chip
+                              label={teacher.status}
+                              color={
+                                teacher.status?.toLowerCase() === "active"
+                                  ? "success"
+                                  : "default"
+                              }
+                              size="small"
+                              sx={{
+                                fontWeight: 500,
+                                height: 24,
+                                minWidth: 80,
+                              }}
+                            />
+                          </TableCell>
+                          <TableCell align="right">
+                            <Box
+                              sx={{
+                                display: "flex",
+                                justifyContent: "flex-end",
+                              }}
+                            >
+                              <Tooltip title="Edit Teacher" arrow>
+                                <IconButton
+                                  color="primary"
+                                  size="small"
+                                  onClick={() => handleOpen(teacher)}
+                                  sx={{
+                                    mr: 1,
+                                    bgcolor: alpha(
+                                      theme.palette.primary.main,
+                                      0.05
+                                    ),
+                                    "&:hover": {
+                                      bgcolor: alpha(
+                                        theme.palette.primary.main,
+                                        0.1
+                                      ),
+                                    },
+                                  }}
+                                >
+                                  <EditIcon fontSize="small" />
+                                </IconButton>
+                              </Tooltip>
+                              <Tooltip title="Delete Teacher" arrow>
+                                <IconButton
+                                  color="error"
+                                  size="small"
+                                  onClick={() => handleDelete(teacher)}
+                                  sx={{
+                                    bgcolor: alpha(
+                                      theme.palette.error.main,
+                                      0.05
+                                    ),
+                                    "&:hover": {
+                                      bgcolor: alpha(
+                                        theme.palette.error.main,
+                                        0.1
+                                      ),
+                                    },
+                                  }}
+                                >
+                                  <DeleteIcon fontSize="small" />
+                                </IconButton>
+                              </Tooltip>
+                            </Box>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell
+                          colSpan={isTablet ? 5 : 7}
+                          align="center"
+                          sx={{ py: 3 }}
+                        >
+                          <Box
+                            sx={{
+                              p: 3,
+                              textAlign: "center",
+                              backgroundColor: alpha(
+                                theme.palette.primary.light,
+                                0.05
+                              ),
+                              borderRadius: 2,
+                              border: `1px dashed ${alpha(
+                                theme.palette.primary.main,
+                                0.2
+                              )}`,
+                              my: 2,
+                              maxWidth: 400,
+                              mx: "auto",
+                            }}
+                          >
+                            <Typography
+                              variant="body1"
+                              color="text.secondary"
+                              fontWeight={500}
+                            >
+                              No teachers found
+                            </Typography>
+                            <Button
+                              variant="contained"
+                              color="primary"
+                              startIcon={<AddIcon />}
+                              sx={{ mt: 2, borderRadius: 1.5 }}
+                              onClick={() => handleOpen()}
+                            >
+                              Add Teacher
+                            </Button>
+                          </Box>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </Paper>
           )}
         </>
       )}
 
-      {/* Add/Edit Dialog */}
+      {/* Enhanced Add/Edit Dialog */}
       <Dialog
         open={open}
         onClose={handleClose}
         maxWidth="md"
         fullWidth
-        fullScreen={isMobile}
+        PaperProps={{
+          sx: {
+            borderRadius: 2,
+            maxHeight: { xs: "100%", sm: "90vh" },
+            position: "relative",
+          },
+        }}
       >
-        <DialogTitle>
-          {selectedTeacher ? "Edit Teacher" : "Add New Teacher"}
+        <DialogTitle
+          sx={{
+            px: { xs: 2, sm: 3 },
+            py: 2.5,
+            bgcolor: theme.palette.primary.main,
+            color: "white",
+            display: "flex",
+            alignItems: "center",
+            gap: 1,
+          }}
+        >
+          {selectedTeacher ? <EditIcon /> : <AddIcon />}
+          <Typography variant="h6" component="div" sx={{ fontWeight: 600 }}>
+            {selectedTeacher ? "Edit Teacher" : "Add Teacher"}
+          </Typography>
+          <IconButton
+            edge="end"
+            color="inherit"
+            onClick={handleClose}
+            aria-label="close"
+            sx={{
+              position: "absolute",
+              right: 8,
+              top: 8,
+              color: "white",
+            }}
+          >
+            <CloseIcon />
+          </IconButton>
         </DialogTitle>
+
         <Formik
           initialValues={{
             name: selectedTeacher?.name || "",
             email: selectedTeacher?.email || "",
-            password: "", // Don't prefill password for security
+            password: "",
             phone: selectedTeacher?.phone || "",
-            gender: selectedTeacher?.gender || "",
+            gender: selectedTeacher?.gender || "male",
             address: selectedTeacher?.address || "",
-            subjects: selectedTeacher?.subjects
-              ? Array.isArray(selectedTeacher.subjects)
-                ? selectedTeacher.subjects.map((s) =>
-                    typeof s === "object" && s._id ? s._id : s
-                  )
-                : []
-              : [],
+            subjects:
+              selectedTeacher?.subjects?.map((s) =>
+                typeof s === "object" ? s._id : s
+              ) || [],
             qualification: selectedTeacher?.qualification || "",
-            experience: selectedTeacher?.experience || 0,
+            experience: selectedTeacher?.experience || "",
             joiningDate: selectedTeacher?.joiningDate
               ? new Date(selectedTeacher.joiningDate)
                   .toISOString()
                   .split("T")[0]
-              : "",
-            salary: selectedTeacher?.salary || 0,
+              : new Date().toISOString().split("T")[0],
+            salary: selectedTeacher?.salary || "",
             status: selectedTeacher?.status || "active",
           }}
           validationSchema={validationSchema(!!selectedTeacher)}
@@ -776,228 +1643,527 @@ const Teachers = () => {
             setFieldValue,
           }) => (
             <Form onSubmit={handleSubmit}>
-              <DialogContent>
-                <Grid container spacing={2}>
-                  <Grid item xs={12} sm={6}>
-                    <TextField
-                      fullWidth
-                      label="Name"
-                      name="name"
-                      value={values.name}
-                      onChange={handleChange}
-                      onBlur={handleBlur}
-                      error={touched.name && Boolean(errors.name)}
-                      helperText={touched.name && errors.name}
-                      margin="dense"
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <TextField
-                      fullWidth
-                      label="Email"
-                      name="email"
-                      type="email"
-                      value={values.email}
-                      onChange={handleChange}
-                      onBlur={handleBlur}
-                      error={touched.email && Boolean(errors.email)}
-                      helperText={touched.email && errors.email}
-                      margin="dense"
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <TextField
-                      fullWidth
-                      label={
-                        selectedTeacher ? "New Password (optional)" : "Password"
-                      }
-                      name="password"
-                      type="password"
-                      value={values.password}
-                      onChange={handleChange}
-                      onBlur={handleBlur}
-                      error={touched.password && Boolean(errors.password)}
-                      helperText={
-                        (touched.password && errors.password) ||
-                        (selectedTeacher &&
-                          "Leave blank to keep current password")
-                      }
-                      margin="dense"
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <TextField
-                      fullWidth
-                      label="Phone"
-                      name="phone"
-                      value={values.phone}
-                      onChange={handleChange}
-                      onBlur={handleBlur}
-                      error={touched.phone && Boolean(errors.phone)}
-                      helperText={touched.phone && errors.phone}
-                      margin="dense"
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <TextField
-                      select
-                      fullWidth
-                      label="Gender"
-                      name="gender"
-                      value={values.gender}
-                      onChange={handleChange}
-                      onBlur={handleBlur}
-                      error={touched.gender && Boolean(errors.gender)}
-                      helperText={touched.gender && errors.gender}
-                      margin="dense"
-                    >
-                      <MenuItem value="male">Male</MenuItem>
-                      <MenuItem value="female">Female</MenuItem>
-                      <MenuItem value="other">Other</MenuItem>
-                    </TextField>
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <TextField
-                      fullWidth
-                      label="Address"
-                      name="address"
-                      value={values.address}
-                      onChange={handleChange}
-                      onBlur={handleBlur}
-                      error={touched.address && Boolean(errors.address)}
-                      helperText={touched.address && errors.address}
-                      margin="dense"
-                    />
-                  </Grid>
-                  <Grid item xs={12}>
-                    <TextField
-                      select
-                      fullWidth
-                      SelectProps={{ multiple: true }}
-                      label="Subjects"
-                      name="subjects"
-                      value={values.subjects}
-                      onChange={handleChange}
-                      onBlur={handleBlur}
-                      error={touched.subjects && Boolean(errors.subjects)}
-                      helperText={touched.subjects && errors.subjects}
-                      margin="dense"
-                    >
-                      {subjects.map((subject) => (
-                        <MenuItem key={subject._id} value={subject._id}>
-                          {subject.name}
+              <DialogContent dividers sx={{ p: 3 }}>
+                <Box sx={{ mb: 3 }}>
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ mb: 2 }}
+                    fontWeight={500}
+                  >
+                    Complete the form below. Fields marked with{" "}
+                    <Box component="span" sx={{ color: "error.main" }}>
+                      *
+                    </Box>{" "}
+                    are required.
+                  </Typography>
+
+                  <Divider sx={{ mb: 3 }} />
+
+                  <Typography
+                    variant="subtitle1"
+                    fontWeight={600}
+                    color="primary"
+                    sx={{ mb: 2 }}
+                  >
+                    Personal Information
+                  </Typography>
+
+                  <Grid container spacing={2.5}>
+                    <Grid item xs={12} sm={6}>
+                      <TextField
+                        fullWidth
+                        label="Name"
+                        name="name"
+                        value={values.name}
+                        onChange={handleChange}
+                        onBlur={handleBlur}
+                        error={touched.name && Boolean(errors.name)}
+                        helperText={touched.name && errors.name}
+                        margin="dense"
+                        required
+                        InputProps={{
+                          sx: {
+                            borderRadius: 1,
+                            fontSize: { xs: "0.95rem", sm: "1rem" },
+                          },
+                        }}
+                        sx={{
+                          "& .MuiInputBase-root": {
+                            minHeight: { xs: 48, sm: "auto" },
+                          },
+                        }}
+                      />
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                      <TextField
+                        fullWidth
+                        label="Email"
+                        name="email"
+                        type="email"
+                        value={values.email}
+                        onChange={handleChange}
+                        onBlur={handleBlur}
+                        error={touched.email && Boolean(errors.email)}
+                        helperText={touched.email && errors.email}
+                        margin="dense"
+                        required
+                        InputProps={{ sx: { borderRadius: 1 } }}
+                      />
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                      <TextField
+                        fullWidth
+                        label={
+                          selectedTeacher
+                            ? "New Password (optional)"
+                            : "Password"
+                        }
+                        name="password"
+                        type="password"
+                        value={values.password}
+                        onChange={handleChange}
+                        onBlur={handleBlur}
+                        error={touched.password && Boolean(errors.password)}
+                        helperText={
+                          (touched.password && errors.password) ||
+                          (selectedTeacher &&
+                            "Leave blank to keep current password")
+                        }
+                        margin="dense"
+                        required={!selectedTeacher}
+                        InputProps={{ sx: { borderRadius: 1 } }}
+                      />
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                      <TextField
+                        fullWidth
+                        label="Phone"
+                        name="phone"
+                        value={values.phone}
+                        onChange={handleChange}
+                        onBlur={handleBlur}
+                        error={touched.phone && Boolean(errors.phone)}
+                        helperText={touched.phone && errors.phone}
+                        margin="dense"
+                        required
+                        InputProps={{
+                          sx: { borderRadius: 1 },
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <PhoneIcon color="primary" fontSize="small" />
+                            </InputAdornment>
+                          ),
+                        }}
+                      />
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                      <TextField
+                        select
+                        fullWidth
+                        label="Gender"
+                        name="gender"
+                        value={values.gender}
+                        onChange={handleChange}
+                        onBlur={handleBlur}
+                        error={touched.gender && Boolean(errors.gender)}
+                        helperText={touched.gender && errors.gender}
+                        margin="dense"
+                        required
+                        InputProps={{ sx: { borderRadius: 1 } }}
+                      >
+                        <MenuItem value="male">
+                          <Box sx={{ display: "flex", alignItems: "center" }}>
+                            <MaleIcon
+                              fontSize="small"
+                              sx={{ mr: 1, color: theme.palette.primary.main }}
+                            />
+                            Male
+                          </Box>
                         </MenuItem>
-                      ))}
-                    </TextField>
+                        <MenuItem value="female">
+                          <Box sx={{ display: "flex", alignItems: "center" }}>
+                            <FemaleIcon
+                              fontSize="small"
+                              sx={{ mr: 1, color: "#e91e63" }}
+                            />
+                            Female
+                          </Box>
+                        </MenuItem>
+                        <MenuItem value="other">Other</MenuItem>
+                      </TextField>
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                      <TextField
+                        fullWidth
+                        label="Address"
+                        name="address"
+                        value={values.address}
+                        onChange={handleChange}
+                        onBlur={handleBlur}
+                        error={touched.address && Boolean(errors.address)}
+                        helperText={touched.address && errors.address}
+                        margin="dense"
+                        required
+                        InputProps={{
+                          sx: { borderRadius: 1 },
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <LocationOnIcon
+                                color="primary"
+                                fontSize="small"
+                              />
+                            </InputAdornment>
+                          ),
+                        }}
+                      />
+                    </Grid>
                   </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <TextField
-                      fullWidth
-                      label="Qualification"
-                      name="qualification"
-                      value={values.qualification}
-                      onChange={handleChange}
-                      onBlur={handleBlur}
-                      error={
-                        touched.qualification && Boolean(errors.qualification)
-                      }
-                      helperText={touched.qualification && errors.qualification}
-                      margin="dense"
-                    />
+
+                  <Divider sx={{ my: 3 }} />
+
+                  <Typography
+                    variant="subtitle1"
+                    fontWeight={600}
+                    color="primary"
+                    sx={{ mb: 2 }}
+                  >
+                    Professional Information
+                  </Typography>
+
+                  <Grid container spacing={2}>
+                    <Grid item xs={12}>
+                      <TextField
+                        select
+                        fullWidth
+                        SelectProps={{ multiple: true }}
+                        label="Subjects"
+                        name="subjects"
+                        value={values.subjects}
+                        onChange={handleChange}
+                        onBlur={handleBlur}
+                        error={touched.subjects && Boolean(errors.subjects)}
+                        helperText={touched.subjects && errors.subjects}
+                        margin="dense"
+                        required
+                        InputProps={{ sx: { borderRadius: 1 } }}
+                      >
+                        {subjects.map((subject) => (
+                          <MenuItem key={subject._id} value={subject._id}>
+                            {subject.name}
+                          </MenuItem>
+                        ))}
+                      </TextField>
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                      <TextField
+                        fullWidth
+                        label="Qualification"
+                        name="qualification"
+                        value={values.qualification}
+                        onChange={handleChange}
+                        onBlur={handleBlur}
+                        error={
+                          touched.qualification && Boolean(errors.qualification)
+                        }
+                        helperText={
+                          touched.qualification && errors.qualification
+                        }
+                        margin="dense"
+                        required
+                        InputProps={{
+                          sx: { borderRadius: 1 },
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <SchoolIcon color="primary" fontSize="small" />
+                            </InputAdornment>
+                          ),
+                        }}
+                      />
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                      <TextField
+                        fullWidth
+                        label="Experience (Years)"
+                        name="experience"
+                        type="number"
+                        value={values.experience}
+                        onChange={handleChange}
+                        onBlur={handleBlur}
+                        error={touched.experience && Boolean(errors.experience)}
+                        helperText={touched.experience && errors.experience}
+                        inputProps={{ min: 0 }}
+                        margin="dense"
+                        required
+                        InputProps={{
+                          sx: { borderRadius: 1 },
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <HistoryIcon color="primary" fontSize="small" />
+                            </InputAdornment>
+                          ),
+                        }}
+                      />
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                      <TextField
+                        fullWidth
+                        label="Joining Date"
+                        name="joiningDate"
+                        type="date"
+                        value={values.joiningDate}
+                        onChange={handleChange}
+                        onBlur={handleBlur}
+                        error={
+                          touched.joiningDate && Boolean(errors.joiningDate)
+                        }
+                        helperText={touched.joiningDate && errors.joiningDate}
+                        InputLabelProps={{ shrink: true }}
+                        margin="dense"
+                        required
+                        InputProps={{
+                          sx: { borderRadius: 1 },
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <EventIcon color="primary" fontSize="small" />
+                            </InputAdornment>
+                          ),
+                        }}
+                      />
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                      <TextField
+                        fullWidth
+                        label="Salary"
+                        name="salary"
+                        type="number"
+                        value={values.salary}
+                        onChange={handleChange}
+                        onBlur={handleBlur}
+                        error={touched.salary && Boolean(errors.salary)}
+                        helperText={touched.salary && errors.salary}
+                        InputProps={{
+                          sx: { borderRadius: 1 },
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <AttachMoneyIcon
+                                color="primary"
+                                fontSize="small"
+                              />
+                            </InputAdornment>
+                          ),
+                        }}
+                        inputProps={{ min: 0 }}
+                        margin="dense"
+                        required
+                      />
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                      <TextField
+                        select
+                        fullWidth
+                        label="Status"
+                        name="status"
+                        value={values.status}
+                        onChange={handleChange}
+                        onBlur={handleBlur}
+                        error={touched.status && Boolean(errors.status)}
+                        helperText={touched.status && errors.status}
+                        margin="dense"
+                        required
+                        InputProps={{ sx: { borderRadius: 1 } }}
+                      >
+                        <MenuItem value="active">
+                          <Box sx={{ display: "flex", alignItems: "center" }}>
+                            <Chip
+                              size="small"
+                              label="Active"
+                              color="success"
+                              sx={{ mr: 1, minWidth: 60, fontWeight: 500 }}
+                            />
+                            <Typography variant="body2">
+                              Available to teach
+                            </Typography>
+                          </Box>
+                        </MenuItem>
+                        <MenuItem value="inactive">
+                          <Box sx={{ display: "flex", alignItems: "center" }}>
+                            <Chip
+                              size="small"
+                              label="Inactive"
+                              color="default"
+                              sx={{ mr: 1, minWidth: 60, fontWeight: 500 }}
+                            />
+                            <Typography variant="body2">
+                              Not available to teach
+                            </Typography>
+                          </Box>
+                        </MenuItem>
+                      </TextField>
+                    </Grid>
                   </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <TextField
-                      fullWidth
-                      label="Experience (Years)"
-                      name="experience"
-                      type="number"
-                      value={values.experience}
-                      onChange={handleChange}
-                      onBlur={handleBlur}
-                      error={touched.experience && Boolean(errors.experience)}
-                      helperText={touched.experience && errors.experience}
-                      inputProps={{ min: 0 }}
-                      margin="dense"
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <TextField
-                      fullWidth
-                      label="Joining Date"
-                      name="joiningDate"
-                      type="date"
-                      value={values.joiningDate}
-                      onChange={handleChange}
-                      onBlur={handleBlur}
-                      error={touched.joiningDate && Boolean(errors.joiningDate)}
-                      helperText={touched.joiningDate && errors.joiningDate}
-                      InputLabelProps={{ shrink: true }}
-                      margin="dense"
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <TextField
-                      fullWidth
-                      label="Salary"
-                      name="salary"
-                      type="number"
-                      value={values.salary}
-                      onChange={handleChange}
-                      onBlur={handleBlur}
-                      error={touched.salary && Boolean(errors.salary)}
-                      helperText={touched.salary && errors.salary}
-                      InputProps={{
-                        startAdornment: (
-                          <InputAdornment position="start">₹</InputAdornment>
-                        ),
-                      }}
-                      inputProps={{ min: 0 }}
-                      margin="dense"
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <TextField
-                      select
-                      fullWidth
-                      label="Status"
-                      name="status"
-                      value={values.status}
-                      onChange={handleChange}
-                      onBlur={handleBlur}
-                      error={touched.status && Boolean(errors.status)}
-                      helperText={touched.status && errors.status}
-                      margin="dense"
-                    >
-                      <MenuItem value="active">Active</MenuItem>
-                      <MenuItem value="inactive">Inactive</MenuItem>
-                    </TextField>
-                  </Grid>
-                </Grid>
+                </Box>
               </DialogContent>
               <DialogActions
-                sx={{ px: { xs: 2, sm: 3 }, pb: { xs: 2, sm: 2 } }}
+                sx={{
+                  px: { xs: 2, sm: 3 },
+                  py: { xs: 2, sm: 2 },
+                  bgcolor: alpha(theme.palette.primary.light, 0.05),
+                }}
               >
-                <Button onClick={handleClose} disabled={submitting}>
+                <Button
+                  onClick={handleClose}
+                  disabled={isSubmitting}
+                  startIcon={<CancelIcon />}
+                  variant="outlined"
+                  sx={{ borderRadius: 1.5 }}
+                >
                   Cancel
                 </Button>
                 <Button
                   type="submit"
                   variant="contained"
                   color="primary"
-                  disabled={submitting}
+                  disabled={isSubmitting}
+                  startIcon={
+                    isSubmitting ? (
+                      <CircularProgress size={20} color="inherit" />
+                    ) : selectedTeacher ? (
+                      <SaveIcon />
+                    ) : (
+                      <AddIcon />
+                    )
+                  }
+                  sx={{ ml: 1, borderRadius: 1.5 }}
                 >
-                  {submitting ? (
-                    <CircularProgress size={24} />
-                  ) : selectedTeacher ? (
-                    "Update"
-                  ) : (
-                    "Create"
-                  )}
+                  {isSubmitting
+                    ? "Saving..."
+                    : selectedTeacher
+                    ? "Update Teacher"
+                    : "Add Teacher"}
                 </Button>
               </DialogActions>
             </Form>
           )}
         </Formik>
+      </Dialog>
+
+      {/* Confirm Delete Dialog */}
+      <Dialog
+        open={confirmDelete}
+        onClose={() => setConfirmDelete(false)}
+        PaperProps={{
+          sx: {
+            borderRadius: 2,
+            overflow: "hidden",
+            boxShadow: 10,
+            position: "relative",
+          },
+        }}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle
+          sx={{
+            bgcolor: theme.palette.error.main,
+            color: "white",
+            p: 2,
+          }}
+        >
+          <Box sx={{ display: "flex", alignItems: "center" }}>
+            <WarningIcon sx={{ mr: 1 }} />
+            <Typography variant="h6" fontWeight={600}>
+              Confirm Delete
+            </Typography>
+          </Box>
+          <IconButton
+            aria-label="close"
+            onClick={() => setConfirmDelete(false)}
+            sx={{
+              position: "absolute",
+              right: 8,
+              top: 8,
+              color: "white",
+            }}
+          >
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+
+        <DialogContent dividers sx={{ pt: 3, pb: 1 }}>
+          <Box sx={{ textAlign: "center", py: 2 }}>
+            <ErrorOutlineIcon
+              color="error"
+              sx={{ fontSize: 60, mb: 2, opacity: 0.8 }}
+            />
+            <Typography variant="subtitle1" fontWeight={500} gutterBottom>
+              Are you sure you want to delete this teacher?
+            </Typography>
+            {teacherToDelete && (
+              <Box
+                sx={{
+                  mt: 2,
+                  mb: 3,
+                  p: 2,
+                  borderRadius: 1,
+                  bgcolor: alpha(theme.palette.error.light, 0.1),
+                  border: `1px dashed ${alpha(theme.palette.error.main, 0.2)}`,
+                }}
+              >
+                <Typography fontWeight={600} variant="body1">
+                  {teacherToDelete.name}
+                </Typography>
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ mt: 0.5 }}
+                >
+                  {teacherToDelete.email}
+                </Typography>
+              </Box>
+            )}
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              This action cannot be undone. All related data will be permanently
+              removed.
+            </Typography>
+          </Box>
+        </DialogContent>
+
+        <DialogActions
+          sx={{
+            px: 3,
+            py: 2,
+            bgcolor: alpha(theme.palette.background.paper, 0.9),
+          }}
+        >
+          <Button
+            variant="outlined"
+            onClick={() => setConfirmDelete(false)}
+            sx={{
+              borderRadius: 1.5,
+              mr: 1,
+            }}
+            startIcon={<CancelIcon />}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            color="error"
+            onClick={confirmDeleteTeacher}
+            disabled={deleting}
+            startIcon={
+              deleting ? (
+                <CircularProgress size={20} color="inherit" />
+              ) : (
+                <DeleteIcon />
+              )
+            }
+            sx={{ borderRadius: 1.5 }}
+          >
+            {deleting ? "Deleting..." : "Delete Teacher"}
+          </Button>
+        </DialogActions>
       </Dialog>
     </Box>
   );

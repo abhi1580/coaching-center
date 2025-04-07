@@ -36,6 +36,11 @@ import {
   AccordionDetails,
   InputAdornment,
   Chip,
+  Tooltip,
+  Divider,
+  FormLabel,
+  FormControlLabel,
+  Radio,
 } from "@mui/material";
 import {
   Add as AddIcon,
@@ -46,6 +51,14 @@ import {
   Search as SearchIcon,
   Clear as ClearIcon,
   Book as BookIcon,
+  AccessTime as AccessTimeIcon,
+  Description as DescriptionIcon,
+  AddCircleOutline as AddCircleOutlineIcon,
+  Close as CloseIcon,
+  Save as SaveIcon,
+  Cancel as CancelIcon,
+  Warning as WarningIcon,
+  ErrorOutline as ErrorOutlineIcon,
 } from "@mui/icons-material";
 import { useFormik } from "formik";
 import * as Yup from "yup";
@@ -57,6 +70,8 @@ import {
   resetStatus,
 } from "../store/slices/subjectSlice";
 import RefreshButton from "../components/RefreshButton";
+import { alpha } from "@mui/material/styles";
+import { Formik, Field } from "formik";
 
 const Subjects = () => {
   const dispatch = useDispatch();
@@ -75,6 +90,11 @@ const Subjects = () => {
   const [statusFilter, setStatusFilter] = useState("");
   const [filteredSubjects, setFilteredSubjects] = useState([]);
   const [filterExpanded, setFilterExpanded] = useState(false);
+
+  // Confirm Delete state
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [subjectIdToDelete, setSubjectIdToDelete] = useState(null);
 
   useEffect(() => {
     dispatch(fetchSubjects());
@@ -176,10 +196,24 @@ const Subjects = () => {
     formik.resetForm();
   };
 
+  const handleCancel = () => {
+    handleClose();
+  };
+
   const handleDelete = (id) => {
-    if (window.confirm("Are you sure you want to delete this subject?")) {
-      dispatch(deleteSubject(id));
-    }
+    setSubjectIdToDelete(id);
+    setConfirmDelete(true);
+  };
+
+  const handleConfirmDelete = () => {
+    setDeleting(true);
+    dispatch(deleteSubject(subjectIdToDelete))
+      .unwrap()
+      .finally(() => {
+        setDeleting(false);
+        setConfirmDelete(false);
+        setSubjectIdToDelete(null);
+      });
   };
 
   // Add loadAllData function for refresh button
@@ -204,39 +238,190 @@ const Subjects = () => {
 
   return (
     <Box sx={{ p: { xs: 1, sm: 2, md: 3 } }}>
-      <Box
+      {/* Enhanced Header with gradient background */}
+      <Paper
+        elevation={2}
         sx={{
-          display: "flex",
-          flexDirection: { xs: "column", sm: "row" },
-          justifyContent: "space-between",
-          alignItems: { xs: "flex-start", sm: "center" },
-          mb: 3,
-          gap: { xs: 1, sm: 0 },
+          p: { xs: 2, sm: 3 },
+          mb: { xs: 2, sm: 3 },
+          borderRadius: 2,
+          background: `linear-gradient(90deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
         }}
       >
-        <Box sx={{ display: "flex", alignItems: "center" }}>
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: { xs: "column", sm: "row" },
+            justifyContent: "space-between",
+            alignItems: { xs: "flex-start", sm: "center" },
+            gap: { xs: 2, sm: 0 },
+          }}
+        >
           <Typography
             variant="h4"
             component="h1"
-            sx={{ fontSize: { xs: "1.5rem", sm: "2rem", md: "2.125rem" } }}
+            sx={{
+              fontSize: { xs: "1.5rem", sm: "2rem", md: "2.125rem" },
+              fontWeight: 600,
+              color: "white",
+            }}
           >
             Subjects
           </Typography>
-          <RefreshButton
-            onRefresh={loadAllData}
-            tooltip="Refresh subjects data"
-            sx={{ ml: 1 }}
-          />
+          <Box sx={{ display: "flex", gap: 1 }}>
+            <Button
+              variant="contained"
+              color="secondary"
+              startIcon={<AddIcon />}
+              onClick={() => handleOpen()}
+              sx={{
+                borderRadius: 1.5,
+                boxShadow: 2,
+                "&:hover": {
+                  boxShadow: 4,
+                },
+              }}
+              size={isMobile ? "small" : "medium"}
+            >
+              Add Subject
+            </Button>
+            <RefreshButton
+              onRefresh={loadAllData}
+              tooltip="Refresh subjects data"
+              color="secondary"
+            />
+          </Box>
         </Box>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => handleOpen()}
-          sx={{ alignSelf: { xs: "flex-start", sm: "auto" } }}
-        >
-          Add Subject
-        </Button>
-      </Box>
+      </Paper>
+
+      {/* Enhanced Stats Cards */}
+      <Grid container spacing={isMobile ? 1.5 : 3} mb={isMobile ? 3 : 4}>
+        <Grid item xs={6} md={3}>
+          <Card
+            elevation={2}
+            sx={{
+              borderRadius: 2,
+              transition: "all 0.3s ease",
+              "&:hover": {
+                transform: "translateY(-4px)",
+                boxShadow: 6,
+              },
+            }}
+          >
+            <CardContent sx={{ p: isMobile ? 2 : 3 }}>
+              <Typography
+                color="textSecondary"
+                gutterBottom
+                variant={isMobile ? "body2" : "body1"}
+                sx={{ fontWeight: 500 }}
+              >
+                Total Subjects
+              </Typography>
+              <Typography
+                variant={isMobile ? "h5" : "h4"}
+                sx={{ fontWeight: 600 }}
+              >
+                {subjects?.length || 0}
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid item xs={6} md={3}>
+          <Card
+            elevation={2}
+            sx={{
+              borderRadius: 2,
+              transition: "all 0.3s ease",
+              "&:hover": {
+                transform: "translateY(-4px)",
+                boxShadow: 6,
+              },
+            }}
+          >
+            <CardContent sx={{ p: isMobile ? 2 : 3 }}>
+              <Typography
+                color="textSecondary"
+                gutterBottom
+                variant={isMobile ? "body2" : "body1"}
+                sx={{ fontWeight: 500 }}
+              >
+                Active Subjects
+              </Typography>
+              <Typography
+                variant={isMobile ? "h5" : "h4"}
+                color="success.main"
+                sx={{ fontWeight: 600 }}
+              >
+                {subjects?.filter((subject) => subject.status === "active")
+                  .length || 0}
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid item xs={6} md={3}>
+          <Card
+            elevation={2}
+            sx={{
+              borderRadius: 2,
+              transition: "all 0.3s ease",
+              "&:hover": {
+                transform: "translateY(-4px)",
+                boxShadow: 6,
+              },
+            }}
+          >
+            <CardContent sx={{ p: isMobile ? 2 : 3 }}>
+              <Typography
+                color="textSecondary"
+                gutterBottom
+                variant={isMobile ? "body2" : "body1"}
+                sx={{ fontWeight: 500 }}
+              >
+                Inactive Subjects
+              </Typography>
+              <Typography
+                variant={isMobile ? "h5" : "h4"}
+                color="text.secondary"
+                sx={{ fontWeight: 600 }}
+              >
+                {subjects?.filter((subject) => subject.status === "inactive")
+                  .length || 0}
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid item xs={6} md={3}>
+          <Card
+            elevation={2}
+            sx={{
+              borderRadius: 2,
+              transition: "all 0.3s ease",
+              "&:hover": {
+                transform: "translateY(-4px)",
+                boxShadow: 6,
+              },
+            }}
+          >
+            <CardContent sx={{ p: isMobile ? 2 : 3 }}>
+              <Typography
+                color="textSecondary"
+                gutterBottom
+                variant={isMobile ? "body2" : "body1"}
+                sx={{ fontWeight: 500 }}
+              >
+                Search Results
+              </Typography>
+              <Typography
+                variant={isMobile ? "h5" : "h4"}
+                color="primary.main"
+                sx={{ fontWeight: 600 }}
+              >
+                {filteredSubjects?.length || 0}
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
 
       {error && (
         <Alert severity="error" sx={{ mb: 2 }}>
@@ -244,16 +429,33 @@ const Subjects = () => {
         </Alert>
       )}
 
-      {/* Filter Accordion */}
+      {/* Enhanced Filter Accordion */}
       <Accordion
         expanded={filterExpanded}
         onChange={() => setFilterExpanded(!filterExpanded)}
-        sx={{ mb: 2 }}
+        sx={{
+          mb: 2,
+          borderRadius: 2,
+          overflow: "hidden",
+          boxShadow: filterExpanded ? 3 : 1,
+          "&:before": {
+            display: "none",
+          },
+          transition: "all 0.3s ease",
+        }}
       >
-        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+        <AccordionSummary
+          expandIcon={<ExpandMoreIcon />}
+          sx={{
+            backgroundColor: alpha(theme.palette.primary.light, 0.05),
+            "&:hover": {
+              backgroundColor: alpha(theme.palette.primary.light, 0.1),
+            },
+          }}
+        >
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
             <FilterIcon color="primary" />
-            <Typography>Filters</Typography>
+            <Typography fontWeight={500}>Filters</Typography>
             {(nameFilter || statusFilter) && (
               <Chip
                 label={`${[nameFilter ? 1 : 0, statusFilter ? 1 : 0].reduce(
@@ -262,11 +464,12 @@ const Subjects = () => {
                 )} active`}
                 size="small"
                 color="primary"
+                sx={{ fontWeight: 500 }}
               />
             )}
           </Box>
         </AccordionSummary>
-        <AccordionDetails>
+        <AccordionDetails sx={{ p: { xs: 2, sm: 3 }, pt: 2 }}>
           <Grid container spacing={2}>
             <Grid item xs={12} sm={6}>
               <TextField
@@ -277,7 +480,7 @@ const Subjects = () => {
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
-                      <SearchIcon />
+                      <SearchIcon color="primary" />
                     </InputAdornment>
                   ),
                   endAdornment: nameFilter && (
@@ -285,12 +488,21 @@ const Subjects = () => {
                       <IconButton
                         size="small"
                         onClick={() => setNameFilter("")}
+                        sx={{
+                          bgcolor: alpha(theme.palette.primary.main, 0.05),
+                          "&:hover": {
+                            bgcolor: alpha(theme.palette.primary.main, 0.1),
+                          },
+                        }}
                       >
-                        <ClearIcon />
+                        <ClearIcon fontSize="small" />
                       </IconButton>
                     </InputAdornment>
                   ),
+                  sx: { borderRadius: 1 },
                 }}
+                variant="outlined"
+                size="small"
               />
             </Grid>
             <Grid item xs={12} sm={6}>
@@ -300,6 +512,11 @@ const Subjects = () => {
                 label="Filter by Status"
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
+                InputProps={{
+                  sx: { borderRadius: 1 },
+                }}
+                variant="outlined"
+                size="small"
               >
                 <MenuItem value="">All Statuses</MenuItem>
                 <MenuItem value="active">Active</MenuItem>
@@ -313,6 +530,11 @@ const Subjects = () => {
                   startIcon={<ClearIcon />}
                   onClick={clearFilters}
                   disabled={!nameFilter && !statusFilter}
+                  sx={{
+                    borderRadius: 1.5,
+                    color: theme.palette.primary.main,
+                  }}
+                  size="small"
                 >
                   Clear Filters
                 </Button>
@@ -322,7 +544,7 @@ const Subjects = () => {
         </AccordionDetails>
       </Accordion>
 
-      {/* Results count */}
+      {/* Results count - enhanced styling */}
       <Box
         sx={{
           mb: 2,
@@ -331,15 +553,19 @@ const Subjects = () => {
           justifyContent: "space-between",
           alignItems: { xs: "flex-start", sm: "center" },
           gap: { xs: 1, sm: 0 },
+          p: 1.5,
+          backgroundColor: alpha(theme.palette.primary.light, 0.05),
+          borderRadius: 2,
+          border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
         }}
       >
-        <Typography variant="body2" color="text.secondary">
+        <Typography variant="body2" color="text.secondary" fontWeight={500}>
           Showing {filteredSubjects.length} of {subjects.length} subjects
         </Typography>
         {filteredSubjects.length === 0 && subjects.length > 0 && (
           <Alert
             severity="info"
-            sx={{ py: 0, width: { xs: "100%", sm: "auto" } }}
+            sx={{ py: 0, width: { xs: "100%", sm: "auto" }, borderRadius: 1 }}
           >
             No subjects match your filter criteria
           </Alert>
@@ -347,309 +573,778 @@ const Subjects = () => {
       </Box>
 
       {isMobile ? (
-        // Mobile view - cards instead of table
+        // Enhanced Mobile card view
         <Stack spacing={2}>
           {filteredSubjects && filteredSubjects.length > 0 ? (
             filteredSubjects.map((subject, index) => (
               <Card
                 key={subject._id || `subject-${index}`}
-                sx={{ width: "100%", borderRadius: 2 }}
+                sx={{
+                  width: "100%",
+                  borderRadius: 2,
+                  transition: "all 0.3s ease",
+                  "&:hover": {
+                    transform: "translateY(-2px)",
+                    boxShadow: 3,
+                  },
+                  overflow: "hidden",
+                }}
                 elevation={2}
               >
-                <CardContent>
-                  <Box
-                    sx={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "flex-start",
-                      mb: 1,
-                    }}
-                  >
+                <Box
+                  sx={{
+                    backgroundColor: theme.palette.primary.main,
+                    py: 1,
+                    px: 2,
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                >
+                  <Box sx={{ display: "flex", alignItems: "center" }}>
+                    <BookIcon sx={{ color: "white", mr: 1, fontSize: 18 }} />
                     <Typography
-                      variant="h6"
-                      component="div"
-                      sx={{ fontSize: "1.1rem" }}
+                      variant="subtitle1"
+                      fontWeight={600}
+                      color="white"
                     >
                       {subject.name || "Unnamed Subject"}
                     </Typography>
-                    <Chip
-                      label={subject.status || "Unknown"}
-                      size="small"
-                      color={
-                        subject.status === "active" ? "success" : "default"
-                      }
-                      sx={{ ml: 1 }}
-                    />
                   </Box>
-                  <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
+                  <Chip
+                    label={subject.status || "Unknown"}
+                    size="small"
+                    color={subject.status === "active" ? "success" : "default"}
+                    sx={{
+                      fontWeight: 500,
+                      height: 24,
+                    }}
+                  />
+                </Box>
+
+                <CardContent sx={{ p: 2 }}>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      mb: 1.5,
+                      pb: 1.5,
+                      borderBottom: `1px solid ${alpha(
+                        theme.palette.divider,
+                        0.1
+                      )}`,
+                    }}
+                  >
+                    <AccessTimeIcon
+                      color="primary"
+                      fontSize="small"
+                      sx={{ mr: 1 }}
+                    />
                     <Typography
                       variant="body2"
                       color="text.secondary"
-                      sx={{ mr: 1, fontWeight: 500 }}
+                      sx={{ fontWeight: 500, mr: 1 }}
                     >
                       Duration:
                     </Typography>
-                    <Typography variant="body2">
+                    <Typography variant="body2" fontWeight={500}>
                       {subject.duration || "Not specified"}
                     </Typography>
                   </Box>
+
                   {subject.description && (
-                    <Box sx={{ mt: 1 }}>
+                    <Box>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          alignItems: "flex-start",
+                        }}
+                      >
+                        <DescriptionIcon
+                          color="primary"
+                          fontSize="small"
+                          sx={{ mr: 1, mt: 0.3 }}
+                        />
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          sx={{ fontWeight: 500, mb: 0.5 }}
+                        >
+                          Description:
+                        </Typography>
+                      </Box>
                       <Typography
                         variant="body2"
-                        color="text.secondary"
-                        sx={{ fontWeight: 500, mb: 0.5 }}
+                        sx={{
+                          pl: 3.5,
+                          color: alpha(theme.palette.text.primary, 0.85),
+                        }}
                       >
-                        Description:
-                      </Typography>
-                      <Typography variant="body2">
                         {subject.description}
                       </Typography>
                     </Box>
                   )}
                 </CardContent>
-                <CardActions sx={{ px: 2, pb: 2, pt: 0 }}>
+
+                <CardActions
+                  sx={{
+                    px: 2,
+                    pb: 2,
+                    pt: 0,
+                    borderTop: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+                    justifyContent: "flex-end",
+                  }}
+                >
                   <Button
                     size="small"
+                    variant="outlined"
                     startIcon={<EditIcon />}
                     onClick={() => handleOpen(subject)}
                     color="primary"
                     disabled={!subject._id}
-                    sx={{ mr: 1 }}
+                    sx={{
+                      mr: 1,
+                      borderRadius: 1.5,
+                    }}
                   >
                     Edit
                   </Button>
                   <Button
                     size="small"
+                    variant="outlined"
                     startIcon={<DeleteIcon />}
                     onClick={() => handleDelete(subject._id)}
                     color="error"
                     disabled={!subject._id}
+                    sx={{ borderRadius: 1.5 }}
                   >
                     Delete
                   </Button>
                 </CardActions>
               </Card>
             ))
+          ) : subjects.length > 0 ? (
+            <Box
+              sx={{
+                p: 3,
+                textAlign: "center",
+                backgroundColor: alpha(theme.palette.primary.light, 0.05),
+                borderRadius: 2,
+                border: `1px dashed ${alpha(theme.palette.primary.main, 0.2)}`,
+                mb: 3,
+              }}
+            >
+              <Typography
+                variant="body1"
+                color="text.secondary"
+                fontWeight={500}
+              >
+                No subjects match your filter criteria
+              </Typography>
+              <Button
+                variant="outlined"
+                startIcon={<ClearIcon />}
+                onClick={clearFilters}
+                sx={{ mt: 2, borderRadius: 1.5 }}
+              >
+                Clear Filters
+              </Button>
+            </Box>
           ) : (
-            <Typography align="center" sx={{ py: 3 }}>
-              No subjects found
-            </Typography>
+            <Box
+              sx={{
+                p: 3,
+                textAlign: "center",
+                backgroundColor: alpha(theme.palette.primary.light, 0.05),
+                borderRadius: 2,
+                border: `1px dashed ${alpha(theme.palette.primary.main, 0.2)}`,
+                mb: 3,
+              }}
+            >
+              <Typography
+                variant="body1"
+                color="text.secondary"
+                fontWeight={500}
+              >
+                No subjects found
+              </Typography>
+              <Button
+                variant="contained"
+                color="primary"
+                startIcon={<AddIcon />}
+                sx={{ mt: 2, borderRadius: 1.5 }}
+                onClick={() => handleOpen()}
+              >
+                Add Subject
+              </Button>
+            </Box>
           )}
         </Stack>
       ) : (
-        // Desktop/tablet view - table
-        <TableContainer
-          component={Paper}
-          sx={{ borderRadius: 2, overflow: "hidden" }}
+        // Enhanced Desktop Table View
+        <Paper
+          elevation={2}
+          sx={{
+            overflow: "hidden",
+            borderRadius: 2,
+            transition: "all 0.3s ease",
+            mb: 2,
+            "&:hover": {
+              boxShadow: 4,
+            },
+          }}
         >
-          <Table size={isTablet ? "small" : "medium"}>
-            <TableHead>
-              <TableRow sx={{ backgroundColor: theme.palette.primary.main }}>
-                <TableCell sx={{ color: "white", fontWeight: "bold" }}>
-                  Name
-                </TableCell>
-                <TableCell sx={{ color: "white", fontWeight: "bold" }}>
-                  Duration
-                </TableCell>
-                <TableCell sx={{ color: "white", fontWeight: "bold" }}>
-                  Status
-                </TableCell>
-                {!isTablet && (
-                  <TableCell sx={{ color: "white", fontWeight: "bold" }}>
-                    Description
+          <TableContainer sx={{ maxHeight: 650, minHeight: 200 }}>
+            <Table stickyHeader>
+              <TableHead>
+                <TableRow>
+                  <TableCell
+                    sx={{
+                      backgroundColor: theme.palette.primary.main,
+                      color: "white",
+                      fontWeight: 600,
+                      fontSize: "0.875rem",
+                    }}
+                  >
+                    Name
                   </TableCell>
-                )}
-                <TableCell
-                  align="right"
-                  sx={{ color: "white", fontWeight: "bold" }}
-                >
-                  Actions
-                </TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {filteredSubjects && filteredSubjects.length > 0 ? (
-                filteredSubjects.map((subject, index) => (
-                  <TableRow key={subject._id || `subject-row-${index}`}>
-                    <TableCell>{subject.name || "Unnamed Subject"}</TableCell>
-                    <TableCell>{subject.duration || "Not specified"}</TableCell>
-                    <TableCell>
-                      <Chip
-                        label={subject.status || "Unknown"}
-                        size="small"
-                        color={
-                          subject.status === "active" ? "success" : "default"
-                        }
-                      />
-                    </TableCell>
-                    {!isTablet && (
-                      <TableCell>
-                        {subject.description || (
-                          <Typography variant="caption" color="text.secondary">
-                            No description
-                          </Typography>
-                        )}
-                      </TableCell>
-                    )}
-                    <TableCell align="right">
-                      <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
-                        <IconButton
-                          size="small"
-                          onClick={() => handleOpen(subject)}
-                          disabled={!subject._id}
+                  <TableCell
+                    sx={{
+                      backgroundColor: theme.palette.primary.main,
+                      color: "white",
+                      fontWeight: 600,
+                      fontSize: "0.875rem",
+                    }}
+                  >
+                    Duration
+                  </TableCell>
+                  <TableCell
+                    sx={{
+                      backgroundColor: theme.palette.primary.main,
+                      color: "white",
+                      fontWeight: 600,
+                      fontSize: "0.875rem",
+                    }}
+                  >
+                    Status
+                  </TableCell>
+                  <TableCell
+                    align="right"
+                    sx={{
+                      backgroundColor: theme.palette.primary.main,
+                      color: "white",
+                      fontWeight: 600,
+                      fontSize: "0.875rem",
+                    }}
+                  >
+                    Actions
+                  </TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {filteredSubjects && filteredSubjects.length > 0 ? (
+                  filteredSubjects.map((subject, index) => (
+                    <TableRow
+                      key={subject._id || `subject-${index}`}
+                      sx={{
+                        "&:hover": {
+                          backgroundColor: alpha(
+                            theme.palette.primary.light,
+                            0.1
+                          ),
+                        },
+                        ...(index % 2
+                          ? {
+                              bgcolor: alpha(theme.palette.primary.light, 0.03),
+                            }
+                          : {}),
+                      }}
+                    >
+                      <TableCell sx={{ display: "flex", alignItems: "center" }}>
+                        <BookIcon
                           color="primary"
-                          sx={{ mr: 1 }}
+                          sx={{ mr: 1, fontSize: 18 }}
+                        />
+                        <Tooltip
+                          title={subject.description || "No description"}
+                          arrow
                         >
-                          <EditIcon fontSize="small" />
-                        </IconButton>
-                        <IconButton
+                          <Typography fontWeight={500}>
+                            {subject.name || "Unnamed Subject"}
+                          </Typography>
+                        </Tooltip>
+                      </TableCell>
+                      <TableCell
+                        sx={{ color: alpha(theme.palette.text.primary, 0.9) }}
+                      >
+                        <Box sx={{ display: "flex", alignItems: "center" }}>
+                          <AccessTimeIcon
+                            color="primary"
+                            fontSize="small"
+                            sx={{ mr: 1 }}
+                          />
+                          {subject.duration || "Not specified"}
+                        </Box>
+                      </TableCell>
+                      <TableCell>
+                        <Chip
+                          label={subject.status || "Unknown"}
                           size="small"
-                          onClick={() => handleDelete(subject._id)}
-                          disabled={!subject._id}
-                          color="error"
+                          color={
+                            subject.status === "active" ? "success" : "default"
+                          }
+                          sx={{
+                            fontWeight: 500,
+                            height: 24,
+                            minWidth: 80,
+                          }}
+                        />
+                      </TableCell>
+                      <TableCell align="right">
+                        <Box
+                          sx={{ display: "flex", justifyContent: "flex-end" }}
                         >
-                          <DeleteIcon fontSize="small" />
-                        </IconButton>
+                          <Tooltip title="Edit Subject" arrow>
+                            <IconButton
+                              onClick={() => handleOpen(subject)}
+                              color="primary"
+                              disabled={!subject._id}
+                              sx={{
+                                bgcolor: alpha(
+                                  theme.palette.primary.main,
+                                  0.05
+                                ),
+                                mr: 1,
+                                "&:hover": {
+                                  bgcolor: alpha(
+                                    theme.palette.primary.main,
+                                    0.1
+                                  ),
+                                },
+                              }}
+                              size="small"
+                            >
+                              <EditIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="Delete Subject" arrow>
+                            <IconButton
+                              onClick={() => handleDelete(subject._id)}
+                              color="error"
+                              disabled={!subject._id}
+                              sx={{
+                                bgcolor: alpha(theme.palette.error.main, 0.05),
+                                "&:hover": {
+                                  bgcolor: alpha(theme.palette.error.main, 0.1),
+                                },
+                              }}
+                              size="small"
+                            >
+                              <DeleteIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        </Box>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : subjects.length > 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={4} align="center" sx={{ py: 3 }}>
+                      <Box
+                        sx={{
+                          p: 2,
+                          textAlign: "center",
+                          backgroundColor: alpha(
+                            theme.palette.primary.light,
+                            0.05
+                          ),
+                          borderRadius: 2,
+                          border: `1px dashed ${alpha(
+                            theme.palette.primary.main,
+                            0.2
+                          )}`,
+                          my: 2,
+                        }}
+                      >
+                        <Typography
+                          variant="body1"
+                          color="text.secondary"
+                          fontWeight={500}
+                        >
+                          No subjects match your filter criteria
+                        </Typography>
+                        <Button
+                          variant="outlined"
+                          startIcon={<ClearIcon />}
+                          onClick={clearFilters}
+                          sx={{ mt: 2, borderRadius: 1.5 }}
+                        >
+                          Clear Filters
+                        </Button>
                       </Box>
                     </TableCell>
                   </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={isTablet ? 4 : 5} align="center">
-                    No subjects found
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={4} align="center" sx={{ py: 3 }}>
+                      <Box
+                        sx={{
+                          p: 3,
+                          textAlign: "center",
+                          backgroundColor: alpha(
+                            theme.palette.primary.light,
+                            0.05
+                          ),
+                          borderRadius: 2,
+                          border: `1px dashed ${alpha(
+                            theme.palette.primary.main,
+                            0.2
+                          )}`,
+                          my: 2,
+                        }}
+                      >
+                        <Typography
+                          variant="body1"
+                          color="text.secondary"
+                          fontWeight={500}
+                        >
+                          No subjects found
+                        </Typography>
+                        <Button
+                          variant="contained"
+                          color="primary"
+                          startIcon={<AddIcon />}
+                          sx={{ mt: 2, borderRadius: 1.5 }}
+                          onClick={() => handleOpen()}
+                        >
+                          Add Subject
+                        </Button>
+                      </Box>
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </Paper>
       )}
 
-      {/* Subject Form Dialog */}
+      {/* Subject Dialog - Create/Edit */}
       <Dialog
         open={open}
         onClose={handleClose}
-        maxWidth="sm"
         fullWidth
-        fullScreen={isMobile}
+        maxWidth="sm"
         PaperProps={{
           sx: {
-            borderRadius: isMobile ? 0 : 2,
+            borderRadius: 2,
+            overflow: "hidden",
           },
         }}
       >
-        <DialogTitle>
-          {editingSubject ? "Edit Subject" : "Add New Subject"}
+        <DialogTitle
+          sx={{
+            bgcolor: theme.palette.primary.main,
+            color: "white",
+            p: 2,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          <Box sx={{ display: "flex", alignItems: "center" }}>
+            {editingSubject && editingSubject._id ? (
+              <EditIcon sx={{ mr: 1 }} />
+            ) : (
+              <AddCircleOutlineIcon sx={{ mr: 1 }} />
+            )}
+            <Typography variant="h6" fontWeight={600}>
+              {editingSubject && editingSubject._id
+                ? "Edit Subject"
+                : "Add New Subject"}
+            </Typography>
+          </Box>
+          <IconButton
+            edge="end"
+            color="inherit"
+            onClick={handleClose}
+            aria-label="close"
+            sx={{ color: "white" }}
+          >
+            <CloseIcon />
+          </IconButton>
         </DialogTitle>
         <form onSubmit={formik.handleSubmit}>
-          <DialogContent dividers>
-            <Grid container spacing={2}>
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  id="name"
-                  name="name"
-                  label="Subject Name"
-                  value={formik.values.name}
-                  onChange={formik.handleChange}
-                  onBlur={formik.handleBlur}
-                  error={formik.touched.name && Boolean(formik.errors.name)}
-                  helperText={formik.touched.name && formik.errors.name}
-                  disabled={submitting}
-                  margin="normal"
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  id="duration"
-                  name="duration"
-                  label="Duration"
-                  placeholder="e.g. 6 months, 1 year"
-                  value={formik.values.duration}
-                  onChange={formik.handleChange}
-                  onBlur={formik.handleBlur}
-                  error={
-                    formik.touched.duration && Boolean(formik.errors.duration)
-                  }
-                  helperText={formik.touched.duration && formik.errors.duration}
-                  disabled={submitting}
-                  margin="normal"
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <FormControl
-                  fullWidth
-                  error={formik.touched.status && Boolean(formik.errors.status)}
-                  margin="normal"
-                >
-                  <InputLabel id="status-label">Status</InputLabel>
-                  <Select
-                    labelId="status-label"
-                    id="status"
-                    name="status"
-                    value={formik.values.status}
+          <DialogContent dividers sx={{ p: 3 }}>
+            <Box sx={{ mb: 3 }}>
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{ mb: 2 }}
+                fontWeight={500}
+              >
+                Complete the form below. Fields marked with{" "}
+                <Box component="span" sx={{ color: "error.main" }}>
+                  *
+                </Box>{" "}
+                are required.
+              </Typography>
+
+              <Divider sx={{ mb: 3 }} />
+
+              <Typography
+                variant="subtitle1"
+                fontWeight={600}
+                color="primary"
+                sx={{ mb: 2 }}
+              >
+                Basic Information
+              </Typography>
+
+              <Grid container spacing={2}>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    name="name"
+                    label="Subject Name"
+                    value={formik.values.name}
                     onChange={formik.handleChange}
                     onBlur={formik.handleBlur}
-                    label="Status"
-                    disabled={submitting}
-                  >
-                    <MenuItem value="active">Active</MenuItem>
-                    <MenuItem value="inactive">Inactive</MenuItem>
-                  </Select>
-                  {formik.touched.status && formik.errors.status && (
-                    <FormHelperText>{formik.errors.status}</FormHelperText>
-                  )}
-                </FormControl>
+                    error={formik.touched.name && Boolean(formik.errors.name)}
+                    helperText={formik.touched.name && formik.errors.name}
+                    required
+                    variant="outlined"
+                    InputProps={{ sx: { borderRadius: 1 } }}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    name="duration"
+                    label="Duration"
+                    value={formik.values.duration}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
+                    error={
+                      formik.touched.duration && Boolean(formik.errors.duration)
+                    }
+                    helperText={
+                      formik.touched.duration && formik.errors.duration
+                    }
+                    placeholder="e.g., 6 months, 45 hours, etc."
+                    variant="outlined"
+                    InputProps={{ sx: { borderRadius: 1 } }}
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    name="description"
+                    label="Description"
+                    multiline
+                    rows={4}
+                    value={formik.values.description}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
+                    error={
+                      formik.touched.description &&
+                      Boolean(formik.errors.description)
+                    }
+                    helperText={
+                      formik.touched.description && formik.errors.description
+                    }
+                    placeholder="Enter a detailed description of the subject..."
+                    variant="outlined"
+                    InputProps={{ sx: { borderRadius: 1 } }}
+                  />
+                </Grid>
               </Grid>
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  id="description"
-                  name="description"
-                  label="Description"
-                  multiline
-                  rows={4}
-                  value={formik.values.description}
-                  onChange={formik.handleChange}
-                  onBlur={formik.handleBlur}
-                  error={
-                    formik.touched.description &&
-                    Boolean(formik.errors.description)
-                  }
-                  helperText={
-                    formik.touched.description && formik.errors.description
-                  }
-                  disabled={submitting}
-                  margin="normal"
-                />
-              </Grid>
-            </Grid>
+
+              <Divider sx={{ my: 3 }} />
+
+              <Typography
+                variant="subtitle1"
+                fontWeight={600}
+                color="primary"
+                sx={{ mb: 2 }}
+              >
+                Status
+              </Typography>
+
+              <FormControl component="fieldset">
+                <FormLabel
+                  component="legend"
+                  sx={{ mb: 1, fontSize: "0.875rem" }}
+                >
+                  Subject Status
+                </FormLabel>
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    bgcolor: alpha(theme.palette.background.paper, 0.8),
+                    p: 1.5,
+                    borderRadius: 1,
+                    border: `1px solid ${alpha(theme.palette.divider, 0.2)}`,
+                  }}
+                >
+                  <Radio
+                    name="status"
+                    value="active"
+                    checked={formik.values.status === "active"}
+                    onChange={formik.handleChange}
+                    color="success"
+                  />
+                  <Typography variant="body2" sx={{ mr: 3, fontWeight: 500 }}>
+                    Active
+                  </Typography>
+
+                  <Radio
+                    name="status"
+                    value="inactive"
+                    checked={formik.values.status === "inactive"}
+                    onChange={formik.handleChange}
+                    color="default"
+                  />
+                  <Typography variant="body2" fontWeight={500}>
+                    Inactive
+                  </Typography>
+                </Box>
+                <FormHelperText
+                  error={formik.touched.status && Boolean(formik.errors.status)}
+                >
+                  {formik.touched.status && formik.errors.status}
+                </FormHelperText>
+              </FormControl>
+            </Box>
           </DialogContent>
-          <DialogActions sx={{ px: { xs: 2, sm: 3 }, py: 2 }}>
+
+          <DialogActions
+            sx={{
+              px: 3,
+              py: 2,
+              bgcolor: alpha(theme.palette.primary.light, 0.05),
+            }}
+          >
             <Button
-              onClick={handleClose}
               variant="outlined"
+              onClick={handleClose}
               disabled={submitting}
-              sx={{ mr: 1 }}
+              startIcon={<CancelIcon />}
+              sx={{
+                borderRadius: 1.5,
+                mr: 1,
+              }}
             >
               Cancel
             </Button>
             <Button
               type="submit"
+              color="primary"
               variant="contained"
               disabled={submitting}
               startIcon={
-                submitting && <CircularProgress size={20} color="inherit" />
+                submitting ? (
+                  <CircularProgress size={20} />
+                ) : editingSubject && editingSubject._id ? (
+                  <SaveIcon />
+                ) : (
+                  <AddIcon />
+                )
               }
+              sx={{ borderRadius: 1.5 }}
             >
-              {editingSubject ? "Update" : "Create"}
+              {submitting
+                ? "Saving..."
+                : editingSubject && editingSubject._id
+                ? "Update Subject"
+                : "Add Subject"}
             </Button>
           </DialogActions>
         </form>
       </Dialog>
+
+      {/* Confirm Delete Dialog */}
+      <Dialog
+        open={confirmDelete}
+        onClose={() => setConfirmDelete(false)}
+        PaperProps={{
+          sx: {
+            borderRadius: 2,
+            overflow: "hidden",
+            boxShadow: 10,
+          },
+        }}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle
+          sx={{
+            bgcolor: theme.palette.error.main,
+            color: "white",
+            p: 2,
+          }}
+        >
+          <Box sx={{ display: "flex", alignItems: "center" }}>
+            <WarningIcon sx={{ mr: 1 }} />
+            <Typography variant="h6" fontWeight={600}>
+              Confirm Delete
+            </Typography>
+          </Box>
+        </DialogTitle>
+        <DialogContent sx={{ pt: 3, pb: 1 }}>
+          <Box sx={{ textAlign: "center", py: 2 }}>
+            <ErrorOutlineIcon
+              color="error"
+              sx={{ fontSize: 60, mb: 2, opacity: 0.8 }}
+            />
+            <Typography variant="subtitle1" fontWeight={500} gutterBottom>
+              Are you sure you want to delete this subject?
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              This action cannot be undone. All related data will be permanently
+              removed.
+            </Typography>
+          </Box>
+        </DialogContent>
+        <DialogActions
+          sx={{
+            px: 3,
+            py: 2,
+            bgcolor: alpha(theme.palette.background.paper, 0.9),
+          }}
+        >
+          <Button
+            variant="outlined"
+            onClick={() => setConfirmDelete(false)}
+            sx={{
+              borderRadius: 1.5,
+              mr: 1,
+            }}
+            startIcon={<CancelIcon />}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            color="error"
+            onClick={handleConfirmDelete}
+            disabled={deleting}
+            startIcon={
+              deleting ? (
+                <CircularProgress size={20} color="inherit" />
+              ) : (
+                <DeleteIcon />
+              )
+            }
+            sx={{ borderRadius: 1.5 }}
+          >
+            {deleting ? "Deleting..." : "Delete Subject"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Success Snackbar */}
     </Box>
   );
 };

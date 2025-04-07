@@ -56,6 +56,7 @@ import {
   getStatusColor,
 } from "../store/slices/announcementSlice";
 import RefreshButton from "../components/RefreshButton";
+import { alpha } from "@mui/material/styles";
 
 const validationSchema = Yup.object({
   title: Yup.string().required("Title is required"),
@@ -125,7 +126,7 @@ const Announcements = () => {
       endDate: "",
     },
     validationSchema,
-    onSubmit: async (values) => {
+    onSubmit: async (values, { setSubmitting }) => {
       try {
         const announcementData = {
           title: values.title,
@@ -152,6 +153,8 @@ const Announcements = () => {
         formik.resetForm();
       } catch (error) {
         console.error("Error submitting form:", error);
+      } finally {
+        setSubmitting(false);
       }
     },
   });
@@ -267,106 +270,186 @@ const Announcements = () => {
 
   return (
     <Box p={isMobile ? 2 : 3}>
-      {/* Responsive Header */}
-      <Box
+      {/* Enhanced Header with shadow and better spacing */}
+      <Paper
+        elevation={2}
         sx={{
-          display: "flex",
-          flexDirection: { xs: "column", sm: "row" },
-          justifyContent: "space-between",
-          alignItems: { xs: "flex-start", sm: "center" },
+          p: { xs: 2, sm: 3 },
           mb: { xs: 2, sm: 3 },
-          gap: { xs: 2, sm: 0 },
+          borderRadius: 2,
+          background: `linear-gradient(90deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
         }}
       >
-        <Typography
-          variant="h4"
-          sx={{ fontSize: { xs: "1.5rem", sm: "2rem", md: "2.125rem" } }}
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: { xs: "column", sm: "row" },
+            justifyContent: "space-between",
+            alignItems: { xs: "flex-start", sm: "center" },
+            gap: { xs: 2, sm: 0 },
+          }}
         >
-          Announcements
-        </Typography>
-        <Box sx={{ display: "flex", width: { xs: "100%", sm: "auto" } }}>
-          <Button
-            variant="contained"
-            color="primary"
-            startIcon={<AddIcon />}
-            onClick={() => handleOpen()}
+          <Typography
+            variant="h4"
             sx={{
-              mr: 1,
-              flex: { xs: 1, sm: "none" },
-              fontSize: { xs: "0.8125rem", sm: "0.875rem" },
+              fontSize: { xs: "1.5rem", sm: "2rem", md: "2.125rem" },
+              fontWeight: 600,
+              color: "white",
             }}
-            size={isMobile ? "small" : "medium"}
           >
-            {isMobile ? "Add" : "Add Announcement"}
-          </Button>
-          <RefreshButton
-            onClick={loadAllData}
-            size={isMobile ? "small" : "medium"}
-          />
+            Announcements
+          </Typography>
+          <Box
+            sx={{ display: "flex", width: { xs: "100%", sm: "auto" }, gap: 1 }}
+          >
+            <Button
+              variant="contained"
+              color="secondary"
+              startIcon={<AddIcon />}
+              onClick={() => handleOpen()}
+              sx={{
+                mr: 1,
+                flex: { xs: 1, sm: "none" },
+                fontSize: { xs: "0.8125rem", sm: "0.875rem" },
+                borderRadius: 1.5,
+                boxShadow: 2,
+                "&:hover": {
+                  boxShadow: 4,
+                },
+              }}
+              size={isMobile ? "small" : "medium"}
+            >
+              {isMobile ? "Add" : "Add Announcement"}
+            </Button>
+            <RefreshButton
+              onClick={loadAllData}
+              size={isMobile ? "small" : "medium"}
+              color="secondary"
+            />
+          </Box>
         </Box>
-      </Box>
+      </Paper>
 
-      {/* Responsive Stats Cards */}
-      <Grid container spacing={isMobile ? 1 : 3} mb={isMobile ? 2 : 3}>
+      {/* Enhanced Stats Cards */}
+      <Grid container spacing={isMobile ? 1.5 : 3} mb={isMobile ? 3 : 4}>
         <Grid item xs={6} sm={6} md={3}>
-          <Card>
-            <CardContent sx={{ p: isMobile ? 1.5 : 2 }}>
+          <Card
+            elevation={2}
+            sx={{
+              borderRadius: 2,
+              transition: "all 0.3s ease",
+              "&:hover": {
+                transform: "translateY(-4px)",
+                boxShadow: 6,
+              },
+            }}
+          >
+            <CardContent sx={{ p: isMobile ? 2 : 3 }}>
               <Typography
                 color="textSecondary"
                 gutterBottom
                 variant={isMobile ? "body2" : "body1"}
+                sx={{ fontWeight: 500 }}
               >
-                Total
+                Total Announcements
               </Typography>
-              <Typography variant={isMobile ? "h5" : "h4"}>
+              <Typography
+                variant={isMobile ? "h5" : "h4"}
+                sx={{ fontWeight: 600 }}
+              >
                 {counts?.total || 0}
               </Typography>
             </CardContent>
           </Card>
         </Grid>
         <Grid item xs={6} sm={6} md={3}>
-          <Card>
-            <CardContent sx={{ p: isMobile ? 1.5 : 2 }}>
+          <Card
+            elevation={2}
+            sx={{
+              borderRadius: 2,
+              transition: "all 0.3s ease",
+              "&:hover": {
+                transform: "translateY(-4px)",
+                boxShadow: 6,
+              },
+            }}
+          >
+            <CardContent sx={{ p: isMobile ? 2 : 3 }}>
               <Typography
                 color="textSecondary"
                 gutterBottom
                 variant={isMobile ? "body2" : "body1"}
+                sx={{ fontWeight: 500 }}
               >
-                Active
+                Active Announcements
               </Typography>
-              <Typography variant={isMobile ? "h5" : "h4"} color="success.main">
+              <Typography
+                variant={isMobile ? "h5" : "h4"}
+                color="success.main"
+                sx={{ fontWeight: 600 }}
+              >
                 {counts?.active || 0}
               </Typography>
             </CardContent>
           </Card>
         </Grid>
         <Grid item xs={6} sm={6} md={3}>
-          <Card>
-            <CardContent sx={{ p: isMobile ? 1.5 : 2 }}>
+          <Card
+            elevation={2}
+            sx={{
+              borderRadius: 2,
+              transition: "all 0.3s ease",
+              "&:hover": {
+                transform: "translateY(-4px)",
+                boxShadow: 6,
+              },
+            }}
+          >
+            <CardContent sx={{ p: isMobile ? 2 : 3 }}>
               <Typography
                 color="textSecondary"
                 gutterBottom
                 variant={isMobile ? "body2" : "body1"}
+                sx={{ fontWeight: 500 }}
               >
-                Scheduled
+                Scheduled Announcements
               </Typography>
-              <Typography variant={isMobile ? "h5" : "h4"} color="warning.main">
+              <Typography
+                variant={isMobile ? "h5" : "h4"}
+                color="warning.main"
+                sx={{ fontWeight: 600 }}
+              >
                 {counts?.scheduled || 0}
               </Typography>
             </CardContent>
           </Card>
         </Grid>
         <Grid item xs={6} sm={6} md={3}>
-          <Card>
-            <CardContent sx={{ p: isMobile ? 1.5 : 2 }}>
+          <Card
+            elevation={2}
+            sx={{
+              borderRadius: 2,
+              transition: "all 0.3s ease",
+              "&:hover": {
+                transform: "translateY(-4px)",
+                boxShadow: 6,
+              },
+            }}
+          >
+            <CardContent sx={{ p: isMobile ? 2 : 3 }}>
               <Typography
                 color="textSecondary"
                 gutterBottom
                 variant={isMobile ? "body2" : "body1"}
+                sx={{ fontWeight: 500 }}
               >
-                Expired
+                Expired Announcements
               </Typography>
-              <Typography variant={isMobile ? "h5" : "h4"} color="error.main">
+              <Typography
+                variant={isMobile ? "h5" : "h4"}
+                color="error.main"
+                sx={{ fontWeight: 600 }}
+              >
                 {counts?.expired || 0}
               </Typography>
             </CardContent>
@@ -374,26 +457,62 @@ const Announcements = () => {
         </Grid>
       </Grid>
 
-      {/* Table for desktop, Cards for mobile */}
+      {/* Enhanced Table for desktop */}
       <Hidden smDown>
-        <TableContainer component={Paper}>
+        <TableContainer
+          component={Paper}
+          elevation={2}
+          sx={{
+            borderRadius: 2,
+            overflow: "hidden",
+            mb: 4,
+          }}
+        >
           <Table>
             <TableHead>
-              <TableRow>
-                <TableCell>Title</TableCell>
-                <TableCell>Type</TableCell>
-                <TableCell>Priority</TableCell>
-                <TableCell>Target Audience</TableCell>
-                <TableCell>Start Date</TableCell>
-                <TableCell>End Date</TableCell>
-                <TableCell>Status</TableCell>
-                <TableCell>Actions</TableCell>
+              <TableRow sx={{ backgroundColor: theme.palette.primary.main }}>
+                <TableCell sx={{ color: "white", fontWeight: 600 }}>
+                  Title
+                </TableCell>
+                <TableCell sx={{ color: "white", fontWeight: 600 }}>
+                  Type
+                </TableCell>
+                <TableCell sx={{ color: "white", fontWeight: 600 }}>
+                  Priority
+                </TableCell>
+                <TableCell sx={{ color: "white", fontWeight: 600 }}>
+                  Target Audience
+                </TableCell>
+                <TableCell sx={{ color: "white", fontWeight: 600 }}>
+                  Start Date
+                </TableCell>
+                <TableCell sx={{ color: "white", fontWeight: 600 }}>
+                  End Date
+                </TableCell>
+                <TableCell sx={{ color: "white", fontWeight: 600 }}>
+                  Status
+                </TableCell>
+                <TableCell sx={{ color: "white", fontWeight: 600 }}>
+                  Actions
+                </TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {announcements?.map((announcement) => (
-                <TableRow key={announcement._id}>
-                  <TableCell>
+                <TableRow
+                  key={announcement._id}
+                  sx={{
+                    "&:nth-of-type(odd)": {
+                      backgroundColor: theme.palette.action.hover,
+                    },
+                    "&:hover": {
+                      backgroundColor: alpha(theme.palette.primary.light, 0.1),
+                      cursor: "pointer",
+                    },
+                  }}
+                  onClick={() => handleView(announcement)}
+                >
+                  <TableCell sx={{ fontWeight: 500 }}>
                     {announcement.title.length > 30
                       ? `${announcement.title.substring(0, 30)}...`
                       : announcement.title}
@@ -403,6 +522,7 @@ const Announcements = () => {
                       label={announcement.type}
                       color={getTypeColor(announcement.type)}
                       size="small"
+                      sx={{ fontWeight: 500 }}
                     />
                   </TableCell>
                   <TableCell>
@@ -410,6 +530,7 @@ const Announcements = () => {
                       label={announcement.priority}
                       color={getPriorityColor(announcement.priority)}
                       size="small"
+                      sx={{ fontWeight: 500 }}
                     />
                   </TableCell>
                   <TableCell>{announcement.targetAudience}</TableCell>
@@ -420,16 +541,29 @@ const Announcements = () => {
                       label={announcement.status}
                       color={getStatusColor(announcement.status)}
                       size="small"
+                      sx={{ fontWeight: 500 }}
                     />
                   </TableCell>
                   <TableCell>
                     <IconButton
                       size="small"
-                      onClick={() => handleView(announcement)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleView(announcement);
+                      }}
                       color="primary"
                       title="View Details"
+                      sx={{
+                        backgroundColor: alpha(theme.palette.primary.main, 0.1),
+                        "&:hover": {
+                          backgroundColor: alpha(
+                            theme.palette.primary.main,
+                            0.2
+                          ),
+                        },
+                      }}
                     >
-                      <VisibilityIcon />
+                      <VisibilityIcon fontSize="small" />
                     </IconButton>
                   </TableCell>
                 </TableRow>
@@ -439,70 +573,196 @@ const Announcements = () => {
         </TableContainer>
       </Hidden>
 
-      {/* Card layout for mobile */}
+      {/* Enhanced Card layout for mobile */}
       <Hidden smUp>
         <Stack spacing={2}>
           {announcements?.map((announcement) => (
-            <Card key={announcement._id} sx={{ mb: 1 }}>
-              <CardContent sx={{ pb: 1 }}>
-                <Typography variant="h6" gutterBottom>
-                  {announcement.title.length > 40
-                    ? `${announcement.title.substring(0, 40)}...`
+            <Card
+              key={announcement._id}
+              sx={{
+                borderRadius: 2,
+                transition: "all 0.3s ease",
+                "&:hover": {
+                  transform: "translateY(-2px)",
+                  boxShadow: 3,
+                },
+                overflow: "hidden",
+              }}
+              elevation={2}
+              onClick={() => handleView(announcement)}
+            >
+              <Box
+                sx={{
+                  backgroundColor: theme.palette.primary.main,
+                  py: 1,
+                  px: 2,
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                <Typography variant="subtitle1" fontWeight={600} color="white">
+                  {announcement.title.length > 30
+                    ? `${announcement.title.substring(0, 30)}...`
                     : announcement.title}
                 </Typography>
+                <Chip
+                  label={announcement.status}
+                  color={getStatusColor(announcement.status)}
+                  size="small"
+                  sx={{
+                    fontWeight: 500,
+                    height: 24,
+                  }}
+                />
+              </Box>
 
-                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mb: 1 }}>
+              <CardContent sx={{ pb: 1, pt: 2 }}>
+                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mb: 2 }}>
                   <Chip
                     label={announcement.type}
                     color={getTypeColor(announcement.type)}
                     size="small"
+                    sx={{ fontWeight: 500 }}
                   />
                   <Chip
                     label={announcement.priority}
                     color={getPriorityColor(announcement.priority)}
                     size="small"
-                  />
-                  <Chip
-                    label={announcement.status}
-                    color={getStatusColor(announcement.status)}
-                    size="small"
+                    sx={{ fontWeight: 500 }}
                   />
                 </Box>
 
                 <Box sx={{ mt: 1.5 }}>
-                  <Typography variant="body2" color="text.secondary">
-                    Target: {announcement.targetAudience}
-                  </Typography>
-                  <Grid container spacing={1} sx={{ mt: 0.5 }}>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      mb: 1,
+                    }}
+                  >
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                      sx={{ fontWeight: 600, minWidth: "70px" }}
+                    >
+                      Audience:
+                    </Typography>
+                    <Typography variant="body2" fontWeight={500}>
+                      {announcement.targetAudience}
+                    </Typography>
+                  </Box>
+
+                  <Grid container spacing={1}>
                     <Grid item xs={6}>
-                      <Typography variant="body2" color="text.secondary">
-                        Start: {formatDate(announcement.startDate)}
-                      </Typography>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                        }}
+                      >
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          sx={{ fontWeight: 600 }}
+                        >
+                          Start:
+                        </Typography>
+                        <Typography
+                          variant="body2"
+                          fontWeight={500}
+                          sx={{ ml: 1 }}
+                        >
+                          {formatDate(announcement.startDate)}
+                        </Typography>
+                      </Box>
                     </Grid>
                     <Grid item xs={6}>
-                      <Typography variant="body2" color="text.secondary">
-                        End: {formatDate(announcement.endDate)}
-                      </Typography>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                        }}
+                      >
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          sx={{ fontWeight: 600 }}
+                        >
+                          End:
+                        </Typography>
+                        <Typography
+                          variant="body2"
+                          fontWeight={500}
+                          sx={{ ml: 1 }}
+                        >
+                          {formatDate(announcement.endDate)}
+                        </Typography>
+                      </Box>
                     </Grid>
                   </Grid>
                 </Box>
               </CardContent>
-              <CardActions>
+              <CardActions
+                sx={{
+                  px: 2,
+                  py: 1,
+                  borderTop: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+                  justifyContent: "flex-end",
+                }}
+              >
                 <Button
                   size="small"
+                  variant="outlined"
                   color="primary"
-                  onClick={() => handleView(announcement)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleView(announcement);
+                  }}
                   startIcon={<VisibilityIcon />}
+                  sx={{
+                    borderRadius: 1.5,
+                    textTransform: "none",
+                  }}
                 >
                   View Details
                 </Button>
               </CardActions>
             </Card>
           ))}
+
+          {announcements?.length === 0 && (
+            <Box
+              sx={{
+                p: 3,
+                textAlign: "center",
+                backgroundColor: alpha(theme.palette.primary.light, 0.05),
+                borderRadius: 2,
+                border: `1px dashed ${alpha(theme.palette.primary.main, 0.2)}`,
+              }}
+            >
+              <Typography
+                variant="body1"
+                color="text.secondary"
+                fontWeight={500}
+              >
+                No announcements found
+              </Typography>
+              <Button
+                variant="contained"
+                color="primary"
+                startIcon={<AddIcon />}
+                sx={{ mt: 2, borderRadius: 1.5 }}
+                onClick={() => handleOpen()}
+              >
+                Add Announcement
+              </Button>
+            </Box>
+          )}
         </Stack>
       </Hidden>
 
-      {/* Responsive View Dialog */}
+      {/* Enhanced Responsive View Dialog */}
       <Dialog
         open={viewDialogOpen}
         onClose={() => setViewDialogOpen(false)}
@@ -512,20 +772,37 @@ const Announcements = () => {
         PaperProps={{
           sx: {
             borderRadius: fullScreen ? 0 : 2,
-            minWidth: { sm: 500 },
+            overflow: "hidden",
+            height: fullScreen ? "100%" : "auto",
+            display: "flex",
+            flexDirection: "column",
             maxHeight: fullScreen ? "100%" : "90vh",
           },
         }}
       >
-        <DialogTitle sx={{ pb: 1 }}>
+        <DialogTitle
+          sx={{
+            p: 0,
+            position: "relative",
+          }}
+        >
           <Box
-            display="flex"
-            justifyContent="space-between"
-            alignItems="center"
+            sx={{
+              backgroundColor: theme.palette.primary.main,
+              color: "white",
+              p: 2,
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              flexShrink: 0,
+            }}
           >
             <Typography
               variant="h6"
-              sx={{ fontSize: { xs: "1.1rem", sm: "1.25rem" } }}
+              sx={{
+                fontSize: { xs: "1.1rem", sm: "1.25rem" },
+                fontWeight: 600,
+              }}
             >
               Announcement Details
             </Typography>
@@ -536,125 +813,364 @@ const Announcements = () => {
                   setViewDialogOpen(false);
                   handleOpen(selectedAnnouncement);
                 }}
-                color="primary"
-                sx={{ mr: 1 }}
+                sx={{
+                  color: "white",
+                  backgroundColor: alpha(theme.palette.common.white, 0.1),
+                  mr: 1,
+                  "&:hover": {
+                    backgroundColor: alpha(theme.palette.common.white, 0.2),
+                  },
+                }}
                 title="Edit"
               >
-                <EditIcon />
+                <EditIcon fontSize="small" />
               </IconButton>
               <IconButton
                 size="small"
                 onClick={handleConfirmDelete}
-                color="error"
+                sx={{
+                  color: "white",
+                  backgroundColor: alpha(theme.palette.error.main, 0.6),
+                  "&:hover": {
+                    backgroundColor: alpha(theme.palette.error.main, 0.8),
+                  },
+                }}
                 title="Delete"
               >
-                <DeleteIcon />
+                <DeleteIcon fontSize="small" />
               </IconButton>
             </Box>
           </Box>
         </DialogTitle>
-        <DialogContent dividers>
+
+        <DialogContent
+          dividers
+          sx={{
+            p: { xs: 2, sm: 3 },
+            overflowY: "auto",
+            flexGrow: 1,
+          }}
+        >
           {selectedAnnouncement && (
             <Box>
-              <Typography
-                variant="h6"
-                gutterBottom
-                sx={{ fontSize: { xs: "1.1rem", sm: "1.25rem" } }}
+              <Paper
+                elevation={0}
+                sx={{
+                  p: 2.5,
+                  mb: 3,
+                  borderRadius: 2,
+                  backgroundColor: alpha(theme.palette.primary.light, 0.05),
+                  border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
+                }}
               >
-                {selectedAnnouncement.title}
-              </Typography>
-              <Typography variant="body1" paragraph>
-                {selectedAnnouncement.content}
-              </Typography>
-              <Grid container spacing={2}>
-                <Grid item xs={6} sm={6}>
-                  <Typography
-                    variant="subtitle2"
-                    color="textSecondary"
-                    gutterBottom
+                <Typography
+                  variant="h5"
+                  gutterBottom
+                  sx={{
+                    fontSize: { xs: "1.3rem", sm: "1.5rem" },
+                    fontWeight: 600,
+                    color: theme.palette.primary.main,
+                  }}
+                >
+                  {selectedAnnouncement.title}
+                </Typography>
+                <Typography
+                  variant="body1"
+                  sx={{
+                    mt: 1,
+                    lineHeight: 1.6,
+                    color: theme.palette.text.secondary,
+                  }}
+                >
+                  {selectedAnnouncement.content}
+                </Typography>
+              </Paper>
+
+              <Grid container spacing={3}>
+                <Grid item xs={12} sm={6}>
+                  <Paper
+                    elevation={0}
+                    sx={{
+                      p: 2.5,
+                      height: "100%",
+                      borderRadius: 2,
+                      border: `1px solid ${alpha(theme.palette.divider, 0.15)}`,
+                    }}
                   >
-                    Type
-                  </Typography>
-                  <Chip
-                    label={selectedAnnouncement.type}
-                    color={getTypeColor(selectedAnnouncement.type)}
-                    size="small"
-                  />
+                    <Typography
+                      variant="subtitle1"
+                      gutterBottom
+                      fontWeight="bold"
+                      color="primary"
+                      sx={{
+                        pb: 1,
+                        borderBottom: `1px solid ${alpha(
+                          theme.palette.primary.main,
+                          0.2
+                        )}`,
+                      }}
+                    >
+                      Announcement Information
+                    </Typography>
+
+                    <Box
+                      sx={{
+                        mt: 2,
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 2,
+                      }}
+                    >
+                      <Box
+                        sx={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          pb: 1,
+                          borderBottom: `1px solid ${alpha(
+                            theme.palette.divider,
+                            0.3
+                          )}`,
+                        }}
+                      >
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          fontWeight={500}
+                        >
+                          Type:
+                        </Typography>
+                        <Chip
+                          label={selectedAnnouncement.type}
+                          color={getTypeColor(selectedAnnouncement.type)}
+                          size="small"
+                          sx={{ fontWeight: 500 }}
+                        />
+                      </Box>
+
+                      <Box
+                        sx={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          pb: 1,
+                          borderBottom: `1px solid ${alpha(
+                            theme.palette.divider,
+                            0.3
+                          )}`,
+                        }}
+                      >
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          fontWeight={500}
+                        >
+                          Priority:
+                        </Typography>
+                        <Chip
+                          label={selectedAnnouncement.priority}
+                          color={getPriorityColor(
+                            selectedAnnouncement.priority
+                          )}
+                          size="small"
+                          sx={{ fontWeight: 500 }}
+                        />
+                      </Box>
+
+                      <Box
+                        sx={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          pb: 1,
+                          borderBottom: `1px solid ${alpha(
+                            theme.palette.divider,
+                            0.3
+                          )}`,
+                        }}
+                      >
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          fontWeight={500}
+                        >
+                          Status:
+                        </Typography>
+                        <Chip
+                          label={selectedAnnouncement.status}
+                          color={getStatusColor(selectedAnnouncement.status)}
+                          size="small"
+                          sx={{ fontWeight: 500 }}
+                        />
+                      </Box>
+
+                      <Box
+                        sx={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          pb: 1,
+                          borderBottom: `1px solid ${alpha(
+                            theme.palette.divider,
+                            0.3
+                          )}`,
+                        }}
+                      >
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          fontWeight={500}
+                        >
+                          Target Audience:
+                        </Typography>
+                        <Typography variant="body2" fontWeight="medium">
+                          {selectedAnnouncement.targetAudience}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  </Paper>
                 </Grid>
-                <Grid item xs={6} sm={6}>
-                  <Typography
-                    variant="subtitle2"
-                    color="textSecondary"
-                    gutterBottom
+
+                <Grid item xs={12} sm={6}>
+                  <Paper
+                    elevation={0}
+                    sx={{
+                      p: 2.5,
+                      height: "100%",
+                      borderRadius: 2,
+                      border: `1px solid ${alpha(theme.palette.divider, 0.15)}`,
+                    }}
                   >
-                    Priority
-                  </Typography>
-                  <Chip
-                    label={selectedAnnouncement.priority}
-                    color={getPriorityColor(selectedAnnouncement.priority)}
-                    size="small"
-                  />
-                </Grid>
-                <Grid item xs={6} sm={6}>
-                  <Typography
-                    variant="subtitle2"
-                    color="textSecondary"
-                    gutterBottom
-                  >
-                    Target Audience
-                  </Typography>
-                  <Typography variant="body1">
-                    {selectedAnnouncement.targetAudience}
-                  </Typography>
-                </Grid>
-                <Grid item xs={6} sm={6}>
-                  <Typography
-                    variant="subtitle2"
-                    color="textSecondary"
-                    gutterBottom
-                  >
-                    Status
-                  </Typography>
-                  <Chip
-                    label={selectedAnnouncement.status}
-                    color={getStatusColor(selectedAnnouncement.status)}
-                    size="small"
-                  />
-                </Grid>
-                <Grid item xs={6} sm={6}>
-                  <Typography
-                    variant="subtitle2"
-                    color="textSecondary"
-                    gutterBottom
-                  >
-                    Start Date
-                  </Typography>
-                  <Typography variant="body1">
-                    {formatDate(selectedAnnouncement.startDate)}
-                  </Typography>
-                </Grid>
-                <Grid item xs={6} sm={6}>
-                  <Typography
-                    variant="subtitle2"
-                    color="textSecondary"
-                    gutterBottom
-                  >
-                    End Date
-                  </Typography>
-                  <Typography variant="body1">
-                    {formatDate(selectedAnnouncement.endDate)}
-                  </Typography>
+                    <Typography
+                      variant="subtitle1"
+                      gutterBottom
+                      fontWeight="bold"
+                      color="primary"
+                      sx={{
+                        pb: 1,
+                        borderBottom: `1px solid ${alpha(
+                          theme.palette.primary.main,
+                          0.2
+                        )}`,
+                      }}
+                    >
+                      Schedule Information
+                    </Typography>
+
+                    <Box
+                      sx={{
+                        mt: 2,
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 2,
+                      }}
+                    >
+                      <Box
+                        sx={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          pb: 1,
+                          borderBottom: `1px solid ${alpha(
+                            theme.palette.divider,
+                            0.3
+                          )}`,
+                        }}
+                      >
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          fontWeight={500}
+                        >
+                          Start Date:
+                        </Typography>
+                        <Typography variant="body2" fontWeight="medium">
+                          {formatDate(selectedAnnouncement.startDate)}
+                        </Typography>
+                      </Box>
+
+                      <Box
+                        sx={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          pb: 1,
+                          borderBottom: `1px solid ${alpha(
+                            theme.palette.divider,
+                            0.3
+                          )}`,
+                        }}
+                      >
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          fontWeight={500}
+                        >
+                          End Date:
+                        </Typography>
+                        <Typography variant="body2" fontWeight="medium">
+                          {formatDate(selectedAnnouncement.endDate)}
+                        </Typography>
+                      </Box>
+
+                      <Box
+                        sx={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          pb: 1,
+                          borderBottom: `1px solid ${alpha(
+                            theme.palette.divider,
+                            0.3
+                          )}`,
+                        }}
+                      >
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          fontWeight={500}
+                        >
+                          Created Date:
+                        </Typography>
+                        <Typography variant="body2" fontWeight="medium">
+                          {formatDate(selectedAnnouncement.createdAt)}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  </Paper>
                 </Grid>
               </Grid>
             </Box>
           )}
         </DialogContent>
-        <DialogActions sx={{ px: { xs: 2, sm: 3 }, py: { xs: 1.5, sm: 2 } }}>
-          <Button onClick={() => setViewDialogOpen(false)}>Close</Button>
+
+        <DialogActions
+          sx={{
+            px: { xs: 2, sm: 3 },
+            py: 2,
+            position: fullScreen ? "sticky" : "relative",
+            bottom: 0,
+            backgroundColor: "background.paper",
+            borderTop: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+            zIndex: 1,
+            mt: "auto",
+            flexShrink: 0,
+          }}
+        >
+          <Button
+            onClick={() => setViewDialogOpen(false)}
+            variant="contained"
+            sx={{
+              borderRadius: 1.5,
+              px: 3,
+            }}
+          >
+            Close
+          </Button>
         </DialogActions>
       </Dialog>
 
-      {/* Responsive Add/Edit Dialog */}
+      {/* Enhanced Add/Edit Dialog */}
       <Dialog
         open={open}
         onClose={handleClose}
@@ -664,19 +1180,79 @@ const Announcements = () => {
         PaperProps={{
           sx: {
             borderRadius: fullScreen ? 0 : 2,
-            minWidth: { sm: 500 },
+            overflow: "hidden",
+            height: fullScreen ? "100%" : "auto",
+            display: "flex",
+            flexDirection: "column",
             maxHeight: fullScreen ? "100%" : "90vh",
           },
         }}
       >
-        <DialogTitle sx={{ pb: 1 }}>
-          <Typography sx={{ fontSize: { xs: "1.1rem", sm: "1.25rem" } }}>
-            {editingAnnouncement ? "Edit Announcement" : "Add Announcement"}
-          </Typography>
+        <DialogTitle
+          sx={{
+            p: 0,
+          }}
+        >
+          <Box
+            sx={{
+              backgroundColor: theme.palette.primary.main,
+              color: "white",
+              p: 2,
+              flexShrink: 0,
+            }}
+          >
+            <Typography
+              variant="h6"
+              fontWeight={600}
+              sx={{ fontSize: { xs: "1.1rem", sm: "1.25rem" } }}
+            >
+              {editingAnnouncement
+                ? "Edit Announcement"
+                : "Add New Announcement"}
+            </Typography>
+          </Box>
         </DialogTitle>
-        <form onSubmit={formik.handleSubmit}>
-          <DialogContent dividers>
-            <Grid container spacing={isMobile ? 1.5 : 2}>
+
+        <form
+          onSubmit={formik.handleSubmit}
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            height: fullScreen ? "100%" : "auto",
+            overflow: "hidden",
+            flexGrow: 1,
+          }}
+        >
+          <DialogContent
+            dividers
+            sx={{
+              p: { xs: 2, sm: 3 },
+              overflowY: "auto",
+              flexGrow: 1,
+              display: "flex",
+              flexDirection: "column",
+            }}
+          >
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="body2" color="text.secondary">
+                Fill in the details below to{" "}
+                {editingAnnouncement ? "update" : "create"} an announcement. All
+                fields are required.
+              </Typography>
+            </Box>
+
+            <Grid container spacing={isMobile ? 2 : 3}>
+              <Grid item xs={12}>
+                <Typography
+                  variant="subtitle1"
+                  color="primary"
+                  fontWeight={600}
+                  gutterBottom
+                >
+                  Announcement Details
+                </Typography>
+              </Grid>
+
               <Grid item xs={12}>
                 <TextField
                   fullWidth
@@ -687,8 +1263,12 @@ const Announcements = () => {
                   error={formik.touched.title && Boolean(formik.errors.title)}
                   helperText={formik.touched.title && formik.errors.title}
                   size={isMobile ? "small" : "medium"}
+                  InputProps={{
+                    sx: { borderRadius: 1 },
+                  }}
                 />
               </Grid>
+
               <Grid item xs={12}>
                 <TextField
                   fullWidth
@@ -703,16 +1283,35 @@ const Announcements = () => {
                   }
                   helperText={formik.touched.content && formik.errors.content}
                   size={isMobile ? "small" : "medium"}
+                  InputProps={{
+                    sx: { borderRadius: 1 },
+                  }}
                 />
               </Grid>
+
+              <Grid item xs={12} sx={{ mt: 1 }}>
+                <Typography
+                  variant="subtitle1"
+                  color="primary"
+                  fontWeight={600}
+                  gutterBottom
+                >
+                  Classification
+                </Typography>
+              </Grid>
+
               <Grid item xs={12} sm={6}>
-                <FormControl fullWidth size={isMobile ? "small" : "medium"}>
+                <FormControl
+                  fullWidth
+                  size={isMobile ? "small" : "medium"}
+                  error={formik.touched.type && Boolean(formik.errors.type)}
+                >
                   <InputLabel>Type</InputLabel>
                   <Select
                     name="type"
                     value={formik.values.type}
                     onChange={formik.handleChange}
-                    error={formik.touched.type && Boolean(formik.errors.type)}
+                    sx={{ borderRadius: 1 }}
                   >
                     <MenuItem value="General">General</MenuItem>
                     <MenuItem value="Event">Event</MenuItem>
@@ -721,44 +1320,82 @@ const Announcements = () => {
                     <MenuItem value="Emergency">Emergency</MenuItem>
                     <MenuItem value="Other">Other</MenuItem>
                   </Select>
+                  {formik.touched.type && formik.errors.type && (
+                    <Typography variant="caption" color="error">
+                      {formik.errors.type}
+                    </Typography>
+                  )}
                 </FormControl>
               </Grid>
+
               <Grid item xs={12} sm={6}>
-                <FormControl fullWidth size={isMobile ? "small" : "medium"}>
+                <FormControl
+                  fullWidth
+                  size={isMobile ? "small" : "medium"}
+                  error={
+                    formik.touched.priority && Boolean(formik.errors.priority)
+                  }
+                >
                   <InputLabel>Priority</InputLabel>
                   <Select
                     name="priority"
                     value={formik.values.priority}
                     onChange={formik.handleChange}
-                    error={
-                      formik.touched.priority && Boolean(formik.errors.priority)
-                    }
+                    sx={{ borderRadius: 1 }}
                   >
                     <MenuItem value="High">High</MenuItem>
                     <MenuItem value="Medium">Medium</MenuItem>
                     <MenuItem value="Low">Low</MenuItem>
                   </Select>
+                  {formik.touched.priority && formik.errors.priority && (
+                    <Typography variant="caption" color="error">
+                      {formik.errors.priority}
+                    </Typography>
+                  )}
                 </FormControl>
               </Grid>
+
               <Grid item xs={12} sm={6}>
-                <FormControl fullWidth size={isMobile ? "small" : "medium"}>
+                <FormControl
+                  fullWidth
+                  size={isMobile ? "small" : "medium"}
+                  error={
+                    formik.touched.targetAudience &&
+                    Boolean(formik.errors.targetAudience)
+                  }
+                >
                   <InputLabel>Target Audience</InputLabel>
                   <Select
                     name="targetAudience"
                     value={formik.values.targetAudience}
                     onChange={formik.handleChange}
-                    error={
-                      formik.touched.targetAudience &&
-                      Boolean(formik.errors.targetAudience)
-                    }
+                    sx={{ borderRadius: 1 }}
                   >
                     <MenuItem value="All">All</MenuItem>
                     <MenuItem value="Students">Students</MenuItem>
                     <MenuItem value="Teachers">Teachers</MenuItem>
                     <MenuItem value="Parents">Parents</MenuItem>
                   </Select>
+                  {formik.touched.targetAudience &&
+                    formik.errors.targetAudience && (
+                      <Typography variant="caption" color="error">
+                        {formik.errors.targetAudience}
+                      </Typography>
+                    )}
                 </FormControl>
               </Grid>
+
+              <Grid item xs={12} sx={{ mt: 1 }}>
+                <Typography
+                  variant="subtitle1"
+                  color="primary"
+                  fontWeight={600}
+                  gutterBottom
+                >
+                  Schedule
+                </Typography>
+              </Grid>
+
               <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
@@ -775,8 +1412,12 @@ const Announcements = () => {
                   }
                   InputLabelProps={{ shrink: true }}
                   size={isMobile ? "small" : "medium"}
+                  InputProps={{
+                    sx: { borderRadius: 1 },
+                  }}
                 />
               </Grid>
+
               <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
@@ -791,23 +1432,34 @@ const Announcements = () => {
                   helperText={formik.touched.endDate && formik.errors.endDate}
                   InputLabelProps={{ shrink: true }}
                   size={isMobile ? "small" : "medium"}
+                  InputProps={{
+                    sx: { borderRadius: 1 },
+                  }}
                 />
               </Grid>
             </Grid>
           </DialogContent>
+
           <DialogActions
             sx={{
               px: { xs: 2, sm: 3 },
-              py: { xs: 1.5, sm: 2 },
-              flexDirection: isMobile ? "column" : "row",
-              alignItems: isMobile ? "stretch" : "center",
+              py: 2,
+              position: fullScreen ? "sticky" : "relative",
+              bottom: 0,
+              backgroundColor: "background.paper",
+              borderTop: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+              zIndex: 1,
+              mt: "auto",
+              flexShrink: 0,
+              gap: 1,
             }}
           >
             <Button
               onClick={handleClose}
-              fullWidth={isMobile}
-              sx={{ mb: isMobile ? 1 : 0 }}
-              size={isMobile ? "small" : "medium"}
+              variant="outlined"
+              sx={{
+                borderRadius: 1.5,
+              }}
             >
               Cancel
             </Button>
@@ -815,10 +1467,18 @@ const Announcements = () => {
               type="submit"
               variant="contained"
               color="primary"
-              fullWidth={isMobile}
-              size={isMobile ? "small" : "medium"}
+              sx={{
+                borderRadius: 1.5,
+                px: 3,
+              }}
             >
-              {editingAnnouncement ? "Update" : "Create"}
+              {formik.isSubmitting ? (
+                <CircularProgress size={24} color="inherit" />
+              ) : editingAnnouncement ? (
+                "Update Announcement"
+              ) : (
+                "Save Announcement"
+              )}
             </Button>
           </DialogActions>
         </form>

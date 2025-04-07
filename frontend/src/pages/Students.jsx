@@ -77,6 +77,7 @@ import {
   dashboardService,
 } from "../services/api";
 import RefreshButton from "../components/RefreshButton";
+import { alpha } from "@mui/material/styles";
 
 const validationSchema = Yup.object({
   name: Yup.string().required("Name is required"),
@@ -946,9 +947,36 @@ const Students = () => {
         <Stack spacing={2}>
           {filteredStudentsList.length > 0 ? (
             filteredStudentsList.map((student) => (
-              <Card key={student._id} sx={{ width: "100%" }}>
-                <CardContent>
-                  <Typography variant="h6" component="div">
+              <Card
+                key={student._id}
+                sx={{
+                  width: "100%",
+                  borderRadius: 2,
+                  boxShadow: 2,
+                  transition: "all 0.3s ease",
+                  "&:hover": {
+                    boxShadow: 6,
+                    transform: "translateY(-2px)",
+                  },
+                }}
+              >
+                <CardContent sx={{ pb: 1 }}>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "flex-start",
+                    }}
+                  >
+                    <Box>
+                      <Typography
+                        variant="h6"
+                        component="div"
+                        sx={{
+                          fontWeight: 600,
+                          color: theme.palette.primary.main,
+                        }}
+                      >
                     {student.name}
                   </Typography>
                   <Typography
@@ -956,56 +984,83 @@ const Students = () => {
                     color="text.secondary"
                     sx={{ mb: 1 }}
                   >
-                    {student.gender || ""}
+                        {student.gender
+                          ? student.gender.charAt(0).toUpperCase() +
+                            student.gender.slice(1)
+                          : ""}
                   </Typography>
+                    </Box>
+                    <Avatar
+                      sx={{
+                        bgcolor: theme.palette.primary.main,
+                        color: "white",
+                        width: 40,
+                        height: 40,
+                      }}
+                    >
+                      {student.name?.charAt(0)}
+                    </Avatar>
+                  </Box>
 
-                  <Grid container spacing={1} sx={{ mt: 1 }}>
+                  <Grid container spacing={2} sx={{ mt: 0.5 }}>
                     <Grid item xs={6}>
-                      <Typography variant="subtitle2" color="text.secondary">
+                      <Typography
+                        variant="subtitle2"
+                        color="text.secondary"
+                        sx={{ fontWeight: 600, mb: 1 }}
+                      >
                         Contact
                       </Typography>
                       <Box
-                        sx={{ display: "flex", alignItems: "center", mt: 0.5 }}
+                        sx={{ display: "flex", alignItems: "center", mb: 1 }}
                       >
                         <EmailIcon
                           fontSize="small"
-                          color="action"
+                          color="primary"
                           sx={{ mr: 1 }}
                         />
-                        <Typography variant="body2">{student.email}</Typography>
+                        <Typography variant="body2" fontWeight="medium">
+                          {student.email}
+                        </Typography>
                       </Box>
-                      <Box
-                        sx={{ display: "flex", alignItems: "center", mt: 0.5 }}
-                      >
+                      <Box sx={{ display: "flex", alignItems: "center" }}>
                         <PhoneIcon
                           fontSize="small"
-                          color="action"
+                          color="primary"
                           sx={{ mr: 1 }}
                         />
-                        <Typography variant="body2">{student.phone}</Typography>
-                      </Box>
-                    </Grid>
-                    <Grid item xs={6}>
-                      <Typography variant="subtitle2" color="text.secondary">
-                        Standard
-                      </Typography>
-                      <Box
-                        sx={{ display: "flex", alignItems: "center", mt: 0.5 }}
-                      >
-                        <SchoolIcon
-                          fontSize="small"
-                          color="action"
-                          sx={{ mr: 1 }}
-                        />
-                        <Typography variant="body2">
-                          {standards.find(
-                            (s) => s._id === student.standard?._id
-                          )?.name || ""}
+                        <Typography variant="body2" fontWeight="medium">
+                          {student.phone}
                         </Typography>
                       </Box>
                     </Grid>
-                    <Grid item xs={12} sx={{ mt: 1 }}>
-                      <Typography variant="subtitle2" color="text.secondary">
+                    <Grid item xs={6}>
+                      <Typography
+                        variant="subtitle2"
+                        color="text.secondary"
+                        sx={{ fontWeight: 600, mb: 1 }}
+                      >
+                        Standard
+                      </Typography>
+                      <Box sx={{ display: "flex", alignItems: "center" }}>
+                        <SchoolIcon
+                          fontSize="small"
+                          color="primary"
+                          sx={{ mr: 1 }}
+                        />
+                        <Typography variant="body2" fontWeight="medium">
+                          {standards.find(
+                            (s) => s._id === student.standard?._id
+                          )?.name || "Not assigned"}
+                        </Typography>
+                      </Box>
+                    </Grid>
+                    <Grid item xs={12} sx={{ mt: 0.5 }}>
+                      <Typography
+                        variant="subtitle2"
+                        color="text.secondary"
+                        sx={{ fontWeight: 600, mb: 1 }}
+                      >
                         Subjects
                       </Typography>
                       <Box
@@ -1013,7 +1068,6 @@ const Students = () => {
                           display: "flex",
                           flexWrap: "wrap",
                           gap: 0.5,
-                          mt: 0.5,
                         }}
                       >
                         {student.subjects?.length > 0 ? (
@@ -1023,89 +1077,190 @@ const Students = () => {
                               label={subject.name}
                               size="small"
                               color="secondary"
-                              sx={{ mb: 0.5 }}
+                              variant="outlined"
+                              sx={{ mb: 0.5, fontWeight: 500 }}
                             />
                           ))
                         ) : (
-                          <Typography variant="caption" color="text.secondary">
-                            No subjects
+                          <Typography variant="body2" color="text.secondary">
+                            No subjects assigned
                           </Typography>
                         )}
                       </Box>
                     </Grid>
                     <Grid item xs={12}>
-                      <Typography variant="subtitle2" color="text.secondary">
+                      <Typography
+                        variant="subtitle2"
+                        color="text.secondary"
+                        sx={{ fontWeight: 600, mb: 1 }}
+                      >
                         Parent
                       </Typography>
-                      <Box
-                        sx={{ display: "flex", alignItems: "center", mt: 0.5 }}
-                      >
+                      <Box sx={{ display: "flex", alignItems: "center" }}>
                         <PersonIcon
                           fontSize="small"
-                          color="action"
+                          color="primary"
                           sx={{ mr: 1 }}
                         />
-                        <Typography variant="body2">
-                          {student.parentName}
+                        <Typography variant="body2" fontWeight="medium">
+                          {student.parentName || "Not provided"}
                         </Typography>
                       </Box>
                     </Grid>
                   </Grid>
                 </CardContent>
-                <CardActions>
+                <CardActions
+                  sx={{ px: 2, pt: 0, pb: 2, justifyContent: "space-between" }}
+                >
                   <Button
                     size="small"
+                    variant="outlined"
                     onClick={() => handleViewStudent(student)}
                     color="primary"
+                    startIcon={<VisibilityIcon />}
+                    sx={{ borderRadius: 1.5 }}
                   >
                     View Details
                   </Button>
+                  <Box>
+                    <IconButton
+                      size="small"
+                      onClick={() => handleOpen(student)}
+                      color="primary"
+                      sx={{ mr: 1 }}
+                    >
+                      <EditIcon fontSize="small" />
+                    </IconButton>
+                    <IconButton
+                      size="small"
+                      onClick={() => handleDelete(student._id)}
+                      color="error"
+                    >
+                      <DeleteIcon fontSize="small" />
+                    </IconButton>
+                  </Box>
                 </CardActions>
               </Card>
             ))
           ) : (
-            <Typography align="center" sx={{ my: 4 }}>
+            <Box
+              sx={{
+                textAlign: "center",
+                py: 4,
+                bgcolor: alpha(theme.palette.primary.light, 0.05),
+                borderRadius: 2,
+                border: `1px dashed ${alpha(theme.palette.primary.main, 0.2)}`,
+              }}
+            >
+              <Typography color="text.secondary" sx={{ mb: 1 }}>
               No students found
             </Typography>
+              <Button
+                variant="outlined"
+                startIcon={<AddIcon />}
+                onClick={() => handleOpen()}
+                size="small"
+                sx={{ mt: 1 }}
+              >
+                Add Student
+              </Button>
+            </Box>
           )}
         </Stack>
       ) : (
         // Desktop table view
         <TableContainer
           component={Paper}
-          sx={{ borderRadius: 2, overflow: "hidden" }}
+          sx={{
+            borderRadius: 2,
+            overflow: "hidden",
+            boxShadow: 2,
+          }}
         >
           <Table size={isTablet ? "small" : "medium"}>
             <TableHead>
-              <TableRow sx={{ backgroundColor: theme.palette.primary.main }}>
-                <TableCell sx={{ color: "white", fontWeight: "bold" }}>
+              <TableRow
+                sx={{
+                  backgroundColor: theme.palette.primary.main,
+                  "&:hover": {
+                    backgroundColor: theme.palette.primary.main,
+                  },
+                }}
+              >
+                <TableCell
+                  sx={{
+                    color: "white",
+                    fontWeight: "bold",
+                    whiteSpace: "nowrap",
+                  }}
+                >
                   Name
                 </TableCell>
-                <TableCell sx={{ color: "white", fontWeight: "bold" }}>
+                <TableCell
+                  sx={{
+                    color: "white",
+                    fontWeight: "bold",
+                    whiteSpace: "nowrap",
+                  }}
+                >
                   Contact Info
                 </TableCell>
-                <TableCell sx={{ color: "white", fontWeight: "bold" }}>
+                <TableCell
+                  sx={{
+                    color: "white",
+                    fontWeight: "bold",
+                    whiteSpace: "nowrap",
+                  }}
+                >
                   Standard
                 </TableCell>
-                <TableCell sx={{ color: "white", fontWeight: "bold" }}>
+                <TableCell
+                  sx={{
+                    color: "white",
+                    fontWeight: "bold",
+                    whiteSpace: "nowrap",
+                  }}
+                >
                   Subjects & Batches
                 </TableCell>
                 {!isTablet && (
-                  <TableCell sx={{ color: "white", fontWeight: "bold" }}>
+                  <TableCell
+                    sx={{
+                      color: "white",
+                      fontWeight: "bold",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
                     Parent Info
                   </TableCell>
                 )}
                 {!isTablet && (
-                  <TableCell sx={{ color: "white", fontWeight: "bold" }}>
+                  <TableCell
+                    sx={{
+                      color: "white",
+                      fontWeight: "bold",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
                     School
                   </TableCell>
                 )}
-                <TableCell sx={{ color: "white", fontWeight: "bold" }}>
+                <TableCell
+                  sx={{
+                    color: "white",
+                    fontWeight: "bold",
+                    whiteSpace: "nowrap",
+                  }}
+                >
                   Joining Date
                 </TableCell>
                 <TableCell
                   align="right"
-                  sx={{ color: "white", fontWeight: "bold" }}
+                  sx={{
+                    color: "white",
+                    fontWeight: "bold",
+                    whiteSpace: "nowrap",
+                  }}
                 >
                   Actions
                 </TableCell>
@@ -1113,10 +1268,43 @@ const Students = () => {
             </TableHead>
             <TableBody>
               {filteredStudentsList.length > 0 ? (
-                filteredStudentsList.map((student) => (
-                  <TableRow key={student._id}>
+                filteredStudentsList.map((student, index) => (
+                  <TableRow
+                    key={student._id}
+                    sx={{
+                      "&:nth-of-type(odd)": {
+                        backgroundColor: alpha(
+                          theme.palette.primary.light,
+                          0.04
+                        ),
+                      },
+                      "&:hover": {
+                        backgroundColor: alpha(
+                          theme.palette.primary.light,
+                          0.1
+                        ),
+                        cursor: "pointer",
+                      },
+                      transition: "background-color 0.2s ease",
+                    }}
+                    onClick={() => handleViewStudent(student)}
+                  >
                     <TableCell>
-                      <Typography fontWeight="medium">
+                      <Box sx={{ display: "flex", alignItems: "center" }}>
+                        <Avatar
+                          sx={{
+                            bgcolor: theme.palette.primary.main,
+                            color: "white",
+                            width: 32,
+                            height: 32,
+                            mr: 1.5,
+                            fontSize: "0.9rem",
+                          }}
+                        >
+                          {student.name?.charAt(0)}
+                        </Avatar>
+                        <Box>
+                          <Typography fontWeight="600" color="primary.main">
                         {student.name || "—"}
                       </Typography>
                       <Typography
@@ -1124,20 +1312,57 @@ const Students = () => {
                         display="block"
                         color="text.secondary"
                       >
-                        {student.gender || "—"}
+                            {student.gender
+                              ? student.gender.charAt(0).toUpperCase() +
+                                student.gender.slice(1)
+                              : "—"}
                       </Typography>
+                        </Box>
+                      </Box>
                     </TableCell>
                     <TableCell>
-                      <Typography variant="body2">
+                      <Box sx={{ display: "flex", flexDirection: "column" }}>
+                        <Box
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            mb: 0.5,
+                          }}
+                        >
+                          <EmailIcon
+                            fontSize="small"
+                            color="action"
+                            sx={{ mr: 1, fontSize: "1rem" }}
+                          />
+                          <Typography variant="body2" fontWeight="medium">
                         {student.email || "—"}
                       </Typography>
+                        </Box>
+                        <Box sx={{ display: "flex", alignItems: "center" }}>
+                          <PhoneIcon
+                            fontSize="small"
+                            color="action"
+                            sx={{ mr: 1, fontSize: "1rem" }}
+                          />
                       <Typography variant="body2">
                         {student.phone || "—"}
                       </Typography>
+                        </Box>
+                      </Box>
                     </TableCell>
                     <TableCell>
-                      {standards.find((s) => s._id === student.standard?._id)
-                        ?.name || "—"}
+                      <Box sx={{ display: "flex", alignItems: "center" }}>
+                        <SchoolIcon
+                          fontSize="small"
+                          color="primary"
+                          sx={{ mr: 1, opacity: 0.8 }}
+                        />
+                        <Typography variant="body2" fontWeight="medium">
+                          {standards.find(
+                            (s) => s._id === student.standard?._id
+                          )?.name || "—"}
+                        </Typography>
+                      </Box>
                     </TableCell>
                     <TableCell>
                       {/* Subjects */}
@@ -1149,7 +1374,8 @@ const Students = () => {
                               label={subject.name}
                               size="small"
                               color="secondary"
-                              sx={{ mr: 0.5, mb: 0.5 }}
+                              variant="outlined"
+                              sx={{ mr: 0.5, mb: 0.5, fontWeight: 500 }}
                             />
                           ))
                         ) : (
@@ -1168,7 +1394,8 @@ const Students = () => {
                               label={batch.name}
                               size="small"
                               color="primary"
-                              sx={{ mr: 0.5, mb: 0.5 }}
+                              variant="outlined"
+                              sx={{ mr: 0.5, mb: 0.5, fontWeight: 500 }}
                             />
                           ))
                         ) : (
@@ -1183,14 +1410,27 @@ const Students = () => {
                         <Typography variant="body2" fontWeight="medium">
                           {student.parentName || "—"}
                         </Typography>
-                        <Typography variant="caption" display="block">
+                        <Box
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            mt: 0.5,
+                          }}
+                        >
+                          <PhoneIcon
+                            fontSize="small"
+                            color="action"
+                            sx={{ mr: 0.5, fontSize: "0.9rem" }}
+                          />
+                          <Typography variant="caption">
                           {student.parentPhone || "—"}
                         </Typography>
+                        </Box>
                       </TableCell>
                     )}
                     {!isTablet && (
                       <TableCell>
-                        <Typography variant="body2">
+                        <Typography variant="body2" fontWeight="medium">
                           {student.schoolName || "—"}
                         </Typography>
                         <Typography variant="caption" color="text.secondary">
@@ -1199,22 +1439,74 @@ const Students = () => {
                       </TableCell>
                     )}
                     <TableCell>
-                      {student.joiningDate
-                        ? new Date(student.joiningDate).toLocaleDateString()
-                        : "—"}
+                      <Typography variant="body2" fontWeight="medium">
+                        {formatDate(student.joiningDate) || "—"}
+                      </Typography>
                     </TableCell>
                     <TableCell align="right">
-                      <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          justifyContent: "flex-end",
+                          "& button": { opacity: 0.7 },
+                          "& button:hover": { opacity: 1 },
+                        }}
+                      >
                         <IconButton
                           size="small"
+                          color="primary"
                           onClick={(e) => {
                             e.stopPropagation();
                             handleViewStudent(student);
                           }}
-                          title="View Details"
-                          sx={{ mr: 0.5 }}
+                          sx={{
+                            mr: 1,
+                            "&:hover": {
+                              backgroundColor: alpha(
+                                theme.palette.primary.main,
+                                0.1
+                              ),
+                            },
+                          }}
                         >
                           <VisibilityIcon fontSize="small" />
+                        </IconButton>
+                        <IconButton
+                          size="small"
+                          color="primary"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleOpen(student);
+                          }}
+                          sx={{
+                            mr: 1,
+                            "&:hover": {
+                              backgroundColor: alpha(
+                                theme.palette.primary.main,
+                                0.1
+                              ),
+                            },
+                          }}
+                        >
+                          <EditIcon fontSize="small" />
+                        </IconButton>
+                        <IconButton
+                          size="small"
+                          color="error"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDelete(student._id);
+                          }}
+                          sx={{
+                            "&:hover": {
+                              backgroundColor: alpha(
+                                theme.palette.error.main,
+                                0.1
+                              ),
+                            },
+                          }}
+                        >
+                          <DeleteIcon fontSize="small" />
                         </IconButton>
                       </Box>
                     </TableCell>
@@ -1222,8 +1514,37 @@ const Students = () => {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={isTablet ? 6 : 8} align="center">
+                  <TableCell
+                    colSpan={isTablet ? 6 : 8}
+                    align="center"
+                    sx={{ py: 3 }}
+                  >
+                    <Box
+                      sx={{
+                        py: 2,
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        bgcolor: alpha(theme.palette.primary.light, 0.05),
+                        borderRadius: 1,
+                        border: `1px dashed ${alpha(
+                          theme.palette.primary.main,
+                          0.2
+                        )}`,
+                      }}
+                    >
+                      <Typography color="text.secondary" sx={{ mb: 1 }}>
                     No students found
+                      </Typography>
+                      <Button
+                        variant="outlined"
+                        startIcon={<AddIcon />}
+                        onClick={() => handleOpen()}
+                        size="small"
+                      >
+                        Add Student
+                      </Button>
+                    </Box>
                   </TableCell>
                 </TableRow>
               )}
@@ -1238,26 +1559,69 @@ const Students = () => {
         maxWidth="md"
         fullWidth
         fullScreen={isMobile}
+        PaperProps={{
+          sx: {
+            borderRadius: isMobile ? 0 : 2,
+            overflow: "hidden",
+            height: isMobile ? "100%" : "auto",
+            display: "flex",
+            flexDirection: "column",
+            maxHeight: isMobile ? "100%" : "90vh",
+          },
+        }}
       >
-        <DialogTitle>
+        <DialogTitle
+          sx={{
+            backgroundColor: theme.palette.primary.main,
+            color: "white",
+            p: 2,
+            flexShrink: 0,
+          }}
+        >
+          <Typography variant="h6" fontWeight={600}>
           {editingStudent ? "Edit Student" : "Add New Student"}
+          </Typography>
         </DialogTitle>
-        <form onSubmit={formik.handleSubmit}>
-          <DialogContent>
-            <Grid container spacing={2}>
-              {/* Debug only - show current form values */}
-              <Grid item xs={12} sx={{ display: "none" }}>
-                <Typography variant="caption" color="text.secondary">
-                  Selected batches: {formik.values.batches.length} -{" "}
-                  {JSON.stringify(formik.values.batches)}
+        <form
+          onSubmit={formik.handleSubmit}
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            height: isMobile ? "100%" : "auto",
+            overflow: "hidden",
+            flexGrow: 1,
+          }}
+        >
+          <DialogContent
+            dividers
+            sx={{
+              p: { xs: 2, sm: 3 },
+              overflowY: "auto",
+              flexGrow: 1,
+              display: "flex",
+              flexDirection: "column",
+            }}
+          >
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="body2" color="text.secondary">
+                Fill in the details below to{" "}
+                {editingStudent ? "update" : "create"} a student. Fields marked
+                with * are required.
+                </Typography>
+            </Box>
+
+            <Grid container spacing={3}>
+              <Grid item xs={12}>
+                <Typography
+                  variant="subtitle1"
+                  color="primary"
+                  fontWeight={600}
+                  gutterBottom
+                >
+                  Basic Information
                 </Typography>
               </Grid>
-              <Grid item xs={12} sx={{ display: "none" }}>
-                <Typography variant="caption" color="text.secondary">
-                  Selected subjects: {formik.values.subjects.length} -{" "}
-                  {JSON.stringify(formik.values.subjects)}
-                </Typography>
-              </Grid>
+
               <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
@@ -1267,6 +1631,9 @@ const Students = () => {
                   onChange={formik.handleChange}
                   error={formik.touched.name && Boolean(formik.errors.name)}
                   helperText={formik.touched.name && formik.errors.name}
+                  InputProps={{
+                    sx: { borderRadius: 1 },
+                  }}
                 />
               </Grid>
               <Grid item xs={12} sm={6}>
@@ -1278,6 +1645,9 @@ const Students = () => {
                   onChange={formik.handleChange}
                   error={formik.touched.email && Boolean(formik.errors.email)}
                   helperText={formik.touched.email && formik.errors.email}
+                  InputProps={{
+                    sx: { borderRadius: 1 },
+                  }}
                 />
               </Grid>
               <Grid item xs={12} sm={6}>
@@ -1289,44 +1659,65 @@ const Students = () => {
                   onChange={formik.handleChange}
                   error={formik.touched.phone && Boolean(formik.errors.phone)}
                   helperText={formik.touched.phone && formik.errors.phone}
+                  InputProps={{
+                    sx: { borderRadius: 1 },
+                  }}
                 />
               </Grid>
               <Grid item xs={12} sm={6}>
                 <FormControl fullWidth>
+                  <InputLabel id="gender-label">Gender</InputLabel>
+                  <Select
+                    labelId="gender-label"
+                    name="gender"
+                    value={formik.values.gender}
+                    onChange={formik.handleChange}
+                    label="Gender"
+                    sx={{ borderRadius: 1 }}
+                  >
+                    <MenuItem value="male">Male</MenuItem>
+                    <MenuItem value="female">Female</MenuItem>
+                    <MenuItem value="other">Other</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+
+              <Grid item xs={12} sx={{ mt: 1 }}>
+                <Typography
+                  variant="subtitle1"
+                  color="primary"
+                  fontWeight={600}
+                  gutterBottom
+                >
+                  Education Details
+                </Typography>
+              </Grid>
+
+              <Grid item xs={12} sm={6}>
+                <FormControl
+                  fullWidth
+                  error={
+                    formik.touched.standard && Boolean(formik.errors.standard)
+                  }
+                >
                   <InputLabel>Standard</InputLabel>
                   <Select
                     name="standard"
                     value={formik.values.standard}
                     onChange={handleStandardChange}
                     label="Standard"
-                    disabled={standardsLoading}
-                    error={
-                      formik.touched.standard && Boolean(formik.errors.standard)
-                    }
+                    sx={{ borderRadius: 1 }}
                   >
-                    {standardsLoading ? (
-                      <MenuItem disabled>Loading standards...</MenuItem>
-                    ) : standards?.length > 0 ? (
-                      standards.map((standard) => (
+                    {standards.map((standard) => (
                         <MenuItem key={standard._id} value={standard._id}>
-                          {standard.name} ({standard.level})
+                        {standard.name}
                         </MenuItem>
-                      ))
-                    ) : (
-                      <MenuItem disabled>No standards available</MenuItem>
-                    )}
+                    ))}
                   </Select>
                   {formik.touched.standard && formik.errors.standard && (
-                    <div
-                      style={{
-                        color: "red",
-                        fontSize: "0.75rem",
-                        marginTop: "3px",
-                        marginLeft: "14px",
-                      }}
-                    >
+                    <Typography variant="caption" color="error">
                       {formik.errors.standard}
-                    </div>
+                    </Typography>
                   )}
                 </FormControl>
               </Grid>
@@ -1854,21 +2245,6 @@ const Students = () => {
               </Grid>
               <Grid item xs={12} sm={6}>
                 <FormControl fullWidth>
-                  <InputLabel>Gender</InputLabel>
-                  <Select
-                    name="gender"
-                    value={formik.values.gender || ""}
-                    onChange={formik.handleChange}
-                    label="Gender"
-                  >
-                    <MenuItem value="male">Male</MenuItem>
-                    <MenuItem value="female">Female</MenuItem>
-                    <MenuItem value="other">Other</MenuItem>
-                  </Select>
-                </FormControl>
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <FormControl fullWidth>
                   <InputLabel>Board</InputLabel>
                   <Select
                     name="board"
@@ -1974,264 +2350,532 @@ const Students = () => {
               </Grid>
             </Grid>
           </DialogContent>
-          <DialogActions sx={{ px: { xs: 2, sm: 3 }, pb: { xs: 2, sm: 2 } }}>
-            <Button onClick={handleClose}>Cancel</Button>
+          <DialogActions
+            sx={{
+              px: { xs: 2, sm: 3 },
+              py: 2,
+              position: isMobile ? "sticky" : "relative",
+              bottom: 0,
+              backgroundColor: "background.paper",
+              borderTop: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+              zIndex: 1,
+              mt: "auto",
+              flexShrink: 0,
+            }}
+          >
+            <Button
+              onClick={handleClose}
+              disabled={formik.isSubmitting}
+              sx={{ borderRadius: 1.5 }}
+            >
+              Cancel
+            </Button>
             <Button
               type="submit"
               variant="contained"
               color="primary"
               disabled={formik.isSubmitting}
+              sx={{ borderRadius: 1.5, px: 3 }}
             >
               {formik.isSubmitting ? (
                 <CircularProgress size={24} />
               ) : editingStudent ? (
-                "Update"
+                "Update Student"
               ) : (
-                "Create"
+                "Save Student"
               )}
             </Button>
           </DialogActions>
         </form>
       </Dialog>
 
-      {/* View Student Dialog */}
+      {/* View student dialog */}
       <Dialog
         open={viewDialogOpen}
         onClose={handleCloseViewDialog}
         maxWidth="md"
         fullWidth
         fullScreen={isMobile}
-        sx={{
-          "& .MuiDialog-paper": {
-            width: "100%",
-            margin: { xs: 0, sm: 3 },
-            maxHeight: { xs: "100vh", sm: "85vh" },
+        PaperProps={{
+          sx: {
+            borderRadius: isMobile ? 0 : 2,
+            overflow: "hidden",
+            height: isMobile ? "100%" : "auto",
+            display: "flex",
+            flexDirection: "column",
+            maxHeight: isMobile ? "100%" : "90vh",
           },
         }}
       >
         {viewStudent && (
           <>
-            <DialogTitle sx={{ pb: 1, pt: { xs: 2, sm: 2 } }}>
-              <Box
+            <DialogTitle
                 sx={{
+                backgroundColor: theme.palette.primary.main,
+                color: "white",
+                p: 2,
                   display: "flex",
                   justifyContent: "space-between",
                   alignItems: "center",
-                }}
-              >
-                <Typography
-                  variant="h5"
-                  component="div"
-                  sx={{ fontSize: { xs: "1.25rem", sm: "1.5rem" } }}
+                flexShrink: 0,
+              }}
+            >
+              <Box sx={{ display: "flex", alignItems: "center" }}>
+                <Avatar
+                  sx={{
+                    bgcolor: "white",
+                    color: theme.palette.primary.main,
+                    mr: 1.5,
+                    fontWeight: "bold",
+                  }}
                 >
-                  Student Profile
+                  {viewStudent.name?.charAt(0)}
+                </Avatar>
+                <Typography variant="h6" fontWeight={600}>
+                  {viewStudent.name}
                 </Typography>
-                {isMobile && (
-                  <IconButton
-                    edge="end"
-                    color="inherit"
-                    onClick={handleCloseViewDialog}
-                    aria-label="close"
-                    size="small"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="24"
-                      height="24"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <line x1="18" y1="6" x2="6" y2="18"></line>
-                      <line x1="6" y1="6" x2="18" y2="18"></line>
-                    </svg>
-                  </IconButton>
-                )}
               </Box>
-              {/* <Typography variant="subtitle2" color="text.secondary">
-                {viewStudent._id}
-              </Typography> */}
+              <Chip
+                label={
+                  viewStudent.gender
+                    ? viewStudent.gender.charAt(0).toUpperCase() +
+                      viewStudent.gender.slice(1)
+                    : ""
+                }
+                    size="small"
+                sx={{
+                  color: "white",
+                  bgcolor: theme.palette.primary.dark,
+                  fontWeight: 500,
+                }}
+              />
             </DialogTitle>
-            <DialogContent sx={{ p: { xs: 2, sm: 3 } }}>
-              <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                {/* Personal Information */}
-                <Box>
-                  <Typography variant="h6" color="primary" gutterBottom>
-                    Personal Information
+            <DialogContent
+              dividers
+              sx={{
+                p: { xs: 2, sm: 3 },
+                overflowY: "auto",
+                flexGrow: 1,
+              }}
+            >
+              <Grid container spacing={3}>
+                <Grid item xs={12} md={6}>
+                  <Paper
+                    elevation={1}
+                    sx={{
+                      p: 2.5,
+                      borderRadius: 2,
+                      height: "100%",
+                      border: `1px solid ${alpha(
+                        theme.palette.primary.main,
+                        0.1
+                      )}`,
+                    }}
+                  >
+                    <Typography
+                      variant="subtitle1"
+                      gutterBottom
+                      fontWeight="bold"
+                      color="primary"
+                      sx={{
+                        pb: 1,
+                        borderBottom: `1px solid ${alpha(
+                          theme.palette.primary.main,
+                          0.2
+                        )}`,
+                      }}
+                    >
+                      Contact Information
                   </Typography>
-                  <Grid container spacing={{ xs: 2, sm: 2 }}>
-                    <Grid item xs={12} sm={6} md={4}>
-                      <Typography variant="subtitle2" color="text.secondary">
-                        Name
-                      </Typography>
-                      <Typography variant="body1">
-                        {viewStudent.name}
-                      </Typography>
-                    </Grid>
-                    <Grid item xs={12} sm={6} md={4}>
-                      <Typography variant="subtitle2" color="text.secondary">
+                    <Box
+                      sx={{
+                        mt: 2,
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 2,
+                      }}
+                    >
+                      <Box
+                        sx={{
+                          display: "flex",
+                          justifyContent: "flex-start",
+                          alignItems: "center",
+                        }}
+                      >
+                        <EmailIcon color="primary" sx={{ mr: 2 }} />
+                        <Box>
+                          <Typography variant="caption" color="text.secondary">
                         Email
                       </Typography>
-                      <Typography variant="body1">
+                          <Typography variant="body2" fontWeight="medium">
                         {viewStudent.email}
                       </Typography>
-                    </Grid>
-                    <Grid item xs={12} sm={6} md={4}>
-                      <Typography variant="subtitle2" color="text.secondary">
+                        </Box>
+                      </Box>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          justifyContent: "flex-start",
+                          alignItems: "center",
+                        }}
+                      >
+                        <PhoneIcon color="primary" sx={{ mr: 2 }} />
+                        <Box>
+                          <Typography variant="caption" color="text.secondary">
                         Phone
                       </Typography>
-                      <Typography variant="body1">
-                        {viewStudent.phone || "N/A"}
+                          <Typography variant="body2" fontWeight="medium">
+                            {viewStudent.phone}
                       </Typography>
+                        </Box>
+                      </Box>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          justifyContent: "flex-start",
+                          alignItems: "center",
+                        }}
+                      >
+                        <HomeIcon color="primary" sx={{ mr: 2 }} />
+                        <Box>
+                          <Typography variant="caption" color="text.secondary">
+                            Address
+                      </Typography>
+                          <Typography variant="body2" fontWeight="medium">
+                            {viewStudent.address || "Not provided"}
+                      </Typography>
+                        </Box>
+                      </Box>
+                    </Box>
+                  </Paper>
                     </Grid>
-                    <Grid item xs={12} sm={6} md={4}>
-                      <Typography variant="subtitle2" color="text.secondary">
-                        Gender
+
+                <Grid item xs={12} md={6}>
+                  <Paper
+                    elevation={1}
+                    sx={{
+                      p: 2.5,
+                      borderRadius: 2,
+                      height: "100%",
+                      border: `1px solid ${alpha(
+                        theme.palette.primary.main,
+                        0.1
+                      )}`,
+                    }}
+                  >
+                    <Typography
+                      variant="subtitle1"
+                      gutterBottom
+                      fontWeight="bold"
+                      color="primary"
+                      sx={{
+                        pb: 1,
+                        borderBottom: `1px solid ${alpha(
+                          theme.palette.primary.main,
+                          0.2
+                        )}`,
+                      }}
+                    >
+                      Parent Information
                       </Typography>
-                      <Typography variant="body1">
-                        {viewStudent.gender
-                          ? viewStudent.gender.charAt(0).toUpperCase() +
-                            viewStudent.gender.slice(1)
-                          : "N/A"}
+                    <Box
+                      sx={{
+                        mt: 2,
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 2,
+                      }}
+                    >
+                      <Box
+                        sx={{
+                          display: "flex",
+                          justifyContent: "flex-start",
+                          alignItems: "center",
+                        }}
+                      >
+                        <PersonIcon color="primary" sx={{ mr: 2 }} />
+                        <Box>
+                          <Typography variant="caption" color="text.secondary">
+                            Parent Name
                       </Typography>
-                    </Grid>
-                    <Grid item xs={12} sm={6} md={4}>
-                      <Typography variant="subtitle2" color="text.secondary">
-                        Date of Birth
+                          <Typography variant="body2" fontWeight="medium">
+                            {viewStudent.parentName || "Not provided"}
                       </Typography>
-                      <Typography variant="body1">
-                        {formatDate(viewStudent.dateOfBirth)}
-                      </Typography>
-                    </Grid>
-                    <Grid item xs={12} sm={6} md={4}>
-                      <Typography variant="subtitle2" color="text.secondary">
-                        Joining Date
-                      </Typography>
-                      <Typography variant="body1">
-                        {formatDate(viewStudent.joiningDate)}
-                      </Typography>
-                    </Grid>
-                  </Grid>
                 </Box>
-
-                <Divider />
-
-                {/* Academic Information */}
+                      </Box>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          justifyContent: "flex-start",
+                          alignItems: "center",
+                        }}
+                      >
+                        <PhoneIcon color="primary" sx={{ mr: 2 }} />
                 <Box>
-                  <Typography variant="h6" color="primary" gutterBottom>
-                    Academic Information
+                          <Typography variant="caption" color="text.secondary">
+                            Parent Phone
                   </Typography>
-                  <Grid container spacing={{ xs: 2, sm: 2 }}>
-                    <Grid item xs={12} sm={6} md={4}>
-                      <Typography variant="subtitle2" color="text.secondary">
-                        School
+                          <Typography variant="body2" fontWeight="medium">
+                            {viewStudent.parentPhone || "Not provided"}
                       </Typography>
-                      <Typography variant="body1">
-                        {viewStudent.schoolName || "N/A"}
-                      </Typography>
+                        </Box>
+                      </Box>
+                    </Box>
+                  </Paper>
                     </Grid>
-                    <Grid item xs={12} sm={6} md={4}>
-                      <Typography variant="subtitle2" color="text.secondary">
-                        Standard
+
+                <Grid item xs={12} md={6}>
+                  <Paper
+                    elevation={1}
+                    sx={{
+                      p: 2.5,
+                      borderRadius: 2,
+                      border: `1px solid ${alpha(
+                        theme.palette.primary.main,
+                        0.1
+                      )}`,
+                    }}
+                  >
+                    <Typography
+                      variant="subtitle1"
+                      gutterBottom
+                      fontWeight="bold"
+                      color="primary"
+                      sx={{
+                        pb: 1,
+                        borderBottom: `1px solid ${alpha(
+                          theme.palette.primary.main,
+                          0.2
+                        )}`,
+                      }}
+                    >
+                      Education Details
                       </Typography>
-                      <Typography variant="body1">
-                        {viewStudent.standard?.name || "N/A"}
+                    <Box
+                      sx={{
+                        mt: 2,
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 2,
+                      }}
+                    >
+                      <Box
+                        sx={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          pb: 1,
+                          borderBottom: `1px solid ${alpha(
+                            theme.palette.divider,
+                            0.3
+                          )}`,
+                        }}
+                      >
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          fontWeight={500}
+                        >
+                          Standard:
                       </Typography>
-                    </Grid>
-                    <Grid item xs={12} sm={6} md={4}>
-                      <Typography variant="subtitle2" color="text.secondary">
-                        Address
+                        <Typography variant="body2" fontWeight="medium">
+                          {viewStudent.standard?.name || "Not specified"}
                       </Typography>
-                      <Typography variant="body1">
-                        {viewStudent.address || "N/A"}
+                      </Box>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          pb: 1,
+                          borderBottom: `1px solid ${alpha(
+                            theme.palette.divider,
+                            0.3
+                          )}`,
+                        }}
+                      >
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          fontWeight={500}
+                        >
+                          School:
                       </Typography>
-                    </Grid>
-                  </Grid>
+                        <Typography variant="body2" fontWeight="medium">
+                          {viewStudent.schoolName || "Not specified"}
+                        </Typography>
                 </Box>
-
-                <Divider />
-
-                {/* Parent Information */}
-                <Box>
-                  <Typography variant="h6" color="primary" gutterBottom>
-                    Parent Information
+                      <Box
+                        sx={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          pb: 1,
+                          borderBottom: `1px solid ${alpha(
+                            theme.palette.divider,
+                            0.3
+                          )}`,
+                        }}
+                      >
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          fontWeight={500}
+                        >
+                          Board:
                   </Typography>
-                  <Grid container spacing={{ xs: 2, sm: 2 }}>
-                    <Grid item xs={12} sm={6}>
-                      <Typography variant="subtitle2" color="text.secondary">
-                        Parent Name
+                        <Typography variant="body2" fontWeight="medium">
+                          {viewStudent.board || "Not specified"}
                       </Typography>
-                      <Typography variant="body1">
-                        {viewStudent.parentName || "N/A"}
+                      </Box>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          pb: 1,
+                          borderBottom: `1px solid ${alpha(
+                            theme.palette.divider,
+                            0.3
+                          )}`,
+                        }}
+                      >
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          fontWeight={500}
+                        >
+                          Previous Percentage:
                       </Typography>
-                    </Grid>
-                    <Grid item xs={12} sm={6}>
-                      <Typography variant="subtitle2" color="text.secondary">
-                        Parent Phone
+                        <Typography variant="body2" fontWeight="medium">
+                          {viewStudent.previousPercentage
+                            ? `${viewStudent.previousPercentage}%`
+                            : "Not specified"}
                       </Typography>
-                      <Typography variant="body1">
-                        {viewStudent.parentPhone || "N/A"}
+                      </Box>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          pb: 1,
+                          borderBottom: `1px solid ${alpha(
+                            theme.palette.divider,
+                            0.3
+                          )}`,
+                        }}
+                      >
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          fontWeight={500}
+                        >
+                          Joining Date:
                       </Typography>
-                    </Grid>
-                  </Grid>
+                        <Typography variant="body2" fontWeight="medium">
+                          {formatDate(viewStudent.joiningDate) ||
+                            "Not specified"}
+                        </Typography>
                 </Box>
+                    </Box>
+                  </Paper>
+                </Grid>
 
-                <Divider />
-
-                {/* Subjects & Batches */}
-                <Box>
-                  <Typography variant="h6" color="primary" gutterBottom>
-                    Enrolled Subjects & Batches
-                  </Typography>
-                  <Grid container spacing={{ xs: 2, sm: 2 }}>
                     <Grid item xs={12} md={6}>
+                  <Paper
+                    elevation={1}
+                    sx={{
+                      p: 2.5,
+                      borderRadius: 2,
+                      border: `1px solid ${alpha(
+                        theme.palette.primary.main,
+                        0.1
+                      )}`,
+                    }}
+                  >
                       <Typography
-                        variant="subtitle2"
-                        color="text.secondary"
+                      variant="subtitle1"
                         gutterBottom
+                      fontWeight="bold"
+                      color="primary"
+                      sx={{
+                        pb: 1,
+                        borderBottom: `1px solid ${alpha(
+                          theme.palette.primary.main,
+                          0.2
+                        )}`,
+                      }}
                       >
                         Subjects
                       </Typography>
-                      <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+                    <Box
+                      sx={{
+                        mt: 2,
+                        display: "flex",
+                        flexWrap: "wrap",
+                        gap: 0.8,
+                      }}
+                    >
                         {viewStudent.subjects &&
                         viewStudent.subjects.length > 0 ? (
                           viewStudent.subjects.map((subject) => (
                             <Chip
                               key={subject._id}
                               label={subject.name}
-                              color="primary"
+                            color="secondary"
                               variant="outlined"
                               size="small"
+                            sx={{ mb: 1, fontWeight: 500 }}
                             />
                           ))
                         ) : (
                           <Typography variant="body2" color="text.secondary">
-                            No subjects enrolled
+                          No subjects assigned
                           </Typography>
                         )}
                       </Box>
+                  </Paper>
                     </Grid>
-                    <Grid item xs={12} md={6}>
+
+                <Grid item xs={12}>
+                  <Paper
+                    elevation={1}
+                    sx={{
+                      p: 2.5,
+                      borderRadius: 2,
+                      border: `1px solid ${alpha(
+                        theme.palette.primary.main,
+                        0.1
+                      )}`,
+                    }}
+                  >
                       <Typography
-                        variant="subtitle2"
-                        color="text.secondary"
+                      variant="subtitle1"
                         gutterBottom
+                      fontWeight="bold"
+                      color="primary"
+                      sx={{
+                        pb: 1,
+                        borderBottom: `1px solid ${alpha(
+                          theme.palette.primary.main,
+                          0.2
+                        )}`,
+                      }}
                       >
                         Batches
                       </Typography>
                       <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
-                        {viewStudent.batches &&
-                        viewStudent.batches.length > 0 ? (
+                      {viewStudent.batches && viewStudent.batches.length > 0 ? (
                           viewStudent.batches.map((batch) => (
                             <Chip
                               key={batch._id}
-                              label={batch.name}
-                              color="secondary"
+                            label={`${batch.name} (${
+                              batch.enrolledStudents?.length || 0
+                            }/${batch.capacity})`}
+                            color="primary"
                               variant="outlined"
                               size="small"
+                            sx={{ mb: 1, fontWeight: 500 }}
                             />
                           ))
                         ) : (
@@ -2240,49 +2884,51 @@ const Students = () => {
                           </Typography>
                         )}
                       </Box>
+                  </Paper>
                     </Grid>
                   </Grid>
-                </Box>
-              </Box>
             </DialogContent>
-            <DialogActions sx={{ px: 3, pb: 2, flexWrap: "wrap", gap: 1 }}>
+            <DialogActions
+              sx={{
+                px: { xs: 2, sm: 3 },
+                py: 2,
+                position: isMobile ? "sticky" : "relative",
+                bottom: 0,
+                backgroundColor: "background.paper",
+                borderTop: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+                zIndex: 1,
+                mt: "auto",
+                flexShrink: 0,
+              }}
+            >
               <Button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleOpen(viewStudent);
-                  handleCloseViewDialog();
-                }}
-                color="primary"
                 variant="outlined"
+                color="primary"
                 startIcon={<EditIcon />}
-                size={isMobile ? "small" : "medium"}
+                onClick={() => {
+                  handleCloseViewDialog();
+                  handleOpen(viewStudent);
+                }}
+                sx={{ borderRadius: 1.5 }}
               >
                 Edit
               </Button>
               <Button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (
-                    window.confirm(
-                      "Are you sure you want to delete this student?"
-                    )
-                  ) {
-                    handleDelete(viewStudent._id);
-                    handleCloseViewDialog();
-                  }
-                }}
-                color="error"
                 variant="outlined"
+                color="error"
                 startIcon={<DeleteIcon />}
-                size={isMobile ? "small" : "medium"}
+                onClick={() => {
+                  handleCloseViewDialog();
+                  handleDelete(viewStudent._id);
+                }}
+                sx={{ borderRadius: 1.5 }}
               >
                 Delete
               </Button>
               <Button
                 onClick={handleCloseViewDialog}
-                color="primary"
                 variant="contained"
-                size={isMobile ? "small" : "medium"}
+                sx={{ ml: "auto", borderRadius: 1.5 }}
               >
                 Close
               </Button>

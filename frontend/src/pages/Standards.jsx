@@ -59,6 +59,7 @@ import {
 } from "../store/slices/standardSlice";
 import { fetchSubjects } from "../store/slices/subjectSlice";
 import RefreshButton from "../components/RefreshButton";
+import { alpha } from "@mui/material/styles";
 
 const validationSchema = Yup.object({
   name: Yup.string().required("Name is required"),
@@ -317,39 +318,188 @@ const Standards = () => {
 
   return (
     <Box sx={{ p: { xs: 1, sm: 2, md: 3 } }}>
-      <Box
+      {/* Enhanced Header with gradient background */}
+      <Paper
+        elevation={2}
         sx={{
-          display: "flex",
-          flexDirection: { xs: "column", sm: "row" },
-          justifyContent: "space-between",
-          alignItems: { xs: "flex-start", sm: "center" },
-          mb: 3,
-          gap: { xs: 1, sm: 0 },
+          p: { xs: 2, sm: 3 },
+          mb: { xs: 2, sm: 3 },
+          borderRadius: 2,
+          background: `linear-gradient(90deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
         }}
       >
-        <Box sx={{ display: "flex", alignItems: "center" }}>
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: { xs: "column", sm: "row" },
+            justifyContent: "space-between",
+            alignItems: { xs: "flex-start", sm: "center" },
+            gap: { xs: 2, sm: 0 },
+          }}
+        >
           <Typography
             variant="h4"
             component="h1"
-            sx={{ fontSize: { xs: "1.5rem", sm: "2rem", md: "2.125rem" } }}
+            sx={{
+              fontSize: { xs: "1.5rem", sm: "2rem", md: "2.125rem" },
+              fontWeight: 600,
+              color: "white",
+            }}
           >
             Standards
           </Typography>
-          <RefreshButton
-            onRefresh={loadAllData}
-            tooltip="Refresh standards data"
-            sx={{ ml: 1 }}
-          />
+          <Box sx={{ display: "flex", gap: 1 }}>
+            <Button
+              variant="contained"
+              color="secondary"
+              startIcon={<AddIcon />}
+              onClick={() => handleOpen()}
+              sx={{
+                borderRadius: 1.5,
+                boxShadow: 2,
+                "&:hover": {
+                  boxShadow: 4,
+                },
+              }}
+              size={isMobile ? "small" : "medium"}
+            >
+              Add Standard
+            </Button>
+            <RefreshButton
+              onRefresh={loadAllData}
+              tooltip="Refresh standards data"
+              color="secondary"
+            />
+          </Box>
         </Box>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => handleOpen()}
-          sx={{ alignSelf: { xs: "flex-start", sm: "auto" } }}
-        >
-          Add Standard
-        </Button>
-      </Box>
+      </Paper>
+
+      {/* Enhanced Stats Cards */}
+      <Grid container spacing={isMobile ? 1.5 : 3} mb={isMobile ? 3 : 4}>
+        <Grid item xs={6} md={3}>
+          <Card
+            elevation={2}
+            sx={{
+              borderRadius: 2,
+              transition: "all 0.3s ease",
+              "&:hover": {
+                transform: "translateY(-4px)",
+                boxShadow: 6,
+              },
+            }}
+          >
+            <CardContent sx={{ p: isMobile ? 2 : 3 }}>
+              <Typography
+                color="textSecondary"
+                gutterBottom
+                variant={isMobile ? "body2" : "body1"}
+                sx={{ fontWeight: 500 }}
+              >
+                Total Standards
+              </Typography>
+              <Typography
+                variant={isMobile ? "h5" : "h4"}
+                sx={{ fontWeight: 600 }}
+              >
+                {standardsArray.length}
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid item xs={6} md={3}>
+          <Card
+            elevation={2}
+            sx={{
+              borderRadius: 2,
+              transition: "all 0.3s ease",
+              "&:hover": {
+                transform: "translateY(-4px)",
+                boxShadow: 6,
+              },
+            }}
+          >
+            <CardContent sx={{ p: isMobile ? 2 : 3 }}>
+              <Typography
+                color="textSecondary"
+                gutterBottom
+                variant={isMobile ? "body2" : "body1"}
+                sx={{ fontWeight: 500 }}
+              >
+                Active Standards
+              </Typography>
+              <Typography
+                variant={isMobile ? "h5" : "h4"}
+                color="success.main"
+                sx={{ fontWeight: 600 }}
+              >
+                {standardsArray.filter((std) => std.isActive).length}
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid item xs={6} md={3}>
+          <Card
+            elevation={2}
+            sx={{
+              borderRadius: 2,
+              transition: "all 0.3s ease",
+              "&:hover": {
+                transform: "translateY(-4px)",
+                boxShadow: 6,
+              },
+            }}
+          >
+            <CardContent sx={{ p: isMobile ? 2 : 3 }}>
+              <Typography
+                color="textSecondary"
+                gutterBottom
+                variant={isMobile ? "body2" : "body1"}
+                sx={{ fontWeight: 500 }}
+              >
+                Total Subjects
+              </Typography>
+              <Typography
+                variant={isMobile ? "h5" : "h4"}
+                color="primary.main"
+                sx={{ fontWeight: 600 }}
+              >
+                {subjectsArray.length}
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid item xs={6} md={3}>
+          <Card
+            elevation={2}
+            sx={{
+              borderRadius: 2,
+              transition: "all 0.3s ease",
+              "&:hover": {
+                transform: "translateY(-4px)",
+                boxShadow: 6,
+              },
+            }}
+          >
+            <CardContent sx={{ p: isMobile ? 2 : 3 }}>
+              <Typography
+                color="textSecondary"
+                gutterBottom
+                variant={isMobile ? "body2" : "body1"}
+                sx={{ fontWeight: 500 }}
+              >
+                Inactive Standards
+              </Typography>
+              <Typography
+                variant={isMobile ? "h5" : "h4"}
+                color="text.secondary"
+                sx={{ fontWeight: 600 }}
+              >
+                {standardsArray.filter((std) => !std.isActive).length}
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
 
       {error && (
         <Alert severity="error" sx={{ mb: 2 }}>
@@ -358,56 +508,102 @@ const Standards = () => {
       )}
 
       {standardsArray.length === 0 && !loading ? (
-        <Alert severity="info" sx={{ mb: 2 }}>
-          No standards found. Create your first standard by clicking the "Add
-          Standard" button.
-        </Alert>
+        <Box
+          sx={{
+            p: 3,
+            textAlign: "center",
+            backgroundColor: alpha(theme.palette.primary.light, 0.05),
+            borderRadius: 2,
+            border: `1px dashed ${alpha(theme.palette.primary.main, 0.2)}`,
+            mb: 3,
+          }}
+        >
+          <Typography variant="body1" color="text.secondary" fontWeight={500}>
+            No standards found
+          </Typography>
+          <Button
+            variant="contained"
+            color="primary"
+            startIcon={<AddIcon />}
+            sx={{ mt: 2, borderRadius: 1.5 }}
+            onClick={() => handleOpen()}
+          >
+            Add Standard
+          </Button>
+        </Box>
       ) : null}
 
       {isMobile ? (
-        // Mobile card view
+        // Enhanced Mobile card view
         <Stack spacing={2}>
           {standardsArray.length > 0 ? (
             standardsArray.map((standard) => (
               <Card
                 key={standard._id}
-                sx={{ width: "100%", borderRadius: 2 }}
+                sx={{
+                  width: "100%",
+                  borderRadius: 2,
+                  transition: "all 0.3s ease",
+                  "&:hover": {
+                    transform: "translateY(-2px)",
+                    boxShadow: 3,
+                  },
+                  overflow: "hidden",
+                }}
                 elevation={2}
+                onClick={() => handleViewStandard(standard)}
               >
-                <CardContent>
+                <Box
+                  sx={{
+                    backgroundColor: theme.palette.primary.main,
+                    py: 1,
+                    px: 2,
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                >
+                  <Typography
+                    variant="subtitle1"
+                    fontWeight={600}
+                    color="white"
+                  >
+                    {standard.name}
+                  </Typography>
+                  <Chip
+                    label={standard.isActive ? "Active" : "Inactive"}
+                    size="small"
+                    color={standard.isActive ? "success" : "default"}
+                    sx={{
+                      fontWeight: 500,
+                      height: 24,
+                    }}
+                  />
+                </Box>
+
+                <CardContent sx={{ pb: 1, pt: 2 }}>
                   <Box
                     sx={{
                       display: "flex",
-                      justifyContent: "space-between",
                       alignItems: "center",
-                      mb: 1,
+                      mt: 1,
+                      mb: 2,
                     }}
                   >
-                    <Typography variant="h6" component="div">
-                      {standard.name}
-                    </Typography>
-                    <Chip
-                      label={standard.isActive ? "Active" : "Inactive"}
-                      size="small"
-                      color={standard.isActive ? "success" : "default"}
-                    />
-                  </Box>
-
-                  <Box sx={{ display: "flex", alignItems: "center", mt: 1 }}>
                     <SchoolIcon
                       fontSize="small"
                       color="primary"
                       sx={{ mr: 1 }}
                     />
-                    <Typography variant="body2" color="text.secondary">
-                      Level: {standard.level}
+                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                      Class Level: {standard.level}
                     </Typography>
                   </Box>
 
                   {standard.description && (
                     <Typography
                       variant="body2"
-                      sx={{ mt: 1, color: "text.secondary" }}
+                      sx={{ color: "text.secondary", mb: 2 }}
                     >
                       {standard.description.length > 100
                         ? `${standard.description.substring(0, 100)}...`
@@ -416,8 +612,12 @@ const Standards = () => {
                   )}
 
                   {standard.subjects && standard.subjects.length > 0 && (
-                    <Box sx={{ mt: 2 }}>
-                      <Typography variant="subtitle2" color="text.secondary">
+                    <Box>
+                      <Typography
+                        variant="subtitle2"
+                        color="text.secondary"
+                        sx={{ fontWeight: 600, mb: 1 }}
+                      >
                         Subjects:
                       </Typography>
                       <Box
@@ -425,7 +625,6 @@ const Standards = () => {
                           display: "flex",
                           flexWrap: "wrap",
                           gap: 0.5,
-                          mt: 0.5,
                         }}
                       >
                         {getSubjectIdsFromStandard(standard).map(
@@ -439,6 +638,7 @@ const Standards = () => {
                                 color="primary"
                                 variant="outlined"
                                 sx={{ mb: 0.5 }}
+                                icon={<MenuBookIcon />}
                               />
                             ) : null;
                           }
@@ -447,12 +647,27 @@ const Standards = () => {
                     </Box>
                   )}
                 </CardContent>
-                <CardActions sx={{ p: 2, pt: 0 }}>
+                <CardActions
+                  sx={{
+                    px: 2,
+                    py: 1,
+                    borderTop: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+                    justifyContent: "flex-end",
+                  }}
+                >
                   <Button
                     size="small"
-                    startIcon={<VisibilityIcon />}
-                    onClick={() => handleViewStandard(standard)}
+                    variant="outlined"
                     color="primary"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleViewStandard(standard);
+                    }}
+                    startIcon={<VisibilityIcon />}
+                    sx={{
+                      borderRadius: 1.5,
+                      textTransform: "none",
+                    }}
                   >
                     View Details
                   </Button>
@@ -466,10 +681,15 @@ const Standards = () => {
           )}
         </Stack>
       ) : (
-        // Desktop table view
+        // Enhanced Desktop table view
         <TableContainer
           component={Paper}
-          sx={{ borderRadius: 2, overflow: "hidden" }}
+          elevation={2}
+          sx={{
+            borderRadius: 2,
+            overflow: "hidden",
+            mb: 4,
+          }}
         >
           <Table size={isTablet ? "small" : "medium"}>
             <TableHead>
@@ -500,14 +720,43 @@ const Standards = () => {
             <TableBody>
               {standardsArray.length > 0 ? (
                 standardsArray.map((standard) => (
-                  <TableRow key={standard._id}>
-                    <TableCell>{standard.name}</TableCell>
-                    <TableCell>{standard.level}</TableCell>
+                  <TableRow
+                    key={standard._id}
+                    sx={{
+                      "&:nth-of-type(odd)": {
+                        backgroundColor: theme.palette.action.hover,
+                      },
+                      "&:hover": {
+                        backgroundColor: alpha(
+                          theme.palette.primary.light,
+                          0.1
+                        ),
+                        cursor: "pointer",
+                      },
+                    }}
+                    onClick={() => handleViewStandard(standard)}
+                  >
+                    <TableCell sx={{ fontWeight: 500 }}>
+                      {standard.name}
+                    </TableCell>
+                    <TableCell>
+                      <Box sx={{ display: "flex", alignItems: "center" }}>
+                        <SchoolIcon
+                          fontSize="small"
+                          color="primary"
+                          sx={{ mr: 1 }}
+                        />
+                        <Typography variant="body2" fontWeight={500}>
+                          {standard.level}
+                        </Typography>
+                      </Box>
+                    </TableCell>
                     <TableCell>
                       <Chip
                         label={standard.isActive ? "Active" : "Inactive"}
                         size="small"
                         color={standard.isActive ? "success" : "default"}
+                        sx={{ fontWeight: 500 }}
                       />
                     </TableCell>
                     <TableCell>
@@ -524,6 +773,7 @@ const Standards = () => {
                                   color="primary"
                                   variant="outlined"
                                   sx={{ mr: 0.5, mb: 0.5 }}
+                                  icon={<MenuBookIcon fontSize="small" />}
                                 />
                               ) : null;
                             }
@@ -535,7 +785,19 @@ const Standards = () => {
                         )}
                       </Box>
                     </TableCell>
-                    <TableCell>{standard.description}</TableCell>
+                    <TableCell>
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          maxWidth: 250,
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                        }}
+                      >
+                        {standard.description}
+                      </Typography>
+                    </TableCell>
                     <TableCell align="right">
                       <Box
                         sx={{
@@ -548,7 +810,22 @@ const Standards = () => {
                           <IconButton
                             size="small"
                             color="primary"
-                            onClick={() => handleViewStandard(standard)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleViewStandard(standard);
+                            }}
+                            sx={{
+                              backgroundColor: alpha(
+                                theme.palette.primary.main,
+                                0.1
+                              ),
+                              "&:hover": {
+                                backgroundColor: alpha(
+                                  theme.palette.primary.main,
+                                  0.2
+                                ),
+                              },
+                            }}
                           >
                             <VisibilityIcon fontSize="small" />
                           </IconButton>
@@ -569,7 +846,7 @@ const Standards = () => {
         </TableContainer>
       )}
 
-      {/* View Standard Dialog - Redesigned to match Students view */}
+      {/* Enhanced View Standard Dialog */}
       <Dialog
         open={viewDialogOpen}
         onClose={handleCloseViewDialog}
@@ -579,7 +856,11 @@ const Standards = () => {
         PaperProps={{
           sx: {
             borderRadius: isMobile ? 0 : 2,
-            m: isMobile ? 0 : 2,
+            overflow: "hidden",
+            height: isMobile ? "100%" : "auto",
+            display: "flex",
+            flexDirection: "column",
+            maxHeight: isMobile ? "100%" : "90vh",
           },
         }}
       >
@@ -587,25 +868,29 @@ const Standards = () => {
           <>
             <DialogTitle
               sx={{
-                pb: 1,
-                borderBottom: 1,
-                borderColor: "divider",
-                bgcolor: "primary.main",
-                color: "white",
+                p: 0,
+                position: "relative",
               }}
             >
               <Box
                 sx={{
+                  backgroundColor: theme.palette.primary.main,
+                  color: "white",
+                  p: 2,
                   display: "flex",
                   justifyContent: "space-between",
                   alignItems: "center",
+                  flexShrink: 0,
                 }}
               >
                 <Box>
-                  <Typography variant="h6" component="div">
+                  <Typography variant="h6" fontWeight={600}>
                     {selectedStandard.name}
                   </Typography>
-                  <Typography variant="subtitle2" sx={{ opacity: 0.8 }}>
+                  <Typography
+                    variant="subtitle2"
+                    sx={{ opacity: 0.9, mt: 0.5 }}
+                  >
                     Class {selectedStandard.level}
                   </Typography>
                 </Box>
@@ -613,67 +898,149 @@ const Standards = () => {
                   label={selectedStandard.isActive ? "Active" : "Inactive"}
                   color={selectedStandard.isActive ? "success" : "default"}
                   size="small"
-                  sx={{ color: "white", borderColor: "white" }}
-                  variant={selectedStandard.isActive ? "filled" : "outlined"}
+                  sx={{ fontWeight: 500 }}
                 />
               </Box>
             </DialogTitle>
 
             <DialogContent
+              dividers
               sx={{
                 p: { xs: 2, sm: 3 },
-                display: "flex",
-                flexDirection: "column",
-                gap: 2,
+                overflowY: "auto",
+                flexGrow: 1,
               }}
             >
               <Box sx={{ py: 1 }}>
-                {/* Standard Details */}
-                <Box>
-                  <Typography variant="h6" color="primary" gutterBottom>
+                {/* Standard Details Card */}
+                <Paper
+                  elevation={0}
+                  sx={{
+                    p: 2.5,
+                    mb: 3,
+                    borderRadius: 2,
+                    backgroundColor: alpha(theme.palette.primary.light, 0.05),
+                    border: `1px solid ${alpha(
+                      theme.palette.primary.main,
+                      0.1
+                    )}`,
+                  }}
+                >
+                  <Typography
+                    variant="h6"
+                    gutterBottom
+                    sx={{
+                      fontSize: { xs: "1.1rem", sm: "1.25rem" },
+                      fontWeight: 600,
+                      color: theme.palette.primary.main,
+                      pb: 1,
+                      borderBottom: `1px solid ${alpha(
+                        theme.palette.primary.main,
+                        0.2
+                      )}`,
+                    }}
+                  >
                     Standard Details
                   </Typography>
-                  <Grid container spacing={{ xs: 2, sm: 2 }}>
+
+                  <Grid container spacing={3} sx={{ mt: 0.5 }}>
                     <Grid item xs={12} sm={6} md={4}>
-                      <Typography variant="subtitle2" color="text.secondary">
-                        Name
-                      </Typography>
-                      <Typography variant="body1">
-                        {selectedStandard.name || "N/A"}
-                      </Typography>
-                    </Grid>
-                    <Grid item xs={12} sm={6} md={4}>
-                      <Typography variant="subtitle2" color="text.secondary">
-                        Level
-                      </Typography>
-                      <Box sx={{ display: "flex", alignItems: "center" }}>
-                        <SchoolIcon
-                          fontSize="small"
-                          color="primary"
-                          sx={{ mr: 1 }}
-                        />
-                        <Typography variant="body1">
-                          Class {selectedStandard.level}
+                      <Box
+                        sx={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          pb: 1,
+                          borderBottom: `1px solid ${alpha(
+                            theme.palette.divider,
+                            0.3
+                          )}`,
+                        }}
+                      >
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          fontWeight={500}
+                        >
+                          Name:
+                        </Typography>
+                        <Typography variant="body2" fontWeight="medium">
+                          {selectedStandard.name || "N/A"}
                         </Typography>
                       </Box>
                     </Grid>
                     <Grid item xs={12} sm={6} md={4}>
-                      <Typography variant="subtitle2" color="text.secondary">
-                        Status
-                      </Typography>
-                      <Chip
-                        label={
-                          selectedStandard.isActive ? "Active" : "Inactive"
-                        }
-                        color={
-                          selectedStandard.isActive ? "success" : "default"
-                        }
-                        size="small"
-                      />
+                      <Box
+                        sx={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          pb: 1,
+                          borderBottom: `1px solid ${alpha(
+                            theme.palette.divider,
+                            0.3
+                          )}`,
+                        }}
+                      >
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          fontWeight={500}
+                        >
+                          Level:
+                        </Typography>
+                        <Box sx={{ display: "flex", alignItems: "center" }}>
+                          <SchoolIcon
+                            fontSize="small"
+                            color="primary"
+                            sx={{ mr: 0.5 }}
+                          />
+                          <Typography variant="body2" fontWeight="medium">
+                            Class {selectedStandard.level}
+                          </Typography>
+                        </Box>
+                      </Box>
+                    </Grid>
+                    <Grid item xs={12} sm={6} md={4}>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          pb: 1,
+                          borderBottom: `1px solid ${alpha(
+                            theme.palette.divider,
+                            0.3
+                          )}`,
+                        }}
+                      >
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          fontWeight={500}
+                        >
+                          Status:
+                        </Typography>
+                        <Chip
+                          label={
+                            selectedStandard.isActive ? "Active" : "Inactive"
+                          }
+                          color={
+                            selectedStandard.isActive ? "success" : "default"
+                          }
+                          size="small"
+                          sx={{ fontWeight: 500 }}
+                        />
+                      </Box>
                     </Grid>
                     <Grid item xs={12}>
-                      <Typography variant="subtitle2" color="text.secondary">
-                        Description
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        fontWeight={500}
+                        gutterBottom
+                      >
+                        Description:
                       </Typography>
                       <Paper
                         variant="outlined"
@@ -681,24 +1048,44 @@ const Standards = () => {
                           p: 2,
                           mt: 1,
                           backgroundColor: "background.default",
+                          borderRadius: 1,
                         }}
                       >
-                        <Typography variant="body2">
+                        <Typography variant="body2" sx={{ lineHeight: 1.6 }}>
                           {selectedStandard.description ||
                             "No description available"}
                         </Typography>
                       </Paper>
                     </Grid>
                   </Grid>
-                </Box>
+                </Paper>
 
-                <Divider sx={{ my: 3 }} />
-
-                {/* Subjects Section */}
-                <Box>
-                  <Typography variant="h6" color="primary" gutterBottom>
+                {/* Subjects Section Card */}
+                <Paper
+                  elevation={0}
+                  sx={{
+                    p: 2.5,
+                    borderRadius: 2,
+                    border: `1px solid ${alpha(theme.palette.divider, 0.15)}`,
+                  }}
+                >
+                  <Typography
+                    variant="h6"
+                    gutterBottom
+                    sx={{
+                      fontSize: { xs: "1.1rem", sm: "1.25rem" },
+                      fontWeight: 600,
+                      color: theme.palette.primary.main,
+                      pb: 1,
+                      borderBottom: `1px solid ${alpha(
+                        theme.palette.primary.main,
+                        0.2
+                      )}`,
+                    }}
+                  >
                     Associated Subjects
                   </Typography>
+
                   {selectedStandard.subjects &&
                   selectedStandard.subjects.length > 0 ? (
                     <>
@@ -708,6 +1095,7 @@ const Standards = () => {
                           flexWrap: "wrap",
                           gap: 1,
                           mb: 2,
+                          mt: 1.5,
                         }}
                       >
                         {getSubjectIdsFromStandard(selectedStandard).map(
@@ -722,23 +1110,43 @@ const Standards = () => {
                                 icon={<MenuBookIcon />}
                                 color="primary"
                                 variant="outlined"
-                                sx={{ mb: 0.5 }}
+                                sx={{ fontWeight: 500 }}
                               />
                             );
                           }
                         )}
                       </Box>
 
-                      <TableContainer component={Paper} variant="outlined">
+                      <TableContainer
+                        component={Paper}
+                        variant="outlined"
+                        sx={{
+                          borderRadius: 1,
+                          overflow: "hidden",
+                        }}
+                      >
                         <Table size="small">
                           <TableHead>
                             <TableRow
-                              sx={{ backgroundColor: theme.palette.grey[100] }}
+                              sx={{
+                                backgroundColor: alpha(
+                                  theme.palette.primary.main,
+                                  0.08
+                                ),
+                              }}
                             >
-                              <TableCell>Subject Name</TableCell>
-                              <TableCell>Duration</TableCell>
-                              <TableCell>Status</TableCell>
-                              <TableCell>Description</TableCell>
+                              <TableCell sx={{ fontWeight: 600 }}>
+                                Subject Name
+                              </TableCell>
+                              <TableCell sx={{ fontWeight: 600 }}>
+                                Duration
+                              </TableCell>
+                              <TableCell sx={{ fontWeight: 600 }}>
+                                Status
+                              </TableCell>
+                              <TableCell sx={{ fontWeight: 600 }}>
+                                Description
+                              </TableCell>
                             </TableRow>
                           </TableHead>
                           <TableBody>
@@ -748,7 +1156,18 @@ const Standards = () => {
                                 if (!subject) return null;
 
                                 return (
-                                  <TableRow key={subject._id} hover>
+                                  <TableRow
+                                    key={subject._id}
+                                    hover
+                                    sx={{
+                                      "&:nth-of-type(odd)": {
+                                        backgroundColor: alpha(
+                                          theme.palette.action.hover,
+                                          0.5
+                                        ),
+                                      },
+                                    }}
+                                  >
                                     <TableCell>
                                       <Box
                                         sx={{
@@ -763,7 +1182,7 @@ const Standards = () => {
                                         />
                                         <Typography
                                           variant="body2"
-                                          fontWeight="medium"
+                                          fontWeight={500}
                                         >
                                           {subject.name || "Unnamed Subject"}
                                         </Typography>
@@ -781,6 +1200,7 @@ const Standards = () => {
                                             ? "success"
                                             : "default"
                                         }
+                                        sx={{ fontWeight: 500 }}
                                       />
                                     </TableCell>
                                     <TableCell>
@@ -810,42 +1230,46 @@ const Standards = () => {
                       No subjects associated with this standard
                     </Alert>
                   )}
-                </Box>
+                </Paper>
               </Box>
             </DialogContent>
 
             <DialogActions
               sx={{
-                px: 3,
-                pb: 2,
-                pt: 2,
-                flexWrap: "wrap",
+                px: { xs: 2, sm: 3 },
+                py: 2,
+                position: isMobile ? "sticky" : "relative",
+                bottom: 0,
+                backgroundColor: "background.paper",
+                borderTop: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+                zIndex: 1,
+                mt: "auto",
+                flexShrink: 0,
                 gap: 1,
-                borderTop: 1,
-                borderColor: "divider",
               }}
             >
               <Button
                 onClick={() => handleCloseViewDialog()}
-                color="inherit"
-                variant="text"
+                variant="outlined"
+                sx={{ borderRadius: 1.5 }}
               >
                 Close
               </Button>
               <Button
                 color="primary"
-                variant="outlined"
+                variant="contained"
                 onClick={() => {
                   handleCloseViewDialog();
                   handleOpen(selectedStandard);
                 }}
                 startIcon={<EditIcon />}
+                sx={{ borderRadius: 1.5 }}
               >
                 Edit
               </Button>
               <Button
                 color="error"
-                variant="contained"
+                variant="outlined"
                 onClick={() => {
                   if (
                     window.confirm(
@@ -857,6 +1281,7 @@ const Standards = () => {
                   }
                 }}
                 startIcon={<DeleteIcon />}
+                sx={{ borderRadius: 1.5 }}
               >
                 Delete
               </Button>
@@ -865,7 +1290,7 @@ const Standards = () => {
         )}
       </Dialog>
 
-      {/* Create/Edit Dialog */}
+      {/* Enhanced Create/Edit Dialog */}
       <Dialog
         open={open}
         onClose={handleClose}
@@ -873,47 +1298,126 @@ const Standards = () => {
         maxWidth="sm"
         fullScreen={isMobile}
         keepMounted={false}
+        PaperProps={{
+          sx: {
+            borderRadius: isMobile ? 0 : 2,
+            overflow: "hidden",
+            height: isMobile ? "100%" : "auto",
+            display: "flex",
+            flexDirection: "column",
+            maxHeight: isMobile ? "100%" : "90vh",
+          },
+        }}
       >
-        <DialogTitle>
-          {editingStandard
-            ? `Edit Standard: ${editingStandard.name}`
-            : "Add New Standard"}
+        <DialogTitle
+          sx={{
+            p: 0,
+          }}
+        >
+          <Box
+            sx={{
+              backgroundColor: theme.palette.primary.main,
+              color: "white",
+              p: 2,
+              flexShrink: 0,
+            }}
+          >
+            <Typography
+              variant="h6"
+              fontWeight={600}
+              sx={{
+                fontSize: { xs: "1.1rem", sm: "1.25rem" },
+              }}
+            >
+              {editingStandard
+                ? `Edit Standard: ${editingStandard.name}`
+                : "Add New Standard"}
+            </Typography>
+          </Box>
         </DialogTitle>
-        <form onSubmit={formik.handleSubmit}>
-          <DialogContent dividers>
+
+        <form
+          onSubmit={formik.handleSubmit}
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            height: isMobile ? "100%" : "auto",
+            overflow: "hidden",
+            flexGrow: 1,
+          }}
+        >
+          <DialogContent
+            dividers
+            sx={{
+              p: { xs: 2, sm: 3 },
+              overflowY: "auto",
+              flexGrow: 1,
+              display: "flex",
+              flexDirection: "column",
+            }}
+          >
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="body2" color="text.secondary">
+                Fill in the details below to{" "}
+                {editingStandard ? "update" : "create"} a standard. Fields
+                marked with * are required.
+              </Typography>
+            </Box>
+
             <Grid container spacing={2}>
+              <Grid item xs={12}>
+                <Typography
+                  variant="subtitle1"
+                  color="primary"
+                  fontWeight={600}
+                  gutterBottom
+                >
+                  Basic Information
+                </Typography>
+              </Grid>
+
               <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
-                  margin="dense"
                   name="name"
-                  label="Standard Name"
+                  label="Standard Name *"
                   value={formik.values.name}
                   onChange={formik.handleChange}
                   error={formik.touched.name && Boolean(formik.errors.name)}
                   helperText={formik.touched.name && formik.errors.name}
+                  InputProps={{
+                    sx: { borderRadius: 1 },
+                  }}
                 />
               </Grid>
+
               <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
-                  margin="dense"
                   name="level"
-                  label="Level (1-12)"
+                  label="Level (1-12) *"
                   type="number"
                   inputProps={{ min: 1, max: 12 }}
                   value={formik.values.level}
                   onChange={formik.handleChange}
                   error={formik.touched.level && Boolean(formik.errors.level)}
                   helperText={formik.touched.level && formik.errors.level}
+                  InputProps={{
+                    sx: { borderRadius: 1 },
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <SchoolIcon fontSize="small" color="primary" />
+                      </InputAdornment>
+                    ),
+                  }}
                 />
               </Grid>
+
               <Grid item xs={12}>
                 <TextField
                   fullWidth
-                  margin="dense"
                   name="description"
-                  label="Description"
+                  label="Description *"
                   multiline
                   rows={3}
                   value={formik.values.description}
@@ -925,10 +1429,25 @@ const Standards = () => {
                   helperText={
                     formik.touched.description && formik.errors.description
                   }
+                  InputProps={{
+                    sx: { borderRadius: 1 },
+                  }}
                 />
               </Grid>
+
+              <Grid item xs={12} sx={{ mt: 1 }}>
+                <Typography
+                  variant="subtitle1"
+                  color="primary"
+                  fontWeight={600}
+                  gutterBottom
+                >
+                  Associated Subjects
+                </Typography>
+              </Grid>
+
               <Grid item xs={12}>
-                <FormControl fullWidth margin="dense">
+                <FormControl fullWidth sx={{ mb: 1 }}>
                   <InputLabel id="subjects-label">Subjects</InputLabel>
                   <Select
                     labelId="subjects-label"
@@ -936,6 +1455,14 @@ const Standards = () => {
                     name="subjects"
                     value={formik.values.subjects}
                     onChange={formik.handleChange}
+                    sx={{ borderRadius: 1 }}
+                    startAdornment={
+                      formik.values.subjects.length > 0 ? (
+                        <InputAdornment position="start">
+                          <MenuBookIcon fontSize="small" color="primary" />
+                        </InputAdornment>
+                      ) : null
+                    }
                     renderValue={(selected) => (
                       <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
                         {selected.map((value) => {
@@ -945,6 +1472,8 @@ const Standards = () => {
                               key={value}
                               label={subject ? subject.name : value}
                               size="small"
+                              color="primary"
+                              sx={{ fontWeight: 500 }}
                             />
                           );
                         })}
@@ -965,35 +1494,97 @@ const Standards = () => {
                     ))}
                   </Select>
                 </FormControl>
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  fontSize="0.75rem"
+                >
+                  Select the subjects associated with this standard
+                </Typography>
               </Grid>
+
+              <Grid item xs={12} sx={{ mt: 1 }}>
+                <Typography
+                  variant="subtitle1"
+                  color="primary"
+                  fontWeight={600}
+                  gutterBottom
+                >
+                  Status
+                </Typography>
+              </Grid>
+
               <Grid item xs={12}>
-                <FormControlLabel
-                  control={
-                    <Switch
-                      name="isActive"
-                      checked={formik.values.isActive}
-                      onChange={formik.handleChange}
-                    />
-                  }
-                  label="Active"
-                />
+                <Paper
+                  variant="outlined"
+                  sx={{
+                    p: 2,
+                    borderRadius: 1,
+                    backgroundColor: alpha(theme.palette.primary.light, 0.03),
+                  }}
+                >
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        name="isActive"
+                        checked={formik.values.isActive}
+                        onChange={formik.handleChange}
+                        color="success"
+                      />
+                    }
+                    label={
+                      <Box sx={{ display: "flex", alignItems: "center" }}>
+                        <Typography sx={{ mr: 1 }}>
+                          {formik.values.isActive ? "Active" : "Inactive"}
+                        </Typography>
+                        <Chip
+                          label={formik.values.isActive ? "Active" : "Inactive"}
+                          size="small"
+                          color={formik.values.isActive ? "success" : "default"}
+                          sx={{ fontWeight: 500 }}
+                        />
+                      </Box>
+                    }
+                  />
+                </Paper>
               </Grid>
             </Grid>
           </DialogContent>
-          <DialogActions sx={{ px: { xs: 2, sm: 3 }, pb: { xs: 2, sm: 2 } }}>
-            <Button onClick={handleClose}>Cancel</Button>
+
+          <DialogActions
+            sx={{
+              px: { xs: 2, sm: 3 },
+              py: 2,
+              position: isMobile ? "sticky" : "relative",
+              bottom: 0,
+              backgroundColor: "background.paper",
+              borderTop: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+              zIndex: 1,
+              mt: "auto",
+              flexShrink: 0,
+              gap: 1,
+            }}
+          >
+            <Button
+              onClick={handleClose}
+              variant="outlined"
+              sx={{ borderRadius: 1.5 }}
+            >
+              Cancel
+            </Button>
             <Button
               type="submit"
               variant="contained"
               color="primary"
               disabled={formik.isSubmitting}
+              sx={{ borderRadius: 1.5, px: 3 }}
             >
               {formik.isSubmitting ? (
-                <CircularProgress size={24} />
+                <CircularProgress size={24} color="inherit" />
               ) : editingStandard ? (
-                "Update"
+                "Update Standard"
               ) : (
-                "Create"
+                "Create Standard"
               )}
             </Button>
           </DialogActions>
