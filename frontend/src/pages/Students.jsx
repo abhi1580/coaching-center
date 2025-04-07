@@ -223,19 +223,6 @@ const Students = () => {
     loadAllData();
   }, [loadAllData]);
 
-  // Add debug logs to monitor state changes
-  useEffect(() => {
-    console.log("Standards updated:", standards);
-  }, [standards]);
-
-  useEffect(() => {
-    console.log("Subjects updated:", subjects);
-  }, [subjects]);
-
-  useEffect(() => {
-    console.log("Batches updated:", batches);
-  }, [batches]);
-
   useEffect(() => {
     if (success) {
       setOpen(false);
@@ -267,7 +254,7 @@ const Students = () => {
     },
     validationSchema: validationSchema,
     onSubmit: (values) => {
-      console.log("Submitting student with raw values:", values);
+      // console.log("Submitting student with raw values:", values);
 
       // Create a copy with properly formatted dates
       let formattedData = { ...values };
@@ -316,9 +303,9 @@ const Students = () => {
         return;
       }
 
-      console.log("Formatted data for submission:", formattedData);
-      console.log("Formatted dateOfBirth:", formattedData.dateOfBirth);
-      console.log("Formatted joiningDate:", formattedData.joiningDate);
+      // console.log("Formatted data for submission:", formattedData);
+      // console.log("Formatted dateOfBirth:", formattedData.dateOfBirth);
+      // console.log("Formatted joiningDate:", formattedData.joiningDate);
 
       if (editingStudent) {
         dispatch(
@@ -337,14 +324,14 @@ const Students = () => {
     formik.setFieldValue("subjects", []);
     formik.setFieldValue("batches", []);
 
-    console.log("Selected standard:", standardId);
+    // console.log("Selected standard:", standardId);
     setFormLoading(true);
 
     // Always fetch subjects from API for selected standard to ensure fresh data
     subjectService
       .getByStandard(standardId)
       .then((response) => {
-        console.log("Fetched subjects from API:", response.data);
+        // console.log("Fetched subjects from API:", response.data);
         // Handle different response formats
         const subjectsData = Array.isArray(response.data)
           ? response.data
@@ -363,7 +350,7 @@ const Students = () => {
         });
 
         if (standardSubjects.length > 0) {
-          console.log("Using fallback subjects from state:", standardSubjects);
+          // console.log("Using fallback subjects from state:", standardSubjects);
           setFilteredSubjects(standardSubjects);
         }
       })
@@ -380,8 +367,8 @@ const Students = () => {
     const selectedSubjectIds = e.target.value;
     const previousSubjects = formik.values.subjects;
 
-    console.log("Previous subjects:", previousSubjects);
-    console.log("New selected subjects:", selectedSubjectIds);
+    // console.log("Previous subjects:", previousSubjects);
+    // console.log("New selected subjects:", selectedSubjectIds);
 
     // Find subjects that were deselected
     const deselectedSubjects = previousSubjects.filter(
@@ -392,7 +379,7 @@ const Students = () => {
     formik.setFieldValue("subjects", selectedSubjectIds);
 
     if (deselectedSubjects.length > 0) {
-      console.log("Subjects deselected:", deselectedSubjects);
+      // console.log("Subjects deselected:", deselectedSubjects);
 
       // Remove batches associated with deselected subjects
       const currentBatches = formik.values.batches;
@@ -408,7 +395,7 @@ const Students = () => {
             populateEnrolledStudents: true,
           })
           .then((response) => {
-            console.log("Fetched updated batches:", response.data);
+            // console.log("Fetched updated batches:", response.data);
 
             // Get valid batch IDs
             const validBatchIds = Array.isArray(response.data)
@@ -420,7 +407,7 @@ const Students = () => {
               validBatchIds.includes(batchId)
             );
 
-            console.log("Updated batch selection:", validBatches);
+            // console.log("Updated batch selection:", validBatches);
             formik.setFieldValue("batches", validBatches);
             setFilteredBatches(
               Array.isArray(response.data)
@@ -449,7 +436,7 @@ const Students = () => {
           populateEnrolledStudents: true,
         })
         .then((response) => {
-          console.log("Fetched batches from API:", response.data);
+          // console.log("Fetched batches from API:", response.data);
           // Handle different response formats
           const batchesData = Array.isArray(response.data)
             ? response.data
@@ -465,7 +452,7 @@ const Students = () => {
             batchesBySubject[subjectId].push(batch);
           });
 
-          console.log("Grouped batches by subject:", batchesBySubject);
+          // console.log("Grouped batches by subject:", batchesBySubject);
           setFilteredBatches(batchesData);
         })
         .catch((error) => {
@@ -485,7 +472,7 @@ const Students = () => {
   // Handle batch selection with proper array handling
   const handleBatchChange = (event) => {
     const selectedBatches = event.target.value;
-    console.log("Batch selection changed:", selectedBatches);
+    // console.log("Batch selection changed:", selectedBatches);
 
     // Make sure it's always an array even if only one item is selected
     const batchesArray = Array.isArray(selectedBatches)
@@ -495,19 +482,19 @@ const Students = () => {
     // Filter out any undefined or null values that might cause issues
     const validBatches = batchesArray.filter((batch) => batch);
 
-    console.log("Setting batches to:", validBatches);
+    // console.log("Setting batches to:", validBatches);
     formik.setFieldValue("batches", validBatches);
 
     // Debug to verify selection state
     setTimeout(() => {
-      console.log("Updated batches in formik:", formik.values.batches);
+      // console.log("Updated batches in formik:", formik.values.batches);
     }, 0);
   };
 
   const handleOpen = (student = null) => {
     if (student) {
       setEditingStudent(student);
-      console.log("Opening student for edit:", student);
+      // console.log("Opening student for edit:", student);
 
       // Get student standard ID
       const studentStandardId = student.standard?._id || student.standard;
@@ -518,8 +505,8 @@ const Students = () => {
           typeof subject === "object" ? subject._id : subject
         ) || [];
 
-      console.log("Student standard ID:", studentStandardId);
-      console.log("Student subject IDs:", studentSubjectIds);
+      // console.log("Student standard ID:", studentStandardId);
+      // console.log("Student subject IDs:", studentSubjectIds);
 
       // Get student batch IDs
       const studentBatchIds =
@@ -527,7 +514,7 @@ const Students = () => {
           typeof batch === "object" ? batch._id : batch
         ) || [];
 
-      console.log("Student batch IDs:", studentBatchIds);
+      // console.log("Student batch IDs:", studentBatchIds);
 
       // Format dates correctly
       let dateOfBirth = "";
@@ -568,8 +555,8 @@ const Students = () => {
         }
       }
 
-      console.log("Formatted DOB:", dateOfBirth);
-      console.log("Formatted Joining Date:", joiningDate);
+      // console.log("Formatted DOB:", dateOfBirth);
+      // console.log("Formatted Joining Date:", joiningDate);
 
       // Set form values immediately so the form is populated
       formik.setValues({
@@ -597,7 +584,7 @@ const Students = () => {
       subjectService
         .getByStandard(studentStandardId)
         .then((response) => {
-          console.log("Fetched subjects from API for editing:", response.data);
+          // console.log("Fetched subjects from API for editing:", response.data);
           // Handle different response formats
           const subjectsData = Array.isArray(response.data)
             ? response.data
@@ -613,7 +600,7 @@ const Students = () => {
             return subjectStandardId === studentStandardId;
           });
 
-          console.log("Fallback subjects for editing:", availableSubjects);
+          // console.log("Fallback subjects for editing:", availableSubjects);
           setFilteredSubjects(availableSubjects);
         })
         .finally(() => {
@@ -624,7 +611,7 @@ const Students = () => {
               populateEnrolledStudents: true,
             })
             .then((response) => {
-              console.log("Fetched batches for student:", response.data);
+              // console.log("Fetched batches for student:", response.data);
               // Handle different response formats
               const batchesData = Array.isArray(response.data)
                 ? response.data
@@ -633,7 +620,7 @@ const Students = () => {
               setFilteredBatches(batchesData);
 
               // Ensure all valid batches are visible
-              console.log("Available batches for these subjects:", batchesData);
+              // console.log("Available batches for these subjects:", batchesData);
             })
             .catch((error) => {
               console.error("Error fetching batches for student:", error);
@@ -648,10 +635,10 @@ const Students = () => {
                 );
               });
 
-              console.log(
-                "Fallback batches for this student:",
-                availableBatches
-              );
+              // console.log(
+              //   "Fallback batches for this student:",
+              //   availableBatches
+              // );
               setFilteredBatches(availableBatches);
             })
             .finally(() => {
@@ -1502,10 +1489,10 @@ const Students = () => {
                                       currentBatches.splice(currentIndex, 1);
                                     }
 
-                                    console.log(
-                                      `Toggling batch ${batch.name}:`,
-                                      currentBatches
-                                    );
+                                    // console.log(
+                                    //   `Toggling batch ${batch.name}:`,
+                                    //   currentBatches
+                                    // );
                                     formik.setFieldValue(
                                       "batches",
                                       currentBatches
@@ -1857,7 +1844,7 @@ const Students = () => {
                   value={formik.values.dateOfBirth || ""}
                   onChange={(e) => {
                     const value = e.target.value;
-                    console.log(`Date of birth changed to: ${value}`);
+                    // console.log(`Date of birth changed to: ${value}`);
                     if (value) {
                       try {
                         // Validate date format and reasonable range
@@ -1965,7 +1952,7 @@ const Students = () => {
                   value={formik.values.joiningDate || ""}
                   onChange={(e) => {
                     const value = e.target.value;
-                    console.log(`Joining date changed to: ${value}`);
+                    // console.log(`Joining date changed to: ${value}`);
                     if (value) {
                       try {
                         // Validate date format

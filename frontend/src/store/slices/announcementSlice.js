@@ -6,16 +6,16 @@ export const fetchAnnouncements = createAsyncThunk(
   "announcements/fetchAnnouncements",
   async (_, { rejectWithValue }) => {
     try {
-      console.log("Fetching announcements...");
+      // console.log("Fetching announcements...");
       const response = await api.get("/announcements");
-      console.log("Raw response:", response);
+      // console.log("Raw response:", response);
 
       // If the API returned no data or empty data, provide a fallback structure
       if (
         !response.data ||
         (response.data && Object.keys(response.data).length === 0)
       ) {
-        console.log("No data returned from API, using fallback");
+        // console.log("No data returned from API, using fallback");
         return {
           data: [],
           counts: {
@@ -166,8 +166,8 @@ const announcementSlice = createSlice({
         }
 
         // Log for debugging
-        console.log("Received announcements data:", action.payload);
-        console.log("Processed data:", state.data);
+        // console.log("Received announcements data:", action.payload);
+        // console.log("Processed data:", state.data);
       })
       .addCase(fetchAnnouncements.rejected, (state, action) => {
         state.loading = false;
@@ -273,7 +273,14 @@ const announcementSlice = createSlice({
 export const { resetStatus } = announcementSlice.actions;
 export default announcementSlice.reducer;
 
-const validAnnouncementTypes = ["General", "Event", "Holiday", "Exam", "Emergency", "Other"];
+const validAnnouncementTypes = [
+  "General",
+  "Event",
+  "Holiday",
+  "Exam",
+  "Emergency",
+  "Other",
+];
 
 export const isValidAnnouncementType = (type) => {
   return validAnnouncementTypes.includes(type);

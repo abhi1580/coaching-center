@@ -99,11 +99,11 @@ const Announcements = () => {
     dispatch(fetchAnnouncements());
   }, [dispatch]);
 
-  useEffect(() => {
-    console.log("Current announcements state:", announcements);
-    console.log("Loading state:", loading);
-    console.log("Error state:", error);
-  }, [announcements, loading, error]);
+  // useEffect(() => {
+  //   console.log("Current announcements state:", announcements);
+  //   console.log("Loading state:", loading);
+  //   console.log("Error state:", error);
+  // }, [announcements, loading, error]);
 
   useEffect(() => {
     if (success) {
@@ -142,7 +142,7 @@ const Announcements = () => {
           createdBy: "65f1a2b3c4d5e6f7g8h9i0j1",
         };
 
-        console.log("Submitting announcement data:", announcementData);
+        // console.log("Submitting announcement data:", announcementData);
 
         if (editingAnnouncement) {
           await dispatch(

@@ -82,7 +82,7 @@ function Dashboard() {
       const announcementsResponse = await announcementService.getAll();
 
       // Log the raw API response
-      console.log("Dashboard API response:", response.data);
+      // console.log("Dashboard API response:", response.data);
 
       // Handle data depending on API response structure
       const announcementsData = Array.isArray(announcementsResponse.data)
@@ -150,7 +150,7 @@ function Dashboard() {
   };
 
   // Debug logging for stats
-  console.log("Dashboard stats:", stats);
+  // console.log("Dashboard stats:", stats);
 
   // Show login prompt if not logged in
   if (error && error.includes("not logged in")) {

@@ -136,7 +136,7 @@ const Batches = () => {
             populateEnrolledStudents: true,
           })
         ).unwrap();
-        console.log("Fetched batches:", result);
+        // console.log("Fetched batches:", result);
       } catch (err) {
         console.error("Error fetching batches:", err);
       }
@@ -150,7 +150,7 @@ const Batches = () => {
 
   // Add debug logging for batches
   useEffect(() => {
-    console.log("Current batches:", batches);
+    // console.log("Current batches:", batches);
   }, [batches]);
 
   useEffect(() => {
@@ -229,14 +229,14 @@ const Batches = () => {
 
   // Add debug logging for related data
   useEffect(() => {
-    console.log("Standards:", standards);
-    console.log("Subjects:", subjects);
-    console.log("Teachers:", teachers);
+    // console.log("Standards:", standards);
+    // console.log("Subjects:", subjects);
+    // console.log("Teachers:", teachers);
   }, [standards, subjects, teachers]);
 
   const handleOpen = (batch = null) => {
     if (batch) {
-      console.log("Opening edit form with batch:", batch);
+      // console.log("Opening edit form with batch:", batch);
       setSelectedBatch(batch);
 
       // Filter subjects based on the batch's standard
@@ -284,23 +284,23 @@ const Batches = () => {
         teacher: batch.teacher?._id || batch.teacher || "",
       });
 
-      console.log("Set form data for editing:", {
-        name: batch.name,
-        standard: batch.standard?._id || batch.standard,
-        subject: batch.subject?._id || batch.subject,
-        startDate,
-        endDate,
-        schedule: {
-          days: batch.schedule?.days,
-          startTime: batch.schedule?.startTime,
-          endTime: batch.schedule?.endTime,
-        },
-        capacity: batch.capacity,
-        fees: batch.fees,
-        status: batch.status,
-        description: batch.description,
-        teacher: batch.teacher?._id || batch.teacher,
-      });
+      // console.log("Set form data for editing:", {
+      //   name: batch.name,
+      //   standard: batch.standard?._id || batch.standard,
+      //   subject: batch.subject?._id || batch.subject,
+      //   startDate,
+      //   endDate,
+      //   schedule: {
+      //     days: batch.schedule?.days,
+      //     startTime: batch.schedule?.startTime,
+      //     endTime: batch.schedule?.endTime,
+      //   },
+      //   capacity: batch.capacity,
+      //   fees: batch.fees,
+      //   status: batch.status,
+      //   description: batch.description,
+      //   teacher: batch.teacher?._id || batch.teacher,
+      // });
     } else {
       // Reset form data for creating a new batch
       setSelectedBatch(null);
@@ -710,7 +710,7 @@ const Batches = () => {
                 <MenuItem value="">All Teachers</MenuItem>
                 {teachers.map((teacher) => (
                   <MenuItem key={teacher._id} value={teacher._id}>
-                    {teacher.firstName} {teacher.lastName}
+                    {teacher.name}
                   </MenuItem>
                 ))}
               </TextField>

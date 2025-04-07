@@ -97,7 +97,7 @@ const Standards = () => {
     },
     validationSchema: validationSchema,
     onSubmit: (values) => {
-      console.log("Form submitted with values:", values);
+      // console.log("Form submitted with values:", values);
 
       // Convert level to number if it's a string
       const formattedValues = {
@@ -105,15 +105,15 @@ const Standards = () => {
         level: Number(values.level),
       };
 
-      console.log("Formatted values for submission:", formattedValues);
+      // console.log("Formatted values for submission:", formattedValues);
 
       if (editingStandard) {
-        console.log("Updating standard with ID:", editingStandard._id);
+        // console.log("Updating standard with ID:", editingStandard._id);
         dispatch(
           updateStandard({ id: editingStandard._id, data: formattedValues })
         );
       } else {
-        console.log("Creating new standard");
+        // console.log("Creating new standard");
         dispatch(createStandard(formattedValues));
       }
     },
@@ -135,32 +135,32 @@ const Standards = () => {
     }
   }, [success, dispatch]);
 
-  useEffect(() => {
-    console.log("Dialog open state:", open);
-  }, [open]);
+  // useEffect(() => {
+  //   console.log("Dialog open state:", open);
+  // }, [open]);
 
-  useEffect(() => {
-    console.log("Current editing standard:", editingStandard);
-  }, [editingStandard]);
+  // useEffect(() => {
+  //   console.log("Current editing standard:", editingStandard);
+  // }, [editingStandard]);
 
-  useEffect(() => {
-    if (formikRef.current && open) {
-      console.log("Dialog state:", {
-        open,
-        editingStandard: editingStandard ? editingStandard._id : null,
-        formik: {
-          values: formikRef.current.values,
-          isSubmitting: formikRef.current.isSubmitting,
-          errors: formikRef.current.errors,
-        },
-      });
-    }
-  }, [open, editingStandard, formik.values, formik.isSubmitting]);
+  // useEffect(() => {
+  //   if (formikRef.current && open) {
+  //     console.log("Dialog state:", {
+  //       open,
+  //       editingStandard: editingStandard ? editingStandard._id : null,
+  //       formik: {
+  //         values: formikRef.current.values,
+  //         isSubmitting: formikRef.current.isSubmitting,
+  //         errors: formikRef.current.errors,
+  //       },
+  //     });
+  //   }
+  // }, [open, editingStandard, formik.values, formik.isSubmitting]);
 
-  useEffect(() => {
-    console.log("Standards data:", standards);
-    console.log("Subjects data:", subjects);
-  }, [standards, subjects]);
+  // useEffect(() => {
+  //   console.log("Standards data:", standards);
+  //   console.log("Subjects data:", subjects);
+  // }, [standards, subjects]);
 
   // Safe accessor for standards data
   const getStandardsArray = () => {
@@ -219,7 +219,7 @@ const Standards = () => {
   };
 
   const handleOpen = useCallback((standard = null) => {
-    console.log("handleOpen called with standard:", standard);
+    // console.log("handleOpen called with standard:", standard);
 
     if (standard) {
       setEditingStandard(standard);
@@ -236,7 +236,7 @@ const Standards = () => {
         subjects: subjectIds,
       };
 
-      console.log("Setting form values:", formValues);
+      // console.log("Setting form values:", formValues);
       formikRef.current.setValues(formValues);
     } else {
       setEditingStandard(null);
@@ -246,12 +246,12 @@ const Standards = () => {
     // Ensure dialog opens with a slight delay to allow state to update
     setTimeout(() => {
       setOpen(true);
-      console.log("Dialog should be open now");
+      // console.log("Dialog should be open now");
     }, 50);
   }, []);
 
   const handleClose = () => {
-    console.log("Closing dialog");
+    // console.log("Closing dialog");
     setOpen(false);
 
     // Clear form and editing state after a slight delay

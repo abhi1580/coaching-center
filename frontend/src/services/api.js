@@ -34,13 +34,13 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => {
     // Log successful responses for debugging
-    console.log(
-      `API Response [${response.config.method.toUpperCase()} ${
-        response.config.url
-      }]:`,
-      response.status,
-      response.data
-    );
+    // console.log(
+    //   `API Response [${response.config.method.toUpperCase()} ${
+    //     response.config.url
+    //   }]:`,
+    //   response.status,
+    //   response.data
+    // );
     return response;
   },
   async (error) => {
@@ -152,7 +152,7 @@ export const batchService = {
       queryParams += `${queryParams ? "&" : ""}populate=enrolledStudents`;
     }
 
-    console.log(`Calling batch API with query: ${queryParams}`);
+    // console.log(`Calling batch API with query: ${queryParams}`);
     return api.get(`/batches/by-subject?${queryParams}`);
   },
   create: (data) => api.post("/batches", data),
@@ -181,7 +181,7 @@ export const paymentService = {
 // Announcement services
 export const announcementService = {
   getAll: () => {
-    console.log("Fetching all announcements from:", `${API_URL}/announcements`);
+    // console.log("Fetching all announcements from:", `${API_URL}/announcements`);
     return api.get("/announcements").catch((error) => {
       console.error("Error fetching announcements:", error);
       // Return a default structure to prevent UI errors
