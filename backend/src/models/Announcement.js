@@ -26,30 +26,30 @@ const announcementSchema = new mongoose.Schema(
       required: [true, "Target audience is required"],
       enum: ["All", "Students", "Teachers", "Parents"],
     },
-    startTime: {
+    startDate: {
       type: Date,
-      required: [true, "Start time is required"],
+      required: [true, "Start date is required"],
       validate: {
         validator: function (value) {
           return value instanceof Date && !isNaN(value);
         },
-        message: "Invalid start time",
+        message: "Invalid start date",
       },
     },
-    endTime: {
+    endDate: {
       type: Date,
-      required: [true, "End time is required"],
+      required: [true, "End date is required"],
       validate: {
         validator: function (value) {
           return value instanceof Date && !isNaN(value);
         },
-        message: "Invalid end time",
+        message: "Invalid end date",
       },
     },
     status: {
       type: String,
-      enum: ["Scheduled", "Active", "Expired"],
-      default: "Scheduled",
+      enum: ["scheduled", "active", "expired"],
+      default: "scheduled",
     },
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
@@ -62,8 +62,8 @@ const announcementSchema = new mongoose.Schema(
 
 // Pre-save middleware to validate dates
 announcementSchema.pre("save", function (next) {
-  if (this.startTime >= this.endTime) {
-    next(new Error("End time must be after start time"));
+  if (this.endDate < this.startDate) {
+    next(new Error("End date must be after start date"));
   }
   next();
 });
@@ -77,29 +77,29 @@ announcementSchema.statics.updateAnnouncementStatuses = async function () {
     // Update expired announcements
     await AnnouncementModel.updateMany(
       {
-        endTime: { $lt: now },
-        status: { $ne: "Expired" },
+        endDate: { $lt: now },
+        status: { $ne: "expired" },
       },
-      { status: "Expired" }
+      { status: "expired" }
     );
 
     // Update active announcements
     await AnnouncementModel.updateMany(
       {
-        startTime: { $lte: now },
-        endTime: { $gt: now },
-        status: { $ne: "Active" },
+        startDate: { $lte: now },
+        endDate: { $gte: now },
+        status: { $ne: "active" },
       },
-      { status: "Active" }
+      { status: "active" }
     );
 
     // Update scheduled announcements
     await AnnouncementModel.updateMany(
       {
-        startTime: { $gt: now },
-        status: { $ne: "Scheduled" },
+        startDate: { $gt: now },
+        status: { $ne: "scheduled" },
       },
-      { status: "Scheduled" }
+      { status: "scheduled" }
     );
 
     return { success: true };
@@ -118,6 +118,27 @@ announcementSchema.post("save", function () {
     console.error("Error updating announcement statuses after save:", err);
   });
 });
+
+// Method to format date in DD/MM/YYYY format
+announcementSchema.methods.formatDate = function (date) {
+  if (!date) return null;
+  const day = date.getDate().toString().padStart(2, "0");
+  const month = (date.getMonth() + 1).toString().padStart(2, "0");
+  const year = date.getFullYear();
+  return `${day}/${month}/${year}`;
+};
+
+// Virtual getters for formatted dates
+announcementSchema.virtual("formattedStartDate").get(function () {
+  return this.formatDate(this.startDate);
+});
+
+announcementSchema.virtual("formattedEndDate").get(function () {
+  return this.formatDate(this.endDate);
+});
+
+// Ensure virtuals are included in toJSON output
+announcementSchema.set("toJSON", { virtuals: true });
 
 const Announcement = mongoose.model("Announcement", announcementSchema);
 

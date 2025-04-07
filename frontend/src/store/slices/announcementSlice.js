@@ -3,44 +3,13 @@ import { api } from "../../services/api";
 
 // Async thunks
 export const fetchAnnouncements = createAsyncThunk(
-  "announcements/fetchAnnouncements",
+  "announcements/fetchAll",
   async (_, { rejectWithValue }) => {
     try {
-      // console.log("Fetching announcements...");
       const response = await api.get("/announcements");
-      // console.log("Raw response:", response);
-
-      // If the API returned no data or empty data, provide a fallback structure
-      if (
-        !response.data ||
-        (response.data && Object.keys(response.data).length === 0)
-      ) {
-        // console.log("No data returned from API, using fallback");
-        return {
-          data: [],
-          counts: {
-            total: 0,
-            active: 0,
-            scheduled: 0,
-            expired: 0,
-          },
-        };
-      }
-
       return response.data;
     } catch (error) {
-      console.error("Error in fetchAnnouncements:", error);
-
-      // Provide a more detailed error message
-      const errorMessage =
-        error.response?.data?.message ||
-        error.message ||
-        "Failed to fetch announcements";
-
-      return rejectWithValue({
-        message: errorMessage,
-        status: error.response?.status || 500,
-      });
+      return rejectWithValue(error.response.data);
     }
   }
 );
@@ -60,43 +29,80 @@ export const fetchAnnouncement = createAsyncThunk(
 );
 
 export const createAnnouncement = createAsyncThunk(
-  "announcements/createAnnouncement",
-  async (announcementData, { rejectWithValue }) => {
+  "announcements/create",
+  async (announcementData) => {
     try {
-      const response = await api.post("/announcements", announcementData);
+      // Format date as YYYY-MM-DD string for backend
+      const formatDateForBackend = (dateString) => {
+        if (!dateString) return null;
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) return null;
+        return dateString; // Return original ISO date string (YYYY-MM-DD)
+      };
+
+      const formattedData = {
+        ...announcementData,
+        startDate: formatDateForBackend(announcementData.startDate),
+        endDate: formatDateForBackend(announcementData.endDate),
+        startTime: "00:00",
+        endTime: "23:59",
+        createdBy: announcementData.createdBy || "65f1a1a1a1a1a1a1a1a1a1a1", // Default admin user ID
+      };
+
+      if (!formattedData.startDate || !formattedData.endDate) {
+        throw new Error("Start date and end date are required");
+      }
+
+      const response = await api.post("/announcements", formattedData);
       return response.data;
     } catch (error) {
-      return rejectWithValue(
-        error.response?.data || { message: error.message }
-      );
+      console.error("Error in createAnnouncement thunk:", error);
+      throw error;
     }
   }
 );
 
 export const updateAnnouncement = createAsyncThunk(
-  "announcements/updateAnnouncement",
-  async ({ id, data }, { rejectWithValue }) => {
+  "announcements/update",
+  async ({ id, data }) => {
     try {
-      const response = await api.put(`/announcements/${id}`, data);
+      // Format date as YYYY-MM-DD string for backend
+      const formatDateForBackend = (dateString) => {
+        if (!dateString) return null;
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) return null;
+        return dateString; // Return original ISO date string (YYYY-MM-DD)
+      };
+
+      const formattedData = {
+        ...data,
+        startDate: formatDateForBackend(data.startDate),
+        endDate: formatDateForBackend(data.endDate),
+        startTime: "00:00",
+        endTime: "23:59",
+      };
+
+      if (!formattedData.startDate || !formattedData.endDate) {
+        throw new Error("Start date and end date are required");
+      }
+
+      const response = await api.put(`/announcements/${id}`, formattedData);
       return response.data;
     } catch (error) {
-      return rejectWithValue(
-        error.response?.data || { message: error.message }
-      );
+      console.error("Error in updateAnnouncement thunk:", error);
+      throw error;
     }
   }
 );
 
 export const deleteAnnouncement = createAsyncThunk(
-  "announcements/deleteAnnouncement",
+  "announcements/delete",
   async (id, { rejectWithValue }) => {
     try {
-      await api.delete(`/announcements/${id}`);
-      return id;
+      const response = await api.delete(`/announcements/${id}`);
+      return response.data;
     } catch (error) {
-      return rejectWithValue(
-        error.response?.data || { message: error.message }
-      );
+      return rejectWithValue(error.response.data);
     }
   }
 );
@@ -119,9 +125,10 @@ const announcementSlice = createSlice({
   name: "announcements",
   initialState,
   reducers: {
-    resetStatus: (state) => {
-      state.loading = false;
+    clearError: (state) => {
       state.error = null;
+    },
+    clearSuccess: (state) => {
       state.success = false;
     },
   },
@@ -134,40 +141,23 @@ const announcementSlice = createSlice({
       })
       .addCase(fetchAnnouncements.fulfilled, (state, action) => {
         state.loading = false;
+        // Ensure we're working with an array
+        const announcements = Array.isArray(action.payload)
+          ? action.payload
+          : Array.isArray(action.payload.data)
+          ? action.payload.data
+          : [];
 
-        // Handle different response formats
-        if (action.payload && action.payload.data) {
-          // API returns { data: [...], counts: {...} }
-          state.data = action.payload.data;
-          state.counts = action.payload.counts || {
-            total: action.payload.data.length,
-            active: 0,
-            scheduled: 0,
-            expired: 0,
-          };
-        } else if (Array.isArray(action.payload)) {
-          // API returns array directly
-          state.data = action.payload;
-          state.counts = {
-            total: action.payload.length,
-            active: 0,
-            scheduled: 0,
-            expired: 0,
-          };
-        } else {
-          // Fallback
-          state.data = [];
-          state.counts = {
-            total: 0,
-            active: 0,
-            scheduled: 0,
-            expired: 0,
-          };
-        }
+        state.data = announcements;
 
-        // Log for debugging
-        // console.log("Received announcements data:", action.payload);
-        // console.log("Processed data:", state.data);
+        // Calculate counts based on status
+        state.counts = {
+          total: announcements.length,
+          active: announcements.filter((a) => a.status === "active").length,
+          scheduled: announcements.filter((a) => a.status === "scheduled")
+            .length,
+          expired: announcements.filter((a) => a.status === "expired").length,
+        };
       })
       .addCase(fetchAnnouncements.rejected, (state, action) => {
         state.loading = false;
@@ -195,15 +185,16 @@ const announcementSlice = createSlice({
       .addCase(createAnnouncement.fulfilled, (state, action) => {
         state.loading = false;
         state.success = true;
-        state.data.unshift(action.payload.data);
+        const newAnnouncement = action.payload.data || action.payload;
+        state.data = [newAnnouncement, ...state.data];
         state.counts.total += 1;
-        if (action.payload.data.status === "Active") {
-          state.counts.active += 1;
-        } else if (action.payload.data.status === "Scheduled") {
+
+        // Update status count
+        if (newAnnouncement.status === "active") state.counts.active += 1;
+        else if (newAnnouncement.status === "scheduled")
           state.counts.scheduled += 1;
-        } else if (action.payload.data.status === "Expired") {
+        else if (newAnnouncement.status === "expired")
           state.counts.expired += 1;
-        }
       })
       .addCase(createAnnouncement.rejected, (state, action) => {
         state.loading = false;
@@ -218,25 +209,27 @@ const announcementSlice = createSlice({
       .addCase(updateAnnouncement.fulfilled, (state, action) => {
         state.loading = false;
         state.success = true;
+        const updatedAnnouncement = action.payload.data || action.payload;
         const index = state.data.findIndex(
-          (a) => a._id === action.payload.data._id
+          (a) => a._id === updatedAnnouncement._id
         );
+
         if (index !== -1) {
           const oldStatus = state.data[index].status;
-          const newStatus = action.payload.data.status;
+          const newStatus = updatedAnnouncement.status;
 
           // Update counts based on status change
           if (oldStatus !== newStatus) {
-            if (oldStatus === "Active") state.counts.active -= 1;
-            else if (oldStatus === "Scheduled") state.counts.scheduled -= 1;
-            else if (oldStatus === "Expired") state.counts.expired -= 1;
+            if (oldStatus === "active") state.counts.active -= 1;
+            else if (oldStatus === "scheduled") state.counts.scheduled -= 1;
+            else if (oldStatus === "expired") state.counts.expired -= 1;
 
-            if (newStatus === "Active") state.counts.active += 1;
-            else if (newStatus === "Scheduled") state.counts.scheduled += 1;
-            else if (newStatus === "Expired") state.counts.expired += 1;
+            if (newStatus === "active") state.counts.active += 1;
+            else if (newStatus === "scheduled") state.counts.scheduled += 1;
+            else if (newStatus === "expired") state.counts.expired += 1;
           }
 
-          state.data[index] = action.payload.data;
+          state.data[index] = updatedAnnouncement;
         }
       })
       .addCase(updateAnnouncement.rejected, (state, action) => {
@@ -253,13 +246,17 @@ const announcementSlice = createSlice({
         state.loading = false;
         state.success = true;
         const index = state.data.findIndex((a) => a._id === action.payload);
+
         if (index !== -1) {
           const announcement = state.data[index];
           state.counts.total -= 1;
-          if (announcement.status === "Active") state.counts.active -= 1;
-          else if (announcement.status === "Scheduled")
+
+          // Update status count
+          if (announcement.status === "active") state.counts.active -= 1;
+          else if (announcement.status === "scheduled")
             state.counts.scheduled -= 1;
-          else if (announcement.status === "Expired") state.counts.expired -= 1;
+          else if (announcement.status === "expired") state.counts.expired -= 1;
+
           state.data.splice(index, 1);
         }
       })
@@ -270,8 +267,39 @@ const announcementSlice = createSlice({
   },
 });
 
-export const { resetStatus } = announcementSlice.actions;
+export const { clearError, clearSuccess } = announcementSlice.actions;
 export default announcementSlice.reducer;
+
+// Helper functions
+export const formatDate = (dateString) => {
+  if (!dateString) return "";
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return "";
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const year = date.getFullYear();
+  return `${day}/${month}/${year}`;
+};
+
+export const formatDateForInput = (dateString) => {
+  if (!dateString) return "";
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return "";
+  return date.toISOString().split("T")[0];
+};
+
+export const getStatusColor = (status) => {
+  switch (status) {
+    case "active":
+      return "success";
+    case "scheduled":
+      return "warning";
+    case "expired":
+      return "error";
+    default:
+      return "default";
+  }
+};
 
 const validAnnouncementTypes = [
   "General",

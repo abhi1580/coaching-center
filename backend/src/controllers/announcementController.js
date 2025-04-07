@@ -23,11 +23,22 @@ const validateAnnouncementFields = (fields) => {
 };
 
 const createDateTime = (date, time) => {
-  const dateTime = new Date(`${date}T${time}`);
-  if (isNaN(dateTime.getTime())) {
+  try {
+    // Handle Date objects directly
+    if (date instanceof Date) {
+      return date;
+    }
+
+    // Handle string dates - expected format YYYY-MM-DD
+    const dateTime = new Date(`${date}T${time}`);
+    if (isNaN(dateTime.getTime())) {
+      throw new Error("Invalid date or time format");
+    }
+    return dateTime;
+  } catch (error) {
+    console.error("Error creating date time:", error);
     throw new Error("Invalid date or time format");
   }
-  return dateTime;
 };
 
 const validateDateTime = (startDateTime, endDateTime) => {
@@ -111,11 +122,17 @@ export const createAnnouncement = async (req, res) => {
   try {
     validateAnnouncementFields(req.body);
 
-    const startDateTime = createDateTime(
-      req.body.startDate,
-      req.body.startTime
-    );
-    const endDateTime = createDateTime(req.body.endDate, req.body.endTime);
+    let startDateTime, endDateTime;
+
+    try {
+      startDateTime = createDateTime(req.body.startDate, req.body.startTime);
+      endDateTime = createDateTime(req.body.endDate, req.body.endTime);
+    } catch (error) {
+      return res.status(400).json({
+        success: false,
+        message: error.message,
+      });
+    }
 
     validateDateTime(startDateTime, endDateTime);
     validatePastDate(startDateTime);
@@ -126,8 +143,8 @@ export const createAnnouncement = async (req, res) => {
       type: req.body.type,
       priority: req.body.priority,
       targetAudience: req.body.targetAudience,
-      startTime: startDateTime,
-      endTime: endDateTime,
+      startDate: startDateTime,
+      endDate: endDateTime,
       createdBy: req.user._id,
     });
 
@@ -150,11 +167,17 @@ export const updateAnnouncement = async (req, res) => {
 
     validateAnnouncementFields(req.body);
 
-    const startDateTime = createDateTime(
-      req.body.startDate,
-      req.body.startTime
-    );
-    const endDateTime = createDateTime(req.body.endDate, req.body.endTime);
+    let startDateTime, endDateTime;
+
+    try {
+      startDateTime = createDateTime(req.body.startDate, req.body.startTime);
+      endDateTime = createDateTime(req.body.endDate, req.body.endTime);
+    } catch (error) {
+      return res.status(400).json({
+        success: false,
+        message: error.message,
+      });
+    }
 
     validateDateTime(startDateTime, endDateTime);
 
@@ -167,7 +190,7 @@ export const updateAnnouncement = async (req, res) => {
     }
 
     // Only validate past date for new announcements
-    if (existingAnnouncement.startTime > new Date()) {
+    if (existingAnnouncement.startDate > new Date()) {
       validatePastDate(startDateTime);
     }
 
@@ -179,8 +202,8 @@ export const updateAnnouncement = async (req, res) => {
         type: req.body.type,
         priority: req.body.priority,
         targetAudience: req.body.targetAudience,
-        startTime: startDateTime,
-        endTime: endDateTime,
+        startDate: startDateTime,
+        endDate: endDateTime,
       },
       { new: true, runValidators: true }
     );

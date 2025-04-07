@@ -18,6 +18,7 @@ import {
   Button,
   useMediaQuery,
   useTheme,
+  Chip,
 } from "@mui/material";
 import {
   Person as PersonIcon,
@@ -56,6 +57,9 @@ function Dashboard() {
     teacherGrowth: 0,
     revenueGrowth: 0,
     upcomingAnnouncements: [],
+    activeAnnouncements: [],
+    scheduledAnnouncements: [],
+    counts: {},
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -89,15 +93,51 @@ function Dashboard() {
         ? announcementsResponse.data
         : announcementsResponse.data.data || [];
 
-      // Filter for upcoming announcements
       const now = new Date();
+
+      // Filter for upcoming announcements
       const upcomingAnnouncements = announcementsData
         .filter((announcement) => {
-          const startTime = new Date(announcement.startTime);
+          const startTime = new Date(
+            announcement.startDate || announcement.startTime
+          );
           return startTime > now;
         })
-        .sort((a, b) => new Date(a.startTime) - new Date(b.startTime))
+        .sort(
+          (a, b) =>
+            new Date(a.startDate || a.startTime) -
+            new Date(b.startDate || b.startTime)
+        )
         .slice(0, 3);
+
+      // Filter for active announcements
+      const activeAnnouncements = announcementsData
+        .filter((announcement) => announcement.status === "active")
+        .sort(
+          (a, b) =>
+            new Date(b.startDate || b.startTime) -
+            new Date(a.startDate || a.startTime)
+        )
+        .slice(0, 5);
+
+      // Filter for scheduled announcements
+      const scheduledAnnouncements = announcementsData
+        .filter((announcement) => announcement.status === "scheduled")
+        .sort(
+          (a, b) =>
+            new Date(a.startDate || a.startTime) -
+            new Date(b.startDate || b.startTime)
+        )
+        .slice(0, 5);
+
+      // Calculate counts
+      const counts = {
+        total: announcementsData.length,
+        active: announcementsData.filter((a) => a.status === "active").length,
+        scheduled: announcementsData.filter((a) => a.status === "scheduled")
+          .length,
+        expired: announcementsData.filter((a) => a.status === "expired").length,
+      };
 
       // Ensure we have all the required stats with fallbacks
       const responseData = response.data || {};
@@ -111,11 +151,14 @@ function Dashboard() {
         totalStaff: responseData.totalStaff || 0,
         totalPayments: responseData.totalPayments || 0,
         totalRevenue: responseData.totalRevenue || 0,
-        totalAnnouncements: responseData.totalAnnouncements || 0,
+        totalAnnouncements: announcementsData.length,
         studentGrowth: responseData.studentGrowth || 0,
         teacherGrowth: responseData.teacherGrowth || 0,
         revenueGrowth: responseData.revenueGrowth || 0,
         upcomingAnnouncements,
+        activeAnnouncements,
+        scheduledAnnouncements,
+        counts,
       });
       setError(null);
     } catch (err) {
@@ -338,217 +381,300 @@ function Dashboard() {
             </Grid>
           </Grid>
 
-          {/* Upcoming Announcements Section */}
+          {/* Active and Scheduled Announcements Section */}
           <Box sx={{ mt: { xs: 3, sm: 4 } }}>
-            <Paper sx={{ p: { xs: 1.5, sm: 2, md: 3 } }} elevation={2}>
-              <Box
-                sx={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  mb: 2,
-                }}
-              >
-                <Typography
-                  variant="h5"
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    fontSize: { xs: "1.2rem", sm: "1.5rem" },
-                  }}
+            <Grid container spacing={2}>
+              {/* Active Announcements */}
+              <Grid item xs={12} md={6}>
+                <Paper
+                  sx={{ p: { xs: 1.5, sm: 2, md: 3 }, height: "100%" }}
+                  elevation={2}
                 >
-                  <AnnouncementIcon sx={{ mr: 1 }} />
-                  Upcoming Announcements
-                </Typography>
-                <Button
-                  variant="outlined"
-                  size={isMobile ? "small" : "medium"}
-                  onClick={() => navigate("/app/announcements")}
-                >
-                  View All
-                </Button>
-              </Box>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      mb: 2,
+                    }}
+                  >
+                    <Typography
+                      variant="h5"
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        fontSize: { xs: "1.2rem", sm: "1.5rem" },
+                      }}
+                    >
+                      <AnnouncementIcon sx={{ mr: 1, color: "success.main" }} />
+                      Active Announcements
+                    </Typography>
+                    <Chip
+                      label={`${stats.counts?.active || 0} Active`}
+                      color="success"
+                      size="small"
+                    />
+                  </Box>
 
-              {stats.upcomingAnnouncements &&
-              stats.upcomingAnnouncements.length > 0 ? (
-                <List>
-                  {stats.upcomingAnnouncements.map((announcement, index) => (
-                    <React.Fragment key={announcement._id}>
-                      <ListItem
-                        sx={{
-                          flexDirection: { xs: "column", sm: "row" },
-                          alignItems: { xs: "flex-start", sm: "center" },
-                        }}
-                      >
-                        <ListItemText
-                          primary={
-                            <Typography
-                              variant="subtitle1"
-                              fontWeight="bold"
-                              sx={{ fontSize: { xs: "0.9rem", sm: "1rem" } }}
-                            >
-                              {announcement.title}
-                            </Typography>
-                          }
-                          secondary={
-                            <Box
+                  {loading ? (
+                    <LinearProgress sx={{ my: 4 }} />
+                  ) : stats.activeAnnouncements &&
+                    stats.activeAnnouncements.length > 0 ? (
+                    <List>
+                      {stats.activeAnnouncements.map((announcement, index) => (
+                        <React.Fragment key={announcement._id}>
+                          <ListItem
+                            sx={{
+                              flexDirection: { xs: "column", sm: "row" },
+                              alignItems: { xs: "flex-start", sm: "center" },
+                            }}
+                          >
+                            <ListItemText
+                              primary={
+                                <Typography
+                                  variant="subtitle1"
+                                  fontWeight="bold"
+                                  sx={{
+                                    fontSize: { xs: "0.9rem", sm: "1rem" },
+                                  }}
+                                >
+                                  {announcement.title.length > 30
+                                    ? `${announcement.title.substring(
+                                        0,
+                                        30
+                                      )}...`
+                                    : announcement.title}
+                                </Typography>
+                              }
+                              secondary={
+                                <Box
+                                  sx={{
+                                    display: "flex",
+                                    flexDirection: { xs: "column", sm: "row" },
+                                    gap: { xs: 0.5, sm: 1 },
+                                    mt: { xs: 0.5, sm: 0 },
+                                  }}
+                                >
+                                  <Typography
+                                    variant="body2"
+                                    color="text.secondary"
+                                    sx={{
+                                      fontSize: {
+                                        xs: "0.75rem",
+                                        sm: "0.875rem",
+                                      },
+                                    }}
+                                  >
+                                    Ends: {formatDateTime(announcement.endDate)}
+                                  </Typography>
+                                  <Typography
+                                    variant="body2"
+                                    color="text.secondary"
+                                    sx={{
+                                      fontSize: {
+                                        xs: "0.75rem",
+                                        sm: "0.875rem",
+                                      },
+                                      display: { xs: "none", sm: "block" },
+                                    }}
+                                  >
+                                    •
+                                  </Typography>
+                                  <Chip
+                                    label={announcement.priority}
+                                    size="small"
+                                    color={
+                                      announcement.priority === "High"
+                                        ? "error"
+                                        : announcement.priority === "Medium"
+                                        ? "warning"
+                                        : "success"
+                                    }
+                                    sx={{ height: 20, fontSize: "0.7rem" }}
+                                  />
+                                </Box>
+                              }
+                            />
+                            <Tooltip title="View Details">
+                              <Button
+                                variant="text"
+                                size="small"
+                                color="primary"
+                                onClick={() => navigate(`/app/announcements`)}
+                                sx={{ mt: { xs: 1, sm: 0 } }}
+                              >
+                                Details
+                              </Button>
+                            </Tooltip>
+                          </ListItem>
+                          {index < stats.activeAnnouncements.length - 1 && (
+                            <Divider />
+                          )}
+                        </React.Fragment>
+                      ))}
+                    </List>
+                  ) : (
+                    <Typography
+                      variant="body1"
+                      color="text.secondary"
+                      align="center"
+                      sx={{ py: 2 }}
+                    >
+                      No active announcements
+                    </Typography>
+                  )}
+                </Paper>
+              </Grid>
+
+              {/* Scheduled Announcements */}
+              <Grid item xs={12} md={6}>
+                <Paper
+                  sx={{ p: { xs: 1.5, sm: 2, md: 3 }, height: "100%" }}
+                  elevation={2}
+                >
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      mb: 2,
+                    }}
+                  >
+                    <Typography
+                      variant="h5"
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        fontSize: { xs: "1.2rem", sm: "1.5rem" },
+                      }}
+                    >
+                      <AnnouncementIcon sx={{ mr: 1, color: "warning.main" }} />
+                      Scheduled Announcements
+                    </Typography>
+                    <Chip
+                      label={`${stats.counts?.scheduled || 0} Scheduled`}
+                      color="warning"
+                      size="small"
+                    />
+                  </Box>
+
+                  {loading ? (
+                    <LinearProgress sx={{ my: 4 }} />
+                  ) : stats.scheduledAnnouncements &&
+                    stats.scheduledAnnouncements.length > 0 ? (
+                    <List>
+                      {stats.scheduledAnnouncements.map(
+                        (announcement, index) => (
+                          <React.Fragment key={announcement._id}>
+                            <ListItem
                               sx={{
-                                display: "flex",
                                 flexDirection: { xs: "column", sm: "row" },
-                                gap: { xs: 0.5, sm: 1 },
-                                mt: { xs: 0.5, sm: 0 },
+                                alignItems: { xs: "flex-start", sm: "center" },
                               }}
                             >
-                              <Typography
-                                variant="body2"
-                                color="text.secondary"
-                                sx={{
-                                  fontSize: { xs: "0.75rem", sm: "0.875rem" },
-                                }}
-                              >
-                                {formatDateTime(announcement.startTime)}
-                              </Typography>
-                              <Typography
-                                variant="body2"
-                                color="text.secondary"
-                                sx={{
-                                  fontSize: { xs: "0.75rem", sm: "0.875rem" },
-                                  display: { xs: "none", sm: "block" },
-                                }}
-                              >
-                                •
-                              </Typography>
-                              <Typography
-                                variant="body2"
-                                color="text.secondary"
-                                sx={{
-                                  fontSize: { xs: "0.75rem", sm: "0.875rem" },
-                                }}
-                              >
-                                {announcement.type}
-                              </Typography>
-                            </Box>
-                          }
-                        />
-                        <Tooltip title="View Details">
-                          <Button
-                            variant="text"
-                            size="small"
-                            color="primary"
-                            onClick={() => navigate(`/app/announcements`)}
-                            sx={{ mt: { xs: 1, sm: 0 } }}
-                          >
-                            Details
-                          </Button>
-                        </Tooltip>
-                      </ListItem>
-                      {index < stats.upcomingAnnouncements.length - 1 && (
-                        <Divider />
+                              <ListItemText
+                                primary={
+                                  <Typography
+                                    variant="subtitle1"
+                                    fontWeight="bold"
+                                    sx={{
+                                      fontSize: { xs: "0.9rem", sm: "1rem" },
+                                    }}
+                                  >
+                                    {announcement.title.length > 30
+                                      ? `${announcement.title.substring(
+                                          0,
+                                          30
+                                        )}...`
+                                      : announcement.title}
+                                  </Typography>
+                                }
+                                secondary={
+                                  <Box
+                                    sx={{
+                                      display: "flex",
+                                      flexDirection: {
+                                        xs: "column",
+                                        sm: "row",
+                                      },
+                                      gap: { xs: 0.5, sm: 1 },
+                                      mt: { xs: 0.5, sm: 0 },
+                                    }}
+                                  >
+                                    <Typography
+                                      variant="body2"
+                                      color="text.secondary"
+                                      sx={{
+                                        fontSize: {
+                                          xs: "0.75rem",
+                                          sm: "0.875rem",
+                                        },
+                                      }}
+                                    >
+                                      Starts:{" "}
+                                      {formatDateTime(announcement.startDate)}
+                                    </Typography>
+                                    <Typography
+                                      variant="body2"
+                                      color="text.secondary"
+                                      sx={{
+                                        fontSize: {
+                                          xs: "0.75rem",
+                                          sm: "0.875rem",
+                                        },
+                                        display: { xs: "none", sm: "block" },
+                                      }}
+                                    >
+                                      •
+                                    </Typography>
+                                    <Chip
+                                      label={announcement.type}
+                                      size="small"
+                                      color={
+                                        announcement.type === "Emergency"
+                                          ? "error"
+                                          : announcement.type === "Event"
+                                          ? "success"
+                                          : "primary"
+                                      }
+                                      sx={{ height: 20, fontSize: "0.7rem" }}
+                                    />
+                                  </Box>
+                                }
+                              />
+                              <Tooltip title="View Details">
+                                <Button
+                                  variant="text"
+                                  size="small"
+                                  color="primary"
+                                  onClick={() => navigate(`/app/announcements`)}
+                                  sx={{ mt: { xs: 1, sm: 0 } }}
+                                >
+                                  Details
+                                </Button>
+                              </Tooltip>
+                            </ListItem>
+                            {index <
+                              stats.scheduledAnnouncements.length - 1 && (
+                              <Divider />
+                            )}
+                          </React.Fragment>
+                        )
                       )}
-                    </React.Fragment>
-                  ))}
-                </List>
-              ) : (
-                <Typography
-                  variant="body1"
-                  color="text.secondary"
-                  align="center"
-                  sx={{ py: 2 }}
-                >
-                  No upcoming announcements
-                </Typography>
-              )}
-            </Paper>
-          </Box>
-
-          {/* Revenue Overview Section */}
-          <Box sx={{ mt: { xs: 3, sm: 4 } }}>
-            <Paper sx={{ p: { xs: 1.5, sm: 2, md: 3 } }} elevation={2}>
-              <Typography
-                variant="h5"
-                sx={{
-                  mb: 2,
-                  display: "flex",
-                  alignItems: "center",
-                  fontSize: { xs: "1.2rem", sm: "1.5rem" },
-                }}
-              >
-                <PaymentIcon sx={{ mr: 1 }} />
-                Revenue Overview
-              </Typography>
-
-              <Grid container spacing={2}>
-                <Grid item xs={12} sm={6}>
-                  <Card>
-                    <CardContent>
-                      <Typography
-                        variant="h6"
-                        color="text.secondary"
-                        sx={{ fontSize: { xs: "1rem", sm: "1.25rem" } }}
-                      >
-                        Total Revenue
-                      </Typography>
-                      <Typography
-                        variant="h4"
-                        sx={{
-                          my: 1,
-                          fontSize: { xs: "1.5rem", sm: "2.125rem" },
-                        }}
-                      >
-                        ₹{stats.totalRevenue.toLocaleString()}
-                      </Typography>
-                      <Box sx={{ display: "flex", alignItems: "center" }}>
-                        <Typography
-                          variant="body2"
-                          color={
-                            stats.revenueGrowth >= 0
-                              ? "success.main"
-                              : "error.main"
-                          }
-                        >
-                          {stats.revenueGrowth >= 0 ? "+" : ""}
-                          {stats.revenueGrowth}%
-                        </Typography>
-                        <Typography
-                          variant="body2"
-                          color="text.secondary"
-                          sx={{ ml: 1 }}
-                        >
-                          vs. last month
-                        </Typography>
-                      </Box>
-                    </CardContent>
-                  </Card>
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <Card>
-                    <CardContent>
-                      <Typography
-                        variant="h6"
-                        color="text.secondary"
-                        sx={{ fontSize: { xs: "1rem", sm: "1.25rem" } }}
-                      >
-                        Student Growth
-                      </Typography>
-                      <Typography
-                        variant="h4"
-                        sx={{
-                          my: 1,
-                          fontSize: { xs: "1.5rem", sm: "2.125rem" },
-                        }}
-                      >
-                        {stats.studentGrowth}%
-                      </Typography>
-                      <Box>
-                        <Typography variant="body2" color="text.secondary">
-                          Compared to last month
-                        </Typography>
-                      </Box>
-                    </CardContent>
-                  </Card>
-                </Grid>
+                    </List>
+                  ) : (
+                    <Typography
+                      variant="body1"
+                      color="text.secondary"
+                      align="center"
+                      sx={{ py: 2 }}
+                    >
+                      No scheduled announcements
+                    </Typography>
+                  )}
+                </Paper>
               </Grid>
-            </Paper>
+            </Grid>
           </Box>
         </>
       )}
