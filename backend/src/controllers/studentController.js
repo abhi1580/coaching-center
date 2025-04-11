@@ -117,6 +117,7 @@ export const createStudent = async (req, res) => {
       schoolName,
       previousPercentage,
       joiningDate,
+      studentId,
     } = req.body;
 
     // Validate required fields
@@ -167,6 +168,7 @@ export const createStudent = async (req, res) => {
         previousPercentage,
         joiningDate,
         user: user._id, // Link to the created user
+        studentId, // Add the studentId field
       });
 
       res.status(201).json({
@@ -220,8 +222,8 @@ export const updateStudent = async (req, res) => {
         email,
         phone,
         standard,
-        subjects,
-        batches,
+        subjects: subjects || [],
+        batches: batches || [],
         parentName,
         parentPhone,
         address,

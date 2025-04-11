@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { batchService } from "../services/api";
 import {
   Box,
   Button,
@@ -35,6 +36,9 @@ import {
   AccordionSummary,
   AccordionDetails,
   InputAdornment,
+  FormHelperText,
+  Tooltip,
+  // SyncIcon,
 } from "@mui/material";
 import {
   Edit as EditIcon,
@@ -47,6 +51,14 @@ import {
   Search as SearchIcon,
   Clear as ClearIcon,
   Visibility as VisibilityIcon,
+  PersonAdd as PersonAddIcon,
+  Phone as PhoneIcon,
+  Email as EmailIcon,
+  Home as HomeIcon,
+  CalendarToday as CalendarTodayIcon,
+  School as SchoolIcon,
+  Sync as SyncIcon,
+  Save as SaveIcon,
 } from "@mui/icons-material";
 import {
   fetchBatches,
@@ -54,10 +66,15 @@ import {
   updateBatch,
   deleteBatch,
   resetStatus,
+  updateBatchEnrollment,
+  updateBatchById,
 } from "../store/slices/batchSlice";
 import { fetchStandards } from "../store/slices/standardSlice";
 import { fetchSubjects } from "../store/slices/subjectSlice";
 import { fetchTeachers } from "../store/slices/teacherSlice";
+import { fetchStudents, createStudent } from "../store/slices/studentSlice";
+import * as Yup from "yup";
+import { useFormik } from "formik";
 import RefreshButton from "../components/RefreshButton";
 import { alpha } from "@mui/material/styles";
 
@@ -117,6 +134,42 @@ const Batches = () => {
   const [teacherFilter, setTeacherFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
 
+  // Student enrollment state
+  const [studentDialogOpen, setStudentDialogOpen] = useState(false);
+  const [enrollingToBatch, setEnrollingToBatch] = useState(null);
+
+  // Student validation schema
+  const studentValidationSchema = Yup.object({
+    name: Yup.string().required("Name is required"),
+    email: Yup.string().email("Invalid email").required("Email is required"),
+    phone: Yup.string()
+      .matches(/^[0-9]{10}$/, "Phone number must be 10 digits")
+      .required("Phone number is required"),
+    gender: Yup.string().required("Gender is required"),
+    address: Yup.string().required("Address is required"),
+    parentName: Yup.string().required("Parent name is required"),
+    parentPhone: Yup.string()
+      .matches(/^[0-9]{10}$/, "Phone number must be 10 digits")
+      .required("Parent phone number is required"),
+    dateOfBirth: Yup.date().required("Date of birth is required"),
+    joiningDate: Yup.date().required("Joining date is required"),
+    board: Yup.string().required("Board is required"),
+    schoolName: Yup.string().required("School name is required"),
+  });
+
+  // At the beginning of the component, add new state variables
+  const [existingStudentDialogOpen, setExistingStudentDialogOpen] =
+    useState(false);
+  const [availableStudentsForBatch, setAvailableStudentsForBatch] = useState(
+    []
+  );
+  const [selectedExistingStudent, setSelectedExistingStudent] = useState("");
+  const [selectedExistingStudents, setSelectedExistingStudents] = useState([]);
+  const [existingStudentSearchTerm, setExistingStudentSearchTerm] =
+    useState("");
+  const [loadingAvailableStudents, setLoadingAvailableStudents] =
+    useState(false);
+
   // Helper function to format error message
   const formatErrorMessage = (error) => {
     if (typeof error === "string") return error;
@@ -167,6 +220,121 @@ const Batches = () => {
   useEffect(() => {
     setFilteredBatches(getBatchesArray(batches) || []);
   }, [batches]);
+
+  // Ensure the UI is refreshed when batch data changes
+  useEffect(() => {
+    const currentBatchArray = getBatchesArray(batches);
+    // Force an update of the filtered batches using the current filters
+    let results = [...currentBatchArray];
+
+    // Apply current filters
+    if (nameFilter) {
+      const searchTerm = nameFilter.toLowerCase();
+      results = results.filter((batch) =>
+        batch.name?.toLowerCase().includes(searchTerm)
+      );
+    }
+
+    if (subjectFilter) {
+      results = results.filter(
+        (batch) =>
+          batch.subject?._id === subjectFilter ||
+          batch.subject === subjectFilter
+      );
+    }
+
+    if (standardFilter) {
+      results = results.filter(
+        (batch) =>
+          batch.standard?._id === standardFilter ||
+          batch.standard === standardFilter
+      );
+    }
+
+    if (teacherFilter) {
+      results = results.filter(
+        (batch) =>
+          batch.teacher?._id === teacherFilter ||
+          batch.teacher === teacherFilter
+      );
+    }
+
+    if (statusFilter) {
+      results = results.filter((batch) => batch.status === statusFilter);
+    }
+
+    setFilteredBatches(results);
+  }, [
+    batches,
+    nameFilter,
+    subjectFilter,
+    standardFilter,
+    teacherFilter,
+    statusFilter,
+  ]);
+
+  // Student form handling
+  const studentFormik = useFormik({
+    initialValues: {
+      name: "",
+      email: "",
+      phone: "",
+      standard: "",
+      gender: "",
+      address: "",
+      parentName: "",
+      parentPhone: "",
+      dateOfBirth: "",
+      board: "",
+      schoolName: "",
+      joiningDate: "",
+    },
+    validationSchema: studentValidationSchema,
+    onSubmit: async (values, { setSubmitting, resetForm, setStatus }) => {
+      setStatus(null);
+      try {
+        // Use the systematic function to handle student enrollment
+        const createdStudent = await handleEnrollStudent(
+          values,
+          enrollingToBatch
+        );
+
+        if (createdStudent) {
+          alert(
+            `Student ${createdStudent.name} successfully added to ${enrollingToBatch.name}`
+          );
+          setStudentDialogOpen(false);
+          resetForm();
+        }
+      } catch (error) {
+        console.error("Error enrolling student:", error);
+        setStatus(error.message || "Failed to enroll student");
+      } finally {
+        setSubmitting(false);
+      }
+    },
+  });
+
+  // Handle opening the student enrollment dialog
+  const handleOpenStudentDialog = (batch) => {
+    setEnrollingToBatch(batch);
+
+    // Set the standard from the batch
+    studentFormik.setValues({
+      ...studentFormik.initialValues,
+      standard: batch.standard._id || batch.standard,
+      joiningDate: new Date().toISOString().split("T")[0], // Set current date as joining date
+    });
+
+    setStudentDialogOpen(true);
+  };
+
+  // Handle closing the student enrollment dialog
+  const handleCloseStudentDialog = () => {
+    setStudentDialogOpen(false);
+    setEnrollingToBatch(null);
+    studentFormik.resetForm();
+  };
 
   // Apply filters whenever batches data or filter values change
   useEffect(() => {
@@ -354,25 +522,44 @@ const Batches = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (submitting) return;
+
+    // Validate required fields
+    if (!formData.name || !formData.standard || !formData.subject) {
+      alert("Please fill all required fields: Name, Standard, and Subject");
+      return;
+    }
+
     try {
-      setSubmitting(true);
       if (selectedBatch) {
-        await dispatch(
-          updateBatch({ id: selectedBatch._id, data: formData })
-        ).unwrap();
+        // Update existing batch
+        await handleUpdateBatch(selectedBatch._id, formData);
       } else {
-        await dispatch(createBatch(formData)).unwrap();
+        // Create new batch
+        await handleCreateBatch(formData);
       }
     } catch (error) {
-      console.error("Error submitting batch:", error);
-    } finally {
-      setSubmitting(false);
+      console.error("Error submitting batch form:", error);
     }
   };
 
-  const handleDelete = (id) => {
-    if (window.confirm("Are you sure you want to delete this batch?")) {
-      dispatch(deleteBatch(id));
+  const handleDelete = async (id) => {
+    try {
+      setSubmitting(true);
+      await dispatch(deleteBatch(id)).unwrap();
+
+      // If we were viewing this batch, close the details dialog
+      if (detailsOpen && selectedBatch && selectedBatch._id === id) {
+        setDetailsOpen(false);
+        setSelectedBatch(null);
+      }
+
+      alert("Batch deleted successfully");
+    } catch (error) {
+      console.error("Error deleting batch:", error);
+      alert("Failed to delete batch: " + formatErrorMessage(error));
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -478,17 +665,58 @@ const Batches = () => {
     setStatusFilter("");
   };
 
-  const handleViewDetails = (batch) => {
-    setSelectedBatch(batch);
-    setDetailsOpen(true);
+  const handleViewDetails = async (batch) => {
+    try {
+      // First set the selected batch with what we have
+      setSelectedBatch(batch);
+      setDetailsOpen(true);
+
+      console.log(
+        `Fetching details for batch ${batch._id}, name: ${batch.name}`
+      );
+
+      // Directly fetch the specific batch with all its data
+      const response = await batchService.getById(batch._id, {
+        populateEnrolledStudents: true,
+      });
+
+      if (response && response.data) {
+        // Handle the response data - it might be in response.data.data or just response.data
+        const updatedBatch = response.data.data || response.data;
+
+        // Log the student count
+        const enrolledStudentsCount = updatedBatch.enrolledStudents
+          ? updatedBatch.enrolledStudents.length
+          : 0;
+        console.log(
+          `Fetched batch details: ${updatedBatch.name}, students: ${enrolledStudentsCount}`,
+          updatedBatch.enrolledStudents
+        );
+
+        // Update the selected batch in the view
+        setSelectedBatch(updatedBatch);
+
+        // Also update this batch in Redux store to ensure data consistency
+        dispatch(
+          updateBatchById({
+            batchId: batch._id,
+            batchData: updatedBatch,
+          })
+        );
+      }
+    } catch (error) {
+      console.error("Error fetching batch details:", error);
+    }
   };
 
   // Helper function to safely get batches array
   const getBatchesArray = (batchesData) => {
     if (!batchesData) return [];
-    if (Array.isArray(batchesData)) return batchesData;
+    if (Array.isArray(batchesData)) return [...batchesData];
     if (batchesData.batches && Array.isArray(batchesData.batches))
-      return batchesData.batches;
+      return [...batchesData.batches];
+    // If it's a single batch object
+    if (batchesData._id) return [batchesData];
     return [];
   };
 
@@ -565,19 +793,37 @@ const Batches = () => {
 
   // Get students count safely for a batch
   const getStudentsCount = (batch) => {
+    if (!batch) return { enrolled: 0, capacity: 0, remaining: 0 };
+
     let enrolledCount = 0;
+    let studentSource = "";
 
     // Check if enrolledStudents exists and is an array (main way students are tracked in batch model)
     if (batch.enrolledStudents && Array.isArray(batch.enrolledStudents)) {
       enrolledCount = batch.enrolledStudents.length;
+      studentSource = "enrolledStudents";
     }
     // Check if students exists and is an array (secondary way)
     else if (batch.students && Array.isArray(batch.students)) {
       enrolledCount = batch.students.length;
+      studentSource = "students";
     }
     // Check if studentCount property exists (API might provide this)
     else if (typeof batch.studentCount === "number") {
       enrolledCount = batch.studentCount;
+      studentSource = "studentCount";
+    }
+
+    // Log for debugging
+    if (enrolledCount === 0) {
+      console.log(
+        `Batch ${batch.name} (${batch._id}) has zero students:`,
+        batch.enrolledStudents
+      );
+    } else {
+      console.log(
+        `Batch ${batch.name} has ${enrolledCount} students from ${studentSource}`
+      );
     }
 
     const capacity = batch.capacity ? parseInt(batch.capacity, 10) : 0;
@@ -602,6 +848,461 @@ const Batches = () => {
     }
     return "success";
   };
+
+  // Refresh batch details when dialog opens
+  useEffect(() => {
+    if (detailsOpen && selectedBatch) {
+      const fetchBatchDetails = async () => {
+        try {
+          // Fetch the most up-to-date batch data directly from the API
+          const response = await batchService.getById(selectedBatch._id, {
+            populateEnrolledStudents: true,
+          });
+
+          if (response && response.data) {
+            // Handle the response data - it might be in response.data.data or just response.data
+            const updatedBatch = response.data.data || response.data;
+            console.log(
+              "Refreshed batch details on dialog open:",
+              updatedBatch
+            );
+
+            // Update the selected batch for the current view
+            setSelectedBatch(updatedBatch);
+
+            // Also update the batch in the Redux store to maintain consistency
+            dispatch(
+              updateBatchById({
+                batchId: selectedBatch._id,
+                batchData: updatedBatch,
+              })
+            );
+          }
+        } catch (error) {
+          console.error("Error refreshing batch details:", error);
+        }
+      };
+
+      fetchBatchDetails();
+    }
+  }, [detailsOpen, selectedBatch?._id, dispatch]);
+
+  // Batch Management Functions
+
+  // Function to handle batch creation
+  const handleCreateBatch = async (batchData) => {
+    try {
+      setSubmitting(true);
+      const newBatch = await dispatch(createBatch(batchData)).unwrap();
+      alert(`Batch "${newBatch.name}" created successfully`);
+      handleClose();
+      return newBatch;
+    } catch (error) {
+      console.error("Error creating batch:", error);
+      alert("Failed to create batch: " + formatErrorMessage(error));
+      return null;
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Function to handle batch update
+  const handleUpdateBatch = async (batchId, batchData) => {
+    try {
+      setSubmitting(true);
+      const updatedBatch = await dispatch(
+        updateBatch({
+          id: batchId,
+          data: batchData,
+        })
+      ).unwrap();
+      alert(`Batch "${updatedBatch.name}" updated successfully`);
+      handleClose();
+      return updatedBatch;
+    } catch (error) {
+      console.error("Error updating batch:", error);
+      alert("Failed to update batch: " + formatErrorMessage(error));
+      return null;
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Function to handle batch deletion with confirmation
+  const handleDeleteBatchWithConfirmation = (batch) => {
+    if (
+      window.confirm(`Are you sure you want to delete batch "${batch.name}"?`)
+    ) {
+      handleDelete(batch._id);
+    }
+  };
+
+  // Student Management Functions
+
+  // Function to handle student enrollment to batch
+  const handleEnrollStudent = async (studentData, batch) => {
+    try {
+      // Generate student ID
+      const currentYear = new Date().getFullYear();
+
+      // Get students to determine the next sequence number
+      const studentsResponse = await dispatch(fetchStudents()).unwrap();
+
+      // Find students from current year to determine next sequence number
+      const yearPrefix = `${currentYear}-`;
+      const currentYearStudents = studentsResponse.filter(
+        (student) =>
+          student.studentId && student.studentId.startsWith(yearPrefix)
+      );
+
+      // Find the highest sequence number
+      let maxSequence = 0;
+      currentYearStudents.forEach((student) => {
+        const sequencePart = student.studentId.split("-")[1];
+        const sequence = parseInt(sequencePart, 10);
+        if (!isNaN(sequence) && sequence > maxSequence) {
+          maxSequence = sequence;
+        }
+      });
+
+      // Generate next sequence number
+      const nextSequence = maxSequence + 1;
+      const sequenceFormatted = nextSequence.toString().padStart(3, "0");
+      const studentId = `${currentYear}-${sequenceFormatted}`;
+
+      // Prepare student data with batch information
+      const completeStudentData = {
+        ...studentData,
+        studentId: studentId,
+        batches: [batch._id], // Initialize with this batch
+        standard: batch.standard._id || batch.standard,
+        subjects: [batch.subject._id || batch.subject],
+      };
+
+      // Create the student
+      const createdStudent = await dispatch(
+        createStudent(completeStudentData)
+      ).unwrap();
+
+      console.log("Student created successfully:", createdStudent);
+
+      // Explicitly add the student to the batch using the API
+      const enrollResponse = await batchService.addStudentToBatch(
+        batch._id,
+        createdStudent._id
+      );
+
+      if (
+        enrollResponse &&
+        enrollResponse.data &&
+        enrollResponse.data.success
+      ) {
+        const updatedBatch = enrollResponse.data.data;
+        console.log("Student added to batch successfully:", updatedBatch);
+
+        // Update batch data in Redux store
+        dispatch(
+          updateBatchById({
+            batchId: batch._id,
+            batchData: updatedBatch,
+          })
+        );
+
+        // Update UI if details are open
+        if (detailsOpen && selectedBatch && selectedBatch._id === batch._id) {
+          setSelectedBatch(updatedBatch);
+        }
+      } else {
+        console.warn("Batch update response not as expected:", enrollResponse);
+      }
+
+      return createdStudent;
+    } catch (error) {
+      console.error("Error enrolling student:", error);
+      alert("Failed to enroll student: " + formatErrorMessage(error));
+      return null;
+    }
+  };
+
+  // Function to remove student from batch
+  const handleRemoveStudentFromBatch = async (student, batch) => {
+    if (
+      window.confirm(
+        `Are you sure you want to remove ${student.name} from "${batch.name}"?`
+      )
+    ) {
+      try {
+        // Call API to remove student from batch
+        const response = await batchService.removeStudentFromBatch(
+          batch._id,
+          student._id
+        );
+
+        // Check if response was successful and get updated batch data
+        if (response && response.data && response.data.success) {
+          const updatedBatch = response.data.data;
+
+          // Update the batch in Redux store
+          dispatch(
+            updateBatchById({
+              batchId: batch._id,
+              batchData: updatedBatch,
+            })
+          );
+
+          // Update UI if details are open
+          if (detailsOpen && selectedBatch && selectedBatch._id === batch._id) {
+            setSelectedBatch(updatedBatch);
+          }
+
+          alert(`Student ${student.name} removed from batch "${batch.name}"`);
+          return true;
+        } else {
+          throw new Error(
+            "Failed to remove student: No data returned from API"
+          );
+        }
+      } catch (error) {
+        console.error("Error removing student from batch:", error);
+        alert("Failed to remove student: " + formatErrorMessage(error));
+        return false;
+      }
+    }
+    return false;
+  };
+
+  // Function to handle student data update
+  const handleUpdateStudent = async (studentId, updatedData) => {
+    try {
+      const updatedStudent = await dispatch(
+        updateStudent({
+          id: studentId,
+          data: updatedData,
+        })
+      ).unwrap();
+
+      // Refresh any open batch details that might contain this student
+      if (detailsOpen && selectedBatch) {
+        await handleViewDetails(selectedBatch);
+      }
+
+      alert(`Student ${updatedStudent.name} updated successfully`);
+      return updatedStudent;
+    } catch (error) {
+      console.error("Error updating student:", error);
+      alert("Failed to update student: " + formatErrorMessage(error));
+      return null;
+    }
+  };
+
+  // Function to handle student deletion with confirmation
+  const handleDeleteStudentWithConfirmation = async (student) => {
+    if (
+      window.confirm(
+        `Are you sure you want to delete student "${student.name}"?`
+      )
+    ) {
+      try {
+        await dispatch(deleteStudent(student._id)).unwrap();
+
+        // Refresh any open batch details
+        if (detailsOpen && selectedBatch) {
+          await handleViewDetails(selectedBatch);
+        }
+
+        alert(`Student ${student.name} deleted successfully`);
+        return true;
+      } catch (error) {
+        console.error("Error deleting student:", error);
+        alert("Failed to delete student: " + formatErrorMessage(error));
+        return false;
+      }
+    }
+    return false;
+  };
+
+  // Function to synchronize batch-student relationships
+  const handleSyncBatchStudents = async () => {
+    try {
+      setLoading(true);
+      const response = await batchService.syncBatchStudents();
+
+      if (response && response.data && response.data.success) {
+        console.log("Batch-student sync completed:", response.data.message);
+        alert("Batch-student relationships synchronized successfully!");
+
+        // Refresh data
+        await dispatch(
+          fetchBatches({
+            populateEnrolledStudents: true,
+            forceRefresh: true,
+          })
+        ).unwrap();
+
+        // Refresh any open batch details
+        if (detailsOpen && selectedBatch) {
+          await handleViewDetails(selectedBatch);
+        }
+      } else {
+        console.error("Sync response error:", response);
+        alert(
+          "Error synchronizing: " + (response?.data?.message || "Unknown error")
+        );
+      }
+    } catch (error) {
+      console.error("Error synchronizing batch-student relationships:", error);
+      alert("Error synchronizing: " + formatErrorMessage(error));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Function to handle adding an existing student to a batch
+  const handleAddExistingStudentToBatch = async (batch) => {
+    try {
+      setLoadingAvailableStudents(true);
+      setEnrollingToBatch(batch);
+
+      // Get all students
+      const studentsResponse = await dispatch(fetchStudents()).unwrap();
+
+      // Filter out students already enrolled in this batch
+      const batchStudentIds = (batch.enrolledStudents || []).map((student) =>
+        typeof student === "object" ? student._id : student
+      );
+
+      const availableStudents = studentsResponse.filter(
+        (student) => !batchStudentIds.includes(student._id)
+      );
+
+      setAvailableStudentsForBatch(availableStudents);
+      setExistingStudentDialogOpen(true);
+    } catch (error) {
+      console.error("Error fetching available students:", error);
+      alert("Failed to fetch available students: " + formatErrorMessage(error));
+    } finally {
+      setLoadingAvailableStudents(false);
+    }
+  };
+
+  // Function to handle enrolling an existing student to a batch
+  const handleEnrollExistingStudent = async () => {
+    try {
+      if (!selectedExistingStudents.length || !enrollingToBatch) {
+        alert("Please select at least one student to enroll");
+        return;
+      }
+
+      setSubmitting(true);
+
+      let successCount = 0;
+      let failCount = 0;
+
+      // Process each selected student
+      for (const studentId of selectedExistingStudents) {
+        try {
+          // Call the API to add the student to the batch
+          const response = await batchService.addStudentToBatch(
+            enrollingToBatch._id,
+            studentId
+          );
+
+          if (response && response.data && response.data.success) {
+            successCount++;
+          } else {
+            failCount++;
+            console.error("Batch update response not as expected:", response);
+          }
+        } catch (err) {
+          failCount++;
+          console.error("Error enrolling student:", err);
+        }
+      }
+
+      // After processing all students, get the fully populated updated batch with complete student data
+      const updatedBatchResponse = await batchService.getById(
+        enrollingToBatch._id,
+        {
+          populateEnrolledStudents: true, // Make sure to request fully populated student data
+        }
+      );
+
+      if (
+        updatedBatchResponse &&
+        updatedBatchResponse.data &&
+        updatedBatchResponse.data.success
+      ) {
+        const updatedBatch = updatedBatchResponse.data.data;
+
+        console.log("Updated batch with full student data:", updatedBatch);
+
+        // Update Redux store with complete student data
+        dispatch(
+          updateBatchById({
+            batchId: enrollingToBatch._id,
+            batchData: updatedBatch,
+          })
+        );
+
+        // Update UI if details are open - use the fully populated batch data
+        if (
+          detailsOpen &&
+          selectedBatch &&
+          selectedBatch._id === enrollingToBatch._id
+        ) {
+          setSelectedBatch(updatedBatch);
+        }
+      }
+
+      // Show appropriate message based on results
+      if (successCount > 0 && failCount === 0) {
+        alert(`Successfully enrolled ${successCount} students`);
+      } else if (successCount > 0 && failCount > 0) {
+        alert(
+          `Enrolled ${successCount} students. Failed to enroll ${failCount} students.`
+        );
+      } else {
+        alert("Failed to enroll any students");
+      }
+
+      handleCloseExistingStudentDialog();
+    } catch (error) {
+      console.error("Error enrolling existing students:", error);
+      alert("Failed to enroll students: " + formatErrorMessage(error));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Function to close the existing student dialog
+  const handleCloseExistingStudentDialog = () => {
+    setExistingStudentDialogOpen(false);
+    setEnrollingToBatch(null);
+    setSelectedExistingStudent("");
+    setSelectedExistingStudents([]);
+    setExistingStudentSearchTerm("");
+    setAvailableStudentsForBatch([]);
+  };
+
+  // Effect to auto-select first matching student when search term changes
+  useEffect(() => {
+    if (existingStudentSearchTerm && availableStudentsForBatch.length > 0) {
+      const filteredStudents = availableStudentsForBatch.filter((student) => {
+        const searchTerm = existingStudentSearchTerm.toLowerCase();
+        return (
+          (student.name && student.name.toLowerCase().includes(searchTerm)) ||
+          (student.email && student.email.toLowerCase().includes(searchTerm)) ||
+          (student.phone && student.phone.includes(searchTerm)) ||
+          (student.studentId &&
+            student.studentId.toLowerCase().includes(searchTerm))
+        );
+      });
+
+      if (filteredStudents.length > 0) {
+        setSelectedExistingStudent(filteredStudents[0]._id);
+      }
+    }
+  }, [existingStudentSearchTerm, availableStudentsForBatch]);
 
   if (loading && getBatchesArray(batches).length === 0) {
     return (
@@ -636,6 +1337,16 @@ const Batches = () => {
             tooltip="Refresh batches data"
             sx={{ ml: 1 }}
           />
+          <Tooltip title="Sync batch-student relationships">
+            <IconButton
+              color="secondary"
+              onClick={handleSyncBatchStudents}
+              disabled={loading}
+              sx={{ ml: 1 }}
+            >
+              <SyncIcon />
+            </IconButton>
+          </Tooltip>
         </Box>
         <Button
           variant="contained"
@@ -689,13 +1400,18 @@ const Batches = () => {
                       <SearchIcon />
                     </InputAdornment>
                   ),
-                  endAdornment: nameFilter && (
+                  endAdornment: existingStudentSearchTerm && (
                     <InputAdornment position="end">
                       <IconButton
+                        onClick={() => {
+                          setExistingStudentSearchTerm("");
+                          // Also reset the selection when clearing search
+                          setSelectedExistingStudents([]);
+                        }}
+                        edge="end"
                         size="small"
-                        onClick={() => setNameFilter("")}
                       >
-                        <ClearIcon />
+                        <ClearIcon fontSize="small" />
                       </IconButton>
                     </InputAdornment>
                   ),
@@ -944,28 +1660,33 @@ const Batches = () => {
                       <Box
                         sx={{
                           display: "flex",
-                          flexDirection: "column",
-                          gap: 0.8,
+                          alignItems: "center",
+                          gap: 1,
                         }}
                       >
-                      <Chip
-                          label={`${getStudentsCount(batch).enrolled} enrolled`}
-                        size="small"
-                        color={
+                        <Chip
+                          label={`${getStudentsCount(batch).enrolled}/${
+                            batch.capacity || "∞"
+                          }`}
+                          size="small"
+                          color={
                             getStudentsCount(batch).enrolled > 0
                               ? "primary"
                               : "default"
                           }
-                          sx={{ fontWeight: 500 }}
+                          sx={{ fontWeight: 600 }}
+                          icon={<PersonIcon fontSize="small" />}
                         />
-                        <Chip
-                          label={`${
-                            getStudentsCount(batch).remaining
-                          } seats remaining`}
-                          size="small"
-                          color={getRemainingSeatsColor(batch)}
-                          sx={{ fontWeight: 500 }}
-                        />
+                        {batch.capacity > 0 && (
+                          <Chip
+                            label={`${
+                              getStudentsCount(batch).remaining
+                            } seats left`}
+                            size="small"
+                            color={getRemainingSeatsColor(batch)}
+                            sx={{ fontWeight: 500 }}
+                          />
+                        )}
                       </Box>
                     </Box>
                   </Box>
@@ -1162,28 +1883,33 @@ const Batches = () => {
                       <Box
                         sx={{
                           display: "flex",
-                          flexDirection: "column",
-                          gap: 0.8,
+                          alignItems: "center",
+                          gap: 1,
                         }}
                       >
-                      <Chip
-                          label={`${getStudentsCount(batch).enrolled} enrolled`}
-                        size="small"
-                        color={
+                        <Chip
+                          label={`${getStudentsCount(batch).enrolled}/${
+                            batch.capacity || "∞"
+                          }`}
+                          size="small"
+                          color={
                             getStudentsCount(batch).enrolled > 0
                               ? "primary"
                               : "default"
                           }
-                          sx={{ fontWeight: 500 }}
+                          sx={{ fontWeight: 600 }}
+                          icon={<PersonIcon fontSize="small" />}
                         />
-                        <Chip
-                          label={`${
-                            getStudentsCount(batch).remaining
-                          } seats remaining`}
-                          size="small"
-                          color={getRemainingSeatsColor(batch)}
-                          sx={{ fontWeight: 500 }}
-                        />
+                        {batch.capacity > 0 && (
+                          <Chip
+                            label={`${
+                              getStudentsCount(batch).remaining
+                            } seats left`}
+                            size="small"
+                            color={getRemainingSeatsColor(batch)}
+                            sx={{ fontWeight: 500 }}
+                          />
+                        )}
                       </Box>
                     </TableCell>
                     <TableCell>
@@ -1483,13 +2209,13 @@ const Batches = () => {
                           Capacity:
                         </Typography>
                         <Box>
-                        <Typography variant="body2" fontWeight="medium">
+                          <Typography variant="body2" fontWeight="medium">
                             {selectedBatch.capacity
                               ? `${getStudentsCount(selectedBatch).enrolled}/${
                                   selectedBatch.capacity
                                 }`
                               : "Not specified"}
-                        </Typography>
+                          </Typography>
                           {selectedBatch.capacity && (
                             <Box sx={{ mt: 0.5 }}>
                               <Chip
@@ -1704,9 +2430,62 @@ const Batches = () => {
                           theme.palette.primary.main,
                           0.2
                         )}`,
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
                       }}
                     >
-                      Students ({getStudentsCount(selectedBatch).enrolled})
+                      <Box
+                        sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                      >
+                        <PersonIcon />
+                        <span>
+                          Students ({getStudentsCount(selectedBatch).enrolled}/
+                          {selectedBatch.capacity || "∞"})
+                        </span>
+                        {selectedBatch.capacity && (
+                          <Chip
+                            size="small"
+                            label={`${
+                              getStudentsCount(selectedBatch).remaining
+                            } seats remaining`}
+                            color={getRemainingSeatsColor(selectedBatch)}
+                            sx={{ ml: 1, fontWeight: 500 }}
+                          />
+                        )}
+                      </Box>
+                      <Box sx={{ display: "flex", gap: 1 }}>
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          color="secondary"
+                          startIcon={<PersonAddIcon />}
+                          onClick={() =>
+                            handleAddExistingStudentToBatch(selectedBatch)
+                          }
+                          disabled={
+                            selectedBatch.capacity &&
+                            getStudentsCount(selectedBatch).remaining <= 0
+                          }
+                          sx={{ borderRadius: 1.5, textTransform: "none" }}
+                        >
+                          Add Existing Student
+                        </Button>
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          color="primary"
+                          startIcon={<PersonAddIcon />}
+                          onClick={() => handleOpenStudentDialog(selectedBatch)}
+                          disabled={
+                            selectedBatch.capacity &&
+                            getStudentsCount(selectedBatch).remaining <= 0
+                          }
+                          sx={{ borderRadius: 1.5, textTransform: "none" }}
+                        >
+                          Add New Student
+                        </Button>
+                      </Box>
                     </Typography>
                     {selectedBatch.enrolledStudents &&
                     selectedBatch.enrolledStudents.length > 0 ? (
@@ -1724,11 +2503,18 @@ const Batches = () => {
                               <TableCell sx={{ fontWeight: 600 }}>
                                 Name
                               </TableCell>
+                              <TableCell sx={{ fontWeight: 600 }}>ID</TableCell>
                               <TableCell sx={{ fontWeight: 600 }}>
                                 Email
                               </TableCell>
                               <TableCell sx={{ fontWeight: 600 }}>
                                 Phone
+                              </TableCell>
+                              <TableCell
+                                sx={{ fontWeight: 600 }}
+                                align="center"
+                              >
+                                Actions
                               </TableCell>
                             </TableRow>
                           </TableHead>
@@ -1751,8 +2537,65 @@ const Batches = () => {
                                       student.lastName || ""
                                     }`}
                                 </TableCell>
+                                <TableCell>
+                                  {student.studentId || "N/A"}
+                                </TableCell>
                                 <TableCell>{student.email}</TableCell>
                                 <TableCell>{student.phone}</TableCell>
+                                <TableCell align="center">
+                                  <Box
+                                    sx={{
+                                      display: "flex",
+                                      justifyContent: "center",
+                                      gap: 1,
+                                    }}
+                                  >
+                                    <Tooltip title="Edit Student">
+                                      <IconButton
+                                        size="small"
+                                        color="primary"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          // Open edit student dialog (to be implemented)
+                                          alert(
+                                            "Edit student functionality coming soon"
+                                          );
+                                        }}
+                                      >
+                                        <EditIcon fontSize="small" />
+                                      </IconButton>
+                                    </Tooltip>
+                                    <Tooltip title="Remove from Batch">
+                                      <IconButton
+                                        size="small"
+                                        color="warning"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleRemoveStudentFromBatch(
+                                            student,
+                                            selectedBatch
+                                          );
+                                        }}
+                                      >
+                                        <PersonIcon fontSize="small" />
+                                      </IconButton>
+                                    </Tooltip>
+                                    <Tooltip title="Delete Student">
+                                      <IconButton
+                                        size="small"
+                                        color="error"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleDeleteStudentWithConfirmation(
+                                            student
+                                          );
+                                        }}
+                                      >
+                                        <DeleteIcon fontSize="small" />
+                                      </IconButton>
+                                    </Tooltip>
+                                  </Box>
+                                </TableCell>
                               </TableRow>
                             ))}
                           </TableBody>
@@ -1774,11 +2617,18 @@ const Batches = () => {
                               <TableCell sx={{ fontWeight: 600 }}>
                                 Name
                               </TableCell>
+                              <TableCell sx={{ fontWeight: 600 }}>ID</TableCell>
                               <TableCell sx={{ fontWeight: 600 }}>
                                 Email
                               </TableCell>
                               <TableCell sx={{ fontWeight: 600 }}>
                                 Phone
+                              </TableCell>
+                              <TableCell
+                                sx={{ fontWeight: 600 }}
+                                align="center"
+                              >
+                                Actions
                               </TableCell>
                             </TableRow>
                           </TableHead>
@@ -1801,8 +2651,65 @@ const Batches = () => {
                                       student.lastName || ""
                                     }`}
                                 </TableCell>
+                                <TableCell>
+                                  {student.studentId || "N/A"}
+                                </TableCell>
                                 <TableCell>{student.email}</TableCell>
                                 <TableCell>{student.phone}</TableCell>
+                                <TableCell align="center">
+                                  <Box
+                                    sx={{
+                                      display: "flex",
+                                      justifyContent: "center",
+                                      gap: 1,
+                                    }}
+                                  >
+                                    <Tooltip title="Edit Student">
+                                      <IconButton
+                                        size="small"
+                                        color="primary"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          // Open edit student dialog (to be implemented)
+                                          alert(
+                                            "Edit student functionality coming soon"
+                                          );
+                                        }}
+                                      >
+                                        <EditIcon fontSize="small" />
+                                      </IconButton>
+                                    </Tooltip>
+                                    <Tooltip title="Remove from Batch">
+                                      <IconButton
+                                        size="small"
+                                        color="warning"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleRemoveStudentFromBatch(
+                                            student,
+                                            selectedBatch
+                                          );
+                                        }}
+                                      >
+                                        <PersonIcon fontSize="small" />
+                                      </IconButton>
+                                    </Tooltip>
+                                    <Tooltip title="Delete Student">
+                                      <IconButton
+                                        size="small"
+                                        color="error"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleDeleteStudentWithConfirmation(
+                                            student
+                                          );
+                                        }}
+                                      >
+                                        <DeleteIcon fontSize="small" />
+                                      </IconButton>
+                                    </Tooltip>
+                                  </Box>
+                                </TableCell>
                               </TableRow>
                             ))}
                           </TableBody>
@@ -1822,12 +2729,12 @@ const Batches = () => {
                           justifyContent: "center",
                         }}
                       >
-                      <Typography
-                        variant="body2"
+                        <Typography
+                          variant="body2"
                           sx={{ color: "text.secondary" }}
-                      >
-                        No students enrolled in this batch yet.
-                      </Typography>
+                        >
+                          No students enrolled in this batch yet.
+                        </Typography>
                       </Box>
                     )}
                   </Paper>
@@ -1905,7 +2812,7 @@ const Batches = () => {
           }}
         >
           <Typography variant="h6" fontWeight={600}>
-          {selectedBatch ? "Edit Batch" : "Add New Batch"}
+            {selectedBatch ? "Edit Batch" : "Add New Batch"}
           </Typography>
         </DialogTitle>
         <form
@@ -2090,28 +2997,28 @@ const Batches = () => {
                     gutterBottom
                   >
                     Schedule Days
-                </Typography>
+                  </Typography>
                   <Box
                     sx={{ display: "flex", flexWrap: "wrap", gap: 1, mt: 1 }}
                   >
-                  {DAYS_OF_WEEK.map((day) => (
-                    <Chip
-                      key={day}
-                      label={day}
-                      onClick={() => handleDayToggle(day)}
-                      color={
-                        formData.schedule.days.includes(day)
-                          ? "primary"
-                          : "default"
-                      }
-                      variant={
-                        formData.schedule.days.includes(day)
-                          ? "filled"
-                          : "outlined"
-                      }
+                    {DAYS_OF_WEEK.map((day) => (
+                      <Chip
+                        key={day}
+                        label={day}
+                        onClick={() => handleDayToggle(day)}
+                        color={
+                          formData.schedule.days.includes(day)
+                            ? "primary"
+                            : "default"
+                        }
+                        variant={
+                          formData.schedule.days.includes(day)
+                            ? "filled"
+                            : "outlined"
+                        }
                         sx={{ fontWeight: 500 }}
-                    />
-                  ))}
+                      />
+                    ))}
                   </Box>
                 </Box>
               </Grid>
@@ -2257,25 +3164,822 @@ const Batches = () => {
               flexShrink: 0,
             }}
           >
-            <Button onClick={handleClose} disabled={submitting}>
+            {/* Show only Cancel and Submit when adding, include Delete when editing */}
+            <Button
+              variant="outlined"
+              onClick={handleClose}
+              disabled={submitting}
+            >
               Cancel
             </Button>
+
+            {/* Only show Delete button when editing an existing batch */}
+            {selectedBatch && (
+              <Button
+                variant="outlined"
+                color="error"
+                startIcon={<DeleteIcon />}
+                onClick={() => handleDeleteBatchWithConfirmation(selectedBatch)}
+                disabled={submitting}
+              >
+                Delete
+              </Button>
+            )}
+
             <Button
               type="submit"
               variant="contained"
               color="primary"
               disabled={submitting}
+              sx={{ ml: "auto" }}
+              startIcon={
+                submitting ? (
+                  <CircularProgress size={20} color="inherit" />
+                ) : (
+                  <SaveIcon />
+                )
+              }
             >
-              {submitting ? (
-                <CircularProgress size={24} />
-              ) : selectedBatch ? (
-                "Update Batch"
-              ) : (
-                "Save Batch"
-              )}
+              {submitting ? "Saving..." : selectedBatch ? "Update" : "Save"}
             </Button>
           </DialogActions>
         </form>
+      </Dialog>
+
+      {/* Add Student Dialog */}
+      <Dialog
+        open={studentDialogOpen}
+        onClose={handleCloseStudentDialog}
+        maxWidth="md"
+        fullWidth
+        fullScreen={isMobile}
+        PaperProps={{
+          sx: {
+            borderRadius: isMobile ? 0 : 2,
+            overflow: "hidden",
+            height: isMobile ? "100%" : "auto",
+            display: "flex",
+            flexDirection: "column",
+            maxHeight: isMobile ? "100%" : "90vh",
+          },
+        }}
+      >
+        <DialogTitle
+          sx={{
+            background: `linear-gradient(to right, ${alpha(
+              theme.palette.primary.main,
+              0.8
+            )}, ${alpha(theme.palette.primary.dark, 0.9)})`,
+            color: "white",
+            p: 2.5,
+            flexShrink: 0,
+            display: "flex",
+            alignItems: "center",
+            gap: 1.5,
+          }}
+        >
+          <PersonAddIcon sx={{ fontSize: "1.8rem" }} />
+          <Typography variant="h6" fontWeight={600}>
+            Add Student to {enrollingToBatch?.name || "Batch"}
+          </Typography>
+        </DialogTitle>
+        <form
+          onSubmit={studentFormik.handleSubmit}
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            height: isMobile ? "100%" : "auto",
+            overflow: "hidden",
+            flexGrow: 1,
+          }}
+        >
+          <DialogContent
+            dividers
+            sx={{
+              p: { xs: 2, sm: 3 },
+              overflowY: "auto",
+              flexGrow: 1,
+              display: "flex",
+              flexDirection: "column",
+            }}
+          >
+            {studentFormik.status && (
+              <Alert
+                severity="error"
+                sx={{
+                  mb: 3,
+                  borderRadius: 1.5,
+                }}
+              >
+                {studentFormik.status}
+              </Alert>
+            )}
+            <Box
+              sx={{
+                mb: 3,
+                p: 2,
+                borderRadius: 2,
+                bgcolor: alpha(theme.palette.primary.light, 0.05),
+                border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
+              }}
+            >
+              <Typography variant="body2" color="text.secondary">
+                This student will be added to{" "}
+                <b>{enrollingToBatch?.name || "Batch"}</b> and assigned to{" "}
+                <b>
+                  {getRelatedData(
+                    enrollingToBatch?.standard?._id ||
+                      enrollingToBatch?.standard,
+                    standards
+                  )?.name || "Standard"}
+                </b>{" "}
+                and{" "}
+                <b>
+                  {getRelatedData(
+                    enrollingToBatch?.subject?._id || enrollingToBatch?.subject,
+                    subjects
+                  )?.name || "Subject"}
+                </b>{" "}
+                automatically.
+              </Typography>
+            </Box>
+
+            <Grid container spacing={3}>
+              <Grid item xs={12}>
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    pb: 1,
+                    mb: 1,
+                    borderBottom: `1px solid ${alpha(
+                      theme.palette.divider,
+                      0.3
+                    )}`,
+                  }}
+                >
+                  <Typography
+                    variant="subtitle1"
+                    color="primary"
+                    fontWeight={600}
+                    sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                  >
+                    <PersonIcon fontSize="small" />
+                    Basic Information
+                  </Typography>
+                </Box>
+              </Grid>
+
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  name="name"
+                  label="Name"
+                  value={studentFormik.values.name}
+                  onChange={studentFormik.handleChange}
+                  error={
+                    studentFormik.touched.name &&
+                    Boolean(studentFormik.errors.name)
+                  }
+                  helperText={
+                    studentFormik.touched.name && studentFormik.errors.name
+                  }
+                  required
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <PersonIcon fontSize="small" color="primary" />
+                      </InputAdornment>
+                    ),
+                  }}
+                  sx={{ "& .MuiOutlinedInput-root": { borderRadius: 1.5 } }}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <FormControl fullWidth required>
+                  <InputLabel id="gender-label">Gender</InputLabel>
+                  <Select
+                    labelId="gender-label"
+                    name="gender"
+                    value={studentFormik.values.gender}
+                    onChange={studentFormik.handleChange}
+                    error={
+                      studentFormik.touched.gender &&
+                      Boolean(studentFormik.errors.gender)
+                    }
+                    label="Gender"
+                  >
+                    <MenuItem value="">
+                      <em>Select Gender</em>
+                    </MenuItem>
+                    <MenuItem value="male">Male</MenuItem>
+                    <MenuItem value="female">Female</MenuItem>
+                    <MenuItem value="other">Other</MenuItem>
+                  </Select>
+                  {studentFormik.touched.gender &&
+                    studentFormik.errors.gender && (
+                      <FormHelperText error>
+                        {studentFormik.errors.gender}
+                      </FormHelperText>
+                    )}
+                </FormControl>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  name="dateOfBirth"
+                  label="Date of Birth"
+                  type="date"
+                  value={studentFormik.values.dateOfBirth}
+                  onChange={studentFormik.handleChange}
+                  error={
+                    studentFormik.touched.dateOfBirth &&
+                    Boolean(studentFormik.errors.dateOfBirth)
+                  }
+                  helperText={
+                    studentFormik.touched.dateOfBirth &&
+                    studentFormik.errors.dateOfBirth
+                  }
+                  required
+                  InputLabelProps={{
+                    shrink: true,
+                  }}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <CalendarTodayIcon fontSize="small" color="primary" />
+                      </InputAdornment>
+                    ),
+                  }}
+                  sx={{ "& .MuiOutlinedInput-root": { borderRadius: 1.5 } }}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  name="address"
+                  label="Address"
+                  value={studentFormik.values.address}
+                  onChange={studentFormik.handleChange}
+                  error={
+                    studentFormik.touched.address &&
+                    Boolean(studentFormik.errors.address)
+                  }
+                  helperText={
+                    studentFormik.touched.address &&
+                    studentFormik.errors.address
+                  }
+                  required
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <HomeIcon fontSize="small" color="primary" />
+                      </InputAdornment>
+                    ),
+                  }}
+                  sx={{ "& .MuiOutlinedInput-root": { borderRadius: 1.5 } }}
+                />
+              </Grid>
+
+              <Grid item xs={12}>
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    pt: 2,
+                    pb: 1,
+                    mb: 1,
+                    borderBottom: `1px solid ${alpha(
+                      theme.palette.divider,
+                      0.3
+                    )}`,
+                  }}
+                >
+                  <Typography
+                    variant="subtitle1"
+                    color="primary"
+                    fontWeight={600}
+                    sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                  >
+                    <PhoneIcon fontSize="small" />
+                    Contact Information
+                  </Typography>
+                </Box>
+              </Grid>
+
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  name="email"
+                  label="Email"
+                  value={studentFormik.values.email}
+                  onChange={studentFormik.handleChange}
+                  error={
+                    studentFormik.touched.email &&
+                    Boolean(studentFormik.errors.email)
+                  }
+                  helperText={
+                    studentFormik.touched.email && studentFormik.errors.email
+                  }
+                  required
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <EmailIcon fontSize="small" color="primary" />
+                      </InputAdornment>
+                    ),
+                  }}
+                  sx={{ "& .MuiOutlinedInput-root": { borderRadius: 1.5 } }}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  name="phone"
+                  label="Phone Number"
+                  value={studentFormik.values.phone}
+                  onChange={studentFormik.handleChange}
+                  error={
+                    studentFormik.touched.phone &&
+                    Boolean(studentFormik.errors.phone)
+                  }
+                  helperText={
+                    studentFormik.touched.phone && studentFormik.errors.phone
+                  }
+                  required
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <PhoneIcon fontSize="small" color="primary" />
+                      </InputAdornment>
+                    ),
+                  }}
+                  sx={{ "& .MuiOutlinedInput-root": { borderRadius: 1.5 } }}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  name="parentName"
+                  label="Parent Name"
+                  value={studentFormik.values.parentName}
+                  onChange={studentFormik.handleChange}
+                  error={
+                    studentFormik.touched.parentName &&
+                    Boolean(studentFormik.errors.parentName)
+                  }
+                  helperText={
+                    studentFormik.touched.parentName &&
+                    studentFormik.errors.parentName
+                  }
+                  required
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <PersonIcon fontSize="small" color="primary" />
+                      </InputAdornment>
+                    ),
+                  }}
+                  sx={{ "& .MuiOutlinedInput-root": { borderRadius: 1.5 } }}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  name="parentPhone"
+                  label="Parent Phone Number"
+                  value={studentFormik.values.parentPhone}
+                  onChange={studentFormik.handleChange}
+                  error={
+                    studentFormik.touched.parentPhone &&
+                    Boolean(studentFormik.errors.parentPhone)
+                  }
+                  helperText={
+                    studentFormik.touched.parentPhone &&
+                    studentFormik.errors.parentPhone
+                  }
+                  required
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <PhoneIcon fontSize="small" color="primary" />
+                      </InputAdornment>
+                    ),
+                  }}
+                  sx={{ "& .MuiOutlinedInput-root": { borderRadius: 1.5 } }}
+                />
+              </Grid>
+
+              <Grid item xs={12}>
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    pt: 2,
+                    pb: 1,
+                    mb: 1,
+                    borderBottom: `1px solid ${alpha(
+                      theme.palette.divider,
+                      0.3
+                    )}`,
+                  }}
+                >
+                  <Typography
+                    variant="subtitle1"
+                    color="primary"
+                    fontWeight={600}
+                    sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                  >
+                    <SchoolIcon fontSize="small" />
+                    Academic Information
+                  </Typography>
+                </Box>
+              </Grid>
+
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  name="joiningDate"
+                  label="Joining Date"
+                  type="date"
+                  value={studentFormik.values.joiningDate}
+                  onChange={studentFormik.handleChange}
+                  InputLabelProps={{ shrink: true }}
+                  error={
+                    studentFormik.touched.joiningDate &&
+                    Boolean(studentFormik.errors.joiningDate)
+                  }
+                  helperText={
+                    studentFormik.touched.joiningDate &&
+                    studentFormik.errors.joiningDate
+                      ? studentFormik.errors.joiningDate
+                      : "Required"
+                  }
+                  required
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <CalendarTodayIcon fontSize="small" color="primary" />
+                      </InputAdornment>
+                    ),
+                  }}
+                  sx={{ "& .MuiOutlinedInput-root": { borderRadius: 1.5 } }}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  name="schoolName"
+                  label="School Name"
+                  value={studentFormik.values.schoolName}
+                  onChange={studentFormik.handleChange}
+                  error={
+                    studentFormik.touched.schoolName &&
+                    Boolean(studentFormik.errors.schoolName)
+                  }
+                  helperText={
+                    studentFormik.touched.schoolName &&
+                    studentFormik.errors.schoolName
+                  }
+                  required
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <SchoolIcon fontSize="small" color="primary" />
+                      </InputAdornment>
+                    ),
+                  }}
+                  sx={{ "& .MuiOutlinedInput-root": { borderRadius: 1.5 } }}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <FormControl
+                  fullWidth
+                  error={
+                    studentFormik.touched.board &&
+                    Boolean(studentFormik.errors.board)
+                  }
+                  required
+                >
+                  <InputLabel>Board</InputLabel>
+                  <Select
+                    name="board"
+                    value={studentFormik.values.board}
+                    onChange={studentFormik.handleChange}
+                    label="Board"
+                    sx={{ borderRadius: 1.5 }}
+                  >
+                    <MenuItem value="" disabled>
+                      Select a board
+                    </MenuItem>
+                    <MenuItem value="CBSE">CBSE</MenuItem>
+                    <MenuItem value="ICSE">ICSE</MenuItem>
+                    <MenuItem value="State Board">State Board</MenuItem>
+                    <MenuItem value="Other">Other</MenuItem>
+                  </Select>
+                  {studentFormik.touched.board &&
+                    studentFormik.errors.board && (
+                      <FormHelperText>
+                        {studentFormik.errors.board}
+                      </FormHelperText>
+                    )}
+                </FormControl>
+              </Grid>
+            </Grid>
+          </DialogContent>
+          <DialogActions
+            sx={{
+              px: { xs: 2, sm: 3 },
+              py: 2,
+              backgroundColor: "background.paper",
+              borderTop: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+              zIndex: 1,
+              mt: "auto",
+              flexShrink: 0,
+              gap: 1,
+            }}
+          >
+            <Button
+              variant="outlined"
+              onClick={handleCloseStudentDialog}
+              startIcon={<ClearIcon />}
+              disabled={studentFormik.isSubmitting}
+              sx={{ borderRadius: 1.5, textTransform: "none" }}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="contained"
+              type="submit"
+              color="primary"
+              disabled={studentFormik.isSubmitting}
+              startIcon={
+                studentFormik.isSubmitting ? (
+                  <CircularProgress size={20} color="inherit" />
+                ) : (
+                  <PersonAddIcon />
+                )
+              }
+              sx={{
+                ml: "auto",
+                borderRadius: 1.5,
+                textTransform: "none",
+                px: 3,
+              }}
+            >
+              {studentFormik.isSubmitting
+                ? "Processing..."
+                : "Add Student to Batch"}
+            </Button>
+          </DialogActions>
+        </form>
+      </Dialog>
+
+      {/* Add Existing Student Dialog */}
+      <Dialog
+        open={existingStudentDialogOpen}
+        onClose={handleCloseExistingStudentDialog}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 2,
+            overflow: "hidden",
+          },
+        }}
+      >
+        <DialogTitle
+          sx={{
+            background: `linear-gradient(to right, ${alpha(
+              theme.palette.primary.main,
+              0.8
+            )}, ${alpha(theme.palette.primary.dark, 0.9)})`,
+            color: "white",
+            p: 2.5,
+          }}
+        >
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+            <PersonAddIcon sx={{ fontSize: "1.8rem" }} />
+            <Typography variant="h6" fontWeight={600}>
+              Add Existing Student to {enrollingToBatch?.name || "Batch"}
+            </Typography>
+          </Box>
+        </DialogTitle>
+        <DialogContent dividers sx={{ p: 3 }}>
+          <Box sx={{ mb: 3 }}>
+            <Typography variant="body2" color="text.secondary">
+              Select an existing student to enroll in {enrollingToBatch?.name}.
+              This will add this student to this batch for a different subject.
+            </Typography>
+          </Box>
+
+          {/* Student Count */}
+          {!loadingAvailableStudents && (
+            <Box
+              sx={{
+                mb: 2,
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
+              <Typography variant="body2" fontWeight={500} color="primary">
+                {(() => {
+                  const filteredCount = availableStudentsForBatch.filter(
+                    (student) => {
+                      if (!existingStudentSearchTerm) return true;
+                      const searchTerm =
+                        existingStudentSearchTerm.toLowerCase();
+                      return (
+                        (student.name &&
+                          student.name.toLowerCase().includes(searchTerm)) ||
+                        (student.email &&
+                          student.email.toLowerCase().includes(searchTerm)) ||
+                        (student.phone && student.phone.includes(searchTerm)) ||
+                        (student.studentId &&
+                          student.studentId.toLowerCase().includes(searchTerm))
+                      );
+                    }
+                  ).length;
+
+                  if (existingStudentSearchTerm) {
+                    return `${filteredCount} ${
+                      filteredCount === 1 ? "student" : "students"
+                    } found`;
+                  } else {
+                    return `${filteredCount} available ${
+                      filteredCount === 1 ? "student" : "students"
+                    }`;
+                  }
+                })()}
+              </Typography>
+              {existingStudentSearchTerm && (
+                <Chip
+                  label="Clear search"
+                  size="small"
+                  onDelete={() => {
+                    setExistingStudentSearchTerm("");
+                    // Reset selection to make it easier to start fresh
+                    if (selectedExistingStudents.length > 0) {
+                      setSelectedExistingStudents([]);
+                    }
+                  }}
+                  color="primary"
+                  variant="outlined"
+                  clickable
+                />
+              )}
+            </Box>
+          )}
+
+          {/* Student Search */}
+          <TextField
+            fullWidth
+            label="Search Student"
+            placeholder="Search by name, email, or ID"
+            value={existingStudentSearchTerm}
+            onChange={(e) => {
+              setExistingStudentSearchTerm(e.target.value);
+              // Open the select dropdown when typing
+              if (e.target.value) {
+                setTimeout(() => {
+                  const selectElement = document.getElementById(
+                    "existing-student-select"
+                  );
+                  if (selectElement) selectElement.click();
+                }, 100);
+              }
+            }}
+            sx={{ mb: 3 }}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon />
+                </InputAdornment>
+              ),
+              endAdornment: existingStudentSearchTerm && (
+                <InputAdornment position="end">
+                  <IconButton
+                    onClick={() => {
+                      setExistingStudentSearchTerm("");
+                      // Reset selection to make it easier to start fresh
+                      setSelectedExistingStudents([]);
+                    }}
+                    edge="end"
+                    size="small"
+                  >
+                    <ClearIcon fontSize="small" />
+                  </IconButton>
+                </InputAdornment>
+              ),
+            }}
+          />
+
+          {loadingAvailableStudents ? (
+            <Box sx={{ display: "flex", justifyContent: "center", p: 3 }}>
+              <CircularProgress size={30} />
+            </Box>
+          ) : availableStudentsForBatch.length === 0 ? (
+            <Alert severity="info">
+              No available students found. All students are already enrolled in
+              this batch.
+            </Alert>
+          ) : (
+            <FormControl fullWidth>
+              <InputLabel id="existing-student-select-label">
+                Select Students
+              </InputLabel>
+              <Select
+                labelId="existing-student-select-label"
+                multiple
+                value={selectedExistingStudents}
+                onChange={(e) => {
+                  setSelectedExistingStudents(e.target.value);
+                  // Keep the dropdown open
+                }}
+                label="Select Students"
+                renderValue={(selected) => (
+                  <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
+                    {selected.map((value) => {
+                      const student = availableStudentsForBatch.find(
+                        (s) => s._id === value
+                      );
+                      return (
+                        <Chip
+                          key={value}
+                          label={student ? student.name : value}
+                          size="small"
+                        />
+                      );
+                    })}
+                  </Box>
+                )}
+                MenuProps={{
+                  PaperProps: {
+                    style: {
+                      maxHeight: 300,
+                    },
+                  },
+                }}
+                id="existing-student-select"
+              >
+                <MenuItem value="" disabled>
+                  <em>Select a student</em>
+                </MenuItem>
+                {availableStudentsForBatch
+                  .filter((student) => {
+                    if (!existingStudentSearchTerm) return true;
+
+                    const searchTerm = existingStudentSearchTerm.toLowerCase();
+                    return (
+                      (student.name &&
+                        student.name.toLowerCase().includes(searchTerm)) ||
+                      (student.email &&
+                        student.email.toLowerCase().includes(searchTerm)) ||
+                      (student.phone && student.phone.includes(searchTerm)) ||
+                      (student.studentId &&
+                        student.studentId.toLowerCase().includes(searchTerm))
+                    );
+                  })
+                  .map((student) => (
+                    <MenuItem
+                      key={student._id}
+                      value={student._id}
+                      sx={{
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "flex-start",
+                      }}
+                    >
+                      <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                        {student.name}{" "}
+                        {student.studentId ? `(${student.studentId})` : ""}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {student.email} • {student.phone}
+                      </Typography>
+                    </MenuItem>
+                  ))}
+              </Select>
+            </FormControl>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ px: 3, py: 2 }}>
+          <Button onClick={handleCloseExistingStudentDialog} variant="outlined">
+            Cancel
+          </Button>
+          <Button
+            onClick={handleEnrollExistingStudent}
+            variant="contained"
+            color="primary"
+            disabled={!selectedExistingStudents.length || submitting}
+            startIcon={
+              submitting ? <CircularProgress size={20} color="inherit" /> : null
+            }
+          >
+            {submitting ? "Enrolling..." : "Enroll Selected Students"}
+          </Button>
+        </DialogActions>
       </Dialog>
     </Box>
   );

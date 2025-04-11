@@ -6,6 +6,9 @@ import {
   updateBatch,
   deleteBatch,
   getBatchesBySubject,
+  addStudentToBatch,
+  removeStudentFromBatch,
+  syncBatchStudents,
 } from "../controllers/batchController.js";
 import {
   createBatchValidator,
@@ -52,5 +55,22 @@ router.put(
 
 // Delete batch
 router.delete("/:id", authorize("admin"), deleteBatch);
+
+// Add student to batch
+router.put(
+  "/:batchId/students/:studentId/add",
+  authorize("admin"),
+  addStudentToBatch
+);
+
+// Remove student from batch
+router.put(
+  "/:batchId/students/:studentId/remove",
+  authorize("admin"),
+  removeStudentFromBatch
+);
+
+// Sync batch students (admin only utility route)
+router.post("/sync-students", authorize("admin"), syncBatchStudents);
 
 export default router;

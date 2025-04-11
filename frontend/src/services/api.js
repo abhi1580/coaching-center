@@ -171,7 +171,21 @@ export const batchService = {
       : "";
     return api.get(`/batches${queryParams}`);
   },
-  getById: (id) => api.get(`/batches/${id}`),
+  getById: (id, options = {}) => {
+    const { populateEnrolledStudents = false } = options;
+    let queryParams = "";
+
+    if (populateEnrolledStudents) {
+      queryParams += "populate=enrolledStudents";
+    }
+
+    // Always populate standard and subject
+    queryParams += queryParams
+      ? "&populate=standard,subject"
+      : "populate=standard,subject";
+
+    return api.get(`/batches/${id}?${queryParams}`);
+  },
   getBySubject: (subjects, standard, options = {}) => {
     // Convert subjects array to query params
     let queryParams = "";
@@ -205,6 +219,14 @@ export const batchService = {
   create: (data) => api.post("/batches", data),
   update: (id, data) => api.put(`/batches/${id}`, data),
   delete: (id) => api.delete(`/batches/${id}`),
+  // Add a function to remove a student from a batch
+  removeStudentFromBatch: (batchId, studentId) =>
+    api.put(`/batches/${batchId}/students/${studentId}/remove`),
+  // Add a function to add an existing student to a batch
+  addStudentToBatch: (batchId, studentId) =>
+    api.put(`/batches/${batchId}/students/${studentId}/add`),
+  // Sync batch-student relationships
+  syncBatchStudents: () => api.post("/batches/sync-students"),
 };
 
 // Class services
