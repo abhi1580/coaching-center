@@ -1,6 +1,5 @@
 import Student from "../models/Student.js";
 import User from "../models/User.js";
-import Class from "../models/Class.js";
 import Payment from "../models/Payment.js";
 import { validateObjectId } from "../utils/validation.js";
 import { errorResponse, successResponse } from "../utils/errorResponse.js";

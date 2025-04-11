@@ -1,7 +1,6 @@
 import User from "../models/User.js";
 import Subject from "../models/Subject.js";
 import Payment from "../models/Payment.js";
-import Class from "../models/Class.js";
 import Batch from "../models/Batch.js";
 import Standard from "../models/Standard.js";
 import Announcement from "../models/Announcement.js";

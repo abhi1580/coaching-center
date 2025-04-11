@@ -11,7 +11,6 @@ import { fileURLToPath } from "url";
 import authRoutes from "./routes/authRoutes.js";
 import studentRoutes from "./routes/studentRoutes.js";
 import batchRoutes from "./routes/batchRoutes.js";
-import classRoutes from "./routes/classRoutes.js";
 import subjectRoutes from "./routes/subjectRoutes.js";
 import standardRoutes from "./routes/standardRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
