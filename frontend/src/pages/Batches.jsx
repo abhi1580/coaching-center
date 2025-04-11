@@ -169,6 +169,9 @@ const Batches = () => {
     useState("");
   const [loadingAvailableStudents, setLoadingAvailableStudents] =
     useState(false);
+  // Add state variables for edit student functionality
+  const [editStudentDialogOpen, setEditStudentDialogOpen] = useState(false);
+  const [editingStudent, setEditingStudent] = useState(null);
 
   // Helper function to format error message
   const formatErrorMessage = (error) => {
@@ -1274,14 +1277,50 @@ const Batches = () => {
     }
   };
 
-  // Function to close the existing student dialog
   const handleCloseExistingStudentDialog = () => {
     setExistingStudentDialogOpen(false);
     setEnrollingToBatch(null);
-    setSelectedExistingStudent("");
     setSelectedExistingStudents([]);
     setExistingStudentSearchTerm("");
-    setAvailableStudentsForBatch([]);
+  };
+
+  // Add these functions for handling the edit student dialog
+  const handleOpenEditStudentDialog = async (student) => {
+    try {
+      setSubmitting(true);
+
+      // Fetch the complete student data to ensure we have all fields
+      const response = await fetch(`/api/students/${student._id}`);
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch complete student data");
+      }
+
+      const completeStudent = await response.json();
+
+      // If the API response has a data property, extract the student from it
+      const studentData = completeStudent.data
+        ? completeStudent.data
+        : completeStudent;
+
+      console.log("Complete student data fetched:", studentData);
+
+      // Set the student with complete data
+      setEditingStudent(studentData);
+      setEditStudentDialogOpen(true);
+    } catch (error) {
+      console.error("Error fetching complete student data:", error);
+      // Fall back to the existing student data if fetch fails
+      setEditingStudent(student);
+      setEditStudentDialogOpen(true);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleCloseEditStudentDialog = () => {
+    setEditStudentDialogOpen(false);
+    setEditingStudent(null);
   };
 
   // Effect to auto-select first matching student when search term changes
@@ -1649,44 +1688,102 @@ const Batches = () => {
                       </Typography>
                     </Box>
 
-                    <Box sx={{ display: "flex", alignItems: "center" }}>
-                      <Typography
-                        variant="body2"
-                        color="text.secondary"
-                        sx={{ mr: 1, fontWeight: 600, minWidth: "80px" }}
-                      >
-                        Students:
-                      </Typography>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        flexDirection: { xs: "column", sm: "row" },
+                        alignItems: { xs: "stretch", sm: "center" },
+                        mb: 1,
+                        gap: { xs: 2, sm: 0 },
+                      }}
+                    >
                       <Box
                         sx={{
                           display: "flex",
                           alignItems: "center",
+                          flexWrap: "wrap",
                           gap: 1,
+                          mb: { xs: 1, sm: 0 },
                         }}
                       >
-                        <Chip
-                          label={`${getStudentsCount(batch).enrolled}/${
-                            batch.capacity || "∞"
-                          }`}
-                          size="small"
-                          color={
-                            getStudentsCount(batch).enrolled > 0
-                              ? "primary"
-                              : "default"
-                          }
+                        <Typography
+                          variant="h6"
+                          component="h3"
                           sx={{ fontWeight: 600 }}
-                          icon={<PersonIcon fontSize="small" />}
-                        />
-                        {batch.capacity > 0 && (
+                        >
+                          Students{" "}
+                          <Typography
+                            component="span"
+                            sx={{ fontWeight: 400, fontSize: "0.9rem" }}
+                          >
+                            ({getStudentsCount(batch).enrolled}/
+                            {batch.capacity || "∞"})
+                          </Typography>
+                        </Typography>
+                        {batch.capacity && (
                           <Chip
+                            size="small"
                             label={`${
                               getStudentsCount(batch).remaining
-                            } seats left`}
-                            size="small"
+                            } seats remaining`}
                             color={getRemainingSeatsColor(batch)}
-                            sx={{ fontWeight: 500 }}
+                            sx={{ ml: 1, fontWeight: 500 }}
                           />
                         )}
+                      </Box>
+
+                      <Box
+                        sx={{
+                          display: "flex",
+                          flexDirection: { xs: "row", sm: "row" },
+                          alignItems: { xs: "stretch", sm: "center" },
+                          gap: { xs: 1, sm: 1.5 },
+                          width: "100%",
+                          mt: { xs: 1, sm: 0 },
+                        }}
+                      >
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          color="secondary"
+                          startIcon={<PersonAddIcon fontSize="small" />}
+                          onClick={() => handleAddExistingStudentToBatch(batch)}
+                          disabled={
+                            batch.capacity &&
+                            getStudentsCount(batch).remaining <= 0
+                          }
+                          sx={{
+                            borderRadius: 1.5,
+                            textTransform: "none",
+                            fontSize: { xs: "0.7rem", sm: "0.75rem" },
+                            py: { xs: 0.5, sm: 0.75 },
+                            minHeight: { xs: "32px", sm: "36px" },
+                            flex: 1,
+                          }}
+                        >
+                          Add Existing
+                        </Button>
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          color="primary"
+                          startIcon={<PersonAddIcon fontSize="small" />}
+                          onClick={() => handleOpenStudentDialog(batch)}
+                          disabled={
+                            batch.capacity &&
+                            getStudentsCount(batch).remaining <= 0
+                          }
+                          sx={{
+                            borderRadius: 1.5,
+                            textTransform: "none",
+                            fontSize: { xs: "0.7rem", sm: "0.75rem" },
+                            py: { xs: 0.5, sm: 0.75 },
+                            minHeight: { xs: "32px", sm: "36px" },
+                            flex: 1,
+                          }}
+                        >
+                          Add New
+                        </Button>
                       </Box>
                     </Box>
                   </Box>
@@ -2489,118 +2586,157 @@ const Batches = () => {
                     </Typography>
                     {selectedBatch.enrolledStudents &&
                     selectedBatch.enrolledStudents.length > 0 ? (
-                      <TableContainer sx={{ mt: 1.5 }}>
-                        <Table size="small">
-                          <TableHead>
-                            <TableRow
-                              sx={{
-                                backgroundColor: alpha(
-                                  theme.palette.primary.main,
-                                  0.1
-                                ),
-                              }}
-                            >
-                              <TableCell sx={{ fontWeight: 600 }}>
-                                Name
-                              </TableCell>
-                              <TableCell sx={{ fontWeight: 600 }}>ID</TableCell>
-                              <TableCell sx={{ fontWeight: 600 }}>
-                                Email
-                              </TableCell>
-                              <TableCell sx={{ fontWeight: 600 }}>
-                                Phone
-                              </TableCell>
-                              <TableCell
-                                sx={{ fontWeight: 600 }}
-                                align="center"
-                              >
-                                Actions
-                              </TableCell>
-                            </TableRow>
-                          </TableHead>
-                          <TableBody>
-                            {selectedBatch.enrolledStudents.map((student) => (
+                      <Box sx={{ mt: 1.5, overflowX: "auto" }}>
+                        <TableContainer
+                          sx={{
+                            minWidth: { xs: 600, sm: "100%" },
+                            borderRadius: 1,
+                          }}
+                        >
+                          <Table size={isMobile ? "small" : "medium"}>
+                            <TableHead>
                               <TableRow
-                                key={student._id}
                                 sx={{
-                                  "&:hover": {
-                                    backgroundColor: alpha(
-                                      theme.palette.primary.light,
-                                      0.05
-                                    ),
-                                  },
+                                  backgroundColor: alpha(
+                                    theme.palette.primary.main,
+                                    0.1
+                                  ),
                                 }}
                               >
-                                <TableCell>
-                                  {student.name ||
-                                    `${student.firstName || ""} ${
-                                      student.lastName || ""
-                                    }`}
+                                <TableCell sx={{ fontWeight: 600 }}>
+                                  Name
                                 </TableCell>
-                                <TableCell>
-                                  {student.studentId || "N/A"}
+                                <TableCell sx={{ fontWeight: 600 }}>
+                                  ID
                                 </TableCell>
-                                <TableCell>{student.email}</TableCell>
-                                <TableCell>{student.phone}</TableCell>
-                                <TableCell align="center">
-                                  <Box
-                                    sx={{
-                                      display: "flex",
-                                      justifyContent: "center",
-                                      gap: 1,
-                                    }}
-                                  >
-                                    <Tooltip title="Edit Student">
-                                      <IconButton
-                                        size="small"
-                                        color="primary"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          // Open edit student dialog (to be implemented)
-                                          alert(
-                                            "Edit student functionality coming soon"
-                                          );
-                                        }}
-                                      >
-                                        <EditIcon fontSize="small" />
-                                      </IconButton>
-                                    </Tooltip>
-                                    <Tooltip title="Remove from Batch">
-                                      <IconButton
-                                        size="small"
-                                        color="warning"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          handleRemoveStudentFromBatch(
-                                            student,
-                                            selectedBatch
-                                          );
-                                        }}
-                                      >
-                                        <PersonIcon fontSize="small" />
-                                      </IconButton>
-                                    </Tooltip>
-                                    <Tooltip title="Delete Student">
-                                      <IconButton
-                                        size="small"
-                                        color="error"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          handleDeleteStudentWithConfirmation(
-                                            student
-                                          );
-                                        }}
-                                      >
-                                        <DeleteIcon fontSize="small" />
-                                      </IconButton>
-                                    </Tooltip>
-                                  </Box>
+                                <TableCell
+                                  sx={{
+                                    fontWeight: 600,
+                                    display: { xs: "none", sm: "table-cell" },
+                                  }}
+                                >
+                                  Email
+                                </TableCell>
+                                <TableCell
+                                  sx={{
+                                    fontWeight: 600,
+                                    display: { xs: "none", md: "table-cell" },
+                                  }}
+                                >
+                                  Phone
+                                </TableCell>
+                                <TableCell
+                                  sx={{ fontWeight: 600 }}
+                                  align="center"
+                                >
+                                  Actions
                                 </TableCell>
                               </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      </TableContainer>
+                            </TableHead>
+                            <TableBody>
+                              {selectedBatch.enrolledStudents.map((student) => (
+                                <TableRow
+                                  key={student._id}
+                                  sx={{
+                                    "&:hover": {
+                                      backgroundColor: alpha(
+                                        theme.palette.primary.light,
+                                        0.05
+                                      ),
+                                    },
+                                  }}
+                                >
+                                  <TableCell>
+                                    <Typography
+                                      noWrap
+                                      sx={{
+                                        maxWidth: { xs: 120, sm: "none" },
+                                        overflow: "hidden",
+                                        textOverflow: "ellipsis",
+                                      }}
+                                    >
+                                      {student.name ||
+                                        `${student.firstName || ""} ${
+                                          student.lastName || ""
+                                        }`}
+                                    </Typography>
+                                  </TableCell>
+                                  <TableCell>
+                                    {student.studentId || "N/A"}
+                                  </TableCell>
+                                  <TableCell
+                                    sx={{
+                                      display: { xs: "none", sm: "table-cell" },
+                                    }}
+                                  >
+                                    {student.email}
+                                  </TableCell>
+                                  <TableCell
+                                    sx={{
+                                      display: { xs: "none", md: "table-cell" },
+                                    }}
+                                  >
+                                    {student.phone}
+                                  </TableCell>
+                                  <TableCell align="center">
+                                    <Box
+                                      sx={{
+                                        display: "flex",
+                                        justifyContent: "center",
+                                        gap: 1,
+                                      }}
+                                    >
+                                      <Tooltip title="Edit Student">
+                                        <IconButton
+                                          size="small"
+                                          color="primary"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleOpenEditStudentDialog(
+                                              student
+                                            );
+                                          }}
+                                        >
+                                          <EditIcon fontSize="small" />
+                                        </IconButton>
+                                      </Tooltip>
+                                      <Tooltip title="Remove from Batch">
+                                        <IconButton
+                                          size="small"
+                                          color="warning"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleRemoveStudentFromBatch(
+                                              student,
+                                              selectedBatch
+                                            );
+                                          }}
+                                        >
+                                          <PersonIcon fontSize="small" />
+                                        </IconButton>
+                                      </Tooltip>
+                                      <Tooltip title="Delete Student">
+                                        <IconButton
+                                          size="small"
+                                          color="error"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleDeleteStudentWithConfirmation(
+                                              student
+                                            );
+                                          }}
+                                        >
+                                          <DeleteIcon fontSize="small" />
+                                        </IconButton>
+                                      </Tooltip>
+                                    </Box>
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </TableContainer>
+                      </Box>
                     ) : selectedBatch.students &&
                       selectedBatch.students.length > 0 ? (
                       <TableContainer sx={{ mt: 1.5 }}>
@@ -3700,11 +3836,12 @@ const Batches = () => {
             }}
           >
             <Button
-              variant="outlined"
               onClick={handleCloseStudentDialog}
-              startIcon={<ClearIcon />}
-              disabled={studentFormik.isSubmitting}
-              sx={{ borderRadius: 1.5, textTransform: "none" }}
+              variant="outlined"
+              sx={{
+                borderRadius: 1.5,
+                textTransform: "none",
+              }}
             >
               Cancel
             </Button>
@@ -3724,7 +3861,7 @@ const Batches = () => {
                 ml: "auto",
                 borderRadius: 1.5,
                 textTransform: "none",
-                px: 3,
+                px: { xs: 2, sm: 3 },
               }}
             >
               {studentFormik.isSubmitting
@@ -3741,10 +3878,15 @@ const Batches = () => {
         onClose={handleCloseExistingStudentDialog}
         maxWidth="md"
         fullWidth
+        fullScreen={isMobile}
         PaperProps={{
           sx: {
-            borderRadius: 2,
+            borderRadius: isMobile ? 0 : 2,
             overflow: "hidden",
+            height: isMobile ? "100%" : "auto",
+            display: "flex",
+            flexDirection: "column",
+            maxHeight: isMobile ? "100%" : "90vh",
           },
         }}
       >
@@ -3756,6 +3898,10 @@ const Batches = () => {
             )}, ${alpha(theme.palette.primary.dark, 0.9)})`,
             color: "white",
             p: 2.5,
+            flexShrink: 0,
+            display: "flex",
+            alignItems: "center",
+            gap: 1.5,
           }}
         >
           <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
@@ -3765,7 +3911,14 @@ const Batches = () => {
             </Typography>
           </Box>
         </DialogTitle>
-        <DialogContent dividers sx={{ p: 3 }}>
+        <DialogContent
+          dividers
+          sx={{
+            p: { xs: 2, sm: 3 },
+            overflowY: "auto",
+            flexGrow: 1,
+          }}
+        >
           <Box sx={{ mb: 3 }}>
             <Typography variant="body2" color="text.secondary">
               Select an existing student to enroll in {enrollingToBatch?.name}.
@@ -3781,6 +3934,8 @@ const Batches = () => {
                 display: "flex",
                 justifyContent: "space-between",
                 alignItems: "center",
+                flexWrap: "wrap",
+                gap: 1,
               }}
             >
               <Typography variant="body2" fontWeight={500} color="primary">
@@ -3964,8 +4119,26 @@ const Batches = () => {
             </FormControl>
           )}
         </DialogContent>
-        <DialogActions sx={{ px: 3, py: 2 }}>
-          <Button onClick={handleCloseExistingStudentDialog} variant="outlined">
+        <DialogActions
+          sx={{
+            px: { xs: 2, sm: 3 },
+            py: 2,
+            backgroundColor: "background.paper",
+            borderTop: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+            zIndex: 1,
+            mt: "auto",
+            flexShrink: 0,
+            gap: 1,
+          }}
+        >
+          <Button
+            onClick={handleCloseExistingStudentDialog}
+            variant="outlined"
+            sx={{
+              borderRadius: 1.5,
+              textTransform: "none",
+            }}
+          >
             Cancel
           </Button>
           <Button
@@ -3974,12 +4147,96 @@ const Batches = () => {
             color="primary"
             disabled={!selectedExistingStudents.length || submitting}
             startIcon={
-              submitting ? <CircularProgress size={20} color="inherit" /> : null
+              submitting ? (
+                <CircularProgress size={20} color="inherit" />
+              ) : (
+                <PersonAddIcon />
+              )
             }
+            sx={{
+              ml: "auto",
+              borderRadius: 1.5,
+              textTransform: "none",
+              px: { xs: 2, sm: 3 },
+            }}
           >
             {submitting ? "Enrolling..." : "Enroll Selected Students"}
           </Button>
         </DialogActions>
+      </Dialog>
+
+      {/* Edit Student Dialog */}
+      <Dialog
+        open={editStudentDialogOpen}
+        onClose={handleCloseEditStudentDialog}
+        maxWidth="md"
+        fullWidth
+        fullScreen={isMobile}
+        PaperProps={{
+          sx: {
+            borderRadius: isMobile ? 0 : 2,
+            overflow: "hidden",
+            height: isMobile ? "100%" : "auto",
+            display: "flex",
+            flexDirection: "column",
+            maxHeight: isMobile ? "100%" : "90vh",
+          },
+        }}
+      >
+        <DialogTitle
+          sx={{
+            background: `linear-gradient(to right, ${alpha(
+              theme.palette.primary.main,
+              0.8
+            )}, ${alpha(theme.palette.primary.dark, 0.9)})`,
+            color: "white",
+            p: 2.5,
+            flexShrink: 0,
+            display: "flex",
+            alignItems: "center",
+            gap: 1.5,
+          }}
+        >
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+            <EditIcon sx={{ fontSize: "1.8rem" }} />
+            <Typography variant="h6" fontWeight={600}>
+              Edit Student
+            </Typography>
+          </Box>
+        </DialogTitle>
+        <DialogContent
+          sx={{
+            pt: 3,
+            pb: 2,
+            p: { xs: 2, sm: 3 },
+            overflowY: "auto",
+            flexGrow: 1,
+          }}
+        >
+          {editingStudent && (
+            <Box sx={{ height: "100%" }}>
+              <EditStudentForm
+                student={editingStudent}
+                onUpdate={async (updatedData) => {
+                  try {
+                    setSubmitting(true);
+                    const result = await handleUpdateStudent(
+                      editingStudent._id,
+                      updatedData
+                    );
+                    if (result) {
+                      handleCloseEditStudentDialog();
+                    }
+                  } finally {
+                    setSubmitting(false);
+                  }
+                }}
+                onCancel={handleCloseEditStudentDialog}
+                submitting={submitting}
+              />
+            </Box>
+          )}
+        </DialogContent>
       </Dialog>
     </Box>
   );

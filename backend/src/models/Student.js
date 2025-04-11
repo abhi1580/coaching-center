@@ -79,12 +79,6 @@ const studentSchema = new mongoose.Schema(
       min: 0,
       max: 100,
     },
-    classes: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Class",
-      },
-    ],
     payments: [
       {
         type: mongoose.Schema.Types.ObjectId,
