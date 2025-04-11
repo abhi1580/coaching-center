@@ -2528,12 +2528,19 @@ const Batches = () => {
                           0.2
                         )}`,
                         display: "flex",
+                        flexDirection: { xs: "column", sm: "row" },
                         justifyContent: "space-between",
-                        alignItems: "center",
+                        alignItems: { xs: "flex-start", sm: "center" },
+                        gap: { xs: 1, sm: 0 },
                       }}
                     >
                       <Box
-                        sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 1,
+                          flexWrap: "wrap",
+                        }}
                       >
                         <PersonIcon />
                         <span>
@@ -2547,11 +2554,19 @@ const Batches = () => {
                               getStudentsCount(selectedBatch).remaining
                             } seats remaining`}
                             color={getRemainingSeatsColor(selectedBatch)}
-                            sx={{ ml: 1, fontWeight: 500 }}
+                            sx={{ fontWeight: 500 }}
                           />
                         )}
                       </Box>
-                      <Box sx={{ display: "flex", gap: 1 }}>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          gap: 1,
+                          flexDirection: { xs: "column", sm: "row" },
+                          width: { xs: "100%", sm: "auto" },
+                          mt: { xs: 1, sm: 0 },
+                        }}
+                      >
                         <Button
                           size="small"
                           variant="outlined"
@@ -2561,10 +2576,16 @@ const Batches = () => {
                             handleAddExistingStudentToBatch(selectedBatch)
                           }
                           disabled={
-                            selectedBatch.capacity &&
-                            getStudentsCount(selectedBatch).remaining <= 0
+                            !selectedBatch ||
+                            (selectedBatch.capacity &&
+                              getStudentsCount(selectedBatch).remaining <= 0)
                           }
-                          sx={{ borderRadius: 1.5, textTransform: "none" }}
+                          sx={{
+                            borderRadius: 1.5,
+                            textTransform: "none",
+                            width: { xs: "100%", sm: "auto" },
+                            minWidth: { xs: "100%", sm: "140px" },
+                          }}
                         >
                           Add Existing Student
                         </Button>
@@ -2575,10 +2596,16 @@ const Batches = () => {
                           startIcon={<PersonAddIcon />}
                           onClick={() => handleOpenStudentDialog(selectedBatch)}
                           disabled={
-                            selectedBatch.capacity &&
-                            getStudentsCount(selectedBatch).remaining <= 0
+                            !selectedBatch ||
+                            (selectedBatch.capacity &&
+                              getStudentsCount(selectedBatch).remaining <= 0)
                           }
-                          sx={{ borderRadius: 1.5, textTransform: "none" }}
+                          sx={{
+                            borderRadius: 1.5,
+                            textTransform: "none",
+                            width: { xs: "100%", sm: "auto" },
+                            minWidth: { xs: "100%", sm: "140px" },
+                          }}
                         >
                           Add New Student
                         </Button>
