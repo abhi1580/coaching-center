@@ -3,6 +3,7 @@ import User from "../models/User.js";
 import Payment from "../models/Payment.js";
 import { validateObjectId } from "../utils/validation.js";
 import { errorResponse, successResponse } from "../utils/errorResponse.js";
+import mongoose from "mongoose";
 
 // @desc    Get all students
 // @route   GET /api/students
@@ -97,6 +98,10 @@ export const getStudent = async (req, res) => {
 // @route   POST /api/students
 // @access  Private
 export const createStudent = async (req, res) => {
+  // Start a new session for transaction
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
   try {
     console.log("Creating student with data:", req.body);
 
@@ -124,7 +129,7 @@ export const createStudent = async (req, res) => {
     const missingFields = requiredFields.filter((field) => !req.body[field]);
 
     if (missingFields.length > 0) {
-      console.error("Missing required fields:", missingFields);
+      await session.abortTransaction();
       return res.status(400).json({
         success: false,
         message: "Missing required fields",
@@ -132,62 +137,89 @@ export const createStudent = async (req, res) => {
       });
     }
 
-    // Create user account for the student
-    const User = (await import("../models/User.js")).default;
+    // Check if user or student already exists with this email
+    const existingUser = await User.findOne({ email }).session(session);
+    const existingStudent = await Student.findOne({ email }).session(session);
 
-    // Create a simple password from phone number
-    const password = phone.slice(-6);
+    if (existingUser || existingStudent) {
+      await session.abortTransaction();
+      return res.status(400).json({
+        success: false,
+        message: "User with this email already exists",
+      });
+    }
+
+    // Create user account for the student
+    const password = phone.slice(-6); // Simple password from phone number
 
     try {
-      const user = await User.create({
-        name,
-        email,
-        password,
-        role: "student",
-        gender,
-        address,
-        phone,
-      });
+      const user = await User.create(
+        [
+          {
+            name,
+            email,
+            password,
+            role: "student",
+            gender,
+            address,
+            phone,
+          },
+        ],
+        { session }
+      );
 
-      // Now create the student with the user reference
-      const student = await Student.create({
-        name,
-        email,
-        phone,
-        standard,
-        subjects: subjects || [],
-        batches: batches || [],
-        parentName,
-        parentPhone,
-        address,
-        dateOfBirth,
-        gender,
-        board,
-        schoolName,
-        previousPercentage,
-        joiningDate,
-        user: user._id, // Link to the created user
-        studentId, // Add the studentId field
-      });
+      // Create the student with the user reference
+      const student = await Student.create(
+        [
+          {
+            name,
+            email,
+            phone,
+            standard,
+            subjects: subjects || [],
+            batches: batches || [],
+            parentName,
+            parentPhone,
+            address,
+            dateOfBirth,
+            gender,
+            board,
+            schoolName,
+            previousPercentage,
+            joiningDate,
+            user: user[0]._id, // Link to the created user
+            studentId,
+          },
+        ],
+        { session }
+      );
+
+      // If we get here, both user and student were created successfully
+      await session.commitTransaction();
 
       res.status(201).json({
         success: true,
-        data: student,
+        data: student[0],
       });
-    } catch (userError) {
-      console.error("Error creating user/student:", userError);
+    } catch (error) {
+      // If any error occurs, rollback both operations
+      await session.abortTransaction();
+      console.error("Error creating user/student:", error);
       return res.status(400).json({
         success: false,
-        message: userError.message,
+        message: error.message,
       });
     }
   } catch (err) {
+    await session.abortTransaction();
     console.error("Error in createStudent controller:", err);
     res.status(400).json({
       success: false,
       message: err.message,
       stack: process.env.NODE_ENV === "production" ? null : err.stack,
     });
+  } finally {
+    session.endSession();
   }
 };
 

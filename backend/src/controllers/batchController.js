@@ -1,4 +1,5 @@
 import { validationResult } from "express-validator";
+import mongoose from "mongoose";
 import Batch from "../models/Batch.js";
 import Standard from "../models/Standard.js";
 import Subject from "../models/Subject.js";
@@ -447,6 +448,13 @@ export const addStudentToBatch = async (req, res) => {
   try {
     const { batchId, studentId } = req.params;
 
+    if (!batchId || !studentId) {
+      return res.status(400).json({
+        success: false,
+        message: "Batch ID and Student ID are required",
+      });
+    }
+
     // Import Student model
     const Student = (await import("../models/Student.js")).default;
 
@@ -459,7 +467,7 @@ export const addStudentToBatch = async (req, res) => {
       });
     }
 
-    // Find the student
+    // Find the student by _id
     const student = await Student.findById(studentId);
     if (!student) {
       return res.status(404).json({
@@ -469,7 +477,11 @@ export const addStudentToBatch = async (req, res) => {
     }
 
     // Check if student is already enrolled
-    if (batch.enrolledStudents && batch.enrolledStudents.includes(studentId)) {
+    const isAlreadyEnrolled = batch.enrolledStudents.some(
+      (enrolledStudent) => enrolledStudent.toString() === student._id.toString()
+    );
+
+    if (isAlreadyEnrolled) {
       return res.status(400).json({
         success: false,
         message: "Student is already enrolled in this batch",
@@ -477,11 +489,8 @@ export const addStudentToBatch = async (req, res) => {
     }
 
     // Add student to batch
-    if (!batch.enrolledStudents) {
-      batch.enrolledStudents = [studentId];
-    } else {
-      batch.enrolledStudents.push(studentId);
-    }
+    batch.enrolledStudents = batch.enrolledStudents || [];
+    batch.enrolledStudents.push(student._id);
 
     // Add batch to student's batches array if not already there
     if (!student.batches.includes(batchId)) {
@@ -489,26 +498,19 @@ export const addStudentToBatch = async (req, res) => {
       await student.save();
     }
 
+    // Save the batch
     await batch.save();
 
-    console.log(
-      `Added student ${studentId} to batch ${batchId}, batch now has ${batch.enrolledStudents.length} students`
-    );
+    // Get the updated batch with populated students
+    const updatedBatch = await Batch.findById(batchId).populate('enrolledStudents');
 
-    // Return the updated batch with populated data
-    const updatedBatch = await Batch.findById(batchId)
-      .populate("standard", "name level")
-      .populate("subject", "name")
-      .populate("teacher", "name")
-      .populate("enrolledStudents", "name email phone studentId");
-
-    res.json({
+    return res.json({
       success: true,
       data: updatedBatch,
     });
   } catch (error) {
     console.error("Error adding student to batch:", error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: error.message,
     });
@@ -529,6 +531,14 @@ export const removeStudentFromBatch = async (req, res) => {
       return res.status(404).json({
         success: false,
         message: "Batch not found",
+      });
+    }
+
+    // Validate studentId
+    if (!mongoose.Types.ObjectId.isValid(studentId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid student ID",
       });
     }
 
@@ -701,6 +711,66 @@ export const syncBatchStudents = async (req, res) => {
     });
   } catch (error) {
     console.error("Error synchronizing batch students:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+// Check if a student is enrolled in a batch
+export const checkStudentEnrollment = async (req, res) => {
+  try {
+    const { batchId, studentId } = req.params;
+
+    // Find the batch
+    const batch = await Batch.findById(batchId);
+    if (!batch) {
+      return res.status(404).json({
+        success: false,
+        message: "Batch not found",
+      });
+    }
+
+    // Validate studentId
+    if (!mongoose.Types.ObjectId.isValid(studentId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid student ID",
+      });
+    }
+
+    // Import Student model
+    const Student = (await import("../models/Student.js")).default;
+
+    // Find the student
+    const student = await Student.findById(studentId);
+    if (!student) {
+      return res.status(404).json({
+        success: false,
+        message: "Student not found",
+      });
+    }
+
+    // Check if student is already enrolled
+    const isEnrolled =
+      batch.enrolledStudents && batch.enrolledStudents.includes(studentId);
+
+    res.json({
+      success: true,
+      data: {
+        isEnrolled,
+        student: {
+          _id: student._id,
+          name: student.name,
+          email: student.email,
+          phone: student.phone,
+          studentId: student.studentId,
+        },
+      },
+    });
+  } catch (error) {
+    console.error("Error checking student enrollment:", error);
     res.status(500).json({
       success: false,
       message: error.message,

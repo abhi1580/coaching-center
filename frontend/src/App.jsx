@@ -14,9 +14,9 @@ import Standards from "./pages/Standards";
 import Subjects from "./pages/Subjects";
 import Students from "./pages/Students";
 import Teachers from "./pages/Teachers";
-import Batches from "./pages/Batches";
 import AboutUs from "./pages/AboutUs";
 import ContactUs from "./pages/ContactUs";
+import { BatchList, BatchCreate, BatchEdit, BatchView } from "./pages/batch";
 
 // Theme
 import { theme } from "./theme";
@@ -117,7 +117,31 @@ function App() {
               path="batches"
               element={
                 <ProtectedRoute allowedRoles={["admin"]}>
-                  <Batches />
+                  <BatchList />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="batches/create"
+              element={
+                <ProtectedRoute allowedRoles={["admin"]}>
+                  <BatchCreate />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="batches/:id"
+              element={
+                <ProtectedRoute allowedRoles={["admin"]}>
+                  <BatchView />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="batches/:id/edit"
+              element={
+                <ProtectedRoute allowedRoles={["admin"]}>
+                  <BatchEdit />
                 </ProtectedRoute>
               }
             />

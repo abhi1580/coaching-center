@@ -213,20 +213,15 @@ export const batchService = {
       queryParams += `${queryParams ? "&" : ""}populate=enrolledStudents`;
     }
 
-    // console.log(`Calling batch API with query: ${queryParams}`);
     return api.get(`/batches/by-subject?${queryParams}`);
   },
   create: (data) => api.post("/batches", data),
   update: (id, data) => api.put(`/batches/${id}`, data),
   delete: (id) => api.delete(`/batches/${id}`),
-  // Add a function to remove a student from a batch
-  removeStudentFromBatch: (batchId, studentId) =>
-    api.put(`/batches/${batchId}/students/${studentId}/remove`),
-  // Add a function to add an existing student to a batch
-  addStudentToBatch: (batchId, studentId) =>
+  addStudentToBatch: (batchId, studentId) => 
     api.put(`/batches/${batchId}/students/${studentId}/add`),
-  // Sync batch-student relationships
-  syncBatchStudents: () => api.post("/batches/sync-students"),
+  removeStudentFromBatch: (batchId, studentId) => 
+    api.put(`/batches/${batchId}/students/${studentId}/remove`),
 };
 
 // Class services
