@@ -65,6 +65,14 @@ function TeacherStudents() {
         const batchesData =
           batchesResponse.data?.data || batchesResponse.data || [];
         const batches = Array.isArray(batchesData) ? batchesData : [];
+        
+        console.log(`TeacherStudents: Received ${batches.length} batches`);
+        
+        if (batches.length > 0) {
+          batches.forEach((batch, i) => {
+            console.log(`Batch ${i+1} (${batch.name}): ${batch.enrolledStudents ? batch.enrolledStudents.length : 0} students`);
+          });
+        }
 
         // Extract and deduplicate students from all batches
         const uniqueStudentsMap = new Map();
@@ -76,9 +84,14 @@ function TeacherStudents() {
             batch.enrolledStudents &&
             Array.isArray(batch.enrolledStudents)
           ) {
+            console.log(`Processing ${batch.enrolledStudents.length} students in batch ${batch.name}`);
+            
             batch.enrolledStudents.forEach((student) => {
               // Skip if student is missing or doesn't have an id
-              if (!student || !student._id) return;
+              if (!student || !student._id) {
+                console.log("Found invalid student without _id");
+                return;
+              }
 
               // Add batch info to student
               const studentWithBatch = {
@@ -104,11 +117,15 @@ function TeacherStudents() {
                 uniqueStudentsMap.set(student._id, existingStudent);
               }
             });
+          } else {
+            console.log(`Batch has invalid enrolledStudents: ${JSON.stringify(batch.enrolledStudents)}`);
           }
         });
 
         // Convert map to array
         const uniqueStudents = Array.from(uniqueStudentsMap.values());
+        console.log(`Processed ${uniqueStudents.length} unique students`);
+        
         setStudents(uniqueStudents);
         setFilteredStudents(uniqueStudents);
         setError(null);

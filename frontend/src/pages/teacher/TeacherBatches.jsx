@@ -64,7 +64,7 @@ function TeacherBatches() {
 
         // Make API request to fetch batches allocated to this teacher
         const response = await axios.get(
-          `${import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL + `/teachers/batches` : `http://localhost:5000/api/teachers/batches`}`,
+          `${import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL + `/teachers/batches` : `http://localhost:5000/api/teachers/batches`}?populate=enrolledStudents`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         
@@ -362,7 +362,7 @@ function TeacherBatches() {
                     size="small"
                   />
                   <Typography variant="caption" color="text.secondary">
-                    {batch.students?.length || 0} students
+                    {batch.enrolledStudents?.length || 0} students
                   </Typography>
                 </Box>
                 
@@ -406,7 +406,7 @@ function TeacherBatches() {
                       sx={{ color: 'text.secondary', mr: 1 }} 
                     />
                     <Typography variant="body2">
-                      {formatTime(batch.startTime)} - {formatTime(batch.endTime)}
+                      {formatTime(batch.schedule?.startTime)} - {formatTime(batch.schedule?.endTime)}
                     </Typography>
                   </Box>
                   
@@ -421,7 +421,7 @@ function TeacherBatches() {
                       sx={{ color: 'text.secondary', mr: 1 }} 
                     />
                     <Typography variant="body2">
-                      {formatDays(batch.days)}
+                      {formatDays(batch.schedule?.days)}
                     </Typography>
                   </Box>
                 </CardContent>
