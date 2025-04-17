@@ -16,7 +16,7 @@ import {
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import { useDispatch, useSelector } from "react-redux";
-import { login } from "../store/slices/authSlice";
+import { login } from "../../store/slices/authSlice";
 import { School, Group, EmojiEvents, Psychology } from "@mui/icons-material";
 
 const validationSchema = Yup.object({
@@ -37,25 +37,29 @@ function Login() {
     {
       icon: <School sx={{ fontSize: 40 }} />,
       title: "Quality Education",
-      description: "We provide high-quality education with experienced teachers and modern teaching methods.",
+      description:
+        "We provide high-quality education with experienced teachers and modern teaching methods.",
       color: "#1976d2",
     },
     {
       icon: <Group sx={{ fontSize: 40 }} />,
       title: "Small Class Sizes",
-      description: "Our small class sizes ensure personalized attention for every student.",
+      description:
+        "Our small class sizes ensure personalized attention for every student.",
       color: "#2e7d32",
     },
     {
       icon: <EmojiEvents sx={{ fontSize: 40 }} />,
       title: "Proven Track Record",
-      description: "Consistently producing excellent results and helping students achieve their goals.",
+      description:
+        "Consistently producing excellent results and helping students achieve their goals.",
       color: "#ed6c02",
     },
     {
       icon: <Psychology sx={{ fontSize: 40 }} />,
       title: "Holistic Development",
-      description: "Focusing on both academic excellence and personal development of students.",
+      description:
+        "Focusing on both academic excellence and personal development of students.",
       color: "#9c27b0",
     },
   ];
@@ -69,7 +73,7 @@ function Login() {
     onSubmit: async (values) => {
       try {
         const result = await dispatch(login(values)).unwrap();
-        
+
         // Redirect based on user role
         if (result.user.role === "admin") {
           navigate("/app/dashboard");
@@ -160,8 +164,12 @@ function Login() {
                     autoComplete="current-password"
                     value={formik.values.password}
                     onChange={formik.handleChange}
-                    error={formik.touched.password && Boolean(formik.errors.password)}
-                    helperText={formik.touched.password && formik.errors.password}
+                    error={
+                      formik.touched.password && Boolean(formik.errors.password)
+                    }
+                    helperText={
+                      formik.touched.password && formik.errors.password
+                    }
                   />
                   <Button
                     type="submit"

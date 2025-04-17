@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import {
   Box,
@@ -15,15 +15,15 @@ import {
   Chip,
   useTheme,
   InputAdornment,
-  IconButton,
   CircularProgress,
+  IconButton,
 } from "@mui/material";
 import { alpha } from "@mui/material/styles";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import { createBatch } from "../../store/slices/batchSlice";
-import { fetchStandards } from "../../store/slices/standardSlice";
-import { fetchSubjects } from "../../store/slices/subjectSlice";
-import { fetchTeachers } from "../../store/slices/teacherSlice";
+import { updateBatch, fetchBatches } from "../../../store/slices/batchSlice";
+import { fetchStandards } from "../../../store/slices/standardSlice";
+import { fetchSubjects } from "../../../store/slices/subjectSlice";
+import { fetchTeachers } from "../../../store/slices/teacherSlice";
 
 const DAYS_OF_WEEK = [
   "Monday",
@@ -37,11 +37,13 @@ const DAYS_OF_WEEK = [
 
 const STATUS_OPTIONS = ["upcoming", "active", "completed", "cancelled"];
 
-const BatchCreate = () => {
+const BatchEdit = () => {
+  const { id } = useParams();
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const theme = useTheme();
 
+  const { batches, loading } = useSelector((state) => state.batches);
   const { standards } = useSelector((state) => state.standards);
   const { subjects } = useSelector((state) => state.subjects);
   const { teachers } = useSelector((state) => state.teachers);
@@ -59,7 +61,7 @@ const BatchCreate = () => {
     },
     capacity: "",
     fees: "",
-    status: "upcoming",
+    status: "",
     description: "",
     teacher: "",
   });
@@ -69,10 +71,64 @@ const BatchCreate = () => {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
+    dispatch(fetchBatches());
     dispatch(fetchStandards());
     dispatch(fetchSubjects());
     dispatch(fetchTeachers());
   }, [dispatch]);
+
+  useEffect(() => {
+    if (batches && id) {
+      const batch = batches.find((b) => b._id === id);
+      if (batch) {
+        const startDate = batch.startDate
+          ? new Date(batch.startDate).toISOString().split("T")[0]
+          : "";
+        const endDate = batch.endDate
+          ? new Date(batch.endDate).toISOString().split("T")[0]
+          : "";
+
+        setFormData({
+          name: batch.name || "",
+          standard: batch.standard?._id || batch.standard || "",
+          subject: batch.subject?._id || batch.subject || "",
+          startDate,
+          endDate,
+          schedule: {
+            days: batch.schedule?.days || [],
+            startTime: batch.schedule?.startTime || "",
+            endTime: batch.schedule?.endTime || "",
+          },
+          capacity: batch.capacity || "",
+          fees: batch.fees || "",
+          status: batch.status || "upcoming",
+          description: batch.description || "",
+          teacher: batch.teacher?._id || batch.teacher || "",
+        });
+
+        if (batch.standard) {
+          const standard = standards.find(
+            (s) => s._id === (batch.standard._id || batch.standard)
+          );
+          if (standard) {
+            const standardSubjects = subjects.filter((subject) =>
+              standard.subjects?.some((s) => (s._id || s) === subject._id)
+            );
+            setFilteredSubjects(standardSubjects);
+          }
+        }
+
+        if (batch.subject) {
+          const subjectTeachers = teachers.filter((teacher) =>
+            teacher.subjects?.some(
+              (s) => (s._id || s) === (batch.subject._id || batch.subject)
+            )
+          );
+          setFilteredTeachers(subjectTeachers);
+        }
+      }
+    }
+  }, [batches, id, standards, subjects, teachers]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -147,19 +203,26 @@ const BatchCreate = () => {
 
     try {
       setSubmitting(true);
-      const result = await dispatch(createBatch(formData)).unwrap();
-      alert("Batch created successfully!");
-      navigate(`/app/batches/${result._id}`);
+      await dispatch(updateBatch({ id, data: formData })).unwrap();
+      alert("Batch updated successfully!");
+      navigate(`/app/batches/${id}`);
     } catch (error) {
-      alert("Failed to create batch: " + error.message);
+      alert("Failed to update batch: " + error.message);
     } finally {
       setSubmitting(false);
     }
   };
 
+  if (loading) {
+    return (
+      <Box sx={{ display: "flex", justifyContent: "center", p: 3 }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
   return (
     <Box sx={{ p: { xs: 1, sm: 2, md: 3 } }}>
-      {/* Enhanced Header */}
       <Paper
         elevation={0}
         sx={{
@@ -192,14 +255,13 @@ const BatchCreate = () => {
             color: "primary.main",
           }}
         >
-          Create New Batch
+          Edit Batch
         </Typography>
       </Paper>
 
       <Paper sx={{ p: { xs: 2, sm: 3 }, borderRadius: 2 }}>
         <form onSubmit={handleSubmit}>
           <Grid container spacing={3}>
-            {/* Basic Information */}
             <Grid item xs={12}>
               <Typography
                 variant="h6"
@@ -285,7 +347,6 @@ const BatchCreate = () => {
               </FormControl>
             </Grid>
 
-            {/* Schedule */}
             <Grid item xs={12}>
               <Typography
                 variant="h6"
@@ -390,7 +451,6 @@ const BatchCreate = () => {
               />
             </Grid>
 
-            {/* Additional Information */}
             <Grid item xs={12}>
               <Typography
                 variant="h6"
@@ -480,7 +540,6 @@ const BatchCreate = () => {
               />
             </Grid>
 
-            {/* Form Actions */}
             <Grid item xs={12}>
               <Box
                 sx={{
@@ -521,7 +580,7 @@ const BatchCreate = () => {
                       }}
                     />
                   ) : (
-                    "Create Batch"
+                    "Save Changes"
                   )}
                 </Button>
               </Box>
@@ -533,4 +592,4 @@ const BatchCreate = () => {
   );
 };
 
-export default BatchCreate;
+export default BatchEdit;

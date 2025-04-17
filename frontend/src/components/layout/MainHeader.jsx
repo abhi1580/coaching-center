@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { Link as RouterLink, useNavigate } from "react-router-dom";
 import {
   AppBar,
@@ -19,7 +19,8 @@ import MenuIcon from "@mui/icons-material/Menu";
 import { useSelector, useDispatch } from "react-redux";
 import { logout } from "../../store/slices/authSlice";
 
-const pages = [
+// Define public pages for unauthenticated users
+const publicPages = [
   { name: "Home", path: "/" },
   { name: "About", path: "/about" },
   { name: "Contact", path: "/contact" },
@@ -34,6 +35,42 @@ const MainHeader = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { user, isAuthenticated } = useSelector((state) => state.auth);
+
+  // Determine pages based on user role
+  const pages = useMemo(() => {
+    if (!isAuthenticated) {
+      return publicPages;
+    }
+    
+    if (user?.role === "admin") {
+      return [
+        ...publicPages,
+        { name: "Dashboard", path: "/app/dashboard" },
+        { name: "Students", path: "/app/students" },
+        { name: "Teachers", path: "/app/teachers" },
+        { name: "Standards", path: "/app/standards" },
+        { name: "Subjects", path: "/app/subjects" },
+        { name: "Announcements", path: "/app/announcements" },
+        { name: "Payments", path: "/app/payments" },
+      ];
+    } else if (user?.role === "teacher") {
+      return [
+        ...publicPages,
+        { name: "Dashboard", path: "/app/teacher/dashboard" },
+        { name: "My Students", path: "/app/teacher/students" },
+        { name: "My Batches", path: "/app/teacher/batches" },
+        { name: "Announcements", path: "/app/teacher/announcements" },
+        { name: "Profile", path: "/app/teacher/profile" },
+      ];
+    } else if (user?.role === "student") {
+      return [
+        ...publicPages,
+        { name: "Dashboard", path: "/app/student-dashboard" },
+      ];
+    }
+    
+    return publicPages;
+  }, [isAuthenticated, user]); // Recalculate when auth state changes
 
   const handleOpenNavMenu = (event) => {
     setAnchorElNav(event.currentTarget);

@@ -39,7 +39,7 @@ function TeacherStudents() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
-
+  // console.log(filteredStudents);
   useEffect(() => {
     const fetchStudentsData = async () => {
       try {
@@ -53,24 +53,33 @@ function TeacherStudents() {
 
         // First get all batches for the teacher
         const batchesResponse = await axios.get(
-          `${import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL + '/teachers/batches' : 'http://localhost:5000/api/teachers/batches'}`,
+          `${
+            import.meta.env.VITE_API_URL
+              ? import.meta.env.VITE_API_URL + "/teachers/batches"
+              : "http://localhost:5000/api/teachers/batches"
+          }`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
-        
+
         // Safely get batches data from response, ensuring it's an array
-        const batchesData = batchesResponse.data?.data || batchesResponse.data || [];
+        const batchesData =
+          batchesResponse.data?.data || batchesResponse.data || [];
         const batches = Array.isArray(batchesData) ? batchesData : [];
-        
+
         // Extract and deduplicate students from all batches
         const uniqueStudentsMap = new Map();
-        
-        batches.forEach(batch => {
+
+        batches.forEach((batch) => {
           // Make sure batch and enrolledStudents exist and are valid
-          if (batch && batch.enrolledStudents && Array.isArray(batch.enrolledStudents)) {
-            batch.enrolledStudents.forEach(student => {
+          if (
+            batch &&
+            batch.enrolledStudents &&
+            Array.isArray(batch.enrolledStudents)
+          ) {
+            batch.enrolledStudents.forEach((student) => {
               // Skip if student is missing or doesn't have an id
               if (!student || !student._id) return;
-              
+
               // Add batch info to student
               const studentWithBatch = {
                 ...student,
@@ -78,10 +87,10 @@ function TeacherStudents() {
                   id: batch._id || "unknown",
                   name: batch.name || "Unnamed Batch",
                   subject: batch.subject?.name || "Not specified",
-                  standard: batch.standard?.name || "Not specified"
-                }
+                  standard: batch.standard?.name || "Not specified",
+                },
               };
-              
+
               if (!uniqueStudentsMap.has(student._id)) {
                 uniqueStudentsMap.set(student._id, studentWithBatch);
               } else {
@@ -90,14 +99,14 @@ function TeacherStudents() {
                 if (!existingStudent.batches) {
                   existingStudent.batches = [existingStudent.batchInfo];
                 }
-                
+
                 existingStudent.batches.push(studentWithBatch.batchInfo);
                 uniqueStudentsMap.set(student._id, existingStudent);
               }
             });
           }
         });
-        
+
         // Convert map to array
         const uniqueStudents = Array.from(uniqueStudentsMap.values());
         setStudents(uniqueStudents);
@@ -105,9 +114,7 @@ function TeacherStudents() {
         setError(null);
       } catch (err) {
         console.error("Error fetching student data:", err);
-        setError(
-          err.response?.data?.message || "Failed to load students data"
-        );
+        setError(err.response?.data?.message || "Failed to load students data");
       } finally {
         setLoading(false);
       }
@@ -122,22 +129,22 @@ function TeacherStudents() {
       setFilteredStudents([]);
       return;
     }
-    
+
     if (!searchQuery) {
       setFilteredStudents(students);
       return;
     }
-    
+
     const query = searchQuery.toLowerCase();
     const filtered = students.filter(
-      student => 
+      (student) =>
         student.name?.toLowerCase().includes(query) ||
         student.email?.toLowerCase().includes(query) ||
         student.phone?.includes(query) ||
         student.batchInfo?.subject?.toLowerCase().includes(query) ||
         student.batchInfo?.standard?.toLowerCase().includes(query)
     );
-    
+
     setFilteredStudents(filtered);
   }, [students, searchQuery]);
 
@@ -220,7 +227,7 @@ function TeacherStudents() {
                 <SearchIcon />
               </InputAdornment>
             ),
-            sx: { borderRadius: 2 }
+            sx: { borderRadius: 2 },
           }}
           size="small"
         />
@@ -228,21 +235,24 @@ function TeacherStudents() {
 
       {/* Students list */}
       {filteredStudents.length === 0 ? (
-        <Paper 
-          sx={{ 
-            p: 3, 
-            textAlign: 'center',
+        <Paper
+          sx={{
+            p: 3,
+            textAlign: "center",
             borderRadius: 2,
-            bgcolor: alpha(theme.palette.background.paper, 0.7)
+            bgcolor: alpha(theme.palette.background.paper, 0.7),
           }}
         >
-          <PersonIcon color="disabled" sx={{ fontSize: 48, mb: 2, opacity: 0.6 }} />
+          <PersonIcon
+            color="disabled"
+            sx={{ fontSize: 48, mb: 2, opacity: 0.6 }}
+          />
           <Typography variant="h6" color="text.secondary" gutterBottom>
             No students found
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            {students.length === 0 
-              ? "You don't have any students enrolled in your batches yet." 
+            {students.length === 0
+              ? "You don't have any students enrolled in your batches yet."
               : "No students match your search criteria."}
           </Typography>
         </Paper>
@@ -256,7 +266,7 @@ function TeacherStudents() {
             Students ({filteredStudents.length})
           </Typography>
           <Divider sx={{ mb: 2 }} />
-          
+
           <TableContainer>
             <Table sx={{ minWidth: 650 }}>
               <TableHead>
@@ -269,21 +279,25 @@ function TeacherStudents() {
               </TableHead>
               <TableBody>
                 {filteredStudents.map((student) => (
-                  <TableRow 
-                    key={student._id} 
+                  <TableRow
+                    key={student._id}
                     hover
                     sx={{
                       "&:hover": {
-                        backgroundColor: alpha(theme.palette.primary.light, 0.1),
+                        backgroundColor: alpha(
+                          theme.palette.primary.light,
+                          0.1
+                        ),
                       },
                     }}
                   >
                     <TableCell>
-                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                        <Avatar 
-                          sx={{ 
-                            bgcolor: (theme) => alpha(theme.palette.primary.main, 0.8),
-                            mr: 2
+                      <Box sx={{ display: "flex", alignItems: "center" }}>
+                        <Avatar
+                          sx={{
+                            bgcolor: (theme) =>
+                              alpha(theme.palette.primary.main, 0.8),
+                            mr: 2,
                           }}
                         >
                           {getInitials(student.name)}
@@ -292,19 +306,25 @@ function TeacherStudents() {
                       </Box>
                     </TableCell>
                     <TableCell>
-                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                        <EmailIcon fontSize="small" sx={{ mr: 1, color: 'text.secondary' }} />
+                      <Box sx={{ display: "flex", alignItems: "center" }}>
+                        <EmailIcon
+                          fontSize="small"
+                          sx={{ mr: 1, color: "text.secondary" }}
+                        />
                         {student.email}
                       </Box>
                     </TableCell>
                     <TableCell>
-                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                        <PhoneIcon fontSize="small" sx={{ mr: 1, color: 'text.secondary' }} />
+                      <Box sx={{ display: "flex", alignItems: "center" }}>
+                        <PhoneIcon
+                          fontSize="small"
+                          sx={{ mr: 1, color: "text.secondary" }}
+                        />
                         {student.phone || "N/A"}
                       </Box>
                     </TableCell>
                     <TableCell>
-                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                      <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
                         {student.batches ? (
                           student.batches.map((batch, index) => (
                             <Chip
@@ -336,4 +356,4 @@ function TeacherStudents() {
   );
 }
 
-export default TeacherStudents; 
+export default TeacherStudents;

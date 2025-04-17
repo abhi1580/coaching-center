@@ -34,10 +34,10 @@ import {
   Person as PersonIcon,
   Search as SearchIcon,
 } from "@mui/icons-material";
-import { fetchBatches, deleteBatch } from "../../store/slices/batchSlice";
-import { fetchStandards } from "../../store/slices/standardSlice";
-import { fetchSubjects } from "../../store/slices/subjectSlice";
-import { fetchTeachers } from "../../store/slices/teacherSlice";
+import { fetchBatches, deleteBatch } from "../../../store/slices/batchSlice";
+import { fetchStandards } from "../../../store/slices/standardSlice";
+import { fetchSubjects } from "../../../store/slices/subjectSlice";
+import { fetchTeachers } from "../../../store/slices/teacherSlice";
 
 const BatchList = () => {
   const dispatch = useDispatch();

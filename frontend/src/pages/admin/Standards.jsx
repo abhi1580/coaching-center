@@ -1,65 +1,61 @@
-import React, { useEffect, useState, useCallback, useRef } from "react";
-import { useDispatch, useSelector } from "react-redux";
 import {
+  Add as AddIcon,
+  Delete as DeleteIcon,
+  Edit as EditIcon,
+  MenuBook as MenuBookIcon,
+  School as SchoolIcon,
+  Visibility as VisibilityIcon,
+} from "@mui/icons-material";
+import {
+  Alert,
   Box,
   Button,
+  Card,
+  CardActions,
+  CardContent,
+  Chip,
+  CircularProgress,
   Dialog,
-  DialogTitle,
-  DialogContent,
   DialogActions,
-  TextField,
-  Typography,
+  DialogContent,
+  DialogTitle,
+  FormControl,
+  FormControlLabel,
+  Grid,
+  IconButton,
+  InputAdornment,
+  InputLabel,
+  MenuItem,
   Paper,
+  Select,
+  Stack,
+  Switch,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
   TableRow,
-  IconButton,
-  Alert,
-  CircularProgress,
-  Grid,
-  Card,
-  CardContent,
-  CardActions,
+  TextField,
+  Tooltip,
+  Typography,
   useMediaQuery,
   useTheme,
-  Stack,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Chip,
-  FormControlLabel,
-  Switch,
-  Divider,
-  Tooltip,
-  InputAdornment,
-  Avatar,
 } from "@mui/material";
-import {
-  Add as AddIcon,
-  Edit as EditIcon,
-  Delete as DeleteIcon,
-  Visibility as VisibilityIcon,
-  School as SchoolIcon,
-  MenuBook as MenuBookIcon,
-  Class as ClassIcon,
-  Info as InfoIcon,
-} from "@mui/icons-material";
-import { useFormik } from "formik";
-import * as Yup from "yup";
-import {
-  fetchStandards,
-  createStandard,
-  updateStandard,
-  deleteStandard,
-  resetStatus,
-} from "../store/slices/standardSlice";
-import { fetchSubjects } from "../store/slices/subjectSlice";
-import RefreshButton from "../components/RefreshButton";
 import { alpha } from "@mui/material/styles";
+import { useFormik } from "formik";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import * as Yup from "yup";
+import RefreshButton from "../../components/RefreshButton";
+import { fetchSubjects } from "../../store/slices/subjectSlice";
+import {
+  createStandard,
+  deleteStandard,
+  fetchStandards,
+  resetStatus,
+  updateStandard,
+} from "../../store/slices/standardSlice";
 
 const validationSchema = Yup.object({
   name: Yup.string().required("Name is required"),

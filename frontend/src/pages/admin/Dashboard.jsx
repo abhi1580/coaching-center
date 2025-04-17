@@ -37,7 +37,7 @@ import {
   dashboardService,
   announcementService,
   authService,
-} from "../services/api";
+} from "../../services/api";
 
 function Dashboard() {
   const navigate = useNavigate();

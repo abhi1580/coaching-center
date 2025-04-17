@@ -44,10 +44,10 @@ import {
   ArrowBack as ArrowBackIcon,
   Search as SearchIcon,
 } from "@mui/icons-material";
-import { fetchBatches, deleteBatch } from "../../store/slices/batchSlice";
-import { fetchStudents, createStudent } from "../../store/slices/studentSlice";
-import { batchService } from "../../services/api";
-import { studentService } from "../../services/api";
+import { fetchBatches, deleteBatch } from "../../../store/slices/batchSlice";
+import { fetchStudents, createStudent } from "../../../store/slices/studentSlice";
+import { batchService } from "../../../services/api";
+import { studentService } from "../../../services/api";
 import { Formik, Form, Field } from "formik";
 import * as Yup from "yup";
 

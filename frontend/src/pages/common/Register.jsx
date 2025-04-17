@@ -13,7 +13,7 @@ import {
 } from "@mui/material";
 import { useFormik } from "formik";
 import * as Yup from "yup";
-import { authService } from "../services/api";
+import { authService } from "../../services/api";
 
 const validationSchema = Yup.object({
   firstName: Yup.string().required("First name is required"),

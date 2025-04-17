@@ -1,35 +1,45 @@
-import React, { useEffect } from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@mui/material";
 import CssBaseline from "@mui/material/CssBaseline";
 import "bootstrap/dist/css/bootstrap.min.css";
+import React, { useEffect } from "react";
 import { useDispatch } from "react-redux";
-import { initializeAuth } from "./store/slices/authSlice";
+import { Route, BrowserRouter as Router, Routes } from "react-router-dom";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import Layout from "./components/layout/Layout";
+import MainHeader from "./components/layout/MainHeader";
 import TeacherLayout from "./components/teacher/TeacherLayout";
 import TeacherRedirect from "./components/teacher/TeacherRedirect";
-import MainHeader from "./components/layout/MainHeader";
-import Login from "./pages/Login";
-import Dashboard from "./pages/Dashboard";
-import Standards from "./pages/Standards";
-import Subjects from "./pages/Subjects";
-import Students from "./pages/Students";
-import Teachers from "./pages/Teachers";
-import AboutUs from "./pages/AboutUs";
-import ContactUs from "./pages/ContactUs";
-import { BatchList, BatchCreate, BatchEdit, BatchView } from "./pages/batch";
-import { TeacherDashboard, TeacherBatches, TeacherBatchDetail, TeacherStudents, TeacherProfile } from "./pages/teacher";
+import Login from "./pages/common/Login";
+import Dashboard from "./pages/admin/Dashboard";
+import Standards from "./pages/admin/Standards";
+import Students from "./pages/admin/Students";
+import Subjects from "./pages/admin/Subjects";
+import Teachers from "./pages/admin/Teachers";
+import {
+  BatchCreate,
+  BatchEdit,
+  BatchList,
+  BatchView,
+} from "./pages/admin/batch";
+import AboutUs from "./pages/common/AboutUs";
+import ContactUs from "./pages/common/ContactUs";
+import {
+  TeacherBatchDetail,
+  TeacherBatches,
+  TeacherDashboard,
+  TeacherProfile,
+  TeacherStudents,
+} from "./pages/teacher";
+import { initializeAuth } from "./store/slices/authSlice";
 
 // Theme
 import { theme } from "./theme";
 
 // Pages
-import LandingPage from "./pages/LandingPage";
-import Home from "./pages/Home";
-import Register from "./pages/Register";
-import Payments from "./pages/Payments";
-import Announcements from "./pages/Announcements";
+// import Home from "./pages/Home";
+import LandingPage from "./pages/common/LandingPage";
+import Announcements from "./pages/admin/Announcements";
+import Payments from "./pages/admin/Payments";
 
 function App() {
   const dispatch = useDispatch();
@@ -42,19 +52,51 @@ function App() {
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <Router>
-        <MainHeader />
         <Routes>
           {/* Public routes */}
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/about" element={<AboutUs />} />
-          <Route path="/contact" element={<ContactUs />} />
+          <Route 
+            path="/" 
+            element={
+              <>
+                <MainHeader />
+                <LandingPage />
+              </>
+            } 
+          />
+          <Route 
+            path="/login" 
+            element={
+              <>
+                <MainHeader />
+                <Login />
+              </>
+            } 
+          />
+          <Route 
+            path="/about" 
+            element={
+              <>
+                <MainHeader />
+                <AboutUs />
+              </>
+            } 
+          />
+          <Route 
+            path="/contact" 
+            element={
+              <>
+                <MainHeader />
+                <ContactUs />
+              </>
+            } 
+          />
 
           {/* Protected Admin routes */}
           <Route
             path="/app"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute allowedRoles={["admin"]}>
+                <MainHeader />
                 <Layout />
               </ProtectedRoute>
             }
@@ -95,7 +137,7 @@ function App() {
             <Route
               path="announcements"
               element={
-                <ProtectedRoute allowedRoles={["admin", "teacher"]}>
+                <ProtectedRoute allowedRoles={["admin"]}>
                   <Announcements />
                 </ProtectedRoute>
               }
@@ -148,7 +190,7 @@ function App() {
                 </ProtectedRoute>
               }
             />
-
+            
             {/* Legacy teacher routes - redirect to new teacher dashboard */}
             <Route
               path="teacher-dashboard"
@@ -170,10 +212,10 @@ function App() {
             />
 
             {/* Common routes */}
-            <Route path="home" element={<Home />} />
+            {/* <Route path="home" element={<Home />} /> */}
           </Route>
 
-          {/* New Teacher Layout and Routes */}
+          {/* New Teacher Layout and Routes - No MainHeader here */}
           <Route
             path="/app/teacher"
             element={
@@ -182,34 +224,13 @@ function App() {
               </ProtectedRoute>
             }
           >
-            <Route
-              index
-              element={<TeacherDashboard />}
-            />
-            <Route
-              path="dashboard"
-              element={<TeacherDashboard />}
-            />
-            <Route
-              path="batches"
-              element={<TeacherBatches />}
-            />
-            <Route
-              path="batches/:id"
-              element={<TeacherBatchDetail />}
-            />
-            <Route
-              path="students"
-              element={<TeacherStudents />}
-            />
-            <Route
-              path="profile"
-              element={<TeacherProfile />}
-            />
-            <Route
-              path="announcements"
-              element={<Announcements />}
-            />
+            <Route index element={<TeacherDashboard />} />
+            <Route path="dashboard" element={<TeacherDashboard />} />
+            <Route path="batches" element={<TeacherBatches />} />
+            <Route path="batches/:id" element={<TeacherBatchDetail />} />
+            <Route path="students" element={<TeacherStudents />} />
+            <Route path="profile" element={<TeacherProfile />} />
+            <Route path="announcements" element={<Announcements />} />
           </Route>
         </Routes>
       </Router>

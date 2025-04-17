@@ -54,8 +54,8 @@ import {
   formatDate,
   formatDateForInput,
   getStatusColor,
-} from "../store/slices/announcementSlice";
-import RefreshButton from "../components/RefreshButton";
+} from "../../store/slices/announcementSlice";
+import RefreshButton from "../../components/RefreshButton";
 import { alpha } from "@mui/material/styles";
 
 const validationSchema = Yup.object({
@@ -97,6 +97,8 @@ const Announcements = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const isTablet = useMediaQuery(theme.breakpoints.down("md"));
   const fullScreen = useMediaQuery(theme.breakpoints.down("md"));
+  const { user } = useSelector((state) => state.auth);
+  const isAdmin = user && user.role === "admin";
 
   const loadAllData = useCallback(() => {
     dispatch(fetchAnnouncements());
@@ -302,25 +304,27 @@ const Announcements = () => {
           <Box
             sx={{ display: "flex", width: { xs: "100%", sm: "auto" }, gap: 1 }}
           >
-            <Button
-              variant="contained"
-              color="secondary"
-              startIcon={<AddIcon />}
-              onClick={() => handleOpen()}
-              sx={{
-                mr: 1,
-                flex: { xs: 1, sm: "none" },
-                fontSize: { xs: "0.8125rem", sm: "0.875rem" },
-                borderRadius: 1.5,
-                boxShadow: 2,
-                "&:hover": {
-                  boxShadow: 4,
-                },
-              }}
-              size={isMobile ? "small" : "medium"}
-            >
-              {isMobile ? "Add" : "Add Announcement"}
-            </Button>
+            {isAdmin && (
+              <Button
+                variant="contained"
+                color="secondary"
+                startIcon={<AddIcon />}
+                onClick={() => handleOpen()}
+                sx={{
+                  mr: 1,
+                  flex: { xs: 1, sm: "none" },
+                  fontSize: { xs: "0.8125rem", sm: "0.875rem" },
+                  borderRadius: 1.5,
+                  boxShadow: 2,
+                  "&:hover": {
+                    boxShadow: 4,
+                  },
+                }}
+                size={isMobile ? "small" : "medium"}
+              >
+                {isMobile ? "Add" : "Add Announcement"}
+              </Button>
+            )}
             <RefreshButton
               onClick={loadAllData}
               size={isMobile ? "small" : "medium"}
@@ -565,6 +569,52 @@ const Announcements = () => {
                     >
                       <VisibilityIcon fontSize="small" />
                     </IconButton>
+                    {isAdmin && (
+                      <>
+                        <IconButton
+                          size="small"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleOpen(announcement);
+                          }}
+                          color="primary"
+                          title="Edit"
+                          sx={{
+                            ml: 1,
+                            backgroundColor: alpha(theme.palette.primary.main, 0.1),
+                            "&:hover": {
+                              backgroundColor: alpha(
+                                theme.palette.primary.main,
+                                0.2
+                              ),
+                            },
+                          }}
+                        >
+                          <EditIcon fontSize="small" />
+                        </IconButton>
+                        <IconButton
+                          size="small"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDelete(announcement._id);
+                          }}
+                          color="error"
+                          title="Delete"
+                          sx={{
+                            ml: 1,
+                            backgroundColor: alpha(theme.palette.error.main, 0.1),
+                            "&:hover": {
+                              backgroundColor: alpha(
+                                theme.palette.error.main,
+                                0.2
+                              ),
+                            },
+                          }}
+                        >
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
+                      </>
+                    )}
                   </TableCell>
                 </TableRow>
               ))}
@@ -748,15 +798,17 @@ const Announcements = () => {
               >
                 No announcements found
               </Typography>
-              <Button
-                variant="contained"
-                color="primary"
-                startIcon={<AddIcon />}
-                sx={{ mt: 2, borderRadius: 1.5 }}
-                onClick={() => handleOpen()}
-              >
-                Add Announcement
-              </Button>
+              {isAdmin && (
+                <Button
+                  variant="contained"
+                  color="primary"
+                  startIcon={<AddIcon />}
+                  sx={{ mt: 2, borderRadius: 1.5 }}
+                  onClick={() => handleOpen()}
+                >
+                  Add Announcement
+                </Button>
+              )}
             </Box>
           )}
         </Stack>
@@ -807,38 +859,42 @@ const Announcements = () => {
               Announcement Details
             </Typography>
             <Box>
-              <IconButton
-                size="small"
-                onClick={() => {
-                  setViewDialogOpen(false);
-                  handleOpen(selectedAnnouncement);
-                }}
-                sx={{
-                  color: "white",
-                  backgroundColor: alpha(theme.palette.common.white, 0.1),
-                  mr: 1,
-                  "&:hover": {
-                    backgroundColor: alpha(theme.palette.common.white, 0.2),
-                  },
-                }}
-                title="Edit"
-              >
-                <EditIcon fontSize="small" />
-              </IconButton>
-              <IconButton
-                size="small"
-                onClick={handleConfirmDelete}
-                sx={{
-                  color: "white",
-                  backgroundColor: alpha(theme.palette.error.main, 0.6),
-                  "&:hover": {
-                    backgroundColor: alpha(theme.palette.error.main, 0.8),
-                  },
-                }}
-                title="Delete"
-              >
-                <DeleteIcon fontSize="small" />
-              </IconButton>
+              {isAdmin && (
+                <>
+                  <IconButton
+                    size="small"
+                    onClick={() => {
+                      setViewDialogOpen(false);
+                      handleOpen(selectedAnnouncement);
+                    }}
+                    sx={{
+                      color: "white",
+                      backgroundColor: alpha(theme.palette.common.white, 0.1),
+                      mr: 1,
+                      "&:hover": {
+                        backgroundColor: alpha(theme.palette.common.white, 0.2),
+                      },
+                    }}
+                    title="Edit"
+                  >
+                    <EditIcon fontSize="small" />
+                  </IconButton>
+                  <IconButton
+                    size="small"
+                    onClick={handleConfirmDelete}
+                    sx={{
+                      color: "white",
+                      backgroundColor: alpha(theme.palette.error.main, 0.6),
+                      "&:hover": {
+                        backgroundColor: alpha(theme.palette.error.main, 0.8),
+                      },
+                    }}
+                    title="Delete"
+                  >
+                    <DeleteIcon fontSize="small" />
+                  </IconButton>
+                </>
+              )}
             </Box>
           </Box>
         </DialogTitle>
@@ -1170,319 +1226,321 @@ const Announcements = () => {
         </DialogActions>
       </Dialog>
 
-      {/* Enhanced Add/Edit Dialog */}
-      <Dialog
-        open={open}
-        onClose={handleClose}
-        maxWidth="md"
-        fullWidth
-        fullScreen={fullScreen}
-        PaperProps={{
-          sx: {
-            borderRadius: fullScreen ? 0 : 2,
-            overflow: "hidden",
-            height: fullScreen ? "100%" : "auto",
-            display: "flex",
-            flexDirection: "column",
-            maxHeight: fullScreen ? "100%" : "90vh",
-          },
-        }}
-      >
-        <DialogTitle
-          sx={{
-            p: 0,
-          }}
-        >
-          <Box
-            sx={{
-              backgroundColor: theme.palette.primary.main,
-              color: "white",
-              p: 2,
-              flexShrink: 0,
-            }}
-          >
-            <Typography
-              variant="h6"
-              fontWeight={600}
-              sx={{ fontSize: { xs: "1.1rem", sm: "1.25rem" } }}
-            >
-              {editingAnnouncement
-                ? "Edit Announcement"
-                : "Add New Announcement"}
-            </Typography>
-          </Box>
-        </DialogTitle>
-
-        <form
-          onSubmit={formik.handleSubmit}
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            height: fullScreen ? "100%" : "auto",
-            overflow: "hidden",
-            flexGrow: 1,
-          }}
-        >
-          <DialogContent
-            dividers
-            sx={{
-              p: { xs: 2, sm: 3 },
-              overflowY: "auto",
-              flexGrow: 1,
+      {/* Create/Edit Dialog - Only shown for admin users */}
+      {isAdmin && (
+        <Dialog
+          open={open}
+          onClose={handleClose}
+          maxWidth="md"
+          fullWidth
+          fullScreen={fullScreen}
+          PaperProps={{
+            sx: {
+              borderRadius: fullScreen ? 0 : 2,
+              overflow: "hidden",
+              height: fullScreen ? "100%" : "auto",
               display: "flex",
               flexDirection: "column",
+              maxHeight: fullScreen ? "100%" : "90vh",
+            },
+          }}
+        >
+          <DialogTitle
+            sx={{
+              p: 0,
             }}
           >
-            <Box sx={{ mb: 3 }}>
-              <Typography variant="body2" color="text.secondary">
-                Fill in the details below to{" "}
-                {editingAnnouncement ? "update" : "create"} an announcement. All
-                fields are required.
+            <Box
+              sx={{
+                backgroundColor: theme.palette.primary.main,
+                color: "white",
+                p: 2,
+                flexShrink: 0,
+              }}
+            >
+              <Typography
+                variant="h6"
+                fontWeight={600}
+                sx={{ fontSize: { xs: "1.1rem", sm: "1.25rem" } }}
+              >
+                {editingAnnouncement
+                  ? "Edit Announcement"
+                  : "Add New Announcement"}
               </Typography>
             </Box>
+          </DialogTitle>
 
-            <Grid container spacing={isMobile ? 2 : 3}>
-              <Grid item xs={12}>
-                <Typography
-                  variant="subtitle1"
-                  color="primary"
-                  fontWeight={600}
-                  gutterBottom
-                >
-                  Announcement Details
-                </Typography>
-              </Grid>
-
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Title"
-                  name="title"
-                  value={formik.values.title}
-                  onChange={formik.handleChange}
-                  error={formik.touched.title && Boolean(formik.errors.title)}
-                  helperText={formik.touched.title && formik.errors.title}
-                  size={isMobile ? "small" : "medium"}
-                  InputProps={{
-                    sx: { borderRadius: 1 },
-                  }}
-                />
-              </Grid>
-
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  multiline
-                  rows={isMobile ? 3 : 4}
-                  label="Content"
-                  name="content"
-                  value={formik.values.content}
-                  onChange={formik.handleChange}
-                  error={
-                    formik.touched.content && Boolean(formik.errors.content)
-                  }
-                  helperText={formik.touched.content && formik.errors.content}
-                  size={isMobile ? "small" : "medium"}
-                  InputProps={{
-                    sx: { borderRadius: 1 },
-                  }}
-                />
-              </Grid>
-
-              <Grid item xs={12} sx={{ mt: 1 }}>
-                <Typography
-                  variant="subtitle1"
-                  color="primary"
-                  fontWeight={600}
-                  gutterBottom
-                >
-                  Classification
-                </Typography>
-              </Grid>
-
-              <Grid item xs={12} sm={6}>
-                <FormControl
-                  fullWidth
-                  size={isMobile ? "small" : "medium"}
-                  error={formik.touched.type && Boolean(formik.errors.type)}
-                >
-                  <InputLabel>Type</InputLabel>
-                  <Select
-                    name="type"
-                    value={formik.values.type}
-                    onChange={formik.handleChange}
-                    sx={{ borderRadius: 1 }}
-                  >
-                    <MenuItem value="General">General</MenuItem>
-                    <MenuItem value="Event">Event</MenuItem>
-                    <MenuItem value="Holiday">Holiday</MenuItem>
-                    <MenuItem value="Exam">Exam</MenuItem>
-                    <MenuItem value="Emergency">Emergency</MenuItem>
-                    <MenuItem value="Other">Other</MenuItem>
-                  </Select>
-                  {formik.touched.type && formik.errors.type && (
-                    <Typography variant="caption" color="error">
-                      {formik.errors.type}
-                    </Typography>
-                  )}
-                </FormControl>
-              </Grid>
-
-              <Grid item xs={12} sm={6}>
-                <FormControl
-                  fullWidth
-                  size={isMobile ? "small" : "medium"}
-                  error={
-                    formik.touched.priority && Boolean(formik.errors.priority)
-                  }
-                >
-                  <InputLabel>Priority</InputLabel>
-                  <Select
-                    name="priority"
-                    value={formik.values.priority}
-                    onChange={formik.handleChange}
-                    sx={{ borderRadius: 1 }}
-                  >
-                    <MenuItem value="High">High</MenuItem>
-                    <MenuItem value="Medium">Medium</MenuItem>
-                    <MenuItem value="Low">Low</MenuItem>
-                  </Select>
-                  {formik.touched.priority && formik.errors.priority && (
-                    <Typography variant="caption" color="error">
-                      {formik.errors.priority}
-                    </Typography>
-                  )}
-                </FormControl>
-              </Grid>
-
-              <Grid item xs={12} sm={6}>
-                <FormControl
-                  fullWidth
-                  size={isMobile ? "small" : "medium"}
-                  error={
-                    formik.touched.targetAudience &&
-                    Boolean(formik.errors.targetAudience)
-                  }
-                >
-                  <InputLabel>Target Audience</InputLabel>
-                  <Select
-                    name="targetAudience"
-                    value={formik.values.targetAudience}
-                    onChange={formik.handleChange}
-                    sx={{ borderRadius: 1 }}
-                  >
-                    <MenuItem value="All">All</MenuItem>
-                    <MenuItem value="Students">Students</MenuItem>
-                    <MenuItem value="Teachers">Teachers</MenuItem>
-                    <MenuItem value="Parents">Parents</MenuItem>
-                  </Select>
-                  {formik.touched.targetAudience &&
-                    formik.errors.targetAudience && (
-                      <Typography variant="caption" color="error">
-                        {formik.errors.targetAudience}
-                      </Typography>
-                    )}
-                </FormControl>
-              </Grid>
-
-              <Grid item xs={12} sx={{ mt: 1 }}>
-                <Typography
-                  variant="subtitle1"
-                  color="primary"
-                  fontWeight={600}
-                  gutterBottom
-                >
-                  Schedule
-                </Typography>
-              </Grid>
-
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  type="date"
-                  label="Start Date"
-                  name="startDate"
-                  value={formik.values.startDate}
-                  onChange={formik.handleChange}
-                  error={
-                    formik.touched.startDate && Boolean(formik.errors.startDate)
-                  }
-                  helperText={
-                    formik.touched.startDate && formik.errors.startDate
-                  }
-                  InputLabelProps={{ shrink: true }}
-                  size={isMobile ? "small" : "medium"}
-                  InputProps={{
-                    sx: { borderRadius: 1 },
-                  }}
-                />
-              </Grid>
-
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  type="date"
-                  label="End Date"
-                  name="endDate"
-                  value={formik.values.endDate}
-                  onChange={formik.handleChange}
-                  error={
-                    formik.touched.endDate && Boolean(formik.errors.endDate)
-                  }
-                  helperText={formik.touched.endDate && formik.errors.endDate}
-                  InputLabelProps={{ shrink: true }}
-                  size={isMobile ? "small" : "medium"}
-                  InputProps={{
-                    sx: { borderRadius: 1 },
-                  }}
-                />
-              </Grid>
-            </Grid>
-          </DialogContent>
-
-          <DialogActions
-            sx={{
-              px: { xs: 2, sm: 3 },
-              py: 2,
-              position: fullScreen ? "sticky" : "relative",
-              bottom: 0,
-              backgroundColor: "background.paper",
-              borderTop: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-              zIndex: 1,
-              mt: "auto",
-              flexShrink: 0,
-              gap: 1,
+          <form
+            onSubmit={formik.handleSubmit}
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              height: fullScreen ? "100%" : "auto",
+              overflow: "hidden",
+              flexGrow: 1,
             }}
           >
-            <Button
-              onClick={handleClose}
-              variant="outlined"
+            <DialogContent
+              dividers
               sx={{
-                borderRadius: 1.5,
+                p: { xs: 2, sm: 3 },
+                overflowY: "auto",
+                flexGrow: 1,
+                display: "flex",
+                flexDirection: "column",
               }}
             >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              variant="contained"
-              color="primary"
+              <Box sx={{ mb: 3 }}>
+                <Typography variant="body2" color="text.secondary">
+                  Fill in the details below to{" "}
+                  {editingAnnouncement ? "update" : "create"} an announcement. All
+                  fields are required.
+                </Typography>
+              </Box>
+
+              <Grid container spacing={isMobile ? 2 : 3}>
+                <Grid item xs={12}>
+                  <Typography
+                    variant="subtitle1"
+                    color="primary"
+                    fontWeight={600}
+                    gutterBottom
+                  >
+                    Announcement Details
+                  </Typography>
+                </Grid>
+
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label="Title"
+                    name="title"
+                    value={formik.values.title}
+                    onChange={formik.handleChange}
+                    error={formik.touched.title && Boolean(formik.errors.title)}
+                    helperText={formik.touched.title && formik.errors.title}
+                    size={isMobile ? "small" : "medium"}
+                    InputProps={{
+                      sx: { borderRadius: 1 },
+                    }}
+                  />
+                </Grid>
+
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    multiline
+                    rows={isMobile ? 3 : 4}
+                    label="Content"
+                    name="content"
+                    value={formik.values.content}
+                    onChange={formik.handleChange}
+                    error={
+                      formik.touched.content && Boolean(formik.errors.content)
+                    }
+                    helperText={formik.touched.content && formik.errors.content}
+                    size={isMobile ? "small" : "medium"}
+                    InputProps={{
+                      sx: { borderRadius: 1 },
+                    }}
+                  />
+                </Grid>
+
+                <Grid item xs={12} sx={{ mt: 1 }}>
+                  <Typography
+                    variant="subtitle1"
+                    color="primary"
+                    fontWeight={600}
+                    gutterBottom
+                  >
+                    Classification
+                  </Typography>
+                </Grid>
+
+                <Grid item xs={12} sm={6}>
+                  <FormControl
+                    fullWidth
+                    size={isMobile ? "small" : "medium"}
+                    error={formik.touched.type && Boolean(formik.errors.type)}
+                  >
+                    <InputLabel>Type</InputLabel>
+                    <Select
+                      name="type"
+                      value={formik.values.type}
+                      onChange={formik.handleChange}
+                      sx={{ borderRadius: 1 }}
+                    >
+                      <MenuItem value="General">General</MenuItem>
+                      <MenuItem value="Event">Event</MenuItem>
+                      <MenuItem value="Holiday">Holiday</MenuItem>
+                      <MenuItem value="Exam">Exam</MenuItem>
+                      <MenuItem value="Emergency">Emergency</MenuItem>
+                      <MenuItem value="Other">Other</MenuItem>
+                    </Select>
+                    {formik.touched.type && formik.errors.type && (
+                      <Typography variant="caption" color="error">
+                        {formik.errors.type}
+                      </Typography>
+                    )}
+                  </FormControl>
+                </Grid>
+
+                <Grid item xs={12} sm={6}>
+                  <FormControl
+                    fullWidth
+                    size={isMobile ? "small" : "medium"}
+                    error={
+                      formik.touched.priority && Boolean(formik.errors.priority)
+                    }
+                  >
+                    <InputLabel>Priority</InputLabel>
+                    <Select
+                      name="priority"
+                      value={formik.values.priority}
+                      onChange={formik.handleChange}
+                      sx={{ borderRadius: 1 }}
+                    >
+                      <MenuItem value="High">High</MenuItem>
+                      <MenuItem value="Medium">Medium</MenuItem>
+                      <MenuItem value="Low">Low</MenuItem>
+                    </Select>
+                    {formik.touched.priority && formik.errors.priority && (
+                      <Typography variant="caption" color="error">
+                        {formik.errors.priority}
+                      </Typography>
+                    )}
+                  </FormControl>
+                </Grid>
+
+                <Grid item xs={12} sm={6}>
+                  <FormControl
+                    fullWidth
+                    size={isMobile ? "small" : "medium"}
+                    error={
+                      formik.touched.targetAudience &&
+                      Boolean(formik.errors.targetAudience)
+                    }
+                  >
+                    <InputLabel>Target Audience</InputLabel>
+                    <Select
+                      name="targetAudience"
+                      value={formik.values.targetAudience}
+                      onChange={formik.handleChange}
+                      sx={{ borderRadius: 1 }}
+                    >
+                      <MenuItem value="All">All</MenuItem>
+                      <MenuItem value="Students">Students</MenuItem>
+                      <MenuItem value="Teachers">Teachers</MenuItem>
+                      <MenuItem value="Parents">Parents</MenuItem>
+                    </Select>
+                    {formik.touched.targetAudience &&
+                      formik.errors.targetAudience && (
+                        <Typography variant="caption" color="error">
+                          {formik.errors.targetAudience}
+                        </Typography>
+                      )}
+                  </FormControl>
+                </Grid>
+
+                <Grid item xs={12} sx={{ mt: 1 }}>
+                  <Typography
+                    variant="subtitle1"
+                    color="primary"
+                    fontWeight={600}
+                    gutterBottom
+                  >
+                    Schedule
+                  </Typography>
+                </Grid>
+
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    type="date"
+                    label="Start Date"
+                    name="startDate"
+                    value={formik.values.startDate}
+                    onChange={formik.handleChange}
+                    error={
+                      formik.touched.startDate && Boolean(formik.errors.startDate)
+                    }
+                    helperText={
+                      formik.touched.startDate && formik.errors.startDate
+                    }
+                    InputLabelProps={{ shrink: true }}
+                    size={isMobile ? "small" : "medium"}
+                    InputProps={{
+                      sx: { borderRadius: 1 },
+                    }}
+                  />
+                </Grid>
+
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    type="date"
+                    label="End Date"
+                    name="endDate"
+                    value={formik.values.endDate}
+                    onChange={formik.handleChange}
+                    error={
+                      formik.touched.endDate && Boolean(formik.errors.endDate)
+                    }
+                    helperText={formik.touched.endDate && formik.errors.endDate}
+                    InputLabelProps={{ shrink: true }}
+                    size={isMobile ? "small" : "medium"}
+                    InputProps={{
+                      sx: { borderRadius: 1 },
+                    }}
+                  />
+                </Grid>
+              </Grid>
+            </DialogContent>
+
+            <DialogActions
               sx={{
-                borderRadius: 1.5,
-                px: 3,
+                px: { xs: 2, sm: 3 },
+                py: 2,
+                position: fullScreen ? "sticky" : "relative",
+                bottom: 0,
+                backgroundColor: "background.paper",
+                borderTop: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+                zIndex: 1,
+                mt: "auto",
+                flexShrink: 0,
+                gap: 1,
               }}
             >
-              {formik.isSubmitting ? (
-                <CircularProgress size={24} color="inherit" />
-              ) : editingAnnouncement ? (
-                "Update Announcement"
-              ) : (
-                "Save Announcement"
-              )}
-            </Button>
-          </DialogActions>
-        </form>
-      </Dialog>
+              <Button
+                onClick={handleClose}
+                variant="outlined"
+                sx={{
+                  borderRadius: 1.5,
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                variant="contained"
+                color="primary"
+                sx={{
+                  borderRadius: 1.5,
+                  px: 3,
+                }}
+              >
+                {formik.isSubmitting ? (
+                  <CircularProgress size={24} color="inherit" />
+                ) : editingAnnouncement ? (
+                  "Update Announcement"
+                ) : (
+                  "Save Announcement"
+                )}
+              </Button>
+            </DialogActions>
+          </form>
+        </Dialog>
+      )}
     </Box>
   );
 };
