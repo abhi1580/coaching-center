@@ -10,7 +10,16 @@ const ProtectedRoute = ({ children, allowedRoles = [] }) => {
   }
 
   if (allowedRoles.length > 0 && !allowedRoles.includes(user?.role)) {
-    return <Navigate to="/app/dashboard" />;
+    // Redirect based on user role
+    if (user?.role === "teacher") {
+      return <Navigate to="/app/teacher/dashboard" />;
+    } else if (user?.role === "student") {
+      return <Navigate to="/app/student-dashboard" />;
+    } else if (user?.role === "admin") {
+      return <Navigate to="/app/dashboard" />;
+    }
+    // Default fallback
+    return <Navigate to="/app/home" />;
   }
 
   return children;

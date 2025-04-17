@@ -207,7 +207,19 @@ const MainHeader = () => {
                   open={Boolean(anchorElUser)}
                   onClose={handleCloseUserMenu}
                 >
-                  <MenuItem onClick={() => navigate("/app/dashboard")}>
+                  <MenuItem onClick={() => {
+                    // Redirect based on user role
+                    if (user?.role === "admin") {
+                      navigate("/app/dashboard");
+                    } else if (user?.role === "teacher") {
+                      navigate("/app/teacher/dashboard");
+                    } else if (user?.role === "student") {
+                      navigate("/app/student-dashboard");
+                    } else {
+                      navigate("/app");
+                    }
+                    handleCloseUserMenu();
+                  }}>
                     <Typography textAlign="center">Dashboard</Typography>
                   </MenuItem>
                   <MenuItem onClick={handleLogout}>

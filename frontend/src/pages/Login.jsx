@@ -74,7 +74,7 @@ function Login() {
         if (result.user.role === "admin") {
           navigate("/app/dashboard");
         } else if (result.user.role === "teacher") {
-          navigate("/app/teacher-dashboard");
+          navigate("/app/teacher/dashboard");
         } else if (result.user.role === "student") {
           navigate("/app/student-dashboard");
         } else {
