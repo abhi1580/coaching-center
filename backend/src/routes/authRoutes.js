@@ -7,6 +7,7 @@ import {
   createUser,
   createAdmin,
   logout,
+  changePassword,
 } from "../controllers/authController.js";
 import { protect } from "../middleware/auth.js";
 import { validate } from "../middleware/validate.js";
@@ -15,6 +16,7 @@ import {
   forgotPasswordValidator,
   resetPasswordValidator,
   createAdminValidator,
+  changePasswordValidator,
 } from "../middleware/validators/authValidators.js";
 
 const router = express.Router();
@@ -34,6 +36,7 @@ router.post("/create-admin", createAdminValidator, validate, createAdmin);
 
 // Protected routes
 router.get("/me", protect, getMe);
+router.post("/change-password", protect, changePasswordValidator, validate, changePassword);
 
 // Admin-only routes
 router.post("/create-user", protect, createUser);

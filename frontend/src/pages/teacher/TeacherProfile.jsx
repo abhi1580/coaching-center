@@ -14,6 +14,7 @@ import {
   useTheme,
   Alert,
   Snackbar,
+  IconButton,
 } from "@mui/material";
 import {
   Person as PersonIcon,
@@ -26,6 +27,8 @@ import {
   CalendarToday as CalendarIcon,
   Save as SaveIcon,
   Cancel as CancelIcon,
+  Visibility as VisibilityIcon,
+  VisibilityOff as VisibilityOffIcon,
 } from "@mui/icons-material";
 import axios from "axios";
 import { useSelector } from "react-redux";
@@ -43,6 +46,21 @@ function TeacherProfile() {
     message: "",
     severity: "success",
   });
+  
+  // Password change state
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
+  const [passwordErrors, setPasswordErrors] = useState({});
+  const [showPassword, setShowPassword] = useState({
+    current: false,
+    new: false,
+    confirm: false,
+  });
+  const [passwordChangeLoading, setPasswordChangeLoading] = useState(false);
+  const [includePasswordChange, setIncludePasswordChange] = useState(false);
 
   useEffect(() => {
     const fetchTeacherProfile = async () => {
@@ -56,8 +74,9 @@ function TeacherProfile() {
         }
 
         // Fetch the authenticated teacher's profile
+        const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
         const response = await axios.get(
-          `${import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL + '/teachers/me' : 'http://localhost:5000/api/teachers/me'}`,
+          `${baseUrl}/teachers/me`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         
@@ -109,18 +128,93 @@ function TeacherProfile() {
     setEditableProfile({ ...editableProfile, [name]: value });
   };
 
+  const handlePasswordChange = (e) => {
+    const { name, value } = e.target;
+    setPasswordData({ ...passwordData, [name]: value });
+    
+    // Clear errors when typing
+    if (passwordErrors[name]) {
+      setPasswordErrors(prev => ({ ...prev, [name]: "" }));
+    }
+  };
+
+  const togglePasswordVisibility = (field) => {
+    setShowPassword(prev => ({ ...prev, [field]: !prev[field] }));
+  };
+
+  const validatePasswordForm = () => {
+    const errors = {};
+    
+    if (includePasswordChange) {
+      if (!passwordData.currentPassword) {
+        errors.currentPassword = "Current password is required";
+      }
+      
+      if (!passwordData.newPassword) {
+        errors.newPassword = "New password is required";
+      } else if (passwordData.newPassword.length < 6) {
+        errors.newPassword = "New password must be at least 6 characters";
+      }
+      
+      if (!passwordData.confirmPassword) {
+        errors.confirmPassword = "Please confirm your new password";
+      } else if (passwordData.newPassword !== passwordData.confirmPassword) {
+        errors.confirmPassword = "Passwords do not match";
+      }
+    }
+    
+    setPasswordErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleSave = async () => {
     try {
+      // First validate password if password change is included
+      if (includePasswordChange && !validatePasswordForm()) {
+        return;
+      }
+      
       setLoading(true);
       const token = localStorage.getItem("token");
       
       // Make API request to update teacher profile
-      // Note: In a real implementation, you would update the endpoint below
+      const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
       const response = await axios.put(
-        `${import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL + '/teachers/me' : 'http://localhost:5000/api/teachers/me'}`,
+        `${baseUrl}/teachers/me`,
         editableProfile,
         { headers: { Authorization: `Bearer ${token}` } }
       );
+      
+      // If password change is included, verify current password and update password
+      if (includePasswordChange) {
+        try {
+          await axios.post(
+            `${baseUrl}/auth/change-password`,
+            {
+              currentPassword: passwordData.currentPassword,
+              newPassword: passwordData.newPassword
+            },
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+          
+          // Reset password fields on success
+          setPasswordData({
+            currentPassword: "",
+            newPassword: "",
+            confirmPassword: ""
+          });
+          setIncludePasswordChange(false);
+        } catch (err) {
+          console.error("Error updating password:", err);
+          setSnackbar({
+            open: true,
+            message: err.response?.data?.message || "Failed to update password. Profile was updated.",
+            severity: "warning"
+          });
+          setLoading(false);
+          return;
+        }
+      }
       
       // Update local state with the response
       const updatedProfile = response.data.data || response.data;
@@ -130,7 +224,9 @@ function TeacherProfile() {
       // Show success message
       setSnackbar({
         open: true,
-        message: "Profile updated successfully",
+        message: includePasswordChange 
+          ? "Profile and password updated successfully" 
+          : "Profile updated successfully",
         severity: "success",
       });
     } catch (err) {
@@ -140,9 +236,21 @@ function TeacherProfile() {
       if (err.response?.status === 404) {
         setProfile({ ...editableProfile });
         setIsEditing(false);
+        
+        if (includePasswordChange) {
+          setPasswordData({
+            currentPassword: "",
+            newPassword: "",
+            confirmPassword: ""
+          });
+          setIncludePasswordChange(false);
+        }
+        
         setSnackbar({
           open: true,
-          message: "Profile updated successfully (Demo)",
+          message: includePasswordChange 
+            ? "Profile and password updated successfully (Demo)" 
+            : "Profile updated successfully (Demo)",
           severity: "success",
         });
       } else {
@@ -228,7 +336,7 @@ function TeacherProfile() {
       </Paper>
 
       {/* Profile content */}
-      <Paper sx={{ p: { xs: 2, sm: 3 }, borderRadius: 2 }}>
+      <Paper sx={{ p: { xs: 2, sm: 3 }, borderRadius: 2, mb: 3 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3 }}>
           <Box sx={{ display: 'flex', alignItems: 'center' }}>
             <Avatar
@@ -343,6 +451,98 @@ function TeacherProfile() {
                   required
                 />
               </Grid>
+              
+              {/* Password change section in edit mode */}
+              <Grid item xs={12}>
+                <Box sx={{ mt: 2, mb: 1 }}>
+                  <Typography variant="h6" component="h3" color="primary">
+                    Change Password
+                  </Typography>
+                  <Button 
+                    variant="text" 
+                    color={includePasswordChange ? "error" : "primary"}
+                    onClick={() => setIncludePasswordChange(!includePasswordChange)}
+                    sx={{ mt: 1 }}
+                  >
+                    {includePasswordChange ? "Cancel Password Change" : "Update Password"}
+                  </Button>
+                </Box>
+              </Grid>
+              
+              {includePasswordChange && (
+                <>
+                  <Grid item xs={12} sm={4}>
+                    <TextField
+                      fullWidth
+                      label="Current Password"
+                      name="currentPassword"
+                      value={passwordData.currentPassword}
+                      onChange={handlePasswordChange}
+                      variant="outlined"
+                      type={showPassword.current ? "text" : "password"}
+                      error={!!passwordErrors.currentPassword}
+                      helperText={passwordErrors.currentPassword}
+                      InputProps={{
+                        endAdornment: (
+                          <IconButton 
+                            onClick={() => togglePasswordVisibility('current')}
+                            edge="end"
+                          >
+                            {showPassword.current ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                          </IconButton>
+                        )
+                      }}
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={4}>
+                    <TextField
+                      fullWidth
+                      label="New Password"
+                      name="newPassword"
+                      value={passwordData.newPassword}
+                      onChange={handlePasswordChange}
+                      variant="outlined"
+                      type={showPassword.new ? "text" : "password"}
+                      error={!!passwordErrors.newPassword}
+                      helperText={passwordErrors.newPassword}
+                      InputProps={{
+                        endAdornment: (
+                          <IconButton 
+                            onClick={() => togglePasswordVisibility('new')}
+                            edge="end"
+                          >
+                            {showPassword.new ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                          </IconButton>
+                        )
+                      }}
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={4}>
+                    <TextField
+                      fullWidth
+                      label="Confirm New Password"
+                      name="confirmPassword"
+                      value={passwordData.confirmPassword}
+                      onChange={handlePasswordChange}
+                      variant="outlined"
+                      type={showPassword.confirm ? "text" : "password"}
+                      error={!!passwordErrors.confirmPassword}
+                      helperText={passwordErrors.confirmPassword}
+                      InputProps={{
+                        endAdornment: (
+                          <IconButton 
+                            onClick={() => togglePasswordVisibility('confirm')}
+                            edge="end"
+                          >
+                            {showPassword.confirm ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                          </IconButton>
+                        )
+                      }}
+                    />
+                  </Grid>
+                </>
+              )}
+              
               <Grid item xs={12}>
                 <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
                   <Button

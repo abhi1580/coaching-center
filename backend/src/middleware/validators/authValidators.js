@@ -72,3 +72,14 @@ export const createAdminValidator = [
     .isIn(["male", "female", "other"])
     .withMessage("Gender must be either male, female, or other"),
 ];
+
+export const changePasswordValidator = [
+  check("currentPassword")
+    .notEmpty()
+    .withMessage("Current password is required"),
+  check("newPassword")
+    .notEmpty()
+    .withMessage("New password is required")
+    .isLength({ min: 6 })
+    .withMessage("Password must be at least 6 characters long"),
+];

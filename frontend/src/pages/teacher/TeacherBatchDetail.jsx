@@ -58,19 +58,20 @@ function TeacherBatchDetail() {
           return;
         }
 
-        // Make API request to fetch batch details
+        // Make API request to fetch batch details using environment variables
+        const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
         const response = await axios.get(
-          `${
-            import.meta.env.VITE_API_URL + `/batches/${id}`
-          }?populate=enrolledStudents`,
+          `${baseUrl}/batches/${id}?populate=enrolledStudents`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
-
+        
         setBatch(response.data.data || response.data);
         setError(null);
       } catch (err) {
         console.error("Error fetching batch details:", err);
-        setError(err.response?.data?.message || "Failed to load batch details");
+        setError(
+          err.response?.data?.message || "Failed to load batch details"
+        );
       } finally {
         setLoading(false);
       }
@@ -493,7 +494,9 @@ function TeacherBatchDetail() {
                       </Box>
                     </TableCell>
                     <TableCell>{student.studentId || "N/A"}</TableCell>
-                    <TableCell>{student.standard || "N/A"}</TableCell>
+                    <TableCell>
+                      {student.standard?.name || student.standard || "N/A"}
+                    </TableCell>
                     <TableCell>
                       <Box sx={{ display: "flex", alignItems: "center" }}>
                         <EmailIcon

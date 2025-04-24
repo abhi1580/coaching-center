@@ -63,8 +63,9 @@ function TeacherBatches() {
         }
 
         // Make API request to fetch batches allocated to this teacher
+        const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
         const response = await axios.get(
-          `${import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL + `/teachers/batches` : `http://localhost:5000/api/teachers/batches`}?populate=enrolledStudents`,
+          `${baseUrl}/teachers/batches?populate=enrolledStudents`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         

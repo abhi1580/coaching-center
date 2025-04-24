@@ -136,7 +136,14 @@ export const getBatchById = async (req, res) => {
 
     // Conditionally populate enrolledStudents with student details
     if (shouldPopulateEnrolledStudents) {
-      query = query.populate("enrolledStudents", "name email phone studentId");
+      query = query.populate({
+        path: "enrolledStudents",
+        select: "name email phone studentId standard",
+        populate: {
+          path: "standard",
+          select: "name"
+        }
+      });
     }
 
     // Execute the query

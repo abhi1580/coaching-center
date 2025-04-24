@@ -297,6 +297,45 @@ export const resetPassword = async (req, res) => {
   }
 };
 
+// @desc    Change user password (when logged in)
+// @route   POST /api/auth/change-password
+// @access  Private
+export const changePassword = async (req, res, next) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    
+    // Get user by ID from auth middleware
+    const user = await User.findById(req.user.id);
+    
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    // Verify current password
+    const isMatch = await user.comparePassword(currentPassword);
+    if (!isMatch) {
+      return res.status(401).json({
+        success: false,
+        message: "Current password is incorrect",
+      });
+    }
+
+    // Update password
+    user.password = newPassword;
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Password changed successfully",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // @desc    Create admin user (special case for first admin)
 // @route   POST /api/auth/create-admin
 // @access  Public or Admin only after first admin

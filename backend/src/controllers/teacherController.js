@@ -286,25 +286,25 @@ export const getTeachersBySubject = async (req, res) => {
  */
 export const getTeacherDashboard = asyncHandler(async (req, res) => {
   try {
-    // Get authenticated user's ID
-    const userId = req.user.id;
+  // Get authenticated user's ID
+  const userId = req.user.id;
 
-    // Find the teacher profile for this user
-    const teacher = await Teacher.findOne({ user: userId }).populate("user", "name email");
+  // Find the teacher profile for this user
+  const teacher = await Teacher.findOne({ user: userId }).populate("user", "name email");
 
-    if (!teacher) {
-      return res.status(404).json({
-        success: false,
-        message: "Teacher profile not found",
-      });
-    }
+  if (!teacher) {
+    return res.status(404).json({
+      success: false,
+      message: "Teacher profile not found",
+    });
+  }
 
-    // Get all batches assigned to this teacher with populated data
-    const batches = await Batch.find({ teacher: teacher._id })
-      .populate("subject", "name")
-      .populate("standard", "name")
-      .populate({
-        path: "enrolledStudents",
+  // Get all batches assigned to this teacher with populated data
+  const batches = await Batch.find({ teacher: teacher._id })
+    .populate("subject", "name")
+    .populate("standard", "name")
+    .populate({
+      path: "enrolledStudents",
         select: "name email phone"
       });
 
@@ -333,12 +333,12 @@ export const getTeacherDashboard = asyncHandler(async (req, res) => {
     console.log(`Found ${studentsWithBatches.length} students with these batches in their record`);
 
     // Calculate total number of unique students from both sources
-    const uniqueStudents = new Set();
+  const uniqueStudents = new Set();
     
     // Add students from enrolledStudents arrays
-    batches.forEach(batch => {
+  batches.forEach(batch => {
       if (batch.enrolledStudents && batch.enrolledStudents.length > 0) {
-        batch.enrolledStudents.forEach(student => {
+    batch.enrolledStudents.forEach(student => {
           if (student && student._id) {
             uniqueStudents.add(student._id.toString());
           }
@@ -352,61 +352,61 @@ export const getTeacherDashboard = asyncHandler(async (req, res) => {
     });
     
     console.log(`Total unique students found: ${uniqueStudents.size}`);
-    
-    // Get active announcements for the teacher
-    const announcements = await Announcement.find({
-      targetAudience: { $in: ['all', 'teachers'] },
-      expiryDate: { $gte: new Date() }
-    }).sort({ createdAt: -1 });
+  
+  // Get active announcements for the teacher
+  const announcements = await Announcement.find({
+    targetAudience: { $in: ['all', 'teachers'] },
+    expiryDate: { $gte: new Date() }
+  }).sort({ createdAt: -1 });
 
-    // Get upcoming classes for the next week
-    const today = new Date();
-    const nextWeek = new Date(today);
-    nextWeek.setDate(today.getDate() + 7);
-    
-    const upcomingClasses = [];
-    
-    batches.forEach(batch => {
-      if (batch.status === 'active' || batch.status === 'upcoming') {
-        // Check if schedule and days exist and are valid
-        if (batch.schedule && batch.schedule.days && Array.isArray(batch.schedule.days)) {
-          batch.schedule.days.forEach(day => {
-            // Create a date object for the next occurrence of this schedule day
-            const nextClassDate = getNextDayOfWeek(today, day);
-            
-            if (nextClassDate && nextClassDate <= nextWeek) {
-              upcomingClasses.push({
-                batchName: batch.name,
-                subject: batch.subject ? batch.subject.name : 'Not assigned',
-                standard: batch.standard ? batch.standard.name : 'Not assigned',
-                day: day,
-                startTime: batch.schedule.startTime,
-                endTime: batch.schedule.endTime,
-                date: nextClassDate
-              });
-            }
-          });
-        }
+  // Get upcoming classes for the next week
+  const today = new Date();
+  const nextWeek = new Date(today);
+  nextWeek.setDate(today.getDate() + 7);
+  
+  const upcomingClasses = [];
+  
+  batches.forEach(batch => {
+    if (batch.status === 'active' || batch.status === 'upcoming') {
+      // Check if schedule and days exist and are valid
+      if (batch.schedule && batch.schedule.days && Array.isArray(batch.schedule.days)) {
+        batch.schedule.days.forEach(day => {
+          // Create a date object for the next occurrence of this schedule day
+          const nextClassDate = getNextDayOfWeek(today, day);
+          
+          if (nextClassDate && nextClassDate <= nextWeek) {
+            upcomingClasses.push({
+              batchName: batch.name,
+              subject: batch.subject ? batch.subject.name : 'Not assigned',
+              standard: batch.standard ? batch.standard.name : 'Not assigned',
+              day: day,
+              startTime: batch.schedule.startTime,
+              endTime: batch.schedule.endTime,
+              date: nextClassDate
+            });
+          }
+        });
       }
-    });
-    
-    // Sort upcoming classes by date and time
-    upcomingClasses.sort((a, b) => {
-      if (a.date.getTime() !== b.date.getTime()) {
-        return a.date.getTime() - b.date.getTime();
-      }
-      return a.startTime.localeCompare(b.startTime);
-    });
+    }
+  });
+  
+  // Sort upcoming classes by date and time
+  upcomingClasses.sort((a, b) => {
+    if (a.date.getTime() !== b.date.getTime()) {
+      return a.date.getTime() - b.date.getTime();
+    }
+    return a.startTime.localeCompare(b.startTime);
+  });
 
     return res.json({
-      success: true,
-      data: {
-        totalBatches: batches.length,
-        totalStudents: uniqueStudents.size,
-        activeAnnouncements: announcements,
-        upcomingClasses: upcomingClasses
-      }
-    });
+    success: true,
+    data: {
+      totalBatches: batches.length,
+      totalStudents: uniqueStudents.size,
+      activeAnnouncements: announcements,
+      upcomingClasses: upcomingClasses
+    }
+  });
   } catch (error) {
     console.error("Error in getTeacherDashboard:", error);
     return res.status(500).json({
@@ -424,25 +424,25 @@ export const getTeacherDashboard = asyncHandler(async (req, res) => {
  */
 export const getTeacherBatches = asyncHandler(async (req, res) => {
   try {
-    // Get authenticated user's ID
-    const userId = req.user.id;
+  // Get authenticated user's ID
+  const userId = req.user.id;
 
-    // Find the teacher profile for this user
-    const teacher = await Teacher.findOne({ user: userId });
+  // Find the teacher profile for this user
+  const teacher = await Teacher.findOne({ user: userId });
 
-    if (!teacher) {
-      return res.status(404).json({
-        success: false,
-        message: "Teacher profile not found",
-      });
-    }
+  if (!teacher) {
+    return res.status(404).json({
+      success: false,
+      message: "Teacher profile not found",
+    });
+  }
 
-    // Get all batches assigned to this teacher with populated data
-    const batches = await Batch.find({ teacher: teacher._id })
-      .populate("subject", "name")
-      .populate("standard", "name")
-      .populate({
-        path: "enrolledStudents",
+  // Get all batches assigned to this teacher with populated data
+  const batches = await Batch.find({ teacher: teacher._id })
+    .populate("subject", "name")
+    .populate("standard", "name")
+    .populate({
+      path: "enrolledStudents",
         select: "name email phone"
       });
       
@@ -525,10 +525,10 @@ export const getTeacherBatches = asyncHandler(async (req, res) => {
     });
 
     return res.json({
-      success: true,
-      count: batches.length,
-      data: batches
-    });
+    success: true,
+    count: batches.length,
+    data: batches
+  });
   } catch (error) {
     console.error("Error in getTeacherBatches:", error);
     return res.status(500).json({
