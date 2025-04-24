@@ -279,3 +279,21 @@ export const staffService = {
   delete: (id) => api.delete(`/staff/${id}`),
   updateStatus: (id, status) => api.patch(`/staff/${id}/status`, { status }),
 };
+
+// Attendance Service
+export const attendanceService = {
+  // Get attendance for a batch on a specific date
+  getBatchAttendance: (batchId, date) => api.get(`/attendance/${batchId}/${date}`),
+  
+  // Submit attendance for a batch
+  submitBatchAttendance: (batchId, data) => api.post(`/attendance/batch/${batchId}`, data),
+  
+  // Get attendance history for a student in a batch
+  getStudentAttendance: (studentId, batchId) => api.get(`/attendance/student/${studentId}/${batchId}`),
+  
+  // Get attendance statistics for a student
+  getStudentAttendanceStats: (studentId) => api.get(`/attendance/statistics/student/${studentId}`),
+  
+  // Get attendance statistics for a batch
+  getBatchAttendanceStats: (batchId) => api.get(`/attendance/statistics/batch/${batchId}`),
+};

@@ -18,6 +18,7 @@ import paymentRoutes from "./routes/paymentRoutes.js";
 import announcementRoutes from "./routes/announcementRoutes.js";
 import teacherRoutes from "./routes/teacherRoutes.js";
 import dashboardRoutes from "./routes/dashboardRoutes.js";
+import attendanceRoutes from "./routes/attendanceRoutes.js";
 
 import cron from "node-cron";
 import { checkAndExpireAnnouncements } from "./utils/announcementExpiry.js";
@@ -69,6 +70,7 @@ app.use("/api/teachers", teacherRoutes);
 app.use("/api/subjects", subjectRoutes);
 app.use("/api/standards", standardRoutes);
 app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/attendance", attendanceRoutes);
 
 // 404 handler
 app.use((req, res) => {

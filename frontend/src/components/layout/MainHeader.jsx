@@ -59,6 +59,7 @@ const MainHeader = () => {
         { name: "Dashboard", path: "/app/teacher/dashboard" },
         { name: "My Students", path: "/app/teacher/students" },
         { name: "My Batches", path: "/app/teacher/batches" },
+        { name: "Attendance", path: "/app/teacher/attendance" },
         { name: "Announcements", path: "/app/teacher/announcements" },
         { name: "Profile", path: "/app/teacher/profile" },
       ];

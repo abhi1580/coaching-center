@@ -29,6 +29,7 @@ import {
   TeacherDashboard,
   TeacherProfile,
   TeacherStudents,
+  TeacherAttendance,
 } from "./pages/teacher";
 import { initializeAuth } from "./store/slices/authSlice";
 
@@ -229,6 +230,7 @@ function App() {
             <Route path="batches" element={<TeacherBatches />} />
             <Route path="batches/:id" element={<TeacherBatchDetail />} />
             <Route path="students" element={<TeacherStudents />} />
+            <Route path="attendance" element={<TeacherAttendance />} />
             <Route path="profile" element={<TeacherProfile />} />
             <Route path="announcements" element={<Announcements />} />
           </Route>
