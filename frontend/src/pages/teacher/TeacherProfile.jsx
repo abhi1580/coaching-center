@@ -15,6 +15,8 @@ import {
   Alert,
   Snackbar,
   IconButton,
+  Stack,
+  useMediaQuery,
 } from "@mui/material";
 import {
   Person as PersonIcon,
@@ -35,6 +37,7 @@ import { useSelector } from "react-redux";
 
 function TeacherProfile() {
   const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const { user } = useSelector((state) => state.auth);
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -313,7 +316,7 @@ function TeacherProfile() {
         elevation={0}
         sx={{
           p: { xs: 2, sm: 3 },
-          mb: 3,
+          mb: 2,
           backgroundColor: (theme) => alpha(theme.palette.primary.light, 0.05),
           borderRadius: 2,
         }}
@@ -322,7 +325,7 @@ function TeacherProfile() {
           variant="h4"
           component="h1"
           sx={{
-            fontSize: { xs: "1.5rem", sm: "2rem" },
+            fontSize: { xs: "1.25rem", sm: "1.5rem", md: "2rem" },
             fontWeight: 600,
             color: "primary.main",
             mb: 1,
@@ -330,19 +333,30 @@ function TeacherProfile() {
         >
           My Profile
         </Typography>
-        <Typography variant="body1" color="text.secondary">
+        <Typography variant="body1" color="text.secondary" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>
           View and manage your personal information
         </Typography>
       </Paper>
 
       {/* Profile content */}
       <Paper sx={{ p: { xs: 2, sm: 3 }, borderRadius: 2, mb: 3 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+        <Box sx={{ 
+          display: 'flex', 
+          flexDirection: isMobile ? 'column' : 'row',
+          justifyContent: 'space-between', 
+          alignItems: isMobile ? 'flex-start' : 'flex-start', 
+          mb: 3 
+        }}>
+          <Box sx={{ 
+            display: 'flex', 
+            alignItems: 'center',
+            width: '100%',
+            mb: isMobile ? 2 : 0
+          }}>
             <Avatar
               sx={{
-                width: { xs: 64, sm: 80 },
-                height: { xs: 64, sm: 80 },
+                width: { xs: 56, sm: 80 },
+                height: { xs: 56, sm: 80 },
                 bgcolor: theme.palette.primary.main,
                 fontSize: { xs: 24, sm: 32 },
                 mr: 2,
@@ -351,10 +365,13 @@ function TeacherProfile() {
               {profile?.name?.charAt(0) || 'T'}
             </Avatar>
             <Box>
-              <Typography variant="h5" component="h2" sx={{ fontWeight: 600 }}>
+              <Typography variant="h5" component="h2" sx={{ 
+                fontWeight: 600,
+                fontSize: { xs: '1.25rem', sm: '1.5rem' }
+              }}>
                 {profile?.name}
               </Typography>
-              <Typography variant="body1" color="text.secondary">
+              <Typography variant="body1" color="text.secondary" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>
                 {profile?.qualification}
               </Typography>
             </Box>
@@ -365,15 +382,19 @@ function TeacherProfile() {
             color={isEditing ? "secondary" : "primary"}
             startIcon={isEditing ? <CancelIcon /> : <EditIcon />}
             onClick={handleEditToggle}
-            sx={{ mt: 1 }}
+            size={isMobile ? "small" : "medium"}
+            sx={{ 
+              mt: isMobile ? 0 : 1,
+              alignSelf: isMobile ? 'flex-start' : 'flex-end'
+            }}
           >
             {isEditing ? "Cancel" : "Edit Profile"}
           </Button>
         </Box>
 
-        <Divider sx={{ my: 3 }} />
+        <Divider sx={{ my: 2 }} />
 
-        <Grid container spacing={3}>
+        <Grid container spacing={isMobile ? 2 : 3}>
           {isEditing ? (
             // Edit mode
             <>
@@ -387,6 +408,7 @@ function TeacherProfile() {
                   margin="normal"
                   variant="outlined"
                   required
+                  size={isMobile ? "small" : "medium"}
                 />
               </Grid>
               <Grid item xs={12} sm={6}>
@@ -401,6 +423,7 @@ function TeacherProfile() {
                   required
                   type="email"
                   disabled
+                  size={isMobile ? "small" : "medium"}
                 />
               </Grid>
               <Grid item xs={12} sm={6}>
@@ -413,6 +436,7 @@ function TeacherProfile() {
                   margin="normal"
                   variant="outlined"
                   required
+                  size={isMobile ? "small" : "medium"}
                 />
               </Grid>
               <Grid item xs={12} sm={6}>
@@ -425,6 +449,7 @@ function TeacherProfile() {
                   margin="normal"
                   variant="outlined"
                   required
+                  size={isMobile ? "small" : "medium"}
                 />
               </Grid>
               <Grid item xs={12} sm={6}>
@@ -437,6 +462,7 @@ function TeacherProfile() {
                   margin="normal"
                   variant="outlined"
                   required
+                  size={isMobile ? "small" : "medium"}
                 />
               </Grid>
               <Grid item xs={12} sm={6}>
@@ -449,13 +475,14 @@ function TeacherProfile() {
                   margin="normal"
                   variant="outlined"
                   required
+                  size={isMobile ? "small" : "medium"}
                 />
               </Grid>
               
               {/* Password change section in edit mode */}
               <Grid item xs={12}>
                 <Box sx={{ mt: 2, mb: 1 }}>
-                  <Typography variant="h6" component="h3" color="primary">
+                  <Typography variant="h6" component="h3" color="primary" sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}>
                     Change Password
                   </Typography>
                   <Button 
@@ -463,6 +490,7 @@ function TeacherProfile() {
                     color={includePasswordChange ? "error" : "primary"}
                     onClick={() => setIncludePasswordChange(!includePasswordChange)}
                     sx={{ mt: 1 }}
+                    size={isMobile ? "small" : "medium"}
                   >
                     {includePasswordChange ? "Cancel Password Change" : "Update Password"}
                   </Button>
@@ -482,13 +510,15 @@ function TeacherProfile() {
                       type={showPassword.current ? "text" : "password"}
                       error={!!passwordErrors.currentPassword}
                       helperText={passwordErrors.currentPassword}
+                      size={isMobile ? "small" : "medium"}
                       InputProps={{
                         endAdornment: (
                           <IconButton 
                             onClick={() => togglePasswordVisibility('current')}
                             edge="end"
+                            size={isMobile ? "small" : "medium"}
                           >
-                            {showPassword.current ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                            {showPassword.current ? <VisibilityOffIcon fontSize={isMobile ? "small" : "medium"} /> : <VisibilityIcon fontSize={isMobile ? "small" : "medium"} />}
                           </IconButton>
                         )
                       }}
@@ -505,13 +535,15 @@ function TeacherProfile() {
                       type={showPassword.new ? "text" : "password"}
                       error={!!passwordErrors.newPassword}
                       helperText={passwordErrors.newPassword}
+                      size={isMobile ? "small" : "medium"}
                       InputProps={{
                         endAdornment: (
                           <IconButton 
                             onClick={() => togglePasswordVisibility('new')}
                             edge="end"
+                            size={isMobile ? "small" : "medium"}
                           >
-                            {showPassword.new ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                            {showPassword.new ? <VisibilityOffIcon fontSize={isMobile ? "small" : "medium"} /> : <VisibilityIcon fontSize={isMobile ? "small" : "medium"} />}
                           </IconButton>
                         )
                       }}
@@ -528,13 +560,15 @@ function TeacherProfile() {
                       type={showPassword.confirm ? "text" : "password"}
                       error={!!passwordErrors.confirmPassword}
                       helperText={passwordErrors.confirmPassword}
+                      size={isMobile ? "small" : "medium"}
                       InputProps={{
                         endAdornment: (
                           <IconButton 
                             onClick={() => togglePasswordVisibility('confirm')}
                             edge="end"
+                            size={isMobile ? "small" : "medium"}
                           >
-                            {showPassword.confirm ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                            {showPassword.confirm ? <VisibilityOffIcon fontSize={isMobile ? "small" : "medium"} /> : <VisibilityIcon fontSize={isMobile ? "small" : "medium"} />}
                           </IconButton>
                         )
                       }}
@@ -552,8 +586,9 @@ function TeacherProfile() {
                     onClick={handleSave}
                     disabled={loading}
                     sx={{ ml: 2 }}
+                    size={isMobile ? "small" : "medium"}
                   >
-                    {loading ? <CircularProgress size={24} /> : "Save Changes"}
+                    {loading ? <CircularProgress size={isMobile ? 20 : 24} /> : "Save Changes"}
                   </Button>
                 </Box>
               </Grid>
@@ -564,74 +599,86 @@ function TeacherProfile() {
               <Grid item xs={12} sm={6}>
                 <Box sx={{ mb: 2 }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                    <EmailIcon sx={{ mr: 1, color: 'text.secondary' }} />
-                    <Typography variant="body2" color="text.secondary">
+                    <EmailIcon sx={{ mr: 1, color: 'text.secondary', fontSize: isMobile ? 18 : 24 }} />
+                    <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
                       Email
                     </Typography>
                   </Box>
-                  <Typography variant="body1">{profile?.email || 'Not provided'}</Typography>
+                  <Typography variant="body1" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>
+                    {profile?.email || 'Not provided'}
+                  </Typography>
                 </Box>
               </Grid>
               <Grid item xs={12} sm={6}>
                 <Box sx={{ mb: 2 }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                    <PhoneIcon sx={{ mr: 1, color: 'text.secondary' }} />
-                    <Typography variant="body2" color="text.secondary">
+                    <PhoneIcon sx={{ mr: 1, color: 'text.secondary', fontSize: isMobile ? 18 : 24 }} />
+                    <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
                       Phone
                     </Typography>
                   </Box>
-                  <Typography variant="body1">{profile?.phone || 'Not provided'}</Typography>
+                  <Typography variant="body1" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>
+                    {profile?.phone || 'Not provided'}
+                  </Typography>
                 </Box>
               </Grid>
               <Grid item xs={12} sm={6}>
                 <Box sx={{ mb: 2 }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                    <HomeIcon sx={{ mr: 1, color: 'text.secondary' }} />
-                    <Typography variant="body2" color="text.secondary">
+                    <HomeIcon sx={{ mr: 1, color: 'text.secondary', fontSize: isMobile ? 18 : 24 }} />
+                    <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
                       Address
                     </Typography>
                   </Box>
-                  <Typography variant="body1">{profile?.address || 'Not provided'}</Typography>
+                  <Typography variant="body1" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>
+                    {profile?.address || 'Not provided'}
+                  </Typography>
                 </Box>
               </Grid>
               <Grid item xs={12} sm={6}>
                 <Box sx={{ mb: 2 }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                    <CalendarIcon sx={{ mr: 1, color: 'text.secondary' }} />
-                    <Typography variant="body2" color="text.secondary">
+                    <CalendarIcon sx={{ mr: 1, color: 'text.secondary', fontSize: isMobile ? 18 : 24 }} />
+                    <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
                       Joining Date
                     </Typography>
                   </Box>
-                  <Typography variant="body1">{profile?.joiningDate ? formatDate(profile.joiningDate) : 'Not provided'}</Typography>
+                  <Typography variant="body1" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>
+                    {profile?.joiningDate ? formatDate(profile.joiningDate) : 'Not provided'}
+                  </Typography>
                 </Box>
               </Grid>
               <Grid item xs={12} sm={6}>
                 <Box sx={{ mb: 2 }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                    <WorkIcon sx={{ mr: 1, color: 'text.secondary' }} />
-                    <Typography variant="body2" color="text.secondary">
+                    <WorkIcon sx={{ mr: 1, color: 'text.secondary', fontSize: isMobile ? 18 : 24 }} />
+                    <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
                       Experience
                     </Typography>
                   </Box>
-                  <Typography variant="body1">{profile?.experience || 'Not provided'}</Typography>
+                  <Typography variant="body1" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>
+                    {profile?.experience || 'Not provided'}
+                  </Typography>
                 </Box>
               </Grid>
               <Grid item xs={12} sm={6}>
                 <Box sx={{ mb: 2 }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                    <SchoolIcon sx={{ mr: 1, color: 'text.secondary' }} />
-                    <Typography variant="body2" color="text.secondary">
+                    <SchoolIcon sx={{ mr: 1, color: 'text.secondary', fontSize: isMobile ? 18 : 24 }} />
+                    <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
                       Qualification
                     </Typography>
                   </Box>
-                  <Typography variant="body1">{profile?.qualification || 'Not provided'}</Typography>
+                  <Typography variant="body1" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>
+                    {profile?.qualification || 'Not provided'}
+                  </Typography>
                 </Box>
               </Grid>
               <Grid item xs={12}>
                 <Box sx={{ mb: 2 }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                    <SchoolIcon sx={{ mr: 1, color: 'text.secondary' }} />
-                    <Typography variant="body2" color="text.secondary">
+                    <SchoolIcon sx={{ mr: 1, color: 'text.secondary', fontSize: isMobile ? 18 : 24 }} />
+                    <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
                       Subjects
                     </Typography>
                   </Box>
@@ -657,7 +704,9 @@ function TeacherProfile() {
                         />
                       ))
                     ) : (
-                      <Typography variant="body1">No subjects assigned</Typography>
+                      <Typography variant="body1" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>
+                        No subjects assigned
+                      </Typography>
                     )}
                   </Box>
                 </Box>

@@ -24,6 +24,12 @@ import {
   Link,
   useTheme,
   alpha,
+  useMediaQuery,
+  Stack,
+  List,
+  ListItem,
+  ListItemAvatar,
+  ListItemText,
 } from "@mui/material";
 import {
   ArrowBack as ArrowBackIcon,
@@ -42,7 +48,8 @@ function TeacherBatchDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const theme = useTheme();
-
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  
   const [batch, setBatch] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -102,7 +109,7 @@ function TeacherBatchDetail() {
     if (!daysArray || !Array.isArray(daysArray) || daysArray.length === 0) {
       return "No days set";
     }
-
+    
     const dayNames = {
       0: "Sunday",
       1: "Monday",
@@ -190,27 +197,88 @@ function TeacherBatchDetail() {
     );
   }
 
+  // Mobile view for student list
+  const StudentMobileList = () => (
+    <List sx={{ width: '100%', p: 0 }}>
+      {batch.enrolledStudents.map((student) => (
+        <ListItem
+          key={student._id}
+          alignItems="flex-start"
+          sx={{ 
+            flexDirection: 'column', 
+            alignItems: 'flex-start',
+            borderBottom: '1px solid',
+            borderColor: 'divider',
+            py: 2
+          }}
+        >
+          <Box sx={{ display: 'flex', width: '100%', mb: 1 }}>
+            <ListItemAvatar>
+              <Avatar sx={{ bgcolor: (theme) => alpha(theme.palette.primary.main, 0.8) }}>
+                {getInitials(student.name)}
+              </Avatar>
+            </ListItemAvatar>
+            <ListItemText
+              primary={student.name}
+              secondary={student.studentId || "ID: N/A"}
+            />
+          </Box>
+          
+          <Box sx={{ pl: 9, width: '100%' }}>
+            <Stack spacing={1}>
+              <Box sx={{ display: "flex", alignItems: "center" }}>
+                <SchoolIcon fontSize="small" sx={{ mr: 1, color: "text.secondary" }} />
+                <Typography variant="body2">
+                  {student.standard?.name || student.standard || "N/A"}
+                </Typography>
+              </Box>
+              
+              <Box sx={{ display: "flex", alignItems: "center" }}>
+                <EmailIcon fontSize="small" sx={{ mr: 1, color: "text.secondary" }} />
+                <Typography variant="body2" sx={{ wordBreak: 'break-word' }}>
+                  {student.email}
+                </Typography>
+              </Box>
+              
+              <Box sx={{ display: "flex", alignItems: "center" }}>
+                <PhoneIcon fontSize="small" sx={{ mr: 1, color: "text.secondary" }} />
+                <Typography variant="body2">
+                  {student.phone || "N/A"}
+                </Typography>
+              </Box>
+            </Stack>
+          </Box>
+        </ListItem>
+      ))}
+    </List>
+  );
+
   return (
     <Box sx={{ p: { xs: 1, sm: 2, md: 3 } }}>
       {/* Breadcrumbs */}
-      <Breadcrumbs sx={{ mb: 2 }} separator="›" aria-label="breadcrumb">
-        <Link
-          underline="hover"
-          color="inherit"
-          onClick={() => navigate("/app/teacher/batches")}
-          sx={{ cursor: "pointer" }}
-        >
-          My Batches
-        </Link>
-        <Typography color="text.primary">{batch.name}</Typography>
-      </Breadcrumbs>
+      {!isMobile && (
+        <Breadcrumbs sx={{ mb: 2 }} separator="›" aria-label="breadcrumb">
+          <Link
+            underline="hover"
+            color="inherit"
+            onClick={() => navigate("/app/teacher/batches")}
+            sx={{ cursor: "pointer" }}
+          >
+            My Batches
+          </Link>
+          <Typography color="text.primary">
+            {batch.name}
+          </Typography>
+        </Breadcrumbs>
+      )}
 
       {/* Back button */}
-      <Box sx={{ mb: 3 }}>
+      <Box sx={{ mb: isMobile ? 2 : 3 }}>
         <Button
           startIcon={<ArrowBackIcon />}
           onClick={() => navigate("/app/teacher/batches")}
-          sx={{ mb: 2 }}
+          sx={{ mb: 1 }}
+          size={isMobile ? "small" : "medium"}
         >
           Back to Batches
         </Button>
@@ -221,7 +289,7 @@ function TeacherBatchDetail() {
         elevation={0}
         sx={{
           p: { xs: 2, sm: 3 },
-          mb: 3,
+          mb: 2,
           backgroundColor: (theme) => alpha(theme.palette.primary.light, 0.07),
           borderRadius: 2,
         }}
@@ -230,20 +298,21 @@ function TeacherBatchDetail() {
           sx={{
             display: "flex",
             justifyContent: "space-between",
-            alignItems: "flex-start",
+            alignItems: isMobile ? "center" : "flex-start",
             flexWrap: "wrap",
-            gap: 2,
+            gap: 1,
           }}
         >
-          <Box>
+          <Box sx={{ width: isMobile ? "100%" : "auto" }}>
             <Typography
               variant="h4"
               component="h1"
               sx={{
-                fontSize: { xs: "1.5rem", sm: "2rem" },
+                fontSize: { xs: "1.25rem", sm: "1.5rem", md: "2rem" },
                 fontWeight: 600,
                 color: "primary.main",
                 mb: 1,
+                pr: isMobile ? 10 : 0, // Make room for status chip
               }}
             >
               {batch.name}
@@ -254,7 +323,7 @@ function TeacherBatchDetail() {
                 fontSize="small"
                 sx={{ mr: 1, color: "text.secondary" }}
               />
-              <Typography variant="body1">
+              <Typography variant="body2" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>
                 {batch.subject?.name || "No subject specified"}
               </Typography>
             </Box>
@@ -264,7 +333,7 @@ function TeacherBatchDetail() {
                 fontSize="small"
                 sx={{ mr: 1, color: "text.secondary" }}
               />
-              <Typography variant="body1">
+              <Typography variant="body2" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>
                 {batch.standard?.name || "No standard specified"}
               </Typography>
             </Box>
@@ -273,75 +342,76 @@ function TeacherBatchDetail() {
           <Chip
             label={batch.status || "Unknown"}
             color={getStatusColor(batch.status)}
-            sx={{ fontWeight: "medium" }}
+            sx={{ 
+              fontWeight: "medium",
+              position: isMobile ? "absolute" : "relative", 
+              top: isMobile ? 16 : "auto", 
+              right: isMobile ? 16 : "auto" 
+            }}
+            size={isMobile ? "small" : "medium"}
           />
         </Box>
       </Paper>
 
       {/* Batch details */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
+      <Grid container spacing={2} sx={{ mb: 3 }}>
         {/* Left side - Basic details */}
         <Grid item xs={12} md={6}>
           <Card sx={{ borderRadius: 2, height: "100%" }}>
-            <CardContent>
+            <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
               <Typography
                 variant="h6"
                 component="h2"
                 gutterBottom
                 color="primary.main"
+                sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}
               >
                 Schedule Details
               </Typography>
               <Divider sx={{ mb: 2 }} />
 
-              <Grid container spacing={2}>
-                <Grid item xs={12}>
-                  <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-                    <AccessTimeIcon sx={{ mr: 2, color: "text.secondary" }} />
-                    <Box>
-                      <Typography variant="body2" color="text.secondary">
-                        Time
-                      </Typography>
-                      <Typography variant="body1">
-                        {formatTime(batch.schedule?.startTime)} -{" "}
-                        {formatTime(batch.schedule?.endTime)}
-                      </Typography>
-                    </Box>
+              <Stack spacing={2}>
+                <Box sx={{ display: "flex", alignItems: "flex-start" }}>
+                  <AccessTimeIcon sx={{ mr: 2, color: "text.secondary", mt: 0.5 }} />
+                  <Box>
+                    <Typography variant="body2" color="text.secondary">
+                      Time
+                    </Typography>
+                    <Typography variant="body1" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>
+                      {formatTime(batch.schedule?.startTime)} -{" "}
+                      {formatTime(batch.schedule?.endTime)}
+                    </Typography>
                   </Box>
-                </Grid>
+                </Box>
 
-                <Grid item xs={12}>
-                  <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-                    <CalendarTodayIcon
-                      sx={{ mr: 2, color: "text.secondary" }}
-                    />
-                    <Box>
-                      <Typography variant="body2" color="text.secondary">
-                        Days
-                      </Typography>
-                      <Typography variant="body1">
-                        {formatDays(batch.schedule?.days)}
-                      </Typography>
-                    </Box>
+                <Box sx={{ display: "flex", alignItems: "flex-start" }}>
+                  <CalendarTodayIcon
+                    sx={{ mr: 2, color: "text.secondary", mt: 0.5 }}
+                  />
+                  <Box>
+                    <Typography variant="body2" color="text.secondary">
+                      Days
+                    </Typography>
+                    <Typography variant="body1" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>
+                      {formatDays(batch.schedule?.days)}
+                    </Typography>
                   </Box>
-                </Grid>
+                </Box>
 
                 {batch.location && (
-                  <Grid item xs={12}>
-                    <Box sx={{ display: "flex", alignItems: "center" }}>
-                      <LocationOnIcon sx={{ mr: 2, color: "text.secondary" }} />
-                      <Box>
-                        <Typography variant="body2" color="text.secondary">
-                          Location
-                        </Typography>
-                        <Typography variant="body1">
-                          {batch.location}
-                        </Typography>
-                      </Box>
+                  <Box sx={{ display: "flex", alignItems: "flex-start" }}>
+                    <LocationOnIcon sx={{ mr: 2, color: "text.secondary", mt: 0.5 }} />
+                    <Box>
+                      <Typography variant="body2" color="text.secondary">
+                        Location
+                      </Typography>
+                      <Typography variant="body1" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>
+                        {batch.location}
+                      </Typography>
                     </Box>
-                  </Grid>
+                  </Box>
                 )}
-              </Grid>
+              </Stack>
 
               {batch.description && (
                 <>
@@ -350,12 +420,14 @@ function TeacherBatchDetail() {
                     component="h2"
                     gutterBottom
                     color="primary.main"
-                    sx={{ mt: 3 }}
+                    sx={{ mt: 3, fontSize: { xs: '1rem', sm: '1.25rem' } }}
                   >
                     Description
                   </Typography>
                   <Divider sx={{ mb: 2 }} />
-                  <Typography variant="body1">{batch.description}</Typography>
+                  <Typography variant="body1" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>
+                    {batch.description}
+                  </Typography>
                 </>
               )}
             </CardContent>
@@ -365,93 +437,104 @@ function TeacherBatchDetail() {
         {/* Right side - Student count and additional info */}
         <Grid item xs={12} md={6}>
           <Card sx={{ borderRadius: 2, height: "100%" }}>
-            <CardContent>
+            <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
               <Typography
                 variant="h6"
                 component="h2"
                 gutterBottom
                 color="primary.main"
+                sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}
               >
                 Class Information
               </Typography>
               <Divider sx={{ mb: 2 }} />
 
-              <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-                <PersonIcon sx={{ mr: 2, color: "text.secondary" }} />
-                <Box>
-                  <Typography variant="body2" color="text.secondary">
-                    Total Students
-                  </Typography>
-                  <Typography
-                    variant="h5"
-                    color="primary.main"
-                    sx={{ fontWeight: "medium" }}
-                  >
-                    {batch.enrolledStudents?.length || 0}
-                  </Typography>
-                </Box>
-              </Box>
-
-              {batch.maxCapacity && (
-                <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-                  <Box>
-                    <Typography variant="body2" color="text.secondary">
-                      Maximum Capacity
-                    </Typography>
-                    <Typography variant="body1">
-                      {batch.maxCapacity} students
-                    </Typography>
-                  </Box>
-                </Box>
-              )}
-
-              {batch.fee && (
-                <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-                  <Box>
-                    <Typography variant="body2" color="text.secondary">
-                      Fee
-                    </Typography>
-                    <Typography variant="body1">₹{batch.fee}</Typography>
-                  </Box>
-                </Box>
-              )}
-
-              {batch.startDate && (
-                <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-                  <Box>
-                    <Typography variant="body2" color="text.secondary">
-                      Start Date
-                    </Typography>
-                    <Typography variant="body1">
-                      {new Date(batch.startDate).toLocaleDateString()}
-                    </Typography>
-                  </Box>
-                </Box>
-              )}
-
-              {batch.endDate && (
+              <Stack spacing={2}>
                 <Box sx={{ display: "flex", alignItems: "center" }}>
+                  <PersonIcon sx={{ mr: 2, color: "text.secondary" }} />
                   <Box>
                     <Typography variant="body2" color="text.secondary">
-                      End Date
+                      Total Students
                     </Typography>
-                    <Typography variant="body1">
-                      {new Date(batch.endDate).toLocaleDateString()}
+                    <Typography
+                      variant="h5"
+                      color="primary.main"
+                      sx={{ fontWeight: "medium", fontSize: { xs: '1.25rem', sm: '1.5rem' } }}
+                    >
+                      {batch.enrolledStudents?.length || 0}
                     </Typography>
                   </Box>
                 </Box>
-              )}
+
+                {batch.maxCapacity && (
+                  <Box sx={{ display: "flex", alignItems: "flex-start", pl: 5 }}>
+                    <Box>
+                      <Typography variant="body2" color="text.secondary">
+                        Maximum Capacity
+                      </Typography>
+                      <Typography variant="body1" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>
+                        {batch.maxCapacity} students
+                      </Typography>
+                    </Box>
+                  </Box>
+                )}
+
+                {batch.fee && (
+                  <Box sx={{ display: "flex", alignItems: "flex-start", pl: 5 }}>
+                    <Box>
+                      <Typography variant="body2" color="text.secondary">
+                        Fee
+                      </Typography>
+                      <Typography variant="body1" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>
+                        ₹{batch.fee}
+                      </Typography>
+                    </Box>
+                  </Box>
+                )}
+
+                {batch.startDate && (
+                  <Box sx={{ display: "flex", alignItems: "flex-start" }}>
+                    <CalendarTodayIcon sx={{ mr: 2, color: "text.secondary" }} />
+                    <Box>
+                      <Typography variant="body2" color="text.secondary">
+                        Start Date
+                      </Typography>
+                      <Typography variant="body1" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>
+                        {new Date(batch.startDate).toLocaleDateString()}
+                      </Typography>
+                    </Box>
+                  </Box>
+                )}
+
+                {batch.endDate && (
+                  <Box sx={{ display: "flex", alignItems: "flex-start", pl: 5 }}>
+                    <Box>
+                      <Typography variant="body2" color="text.secondary">
+                        End Date
+                      </Typography>
+                      <Typography variant="body1" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>
+                        {new Date(batch.endDate).toLocaleDateString()}
+                      </Typography>
+                    </Box>
+                  </Box>
+                )}
+              </Stack>
             </CardContent>
           </Card>
         </Grid>
       </Grid>
 
       {/* Students list */}
-      <Paper sx={{ p: 3, borderRadius: 2 }}>
+      <Paper sx={{ p: { xs: 2, sm: 3 }, borderRadius: 2 }}>
         <Typography
           variant="h5"
           component="h2"
-          sx={{ mb: 2, fontWeight: 600, color: "primary.main" }}
+          sx={{ 
+            mb: 2, 
+            fontWeight: 600, 
+            color: "primary.main",
+            fontSize: { xs: '1.25rem', sm: '1.5rem' }
+          }}
         >
           Enrolled Students
         </Typography>
@@ -464,6 +547,8 @@ function TeacherBatchDetail() {
               No students enrolled yet
             </Typography>
           </Box>
+        ) : isMobile ? (
+          <StudentMobileList />
         ) : (
           <TableContainer>
             <Table sx={{ minWidth: 650 }}>
