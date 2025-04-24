@@ -61,9 +61,7 @@ function TeacherBatchDetail() {
         // Make API request to fetch batch details
         const response = await axios.get(
           `${
-            import.meta.env.VITE_API_URL
-              ? import.meta.env.VITE_API_URL + `/batches/${id}`
-              : `http://localhost:5000/api/batches/${id}`
+            import.meta.env.VITE_API_URL + `/batches/${id}`
           }?populate=enrolledStudents`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
@@ -495,7 +493,7 @@ function TeacherBatchDetail() {
                       </Box>
                     </TableCell>
                     <TableCell>{student.studentId || "N/A"}</TableCell>
-                    <TableCell>{student.standard?.name || "N/A"}</TableCell>
+                    <TableCell>{student.standard || "N/A"}</TableCell>
                     <TableCell>
                       <Box sx={{ display: "flex", alignItems: "center" }}>
                         <EmailIcon
