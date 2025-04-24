@@ -49,10 +49,10 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { useDispatch } from "react-redux";
 import { format } from "date-fns";
-import { 
-  fetchBatchAttendance, 
+import {
+  fetchBatchAttendance,
   submitBatchAttendance,
-  updateAttendanceRecord 
+  updateAttendanceRecord,
 } from "../../store/slices/attendanceSlice";
 import EditAttendanceDialog from "./EditAttendanceDialog";
 
@@ -145,22 +145,22 @@ const AttendanceManagement = ({
       setSelectedStudents([]);
     } else {
       // Select all filtered students
-      setSelectedStudents(filteredStudents.map(student => student._id));
+      setSelectedStudents(filteredStudents.map((student) => student._id));
     }
     setSelectAll(!selectAll);
   };
-  
+
   // Toggle student selection
   const toggleStudentSelection = (studentId) => {
-    setSelectedStudents(prev => {
+    setSelectedStudents((prev) => {
       if (prev.includes(studentId)) {
-        return prev.filter(id => id !== studentId);
+        return prev.filter((id) => id !== studentId);
       } else {
         return [...prev, studentId];
       }
     });
   };
-  
+
   // Check if a student is selected
   const isStudentSelected = (studentId) => {
     return selectedStudents.includes(studentId);
@@ -191,12 +191,12 @@ const AttendanceManagement = ({
           default:
             newStatus = "absent";
         }
-        
+
         return { ...record, status: newStatus };
       }
       return record;
     });
-    
+
     setAttendanceRecords(updatedRecords);
   };
 
@@ -212,16 +212,16 @@ const AttendanceManagement = ({
 
   // Bulk status change
   const handleBulkStatusChange = (status) => {
-    const updatedRecords = attendanceRecords.map(record => {
+    const updatedRecords = attendanceRecords.map((record) => {
       if (selectedStudents.includes(record.studentId._id)) {
         return {
           ...record,
-          status
+          status,
         };
       }
       return record;
     });
-    
+
     setAttendanceRecords(updatedRecords);
   };
 
@@ -249,7 +249,8 @@ const AttendanceManagement = ({
           date: formatDateForAPI(attendanceDate),
           records: formattedRecords,
         })
-      ).unwrap()
+      )
+        .unwrap()
         .then(() => {
           // Refresh attendance data after successful submission
           dispatch(
@@ -259,12 +260,15 @@ const AttendanceManagement = ({
             })
           );
         })
-        .catch(error => {
+        .catch((error) => {
           console.error("Failed to submit attendance:", error);
         });
     } catch (error) {
       console.error("Error formatting attendance data:", error);
-      showNotification("Error preparing attendance data. Please try again.", "error");
+      showNotification(
+        "Error preparing attendance data. Please try again.",
+        "error"
+      );
     }
   };
 
@@ -275,16 +279,18 @@ const AttendanceManagement = ({
       // Only show warning for real errors, not for virtual records
       return;
     }
-    
+
     // Verify status is valid
-    if (!['present', 'absent', 'late', 'excused', 'cancelled'].includes(status)) {
+    if (
+      !["present", "absent", "late", "excused", "cancelled"].includes(status)
+    ) {
       console.error("Invalid status value:", status);
       return;
     }
-    
+
     // Clean up remarks
-    const cleanRemarks = typeof remarks === 'string' ? remarks.trim() : "";
-    
+    const cleanRemarks = typeof remarks === "string" ? remarks.trim() : "";
+
     try {
       // Update server
       dispatch(
@@ -292,23 +298,30 @@ const AttendanceManagement = ({
           id,
           data: {
             status,
-            remarks: cleanRemarks
-          }
+            remarks: cleanRemarks,
+          },
         })
-      ).unwrap()
-        .then(response => {
+      )
+        .unwrap()
+        .then((response) => {
           // Success handling if needed
         })
-        .catch(error => {
+        .catch((error) => {
           // Only show warning if the record has a real _id (not a virtual record)
           if (id) {
-            showNotification("Failed to update attendance. Please try again later.", "warning");
+            showNotification(
+              "Failed to update attendance. Please try again later.",
+              "warning"
+            );
           }
         });
     } catch (error) {
       // Only show warning if the record has a real _id (not a virtual record)
       if (id) {
-        showNotification("Failed to update attendance. Please try again later.", "warning");
+        showNotification(
+          "Failed to update attendance. Please try again later.",
+          "warning"
+        );
       }
     }
   };
@@ -352,9 +365,12 @@ const AttendanceManagement = ({
         return r;
       });
       setAttendanceRecords(updatedRecords);
-      
+
       // Show feedback to user
-      showNotification("Record updated locally. Save attendance to persist changes.", "info");
+      showNotification(
+        "Record updated locally. Save attendance to persist changes.",
+        "info"
+      );
     }
 
     setEditDialogOpen(false);
@@ -364,28 +380,30 @@ const AttendanceManagement = ({
   // Status chip component
   const StatusChip = ({ status, studentId, onClick }) => {
     const [animate, setAnimate] = useState(false);
-    
+
     useEffect(() => {
       // Trigger animation when status changes
       setAnimate(true);
       const timer = setTimeout(() => setAnimate(false), 300);
       return () => clearTimeout(timer);
     }, [status]);
-    
+
     // Get proper label for status
     const getStatusLabel = (status) => {
-      if (status === 'cancelled') {
-        return 'Cancelled';
+      if (status === "cancelled") {
+        return "Cancelled";
       }
       return status.charAt(0).toUpperCase() + status.slice(1);
     };
-    
+
     return (
-      <Tooltip title={
-        status === 'cancelled' 
-          ? 'No class was arranged for this day' 
-          : `Click to change status (currently ${status})`
-      }>
+      <Tooltip
+        title={
+          status === "cancelled"
+            ? "No class was arranged for this day"
+            : `Click to change status (currently ${status})`
+        }
+      >
         <Chip
           icon={getStatusIcon(status)}
           label={getStatusLabel(status)}
@@ -396,8 +414,8 @@ const AttendanceManagement = ({
             borderColor: getStatusColor(status),
             border: "1px solid",
             fontWeight: "bold",
-            transform: animate ? 'scale(1.1)' : 'scale(1)',
-            transition: 'transform 0.3s ease-in-out',
+            transform: animate ? "scale(1.1)" : "scale(1)",
+            transition: "transform 0.3s ease-in-out",
           }}
         />
       </Tooltip>
@@ -406,7 +424,7 @@ const AttendanceManagement = ({
 
   // Render the attendance table
   const AttendanceTable = () => (
-    <TableContainer component={Paper} sx={{ mt: 2 }}>
+    <TableContainer component={Paper} sx={{ mt: 2, p: { xs: 0, sm: 2 } }}>
       <Table size={isSmallScreen ? "small" : "medium"}>
         <TableHead>
           <TableRow>
@@ -415,14 +433,33 @@ const AttendanceManagement = ({
                 color="primary"
                 checked={selectAll}
                 onChange={handleSelectAll}
+                sx={{ p: { xs: 0.5, sm: 1 } }}
               />
             </TableCell>
-            <TableCell>No.</TableCell>
-            <TableCell>Student Name</TableCell>
-            <TableCell>Email</TableCell>
-            <TableCell align="center">Status</TableCell>
-            <TableCell>Remarks</TableCell>
-            <TableCell align="center">Actions</TableCell>
+            <TableCell sx={{ fontSize: { xs: "0.85rem", sm: "1rem" } }}>
+              No.
+            </TableCell>
+            <TableCell sx={{ fontSize: { xs: "0.85rem", sm: "1rem" } }}>
+              Student Name
+            </TableCell>
+            <TableCell sx={{ fontSize: { xs: "0.85rem", sm: "1rem" } }}>
+              Email
+            </TableCell>
+            <TableCell
+              align="center"
+              sx={{ fontSize: { xs: "0.85rem", sm: "1rem" } }}
+            >
+              Status
+            </TableCell>
+            <TableCell sx={{ fontSize: { xs: "0.85rem", sm: "1rem" } }}>
+              Remarks
+            </TableCell>
+            <TableCell
+              align="center"
+              sx={{ fontSize: { xs: "0.85rem", sm: "1rem" } }}
+            >
+              Actions
+            </TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
@@ -437,35 +474,60 @@ const AttendanceManagement = ({
               const record = attendanceRecords.find(
                 (r) => r.studentId._id === student._id
               ) || {
-                studentId: { _id: student._id, name: student.name, email: student.email },
+                studentId: {
+                  _id: student._id,
+                  name: student.name,
+                  email: student.email,
+                },
                 status: "absent",
                 remarks: "",
               };
 
               return (
-                <TableRow 
+                <TableRow
                   key={student._id}
                   selected={isStudentSelected(student._id)}
                   hover
+                  sx={{
+                    fontSize: { xs: "0.85rem", sm: "1rem" },
+                    "& td": { py: { xs: 0.5, sm: 1 }, px: { xs: 0.5, sm: 2 } },
+                  }}
                 >
                   <TableCell padding="checkbox">
                     <Checkbox
                       color="primary"
                       checked={isStudentSelected(student._id)}
                       onChange={() => toggleStudentSelection(student._id)}
+                      sx={{ p: { xs: 0.5, sm: 1 } }}
                     />
                   </TableCell>
                   <TableCell>{index + 1}</TableCell>
                   <TableCell>{student.name}</TableCell>
-                  <TableCell>{student.email}</TableCell>
+                  <TableCell
+                    sx={{
+                      maxWidth: { xs: 90, sm: 200 },
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {student.email}
+                  </TableCell>
                   <TableCell align="center">
-                    <StatusChip 
-                      status={record.status} 
+                    <StatusChip
+                      status={record.status}
                       studentId={student._id}
                       onClick={() => toggleAttendanceStatus(student._id)}
                     />
                   </TableCell>
-                  <TableCell>
+                  <TableCell
+                    sx={{
+                      maxWidth: { xs: 90, sm: 200 },
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
                     {record.remarks ? (
                       <Tooltip title={record.remarks}>
                         <Box sx={{ display: "flex", alignItems: "center" }}>
@@ -476,7 +538,7 @@ const AttendanceManagement = ({
                               overflow: "hidden",
                               textOverflow: "ellipsis",
                               whiteSpace: "nowrap",
-                              maxWidth: "150px",
+                              maxWidth: { xs: 90, sm: 150 },
                             }}
                           >
                             {record.remarks}
@@ -494,6 +556,7 @@ const AttendanceManagement = ({
                         color="primary"
                         onClick={() => openEditDialog(record)}
                         aria-label="Edit attendance"
+                        sx={{ p: { xs: 0.5, sm: 1 } }}
                       >
                         <EditIcon fontSize="small" />
                       </IconButton>
@@ -510,50 +573,52 @@ const AttendanceManagement = ({
 
   // Keyboard shortcuts helper
   const KeyboardShortcutHelp = () => (
-    <Paper sx={{ p: 2, mb: 2, display: 'flex', flexDirection: 'column', gap: 1 }}>
+    <Paper
+      sx={{ p: 2, mb: 2, display: "flex", flexDirection: "column", gap: 1 }}
+    >
       <Typography variant="subtitle1" fontWeight="bold">
         Keyboard Shortcuts
       </Typography>
       <Grid container spacing={2}>
         <Grid item xs={6} sm={3} md={2}>
           <Tooltip title="Used when no class was arranged for this day">
-            <Chip 
-              label="P = Mark Present" 
-              size="small" 
+            <Chip
+              label="P = Mark Present"
+              size="small"
               icon={<CheckCircleIcon />}
               sx={{ bgcolor: alpha(theme.palette.success.main, 0.1) }}
             />
           </Tooltip>
         </Grid>
         <Grid item xs={6} sm={3} md={2}>
-          <Chip 
-            label="A = Mark Absent" 
-            size="small" 
+          <Chip
+            label="A = Mark Absent"
+            size="small"
             icon={<CancelIcon />}
             sx={{ bgcolor: alpha(theme.palette.error.main, 0.1) }}
           />
         </Grid>
         <Grid item xs={6} sm={3} md={2}>
-          <Chip 
-            label="L = Mark Late" 
-            size="small" 
+          <Chip
+            label="L = Mark Late"
+            size="small"
             icon={<LateIcon />}
             sx={{ bgcolor: alpha(theme.palette.warning.main, 0.1) }}
           />
         </Grid>
         <Grid item xs={6} sm={3} md={2}>
-          <Chip 
-            label="E = Mark Excused" 
-            size="small" 
+          <Chip
+            label="E = Mark Excused"
+            size="small"
             icon={<ExcusedIcon />}
             sx={{ bgcolor: alpha(theme.palette.info.main, 0.1) }}
           />
         </Grid>
         <Grid item xs={6} sm={3} md={2}>
           <Tooltip title="Used when no class was arranged for this day">
-            <Chip 
-              label="C = Class Cancelled" 
-              size="small" 
+            <Chip
+              label="C = Class Cancelled"
+              size="small"
               icon={<CloseIcon />}
               sx={{ bgcolor: alpha(theme.palette.grey[700], 0.1) }}
             />
@@ -568,37 +633,56 @@ const AttendanceManagement = ({
     const handleKeyPress = (event) => {
       // Only activate shortcuts when we have selected students
       if (selectedStudents.length === 0) return;
-      
+
       // Don't activate shortcuts when typing in text fields
-      if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') return;
-      
+      if (
+        event.target.tagName === "INPUT" ||
+        event.target.tagName === "TEXTAREA"
+      )
+        return;
+
       switch (event.key) {
-        case 'p':
+        case "p":
           // Mark selected students as present
-          handleBulkStatusChange('present');
-          showNotification(`Marked ${selectedStudents.length} student(s) as present`, "success");
+          handleBulkStatusChange("present");
+          showNotification(
+            `Marked ${selectedStudents.length} student(s) as present`,
+            "success"
+          );
           break;
-        case 'a':
+        case "a":
           // Mark selected students as absent
-          handleBulkStatusChange('absent');
-          showNotification(`Marked ${selectedStudents.length} student(s) as absent`, "success");
+          handleBulkStatusChange("absent");
+          showNotification(
+            `Marked ${selectedStudents.length} student(s) as absent`,
+            "success"
+          );
           break;
-        case 'l':
+        case "l":
           // Mark selected students as late
-          handleBulkStatusChange('late');
-          showNotification(`Marked ${selectedStudents.length} student(s) as late`, "success");
+          handleBulkStatusChange("late");
+          showNotification(
+            `Marked ${selectedStudents.length} student(s) as late`,
+            "success"
+          );
           break;
-        case 'e':
+        case "e":
           // Mark selected students as excused
-          handleBulkStatusChange('excused');
-          showNotification(`Marked ${selectedStudents.length} student(s) as excused`, "success");
+          handleBulkStatusChange("excused");
+          showNotification(
+            `Marked ${selectedStudents.length} student(s) as excused`,
+            "success"
+          );
           break;
-        case 'c':
+        case "c":
           // Mark selected students as cancelled
-          handleBulkStatusChange('cancelled');
-          showNotification(`Marked ${selectedStudents.length} student(s) as cancelled`, "success");
+          handleBulkStatusChange("cancelled");
+          showNotification(
+            `Marked ${selectedStudents.length} student(s) as cancelled`,
+            "success"
+          );
           break;
-        case 'Escape':
+        case "Escape":
           // Clear selection
           setSelectedStudents([]);
           setSelectAll(false);
@@ -607,11 +691,11 @@ const AttendanceManagement = ({
           break;
       }
     };
-    
-    window.addEventListener('keydown', handleKeyPress);
-    
+
+    window.addEventListener("keydown", handleKeyPress);
+
     return () => {
-      window.removeEventListener('keydown', handleKeyPress);
+      window.removeEventListener("keydown", handleKeyPress);
     };
   }, [selectedStudents]);
 
@@ -690,7 +774,10 @@ const AttendanceManagement = ({
               }}
             >
               <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
-                <ButtonGroup variant="outlined" size={isSmallScreen ? "small" : "medium"}>
+                <ButtonGroup
+                  variant="outlined"
+                  size={isSmallScreen ? "small" : "medium"}
+                >
                   <Button
                     startIcon={<SelectAllIcon />}
                     onClick={handleSelectAll}
@@ -711,20 +798,25 @@ const AttendanceManagement = ({
                     </Button>
                   )}
                 </ButtonGroup>
-                
+
                 {selectedStudents.length > 0 && (
                   <Button
                     variant="outlined"
                     color="primary"
                     startIcon={<BulkEditIcon />}
-                    onClick={() => showNotification("Bulk edit functionality moved to keyboard shortcuts", "info")}
+                    onClick={() =>
+                      showNotification(
+                        "Bulk edit functionality moved to keyboard shortcuts",
+                        "info"
+                      )
+                    }
                     size={isSmallScreen ? "small" : "medium"}
                   >
                     Bulk Edit ({selectedStudents.length})
                   </Button>
                 )}
               </Box>
-              
+
               <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
                 <Tooltip title="Mark this day as having no class arranged">
                   <Button
@@ -751,7 +843,7 @@ const AttendanceManagement = ({
               </Box>
             </Box>
 
-            {(loading || attendanceLoading) ? (
+            {loading || attendanceLoading ? (
               <Box sx={{ display: "flex", justifyContent: "center", my: 5 }}>
                 <CircularProgress />
               </Box>

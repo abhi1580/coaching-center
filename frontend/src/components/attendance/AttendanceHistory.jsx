@@ -135,6 +135,24 @@ const AttendanceHistory = ({ classId, students, date }) => {
     return matchesDate && matchesSearch && matchesStatus;
   });
 
+  // Export attendance data to Excel
+  const exportToExcel = () => {
+    const exportData = filteredRecords.map((record) => ({
+      Date: formatDate(record.date),
+      "Student Name": record.studentId?.name || "Unknown",
+      "Student Email": record.studentId?.email || "No email",
+      Status: record.status.charAt(0).toUpperCase() + record.status.slice(1),
+      Remarks: record.remarks || "",
+    }));
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Attendance");
+    const fileName = `Attendance_History_${
+      date ? format(new Date(date), "yyyy-MM-dd") : "export"
+    }.xlsx`;
+    XLSX.writeFile(workbook, fileName);
+  };
+
   return (
     <Box sx={{ width: "100%" }}>
       <Box
@@ -147,12 +165,34 @@ const AttendanceHistory = ({ classId, students, date }) => {
           gap: 2,
         }}
       >
-        <Typography variant="h6" component="h2">
+        <Typography
+          variant="h6"
+          component="h2"
+          sx={{ fontSize: { xs: "1rem", sm: "1.25rem" } }}
+        >
           Attendance History for {date ? formatDate(date) : "—"}
         </Typography>
+        <Button
+          variant="contained"
+          startIcon={<DownloadIcon />}
+          onClick={exportToExcel}
+          disabled={filteredRecords.length === 0}
+          sx={{ minWidth: 120, fontSize: { xs: "0.8rem", sm: "1rem" } }}
+        >
+          Export
+        </Button>
       </Box>
       <Divider />
-      <Box sx={{ p: 2, bgcolor: alpha(theme.palette.primary.main, 0.03) }}>
+      <Box
+        sx={{
+          p: 2,
+          bgcolor: alpha(theme.palette.primary.main, 0.03),
+          flexDirection: { xs: "column", sm: "row" },
+          display: "flex",
+          gap: 2,
+          flexWrap: "wrap",
+        }}
+      >
         <TextField
           placeholder="Search by student name or remarks"
           value={searchQuery}
@@ -167,9 +207,14 @@ const AttendanceHistory = ({ classId, students, date }) => {
               </InputAdornment>
             ),
           }}
-          sx={{ mb: 2 }}
+          sx={{ mb: { xs: 2, sm: 0 }, maxWidth: { xs: "100%", sm: 300 } }}
         />
-        <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
+        <Stack
+          direction="row"
+          spacing={1}
+          alignItems="center"
+          sx={{ mb: { xs: 1, sm: 0 } }}
+        >
           <Typography variant="body2" color="text.secondary">
             Status:
           </Typography>
