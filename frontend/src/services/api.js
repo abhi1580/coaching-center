@@ -288,6 +288,9 @@ export const attendanceService = {
   // Submit attendance for a batch
   submitBatchAttendance: (batchId, data) => api.post(`/attendance/batch/${batchId}`, data),
   
+  // Update a single attendance record
+  updateAttendanceRecord: (id, data) => api.patch(`/attendance/${id}`, data),
+  
   // Get attendance history for a student in a batch
   getStudentAttendance: (studentId, batchId) => api.get(`/attendance/student/${studentId}/${batchId}`),
   

@@ -36,17 +36,50 @@ export const getBatchAttendance = async (req, res) => {
       date: new Date(date),
     }).populate("studentId", "name email");
 
-    if (attendance.length === 0) {
+    // Find all students in the batch to ensure we have records for everyone
+    const batch = await Batch.findById(batchId).populate({
+      path: 'enrolledStudents',
+      select: 'name email'
+    });
+
+    if (!batch) {
       return res.status(404).json({
         success: false,
-        message: "No attendance records found for this date",
+        message: "Batch not found",
       });
     }
 
+    // Create a map of existing attendance records by studentId
+    const attendanceMap = {};
+    attendance.forEach(record => {
+      attendanceMap[record.studentId._id.toString()] = record;
+    });
+
+    // Create complete attendance list including students without records
+    const completeAttendance = batch.enrolledStudents.map(student => {
+      const existingRecord = attendanceMap[student._id.toString()];
+      if (existingRecord) {
+        return existingRecord;
+      } else {
+        // Return a virtual record that doesn't exist in the database yet
+        return {
+          _id: null,
+          studentId: student,
+          batchId: batchId,
+          date: new Date(date),
+          status: "absent",
+          remarks: "",
+          markedBy: null,
+          lastModifiedBy: null,
+          isVirtual: true // Flag to indicate this is not yet saved
+        };
+      }
+    });
+
     res.status(200).json({
       success: true,
-      count: attendance.length,
-      data: attendance,
+      count: completeAttendance.length,
+      data: completeAttendance,
     });
   } catch (error) {
     console.error("Error in getBatchAttendance:", error);
@@ -113,8 +146,10 @@ export const submitBatchAttendance = async (req, res) => {
           },
           update: {
             $set: {
-              present: record.present,
-              markedBy: req.user.id,
+              status: record.status,
+              remarks: record.remarks || "",
+              markedBy: record.markedBy || req.user.id,
+              lastModifiedBy: req.user.id,
             },
           },
           upsert: true, // Create if doesn't exist
@@ -231,7 +266,21 @@ export const getStudentAttendanceStats = async (req, res) => {
     // Get all attendance records for the student
     const allAttendance = await Attendance.find({ studentId });
     
-    // Calculate attendance statistics per batch
+    // Count the number of classes that weren't cancelled
+    const activeAttendance = allAttendance.filter(record => record.status !== 'cancelled');
+    const totalClasses = activeAttendance.length;
+    const presentCount = allAttendance.filter(record => record.status === 'present').length;
+    const lateCount = allAttendance.filter(record => record.status === 'late').length;
+    const excusedCount = allAttendance.filter(record => record.status === 'excused').length;
+    const absentCount = allAttendance.filter(record => record.status === 'absent').length;
+    const cancelledCount = allAttendance.filter(record => record.status === 'cancelled').length;
+
+    // Calculate attendance percentage excluding cancelled classes
+    const overallAttendancePercentage = totalClasses > 0 
+      ? Math.round(((presentCount + lateCount + excusedCount) / totalClasses) * 100) 
+      : 0;
+
+    // Calculate statistics per batch
     const batchIds = [...new Set(allAttendance.map(record => record.batchId.toString()))];
     
     const batchStats = await Promise.all(
@@ -240,10 +289,15 @@ export const getStudentAttendanceStats = async (req, res) => {
           record => record.batchId.toString() === batchId
         );
         
-        const totalClasses = batchAttendance.length;
-        const presentCount = batchAttendance.filter(record => record.present).length;
+        const totalClasses = batchAttendance.filter(record => record.status !== 'cancelled').length;
+        const presentCount = batchAttendance.filter(record => record.status === 'present').length;
+        const lateCount = batchAttendance.filter(record => record.status === 'late').length;
+        const excusedCount = batchAttendance.filter(record => record.status === 'excused').length;
+        const absentCount = batchAttendance.filter(record => record.status === 'absent').length;
+        const cancelledCount = batchAttendance.filter(record => record.status === 'cancelled').length;
+        
         const attendancePercentage = totalClasses > 0 
-          ? Math.round((presentCount / totalClasses) * 100) 
+          ? Math.round(((presentCount + lateCount + excusedCount) / totalClasses) * 100) 
           : 0;
         
         const batch = await Batch.findById(batchId).populate('subject', 'name');
@@ -254,30 +308,34 @@ export const getStudentAttendanceStats = async (req, res) => {
           subjectName: batch?.subject?.name || 'Unknown Subject',
           totalClasses,
           present: presentCount,
-          absent: totalClasses - presentCount,
+          late: lateCount,
+          excused: excusedCount,
+          absent: absentCount,
+          cancelled: cancelledCount,
           attendancePercentage
         };
       })
     );
 
-    // Calculate overall statistics
-    const totalClasses = allAttendance.length;
-    const presentCount = allAttendance.filter(record => record.present).length;
-    const overallAttendancePercentage = totalClasses > 0 
-      ? Math.round((presentCount / totalClasses) * 100) 
-      : 0;
+    const stats = {
+      studentId,
+      studentName: studentExists.name,
+      overallStats: {
+        totalClasses,
+        totalClassesWithCancelled: allAttendance.length,
+        present: presentCount,
+        late: lateCount,
+        excused: excusedCount,
+        absent: absentCount,
+        cancelled: cancelledCount,
+        attendancePercentage: overallAttendancePercentage
+      },
+      batchStats
+    };
 
     res.status(200).json({
       success: true,
-      data: {
-        overall: {
-          totalClasses,
-          present: presentCount,
-          absent: totalClasses - presentCount,
-          attendancePercentage: overallAttendancePercentage
-        },
-        batches: batchStats
-      }
+      data: stats
     });
   } catch (error) {
     console.error("Error in getStudentAttendanceStats:", error);
@@ -298,7 +356,7 @@ export const getBatchAttendanceStats = async (req, res) => {
   try {
     const { batchId } = req.params;
 
-    // Validate ID
+    // Validate batchId
     if (!mongoose.Types.ObjectId.isValid(batchId)) {
       return res.status(400).json({
         success: false,
@@ -307,7 +365,7 @@ export const getBatchAttendanceStats = async (req, res) => {
     }
 
     // Check if batch exists
-    const batch = await Batch.findById(batchId).populate('enrolledStudents');
+    const batch = await Batch.findById(batchId).populate('subject', 'name');
     if (!batch) {
       return res.status(404).json({
         success: false,
@@ -315,88 +373,187 @@ export const getBatchAttendanceStats = async (req, res) => {
       });
     }
 
-    // Get all unique dates for this batch
-    const attendanceDates = await Attendance.distinct('date', { batchId });
+    // Get all students in this batch
+    const students = await Student.find({ _id: { $in: batch.enrolledStudents } });
+    const studentIds = students.map(student => student._id);
+
+    // Get all attendance records for this batch
+    const allAttendance = await Attendance.find({ batchId });
+
+    // Get unique dates when attendance was taken - exclude cancelled dates from class counts
+    const classDates = [...new Set(allAttendance.map(record => record.date.toISOString().split('T')[0]))].sort();
     
-    // Sort dates in descending order
-    attendanceDates.sort((a, b) => new Date(b) - new Date(a));
-    
-    // Get all enrolled students
-    const enrolledStudents = batch.enrolledStudents || [];
-    
-    // Get student statistics
+    // Calculate overall batch statistics - exclude cancelled records from attendance calculation
+    const totalClasses = classDates.length;
+    const activeDates = [...new Set(
+      allAttendance
+        .filter(record => record.status !== 'cancelled')
+        .map(record => record.date.toISOString().split('T')[0])
+    )];
+    const activeClassCount = activeDates.length;
+
+    // Count by status
+    const totalRecords = allAttendance.length;
+    const presentCount = allAttendance.filter(record => record.status === 'present').length;
+    const lateCount = allAttendance.filter(record => record.status === 'late').length;
+    const excusedCount = allAttendance.filter(record => record.status === 'excused').length;
+    const absentCount = allAttendance.filter(record => record.status === 'absent').length;
+    const cancelledCount = allAttendance.filter(record => record.status === 'cancelled').length;
+
+    // Only count classes that weren't cancelled
+    const avgAttendancePercentage = activeClassCount > 0 
+      ? Math.round(((presentCount + lateCount + excusedCount) / (totalRecords - cancelledCount)) * 100) 
+      : 0;
+
+    // Calculate statistics per student
     const studentStats = await Promise.all(
-      enrolledStudents.map(async (student) => {
-        const studentAttendance = await Attendance.find({
-          studentId: student._id,
-          batchId
-        });
+      students.map(async (student) => {
+        const studentAttendance = allAttendance.filter(
+          record => record.studentId.toString() === student._id.toString()
+        );
         
-        const totalRecords = studentAttendance.length;
-        const presentCount = studentAttendance.filter(record => record.present).length;
-        const attendancePercentage = totalRecords > 0 
-          ? Math.round((presentCount / totalRecords) * 100) 
+        // Exclude cancelled classes from attendance calculation
+        const totalAttendedClasses = studentAttendance.filter(record => record.status !== 'cancelled').length;
+        const presentCount = studentAttendance.filter(record => record.status === 'present').length;
+        const lateCount = studentAttendance.filter(record => record.status === 'late').length; 
+        const excusedCount = studentAttendance.filter(record => record.status === 'excused').length;
+        const absentCount = studentAttendance.filter(record => record.status === 'absent').length;
+        const cancelledCount = studentAttendance.filter(record => record.status === 'cancelled').length;
+        
+        const attendancePercentage = totalAttendedClasses > 0 
+          ? Math.round(((presentCount + lateCount + excusedCount) / totalAttendedClasses) * 100) 
           : 0;
         
         return {
           studentId: student._id,
-          name: student.name,
+          studentName: student.name,
           email: student.email,
-          totalClasses: totalRecords,
+          totalClasses: totalAttendedClasses,
           present: presentCount,
-          absent: totalRecords - presentCount,
+          late: lateCount,
+          excused: excusedCount,
+          absent: absentCount,
+          cancelled: cancelledCount,
           attendancePercentage
         };
       })
     );
 
-    // Calculate overall batch statistics
-    const allBatchAttendance = await Attendance.find({ batchId });
-    const totalRecords = allBatchAttendance.length;
-    const presentCount = allBatchAttendance.filter(record => record.present).length;
-    const overallAttendancePercentage = totalRecords > 0 
-      ? Math.round((presentCount / totalRecords) * 100) 
-      : 0;
-    
-    // Calculate daily statistics
-    const dailyStats = await Promise.all(
-      attendanceDates.map(async (date) => {
-        const dateAttendance = await Attendance.find({
-          batchId,
-          date: new Date(date)
-        });
-        
-        const totalStudents = dateAttendance.length;
-        const presentCount = dateAttendance.filter(record => record.present).length;
-        const absentCount = totalStudents - presentCount;
-        const attendancePercentage = totalStudents > 0 
-          ? Math.round((presentCount / totalStudents) * 100) 
-          : 0;
-        
-        return {
-          date,
-          totalStudents,
-          present: presentCount,
-          absent: absentCount,
-          attendancePercentage
-        };
-      })
-    );
+    // Calculate statistics per date
+    const dateStats = classDates.map(date => {
+      const dayAttendance = allAttendance.filter(
+        record => record.date.toISOString().split('T')[0] === date
+      );
+      
+      // Check if this date has any non-cancelled records
+      const isCancelled = dayAttendance.every(record => record.status === 'cancelled');
+      
+      const totalRecords = dayAttendance.length;
+      const presentCount = dayAttendance.filter(record => record.status === 'present').length;
+      const lateCount = dayAttendance.filter(record => record.status === 'late').length;
+      const excusedCount = dayAttendance.filter(record => record.status === 'excused').length;
+      const absentCount = dayAttendance.filter(record => record.status === 'absent').length;
+      const cancelledCount = dayAttendance.filter(record => record.status === 'cancelled').length;
+      
+      // If class was cancelled, set attendance to 100% to avoid affecting stats
+      const attendancePercentage = isCancelled ? 100 : (totalRecords > 0 
+        ? Math.round(((presentCount + lateCount + excusedCount) / totalRecords) * 100) 
+        : 0);
+      
+      return {
+        date,
+        totalStudents: totalRecords,
+        present: presentCount,
+        late: lateCount,
+        excused: excusedCount,
+        absent: absentCount,
+        cancelled: cancelledCount,
+        isCancelled,
+        attendancePercentage
+      };
+    });
+
+    const stats = {
+      batchId,
+      batchName: batch.name,
+      subjectName: batch.subject?.name || 'Unknown Subject',
+      totalStudents: students.length,
+      totalClasses,
+      overallStats: {
+        totalRecords,
+        present: presentCount,
+        late: lateCount,
+        excused: excusedCount,
+        absent: absentCount,
+        avgAttendancePercentage
+      },
+      studentStats,
+      dateStats
+    };
 
     res.status(200).json({
       success: true,
-      data: {
-        overall: {
-          totalClasses: attendanceDates.length,
-          totalStudents: enrolledStudents.length,
-          averageAttendance: overallAttendancePercentage
-        },
-        students: studentStats,
-        daily: dailyStats
-      }
+      data: stats
     });
   } catch (error) {
     console.error("Error in getBatchAttendanceStats:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * @desc    Update a single attendance record
+ * @route   PATCH /api/attendance/:id
+ * @access  Private (Teacher, Admin)
+ */
+export const updateAttendance = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status, remarks } = req.body;
+
+    // Validate ID
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid attendance record ID",
+      });
+    }
+
+    // Validate status
+    if (status && !['present', 'absent', 'late', 'excused', 'cancelled'].includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid status value. Must be 'present', 'absent', 'late', 'excused', or 'cancelled'",
+      });
+    }
+
+    // Find the record
+    const attendanceRecord = await Attendance.findById(id);
+    if (!attendanceRecord) {
+      return res.status(404).json({
+        success: false,
+        message: "Attendance record not found",
+      });
+    }
+
+    // Update the record
+    attendanceRecord.status = status || attendanceRecord.status;
+    attendanceRecord.remarks = remarks !== undefined ? remarks : attendanceRecord.remarks;
+    attendanceRecord.lastModifiedBy = req.user.id;
+
+    await attendanceRecord.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Attendance record updated successfully",
+      data: attendanceRecord,
+    });
+  } catch (error) {
+    console.error("Error in updateAttendance:", error);
     res.status(500).json({
       success: false,
       message: "Server error",

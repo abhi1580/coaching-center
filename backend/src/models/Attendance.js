@@ -16,11 +16,20 @@ const AttendanceSchema = new mongoose.Schema(
       type: Date,
       required: true,
     },
-    present: {
-      type: Boolean,
-      default: false,
+    status: {
+      type: String,
+      enum: ["present", "absent", "late", "excused", "cancelled"],
+      default: "absent",
+    },
+    remarks: {
+      type: String,
+      default: "",
     },
     markedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
+    lastModifiedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
     },

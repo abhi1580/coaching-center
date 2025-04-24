@@ -35,6 +35,16 @@ import {
   InputAdornment,
   Snackbar,
   Stack,
+  FormHelperText,
+  Tooltip,
+  Tab,
+  Tabs,
+  RadioGroup,
+  Radio,
+  Backdrop,
+  Fade,
+  Modal,
+  ButtonGroup,
 } from "@mui/material";
 import {
   Save as SaveIcon,
@@ -44,6 +54,13 @@ import {
   Cancel as CancelIcon,
   History as HistoryIcon,
   Close as CloseIcon,
+  AccessTime as LateIcon,
+  MedicalServices as ExcusedIcon,
+  Comment as CommentIcon,
+  Edit as EditIcon,
+  EditAttributes as BulkEditIcon,
+  SelectAll as SelectAllIcon,
+  ClearAll as ClearSelectionIcon,
 } from "@mui/icons-material";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
@@ -51,53 +68,60 @@ import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import axios from "axios";
 import { useSelector, useDispatch } from "react-redux";
 import { format } from "date-fns";
+import AttendanceManagement from "../../components/attendance/AttendanceManagement";
+import AttendanceHistory from "../../components/attendance/AttendanceHistory";
 
 // Import Redux actions
 import {
   fetchBatchAttendance,
   submitBatchAttendance,
   fetchStudentAttendance,
+  updateAttendanceRecord,
+  updateAttendanceInState,
   clearSuccess,
   clearError,
 } from "../../store/slices/attendanceSlice";
 
-// Create a much simpler notification system
+// Create a simple notification system
 const useNotification = () => {
   const [notification, setNotification] = useState({
     open: false,
     message: "",
-    severity: "info"
+    severity: "info",
   });
-  
+
   // Add reference to track if a specific notification was already shown
   const shownNotifications = useRef(new Set());
 
-  // Only show one notification at a time - no complex timeouts
-  const showNotification = useCallback((message, severity = "info", uniqueId = null) => {
-    // If this is a unique notification and we've already shown it, don't show again
-    if (uniqueId && shownNotifications.current.has(uniqueId)) {
-      return;
-    }
-    
-    // Always close first
-    setNotification({ open: false, message: "", severity: "info" });
-    
-    // Show new notification after a small delay
-    setTimeout(() => {
-      setNotification({ open: true, message, severity });
-      
-      // If this is a unique notification, mark it as shown
-      if (uniqueId) {
-        shownNotifications.current.add(uniqueId);
+  // Only show one notification at a time
+  const showNotification = useCallback(
+    (message, severity = "info", uniqueId = null) => {
+      // If this is a unique notification and we've already shown it, don't show again
+      if (uniqueId && shownNotifications.current.has(uniqueId)) {
+        return;
       }
-    }, 100);
-  }, []);
+
+      // Close first
+      setNotification({ open: false, message: "", severity: "info" });
+
+      // Show new notification after a small delay
+      setTimeout(() => {
+        setNotification({ open: true, message, severity });
+
+        // If this is a unique notification, mark it as shown
+        if (uniqueId) {
+          shownNotifications.current.add(uniqueId);
+        }
+      }, 100);
+    },
+    []
+  );
 
   const hideNotification = useCallback(() => {
-    setNotification(prev => ({ ...prev, open: false }));
+    setNotification((prev) => ({ ...prev, open: false }));
   }, []);
-  
-  // Reset tracked notifications (useful when dependencies change)
+
+  // Reset tracked notifications
   const resetTracking = useCallback(() => {
     shownNotifications.current.clear();
   }, []);
@@ -109,10 +133,11 @@ const TeacherAttendance = () => {
   const theme = useTheme();
   const dispatch = useDispatch();
 
-  // Use the custom notification hook instead of direct state
-  const { notification, showNotification, hideNotification, resetTracking } = useNotification();
+  // Use the custom notification hook
+  const { notification, showNotification, hideNotification, resetTracking } =
+    useNotification();
 
-  // Improved media queries for more precise breakpoints
+  // Media queries for responsive design
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const isTablet = useMediaQuery(theme.breakpoints.between("sm", "md"));
   const isSmallScreen = useMediaQuery("(max-width:600px)");
@@ -144,6 +169,19 @@ const TeacherAttendance = () => {
   const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [historyLoading, setHistoryLoading] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [currentRecord, setCurrentRecord] = useState(null);
+  const [editStatus, setEditStatus] = useState("");
+  const [editRemarks, setEditRemarks] = useState("");
+
+  // Add bulk edit state
+  const [selectedStudents, setSelectedStudents] = useState([]);
+  const [bulkEditOpen, setBulkEditOpen] = useState(false);
+  const [bulkEditStatus, setBulkEditStatus] = useState("present");
+  const [bulkEditRemarks, setBulkEditRemarks] = useState("");
+  const [selectAll, setSelectAll] = useState(false);
+  const [tabIndex, setTabIndex] = useState(0);
+  const [historyDate, setHistoryDate] = useState(new Date());
 
   // Format date for display
   const formatDate = (date) => {
@@ -159,7 +197,7 @@ const TeacherAttendance = () => {
   const getMinAttendanceDate = () => {
     const today = new Date();
     const minDate = new Date(today);
-    minDate.setDate(today.getDate() - 3); // 3 days before today
+    minDate.setDate(today.getDate() - 7); // Allow marking attendance for up to 7 days before
     return minDate;
   };
 
@@ -171,17 +209,19 @@ const TeacherAttendance = () => {
   // Show notification based on Redux state (success or error)
   useEffect(() => {
     if (attendanceSuccess) {
-      const message = typeof attendanceSuccess === "string"
-        ? attendanceSuccess
-        : "Attendance submitted successfully";
+      const message =
+        typeof attendanceSuccess === "string"
+          ? attendanceSuccess
+          : "Operation completed successfully";
       showNotification(message, "success");
       dispatch(clearSuccess());
     }
 
     if (attendanceError) {
-      const message = typeof attendanceError === "string"
-        ? attendanceError
-        : "Error submitting attendance";
+      const message =
+        typeof attendanceError === "string"
+          ? attendanceError
+          : "Error during operation";
       showNotification(message, "error");
       dispatch(clearError());
     }
@@ -248,195 +288,243 @@ const TeacherAttendance = () => {
         const batchData = response.data.data || response.data;
         const enrolledStudents = batchData.enrolledStudents || [];
 
-        // Initialize attendance records with default values (absent)
-        const records = enrolledStudents.map((student) => ({
-          studentId: student._id,
-          name: student.name,
-          email: student.email,
-          present: false,
-          date: formatDateForAPI(attendanceDate),
-          batchId: selectedBatch,
-        }));
-
         setStudents(enrolledStudents);
         setFilteredStudents(enrolledStudents);
-        setAttendanceRecords(records);
-
-        // Fetch existing attendance using Redux action - only when batch is explicitly selected
-        if (selectedBatch && attendanceDate) {
-          // Quick check to prevent multiple fetches
-          if (enrolledStudents.length > 0) {
-            dispatch(
-              fetchBatchAttendance({
-                batchId: selectedBatch,
-                date: formatDateForAPI(attendanceDate),
-              })
-            );
-          }
-        }
-
         setError(null);
       } catch (err) {
         console.error("Error fetching students:", err);
         setError(err.response?.data?.message || "Failed to load students");
+        setStudents([]);
+        setFilteredStudents([]);
       } finally {
         setLoading(false);
       }
     };
 
     fetchStudents();
+  }, [selectedBatch]);
+
+  // Fetch attendance when batch and date are selected
+  useEffect(() => {
+    if (selectedBatch && attendanceDate) {
+      dispatch(
+        fetchBatchAttendance({
+          batchId: selectedBatch,
+          date: formatDateForAPI(attendanceDate),
+        })
+      );
+    }
   }, [selectedBatch, attendanceDate, dispatch]);
 
-  // Update attendance records when redux state changes
+  // Update local attendance records when batch attendance changes
   useEffect(() => {
-    if (batchAttendance && batchAttendance.length > 0 && selectedBatch) {
-      // Only update records if we have a selected batch
-      setAttendanceRecords((prevRecords) => {
-        return prevRecords.map((record) => {
-          const existingRecord = batchAttendance.find(
-            (r) => r.studentId?._id === record.studentId
-          );
-          if (existingRecord) {
-            return {
-              ...record,
-              present: existingRecord.present,
-              _id: existingRecord._id,
-            };
-          }
-          return record;
-        });
-      });
-
-      // Only show notification if this is an intentional fetch (batch is selected)
-      // Use a unique ID based on batch, date, and result type to prevent duplicate notifications
-      if (selectedBatch && attendanceDate) {
-        const notificationId = `${selectedBatch}_${formatDateForAPI(attendanceDate)}_loaded`;
-        showNotification("Attendance records loaded for this date", "info", notificationId);
-      }
-    } else if (
-      batchAttendance &&
-      Array.isArray(batchAttendance) &&
-      batchAttendance.length === 0 &&
-      selectedBatch &&
-      attendanceDate
-    ) {
-      // When no attendance records found, reset all students to absent
-      if (students.length > 0) {
-        const resetRecords = students.map((student) => ({
-          studentId: student._id,
+    if (batchAttendance && batchAttendance.length > 0) {
+      setAttendanceRecords(batchAttendance);
+    } else {
+      // If no attendance records found, create default records for all students
+      const defaultRecords = students.map((student) => ({
+        _id: null, // No ID means this is a new record
+        studentId: {
+          _id: student._id,
           name: student.name,
           email: student.email,
-          present: false,
-          date: formatDateForAPI(attendanceDate),
-          batchId: selectedBatch,
-        }));
-        setAttendanceRecords(resetRecords);
-      }
-      
-      // Only show notification if we have an actual batch selected
-      // Use a unique ID based on batch, date, and result type to prevent duplicate notifications
-      if (selectedBatch && attendanceDate) {
-        const notificationId = `${selectedBatch}_${formatDateForAPI(attendanceDate)}_not_found`;
-        showNotification("No attendance records found for this date", "warning", notificationId);
-      }
+        },
+        batchId: selectedBatch,
+        date: attendanceDate,
+        status: "absent",
+        remarks: "",
+        isVirtual: true,
+      }));
+      setAttendanceRecords(defaultRecords);
     }
-  }, [batchAttendance, selectedBatch, attendanceDate, students, formatDateForAPI, showNotification]);
+  }, [batchAttendance, students, selectedBatch, attendanceDate]);
 
-  // Filter students based on search query
+  // Filter students when search query changes
   useEffect(() => {
     if (!searchQuery.trim()) {
       setFilteredStudents(students);
       return;
     }
 
-    const query = searchQuery.toLowerCase();
+    const lowercaseQuery = searchQuery.toLowerCase();
     const filtered = students.filter(
       (student) =>
-        student.name?.toLowerCase().includes(query) ||
-        student.email?.toLowerCase().includes(query)
+        student.name.toLowerCase().includes(lowercaseQuery) ||
+        student.email.toLowerCase().includes(lowercaseQuery)
     );
-
     setFilteredStudents(filtered);
-  }, [students, searchQuery]);
+  }, [searchQuery, students]);
 
-  // Handle batch selection
+  // Handle batch change
   const handleBatchChange = (e) => {
     setSelectedBatch(e.target.value);
-    // Clear search query when batch changes
     setSearchQuery("");
+    setFilteredStudents([]);
+    setAttendanceRecords([]);
   };
 
   // Handle date change
   const handleDateChange = (newDate) => {
-    setAttendanceDate(newDate);
-    // Clear search query when date changes
-    setSearchQuery("");
-    
-    // Reset attendance records to default (all absent) when date changes
-    if (students.length > 0) {
-      const records = students.map((student) => ({
-        studentId: student._id,
-        name: student.name,
-        email: student.email,
-        present: false,
-        date: formatDateForAPI(newDate),
-        batchId: selectedBatch,
-      }));
-      setAttendanceRecords(records);
-      
-      // Notify user that a new date has been selected
-      showNotification(`Loading attendance for ${formatDate(newDate)}...`, "info");
+    if (newDate) {
+      setAttendanceDate(newDate);
     }
   };
 
-  // Toggle student attendance status
-  const toggleAttendance = (studentId) => {
-    setAttendanceRecords((prevRecords) => {
-      return prevRecords.map((record) => {
-        if (record.studentId === studentId) {
-          return { ...record, present: !record.present };
+  // Improve the handleStatusUpdate function with better validation and error handling
+  const handleStatusUpdate = (id, status, remarks) => {
+    // Validate ID and status
+    if (!id || !status) {
+      console.error("Invalid ID or status for attendance update");
+      return;
+    }
+
+    // Verify status is valid
+    if (!["present", "absent", "late", "excused"].includes(status)) {
+      console.error("Invalid status value:", status);
+      return;
+    }
+
+    // Clean up remarks
+    const cleanRemarks = typeof remarks === "string" ? remarks.trim() : "";
+
+    try {
+      // Update server
+      dispatch(
+        updateAttendanceRecord({
+          id,
+          data: {
+            status,
+            remarks: cleanRemarks,
+          },
+        })
+      )
+        .unwrap()
+        .then((response) => {
+          // Success handling if needed
+        })
+        .catch((error) => {
+          console.error("Error updating attendance record:", error);
+          showNotification(
+            "Failed to update attendance. Changes will be saved when submitting.",
+            "warning"
+          );
+        });
+    } catch (error) {
+      console.error("Exception when updating attendance:", error);
+    }
+  };
+
+  // Modify toggleAttendanceStatus to include cancelled status
+  const toggleAttendanceStatus = (studentId) => {
+    const updatedRecords = attendanceRecords.map((record) => {
+      if (record.studentId._id === studentId) {
+        // Cycle through the statuses: absent -> present -> late -> excused -> cancelled -> absent
+        let newStatus;
+        switch (record.status) {
+          case "absent":
+            newStatus = "present";
+            break;
+          case "present":
+            newStatus = "late";
+            break;
+          case "late":
+            newStatus = "excused";
+            break;
+          case "excused":
+            newStatus = "cancelled";
+            break;
+          case "cancelled":
+            newStatus = "absent";
+            break;
+          default:
+            newStatus = "absent";
         }
-        return record;
-      });
+
+        return { ...record, status: newStatus };
+      }
+      return record;
     });
+
+    setAttendanceRecords(updatedRecords);
   };
 
-  // Mark all students as present
-  const markAllPresent = () => {
-    setAttendanceRecords((prevRecords) => {
-      return prevRecords.map((record) => {
-        return { ...record, present: true };
-      });
+  // Simplify the bulk edit functionality
+  const applyBulkEdit = () => {
+    const updatedRecords = attendanceRecords.map((record) => {
+      if (selectedStudents.includes(record.studentId._id)) {
+        return {
+          ...record,
+          status: bulkEditStatus,
+          remarks: bulkEditRemarks || record.remarks,
+        };
+      }
+      return record;
     });
-  };
 
-  // Mark all students as absent
-  const markAllAbsent = () => {
-    setAttendanceRecords((prevRecords) => {
-      return prevRecords.map((record) => {
-        return { ...record, present: false };
-      });
-    });
-  };
+    setAttendanceRecords(updatedRecords);
+    closeBulkEdit();
 
-  // Submit attendance using Redux action
-  const handleSubmitAttendance = () => {
-    if (!selectedBatch || attendanceRecords.length === 0) return;
+    // Clear selection after bulk edit
+    setSelectedStudents([]);
+    setSelectAll(false);
 
-    // Show immediate feedback - don't track this one as unique since we want to show it each time
-    showNotification("Submitting attendance...", "info");
-    
-    dispatch(
-      submitBatchAttendance({
-        batchId: selectedBatch,
-        date: formatDateForAPI(attendanceDate),
-        records: attendanceRecords.map(({ studentId, present }) => ({
-          studentId,
-          present,
-          date: formatDateForAPI(attendanceDate),
-        })),
-      })
+    showNotification(
+      `Updated ${selectedStudents.length} student(s)`,
+      "success"
     );
+  };
+
+  // Simplify handleBulkStatusChange to avoid server calls
+  const handleBulkStatusChange = (status) => {
+    const updatedRecords = attendanceRecords.map((record) => {
+      if (selectedStudents.includes(record.studentId._id)) {
+        return {
+          ...record,
+          status,
+        };
+      }
+      return record;
+    });
+
+    setAttendanceRecords(updatedRecords);
+  };
+
+  // Modify handleSubmitAttendance to include better error handling
+  const handleSubmitAttendance = () => {
+    if (!selectedBatch || !attendanceDate) {
+      showNotification("Please select a batch and date", "error");
+      return;
+    }
+
+    try {
+      const formattedRecords = formatRecordsForSubmission();
+      dispatch(
+        submitBatchAttendance({
+          batchId: selectedBatch,
+          date: formatDateForAPI(attendanceDate),
+          records: formattedRecords,
+        })
+      )
+        .unwrap()
+        .then(() => {
+          // Refresh attendance data after successful submission
+          dispatch(
+            fetchBatchAttendance({
+              batchId: selectedBatch,
+              date: formatDateForAPI(attendanceDate),
+            })
+          );
+        })
+        .catch((error) => {
+          console.error("Failed to submit attendance:", error);
+        });
+    } catch (error) {
+      console.error("Error formatting attendance data:", error);
+      showNotification(
+        "Error preparing attendance data. Please try again.",
+        "error"
+      );
+    }
   };
 
   // View student attendance history
@@ -445,13 +533,14 @@ const TeacherAttendance = () => {
     setHistoryLoading(true);
     setHistoryDialogOpen(true);
 
-    // Dispatch Redux action to get student attendance history
     dispatch(
       fetchStudentAttendance({
         studentId: student._id,
         batchId: selectedBatch,
       })
-    );
+    ).finally(() => {
+      setHistoryLoading(false);
+    });
   };
 
   // Close history dialog
@@ -460,558 +549,415 @@ const TeacherAttendance = () => {
     setSelectedStudent(null);
   };
 
-  // Mobile view - Card for each student
-  const StudentCards = () => (
-    <Box sx={{ width: "100%" }}>
-      {filteredStudents.map((student) => {
-        const record = attendanceRecords.find(
-          (r) => r.studentId === student._id
-        );
-        const isPresent = record ? record.present : false;
+  // Open edit dialog for a record
+  const openEditDialog = (record) => {
+    setCurrentRecord(record);
+    setEditStatus(record.status);
+    setEditRemarks(record.remarks || "");
+    setEditDialogOpen(true);
+  };
 
-        return (
-          <Card
-            key={student._id}
-            sx={{
-              borderRadius: 1.5,
-              borderLeft: "4px solid",
-              borderLeftColor: isPresent
-                ? theme.palette.success.main
-                : theme.palette.error.main,
-              boxShadow: 1,
-              width: "100%",
-              mb: 1,
-            }}
-          >
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                p: 1,
-              }}
-            >
-              <Box sx={{ overflow: "hidden", width: "70%" }}>
-                <Typography
-                  variant="subtitle2"
-                  sx={{
-                    fontWeight: 600,
-                    whiteSpace: "nowrap",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                  }}
-                >
-                  {student.name}
-                </Typography>
-                <Typography
-                  variant="caption"
-                  color="text.secondary"
-                  sx={{
-                    display: "block",
-                    whiteSpace: "nowrap",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                  }}
-                >
-                  {student.email}
-                </Typography>
-              </Box>
-              <Box sx={{ display: "flex", alignItems: "center" }}>
-                <Checkbox
-                  checked={isPresent}
-                  onChange={() => toggleAttendance(student._id)}
-                  color="success"
-                  size="small"
-                  sx={{ p: 0.5 }}
-                />
-                <IconButton
-                  size="small"
-                  onClick={() => viewStudentHistory(student)}
-                  color="primary"
-                  sx={{ p: 0.5 }}
-                >
-                  <HistoryIcon fontSize="small" />
-                </IconButton>
-              </Box>
-            </Box>
-          </Card>
-        );
-      })}
-    </Box>
+  // Close edit dialog
+  const handleCloseEditDialog = () => {
+    setEditDialogOpen(false);
+    setCurrentRecord(null);
+    setEditStatus("");
+    setEditRemarks("");
+  };
+
+  // Save edited record
+  const handleSaveEdit = () => {
+    if (!currentRecord) return;
+
+    if (currentRecord._id) {
+      // First update the UI immediately for better UX
+      const updatedRecords = attendanceRecords.map((record) => {
+        if (record._id === currentRecord._id) {
+          return {
+            ...record,
+            status: editStatus,
+            remarks: editRemarks,
+          };
+        }
+        return record;
+      });
+      setAttendanceRecords(updatedRecords);
+
+      // Then send update to the server
+      handleStatusUpdate(currentRecord._id, editStatus, editRemarks);
+    } else {
+      // For virtual records (not yet saved to DB)
+      const updatedRecords = attendanceRecords.map((record) => {
+        if (record.studentId._id === currentRecord.studentId._id) {
+          return {
+            ...record,
+            status: editStatus,
+            remarks: editRemarks,
+          };
+        }
+        return record;
+      });
+      setAttendanceRecords(updatedRecords);
+
+      // Show feedback to user
+      showNotification(
+        "Record updated locally. Save attendance to persist changes.",
+        "info"
+      );
+    }
+
+    handleCloseEditDialog();
+  };
+
+  // Get status color
+  const getStatusColor = (status) => {
+    switch (status) {
+      case "present":
+        return theme.palette.success.main;
+      case "absent":
+        return theme.palette.error.main;
+      case "late":
+        return theme.palette.warning.main;
+      case "excused":
+        return theme.palette.info.main;
+      case "cancelled":
+        return theme.palette.grey[700];
+      default:
+        return theme.palette.grey[500];
+    }
+  };
+
+  // Get status icon
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case "present":
+        return <CheckCircleIcon />;
+      case "absent":
+        return <CancelIcon />;
+      case "late":
+        return <LateIcon />;
+      case "excused":
+        return <ExcusedIcon />;
+      case "cancelled":
+        return <CloseIcon />;
+      default:
+        return null;
+    }
+  };
+
+  // Add visual feedback when status changes
+  const StatusChip = ({ status, studentId, onClick }) => {
+    const [animate, setAnimate] = useState(false);
+
+    useEffect(() => {
+      // Trigger animation when status changes
+      setAnimate(true);
+      const timer = setTimeout(() => setAnimate(false), 300);
+      return () => clearTimeout(timer);
+    }, [status]);
+
+    // Get proper label for status
+    const getStatusLabel = (status) => {
+      if (status === "cancelled") {
+        return "Cancelled";
+      }
+      return status.charAt(0).toUpperCase() + status.slice(1);
+    };
+
+    return (
+      <Tooltip
+        title={
+          status === "cancelled"
+            ? "No class was arranged for this day"
+            : `Click to change status (currently ${status})`
+        }
+      >
+        <Chip
+          icon={getStatusIcon(status)}
+          label={getStatusLabel(status)}
+          onClick={onClick}
+          sx={{
+            bgcolor: alpha(getStatusColor(status), 0.1),
+            color: getStatusColor(status),
+            borderColor: getStatusColor(status),
+            border: "1px solid",
+            fontWeight: "bold",
+            transform: animate ? "scale(1.1)" : "scale(1)",
+            transition: "transform 0.3s ease-in-out",
+          }}
+        />
+      </Tooltip>
+    );
+  };
+
+  // Toggle select all students
+  const handleSelectAll = () => {
+    if (selectAll) {
+      // If already selected all, clear selection
+      setSelectedStudents([]);
+    } else {
+      // Select all filtered students
+      setSelectedStudents(filteredStudents.map((student) => student._id));
+    }
+    setSelectAll(!selectAll);
+  };
+
+  // Toggle student selection
+  const toggleStudentSelection = (studentId) => {
+    setSelectedStudents((prev) => {
+      if (prev.includes(studentId)) {
+        return prev.filter((id) => id !== studentId);
+      } else {
+        return [...prev, studentId];
+      }
+    });
+  };
+
+  // Check if a student is selected
+  const isStudentSelected = (studentId) => {
+    return selectedStudents.includes(studentId);
+  };
+
+  // Open bulk edit modal
+  const openBulkEdit = () => {
+    if (selectedStudents.length === 0) {
+      showNotification("Please select at least one student", "warning");
+      return;
+    }
+    setBulkEditOpen(true);
+  };
+
+  // Close bulk edit modal
+  const closeBulkEdit = () => {
+    setBulkEditOpen(false);
+    setBulkEditStatus("present");
+    setBulkEditRemarks("");
+  };
+
+  // Format records for submission
+  const formatRecordsForSubmission = () => {
+    return attendanceRecords.map((record) => ({
+      studentId: record.studentId._id,
+      status: record.status,
+      remarks: record.remarks || "",
+    }));
+  };
+
+  // Add keyboard shortcut handling
+  useEffect(() => {
+    const handleKeyPress = (event) => {
+      // Only activate shortcuts when we have selected students
+      if (selectedStudents.length === 0) return;
+
+      // Don't activate shortcuts when typing in text fields
+      if (
+        event.target.tagName === "INPUT" ||
+        event.target.tagName === "TEXTAREA"
+      )
+        return;
+
+      switch (event.key) {
+        case "p":
+          // Mark selected students as present
+          handleBulkStatusChange("present");
+          showNotification(
+            `Marked ${selectedStudents.length} student(s) as present`,
+            "success"
+          );
+          break;
+        case "a":
+          // Mark selected students as absent
+          handleBulkStatusChange("absent");
+          showNotification(
+            `Marked ${selectedStudents.length} student(s) as absent`,
+            "success"
+          );
+          break;
+        case "l":
+          // Mark selected students as late
+          handleBulkStatusChange("late");
+          showNotification(
+            `Marked ${selectedStudents.length} student(s) as late`,
+            "success"
+          );
+          break;
+        case "e":
+          // Mark selected students as excused
+          handleBulkStatusChange("excused");
+          showNotification(
+            `Marked ${selectedStudents.length} student(s) as excused`,
+            "success"
+          );
+          break;
+        case "c":
+          // Mark selected students as cancelled
+          handleBulkStatusChange("cancelled");
+          showNotification(
+            `Marked ${selectedStudents.length} student(s) as cancelled`,
+            "success"
+          );
+          break;
+        case "Escape":
+          // Clear selection
+          setSelectedStudents([]);
+          setSelectAll(false);
+          break;
+        default:
+          break;
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyPress);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyPress);
+    };
+  }, [selectedStudents]);
+
+  // Add helper component to display keyboard shortcuts
+  const KeyboardShortcutHelp = () => (
+    <Paper
+      sx={{ p: 2, mb: 2, display: "flex", flexDirection: "column", gap: 1 }}
+    >
+      <Typography variant="subtitle1" fontWeight="bold">
+        Keyboard Shortcuts
+      </Typography>
+      <Grid container spacing={2}>
+        <Grid item xs={6} sm={3} md={2}>
+          <Chip
+            label="P = Mark Present"
+            size="small"
+            icon={<CheckCircleIcon />}
+            sx={{ bgcolor: alpha(theme.palette.success.main, 0.1) }}
+          />
+        </Grid>
+        <Grid item xs={6} sm={3} md={2}>
+          <Chip
+            label="A = Mark Absent"
+            size="small"
+            icon={<CancelIcon />}
+            sx={{ bgcolor: alpha(theme.palette.error.main, 0.1) }}
+          />
+        </Grid>
+        <Grid item xs={6} sm={3} md={2}>
+          <Chip
+            label="L = Mark Late"
+            size="small"
+            icon={<LateIcon />}
+            sx={{ bgcolor: alpha(theme.palette.warning.main, 0.1) }}
+          />
+        </Grid>
+        <Grid item xs={6} sm={3} md={2}>
+          <Chip
+            label="E = Mark Excused"
+            size="small"
+            icon={<ExcusedIcon />}
+            sx={{ bgcolor: alpha(theme.palette.info.main, 0.1) }}
+          />
+        </Grid>
+        <Grid item xs={6} sm={3} md={2}>
+          <Tooltip title="Used when no class was arranged for this day">
+            <Chip
+              label="C = Class Cancelled"
+              size="small"
+              icon={<CloseIcon />}
+              sx={{ bgcolor: alpha(theme.palette.grey[700], 0.1) }}
+            />
+          </Tooltip>
+        </Grid>
+      </Grid>
+    </Paper>
   );
 
-  // Loading state
-  if (loading && batchesLoading) {
-    return (
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          height: "80vh",
-          width: "100%",
-        }}
-      >
-        <CircularProgress />
-      </Box>
-    );
-  }
+  // Restore the markAllAs function
+  const markAllAs = (status) => {
+    const updatedRecords = attendanceRecords.map((record) => ({
+      ...record,
+      status,
+    }));
+    setAttendanceRecords(updatedRecords);
+    showNotification(`All students marked as ${status}`, "success");
+  };
 
   return (
-    <Box
-      sx={{
-        width: "100%",
-        maxWidth: "100%",
-        overflow: "hidden",
-        px: { xs: 0.5, sm: 1, md: 2 }, // Add responsive padding to the main container
-      }}
-    >
-      {/* Header section */}
-      <Paper
-        elevation={0}
-        sx={{
-          p: { xs: 1.5, sm: 2 },
-          mb: 2,
-          backgroundColor: (theme) => alpha(theme.palette.primary.light, 0.05),
-          borderRadius: 1.5,
-          width: "100%",
-          maxWidth: "100%",
-          boxSizing: "border-box",
-        }}
+    <Box sx={{ p: { xs: 2, md: 3 } }}>
+      <Typography variant="h5" component="h1" gutterBottom>
+        Attendance
+      </Typography>
+      <Divider sx={{ mb: 3 }} />
+      <Tabs
+        value={tabIndex}
+        onChange={(_, v) => setTabIndex(v)}
+        indicatorColor="primary"
+        textColor="primary"
+        sx={{ mb: 3 }}
       >
-        <Typography
-          variant="h5"
-          component="h1"
-          sx={{
-            fontSize: { xs: "1.1rem", sm: "1.3rem", md: "1.5rem" },
-            fontWeight: 600,
-            color: "primary.main",
-            mb: 0.5,
-          }}
-        >
-          Attendance Management
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          Mark attendance for students in your batches
-        </Typography>
-      </Paper>
-
-      {/* Filters section */}
-      <Paper
-        sx={{
-          p: { xs: 1.5, sm: 2 },
-          mb: 2,
-          borderRadius: 1.5,
-          width: "100%",
-          maxWidth: "100%",
-          boxSizing: "border-box",
-        }}
-      >
-        <Stack spacing={2}>
-          <FormControl fullWidth size="small">
-            <InputLabel id="batch-select-label">Select Batch</InputLabel>
-            <Select
-              labelId="batch-select-label"
-              id="batch-select"
-              value={selectedBatch}
-              label="Select Batch"
-              onChange={handleBatchChange}
-              disabled={batchesLoading}
-            >
-              <MenuItem value="">
-                <em>Select a batch</em>
-              </MenuItem>
-              {batches.map((batch) => (
-                <MenuItem key={batch._id} value={batch._id}>
-                  {batch.name} - {batch.subject?.name || "No subject"}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-
-          <LocalizationProvider dateAdapter={AdapterDateFns}>
-            <DatePicker
-              label="Attendance Date"
-              value={attendanceDate}
-              onChange={handleDateChange}
-              maxDate={new Date()} // Today
-              minDate={getMinAttendanceDate()} // 3 days before today
-              disableFuture
-              slotProps={{
-                textField: {
-                  fullWidth: true,
-                  size: "small",
-                  helperText: "Only dates from 3 days ago to today are allowed",
-                }
-              }}
-            />
-          </LocalizationProvider>
-
-          <TextField
-            fullWidth
-            variant="outlined"
-            size="small"
-            placeholder="Search students..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            disabled={!selectedBatch}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon fontSize="small" />
-                </InputAdornment>
-              ),
-            }}
-          />
-        </Stack>
-      </Paper>
-
-      {/* Error alert */}
-      {error && (
-        <Alert
-          severity="error"
-          sx={{ mb: 2, width: "100%", boxSizing: "border-box" }}
-        >
-          {error}
-        </Alert>
+        <Tab label="Attendance Management" />
+        <Tab label="Attendance History" />
+      </Tabs>
+      {tabIndex === 0 && (
+        <AttendanceManagement
+          batches={batches}
+          selectedBatch={selectedBatch}
+          setSelectedBatch={setSelectedBatch}
+          attendanceDate={attendanceDate}
+          setAttendanceDate={setAttendanceDate}
+          attendanceRecords={attendanceRecords}
+          setAttendanceRecords={setAttendanceRecords}
+          students={students}
+          filteredStudents={filteredStudents}
+          setFilteredStudents={setFilteredStudents}
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          loading={loading}
+          batchesLoading={batchesLoading}
+          attendanceLoading={attendanceLoading}
+          submitting={submitting}
+          error={error}
+          formatDate={formatDate}
+          formatDateForAPI={formatDateForAPI}
+          getMinAttendanceDate={getMinAttendanceDate}
+          showNotification={showNotification}
+          onViewHistory={viewStudentHistory}
+        />
       )}
-
-      {/* No batch selected message */}
-      {!selectedBatch && !loading && (
-        <Paper
-          sx={{
-            p: { xs: 2, sm: 3 },
-            textAlign: "center",
-            borderRadius: 1.5,
-            width: "100%",
-            boxSizing: "border-box",
-          }}
-        >
-          <CalendarIcon
-            color="primary"
-            sx={{ fontSize: 40, mb: 1.5, opacity: 0.7 }}
-          />
-          <Typography
-            variant="h6"
-            gutterBottom
-            sx={{ fontSize: { xs: "1rem", sm: "1.25rem" } }}
-          >
-            Select a batch to mark attendance
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Choose a batch from the dropdown menu to view and mark student
-            attendance
-          </Typography>
-        </Paper>
-      )}
-
-      {/* Attendance section */}
-      {selectedBatch && !loading && (
-        <Paper
-          sx={{
-            borderRadius: 1.5,
-            overflow: { xs: "hidden", sm: "visible" },
-            width: "100%",
-            maxWidth: "100%",
-            boxSizing: "border-box",
-          }}
-        >
-          {/* Header */}
-          <Box
-            sx={{
-              bgcolor: theme.palette.primary.light,
-              color: theme.palette.primary.contrastText,
-              width: "100%",
-              boxSizing: "border-box",
-            }}
-          >
-            <Stack spacing={1.5} sx={{ p: { xs: 1.5, sm: 2 } }}>
-              <Box sx={{ overflow: "hidden" }}>
-                <Typography
-                  variant="subtitle1"
-                  component="h2"
-                  sx={{
-                    fontWeight: 600,
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {batches.find((b) => b._id === selectedBatch)?.name ||
-                    "Selected Batch"}
-                </Typography>
-                <Typography
-                  variant="body2"
-                  sx={{
-                    opacity: 0.9,
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  Attendance for {formatDate(attendanceDate)}
-                </Typography>
-              </Box>
-
-              <Stack
-                direction="row"
-                spacing={1}
-                sx={{
-                  width: "100%",
-                  boxSizing: "border-box",
+      {tabIndex === 1 && (
+        <>
+          <Box sx={{ mb: 2, maxWidth: 260 }}>
+            <LocalizationProvider dateAdapter={AdapterDateFns}>
+              <DatePicker
+                label="History Date"
+                value={historyDate}
+                onChange={setHistoryDate}
+                format="MMM dd, yyyy"
+                slotProps={{
+                  textField: {
+                    fullWidth: true,
+                    variant: "outlined",
+                  },
                 }}
-              >
-                <Button
-                  variant="contained"
-                  color="success"
-                  size="small"
-                  onClick={markAllPresent}
-                  disabled={filteredStudents.length === 0}
-                  startIcon={isMobile ? null : <CheckCircleIcon />}
-                  sx={{ flex: 1 }}
-                >
-                  {isMobile ? "All P" : "All Present"}
-                </Button>
-                <Button
-                  variant="contained"
-                  color="error"
-                  size="small"
-                  onClick={markAllAbsent}
-                  disabled={filteredStudents.length === 0}
-                  startIcon={isMobile ? null : <CancelIcon />}
-                  sx={{ flex: 1 }}
-                >
-                  {isMobile ? "All A" : "All Absent"}
-                </Button>
-              </Stack>
-            </Stack>
+                maxDate={new Date()}
+              />
+            </LocalizationProvider>
           </Box>
-
-          <Divider />
-
-          {/* No students message */}
-          {filteredStudents.length === 0 && (
-            <Box sx={{ p: { xs: 2, sm: 3 }, textAlign: "center" }}>
-              <Typography variant="body1">
-                No students found in this batch
-              </Typography>
-            </Box>
-          )}
-
-          {/* Student list */}
-          {filteredStudents.length > 0 && (
-            <Box
-              sx={{
-                p: { xs: 0.5, sm: 1.5 },
-                width: "100%",
-                boxSizing: "border-box",
-              }}
-            >
-              {isMobile ? (
-                <StudentCards />
-              ) : (
-                <TableContainer sx={{ maxHeight: "60vh" }}>
-                  <Table stickyHeader size="small">
-                    <TableHead>
-                      <TableRow>
-                        <TableCell>Student Name</TableCell>
-                        <TableCell>Email</TableCell>
-                        <TableCell align="center">Attendance</TableCell>
-                        <TableCell align="center">History</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {filteredStudents.map((student) => {
-                        const record = attendanceRecords.find(
-                          (r) => r.studentId === student._id
-                        );
-                        const isPresent = record ? record.present : false;
-
-                        return (
-                          <TableRow key={student._id}>
-                            <TableCell>{student.name}</TableCell>
-                            <TableCell>{student.email}</TableCell>
-                            <TableCell align="center">
-                              <FormControlLabel
-                                control={
-                                  <Checkbox
-                                    checked={isPresent}
-                                    onChange={() =>
-                                      toggleAttendance(student._id)
-                                    }
-                                    color="success"
-                                  />
-                                }
-                                label={isPresent ? "Present" : "Absent"}
-                              />
-                            </TableCell>
-                            <TableCell align="center">
-                              <IconButton
-                                color="primary"
-                                onClick={() => viewStudentHistory(student)}
-                              >
-                                <HistoryIcon />
-                              </IconButton>
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
-              )}
-            </Box>
-          )}
-
-          {/* Submit button */}
-          {filteredStudents.length > 0 && (
-            <Box
-              sx={{
-                p: { xs: 1.5, sm: 2 },
-                borderTop: `1px solid ${theme.palette.divider}`,
-                width: "100%",
-                boxSizing: "border-box",
-              }}
-            >
-              <Button
-                variant="contained"
-                color="primary"
-                fullWidth
-                onClick={handleSubmitAttendance}
-                disabled={submitting}
-                startIcon={!isMobile && <SaveIcon />}
-                size={isMobile ? "small" : "medium"}
-                sx={{
-                  py: { xs: 0.75, sm: 1 },
-                }}
-              >
-                {submitting ? (
-                  <CircularProgress size={20} />
-                ) : (
-                  "Submit Attendance"
-                )}
-              </Button>
-            </Box>
-          )}
-        </Paper>
+          <AttendanceHistory
+            classId={selectedBatch}
+            students={students}
+            date={historyDate}
+          />
+        </>
       )}
-
-      {/* Student history dialog */}
-      <Dialog
-        open={historyDialogOpen}
-        onClose={handleCloseHistoryDialog}
-        maxWidth="xs"
-        fullWidth
-        PaperProps={{
-          sx: {
-            width: { xs: "90%", sm: "400px" },
-            maxWidth: "100%",
-            m: { xs: 0.5, sm: "auto" },
-            borderRadius: { xs: 1, sm: 1.5 },
-          },
-        }}
-      >
-        <DialogTitle
-          sx={{
-            pr: 5,
-            p: { xs: 1.5, sm: 2 },
-            fontSize: { xs: "1rem", sm: "1.25rem" },
-          }}
-        >
-          <Typography
-            noWrap
-            variant="subtitle1"
-            sx={{
-              fontWeight: 600,
-              fontSize: { xs: "0.9rem", sm: "1rem" },
-            }}
-          >
-            {selectedStudent?.name} History
-          </Typography>
-          <IconButton
-            aria-label="close"
-            onClick={handleCloseHistoryDialog}
-            sx={{
-              position: "absolute",
-              right: 8,
-              top: 8,
-              color: theme.palette.grey[500],
-              padding: { xs: 0.5, sm: 1 },
-            }}
-          >
-            <CloseIcon fontSize={isMobile ? "small" : "medium"} />
-          </IconButton>
-        </DialogTitle>
-        <DialogContent
-          dividers
-          sx={{
-            p: { xs: 1, sm: 1.5 },
-            maxHeight: { xs: "60vh", sm: "70vh" },
-          }}
-        >
-          {attendanceLoading ? (
-            <Box sx={{ display: "flex", justifyContent: "center", p: 3 }}>
-              <CircularProgress size={30} />
-            </Box>
-          ) : studentAttendance.length === 0 ? (
-            <Typography variant="body2" sx={{ textAlign: "center", p: 2 }}>
-              No attendance records found
-            </Typography>
-          ) : (
-            <TableContainer sx={{ maxHeight: "50vh" }}>
-              <Table stickyHeader size="small">
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Date</TableCell>
-                    <TableCell align="right">Status</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {studentAttendance.map((record) => (
-                    <TableRow key={record._id}>
-                      <TableCell>{formatDate(record.date)}</TableCell>
-                      <TableCell align="right">
-                        <Chip
-                          label={record.present ? "Present" : "Absent"}
-                          color={record.present ? "success" : "error"}
-                          variant="outlined"
-                          size="small"
-                          sx={{ minWidth: 70 }}
-                        />
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          )}
-        </DialogContent>
-        <DialogActions sx={{ p: { xs: 1, sm: 1.5 } }}>
-          <Button
-            onClick={handleCloseHistoryDialog}
-            color="primary"
-            fullWidth
-            variant="contained"
-            size={isMobile ? "small" : "medium"}
-          >
-            Close
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Simplified Snackbar implementation */}
       <Snackbar
         open={notification.open}
-        autoHideDuration={3000}
+        autoHideDuration={6000}
         onClose={hideNotification}
-        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-        sx={{ mb: 2 }}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
       >
         <Alert
           onClose={hideNotification}
           severity={notification.severity}
           variant="filled"
-          sx={{ width: '100%' }}
+          sx={{ width: "100%" }}
         >
           {notification.message}
         </Alert>

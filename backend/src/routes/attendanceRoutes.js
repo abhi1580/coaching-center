@@ -4,7 +4,8 @@ import {
   submitBatchAttendance,
   getStudentAttendance,
   getStudentAttendanceStats,
-  getBatchAttendanceStats
+  getBatchAttendanceStats,
+  updateAttendance
 } from "../controllers/attendanceController.js";
 import { protect, authorize } from "../middleware/auth.js";
 
@@ -22,6 +23,11 @@ router
 router
   .route("/:batchId/:date")
   .get(authorize("admin", "teacher"), getBatchAttendance);
+
+// Update a single attendance record
+router
+  .route("/:id")
+  .patch(authorize("admin", "teacher"), updateAttendance);
 
 // Get attendance history for a student in a batch
 router

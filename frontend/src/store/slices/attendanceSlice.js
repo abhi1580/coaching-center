@@ -34,6 +34,23 @@ export const submitBatchAttendance = createAsyncThunk(
   }
 );
 
+// Update a single attendance record
+export const updateAttendanceRecord = createAsyncThunk(
+  "attendance/updateAttendanceRecord",
+  async ({ id, data }, { rejectWithValue }) => {
+    try {
+      const response = await attendanceService.updateAttendanceRecord(id, data);
+      return { 
+        success: true, 
+        message: response.data.message || "Attendance record updated successfully",
+        data: response.data.data
+      };
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || "Failed to update attendance record");
+    }
+  }
+);
+
 // Get attendance history for a student in a batch
 export const fetchStudentAttendance = createAsyncThunk(
   "attendance/fetchStudentAttendance",
@@ -82,6 +99,7 @@ const initialState = {
   submitting: false,
   error: null,
   success: null,
+  updatedRecord: null,
 };
 
 const attendanceSlice = createSlice({
@@ -94,6 +112,21 @@ const attendanceSlice = createSlice({
     clearError: (state) => {
       state.error = null;
     },
+    clearUpdatedRecord: (state) => {
+      state.updatedRecord = null;
+    },
+    // Update a record in the batchAttendance array
+    updateAttendanceInState: (state, action) => {
+      const { id, status, remarks } = action.payload;
+      const index = state.batchAttendance.findIndex(record => record._id === id);
+      if (index !== -1) {
+        state.batchAttendance[index] = {
+          ...state.batchAttendance[index],
+          status,
+          remarks
+        };
+      }
+    }
   },
   extraReducers: (builder) => {
     builder
@@ -122,6 +155,33 @@ const attendanceSlice = createSlice({
         state.success = action.payload.message;
       })
       .addCase(submitBatchAttendance.rejected, (state, action) => {
+        state.submitting = false;
+        state.error = action.payload || action.error.message;
+      })
+      
+      // Update Attendance Record
+      .addCase(updateAttendanceRecord.pending, (state) => {
+        state.submitting = true;
+        state.error = null;
+        state.success = null;
+        state.updatedRecord = null;
+      })
+      .addCase(updateAttendanceRecord.fulfilled, (state, action) => {
+        state.submitting = false;
+        state.success = action.payload.message;
+        state.updatedRecord = action.payload.data;
+        
+        // Update the record in the batchAttendance array if it exists
+        if (action.payload.data && state.batchAttendance.length > 0) {
+          const index = state.batchAttendance.findIndex(
+            record => record._id === action.payload.data._id
+          );
+          if (index !== -1) {
+            state.batchAttendance[index] = action.payload.data;
+          }
+        }
+      })
+      .addCase(updateAttendanceRecord.rejected, (state, action) => {
         state.submitting = false;
         state.error = action.payload || action.error.message;
       })
@@ -170,5 +230,5 @@ const attendanceSlice = createSlice({
   },
 });
 
-export const { clearSuccess, clearError } = attendanceSlice.actions;
+export const { clearSuccess, clearError, clearUpdatedRecord, updateAttendanceInState } = attendanceSlice.actions;
 export default attendanceSlice.reducer; 

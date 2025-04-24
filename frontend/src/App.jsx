@@ -41,6 +41,7 @@ import { theme } from "./theme";
 import LandingPage from "./pages/common/LandingPage";
 import Announcements from "./pages/admin/Announcements";
 import Payments from "./pages/admin/Payments";
+import AttendanceHistoryPage from './pages/AttendanceHistoryPage';
 
 function App() {
   const dispatch = useDispatch();
@@ -234,6 +235,8 @@ function App() {
             <Route path="profile" element={<TeacherProfile />} />
             <Route path="announcements" element={<Announcements />} />
           </Route>
+
+          <Route path="/classes/:classId/attendance-history" element={<AttendanceHistoryPage />} />
         </Routes>
       </Router>
     </ThemeProvider>
