@@ -4,16 +4,18 @@ import mongoose from "mongoose";
 import Batch from "../models/Batch.js";
 import Announcement from "../models/Announcement.js";
 import asyncHandler from "express-async-handler";
+import { validationResult } from "express-validator";
+import bcrypt from "bcryptjs";
+import Subject from "../models/Subject.js";
 
 // @desc    Get all teachers
 // @route   GET /api/teachers
 // @access  Private (Admin only)
 export const getTeachers = async (req, res) => {
   try {
-    const teachers = await Teacher.find().populate(
-      "batches",
-      "name subject schedule"
-    );
+    const teachers = await Teacher.find()
+      .populate("batches", "name subject schedule")
+      .populate("subjects", "name description");
 
     res.json({
       success: true,
@@ -64,10 +66,14 @@ export const getTeacher = async (req, res) => {
 // @access  Private (Admin only)
 export const createTeacher = async (req, res) => {
   try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
     const {
       name,
       email,
-      password,
       phone,
       address,
       subjects,
@@ -76,49 +82,65 @@ export const createTeacher = async (req, res) => {
       joiningDate,
       salary,
       gender,
-      status,
+      status = "active",
     } = req.body;
 
-    // Validate required fields
-    if (
-      !name ||
-      !email ||
-      !password ||
-      !phone ||
-      !address ||
-      !subjects ||
-      !qualification ||
-      !experience
-    ) {
+    // Check if teacher with this email already exists
+    const teacherExists = await Teacher.findOne({ email });
+    if (teacherExists) {
       return res.status(400).json({
         success: false,
-        message: "Please provide all required fields",
+        message: "Teacher with this email already exists",
       });
     }
 
-    // Check if teacher already exists
-    const existingTeacher = await Teacher.findOne({ email });
-    if (existingTeacher) {
-      return res.status(400).json({
-        success: false,
-        message: "Teacher already exists",
+    // Check if all subject IDs are valid
+    if (subjects && subjects.length > 0) {
+      // Convert string IDs to ObjectId if needed
+      const subjectIds = subjects.map(subjectId => {
+        try {
+          return new mongoose.Types.ObjectId(subjectId);
+        } catch (err) {
+          // If conversion fails, it's an invalid ID
+          throw new Error(`Invalid subject ID: ${subjectId}`);
+        }
       });
+      
+      // Verify all subjects exist in database
+      const subjectCount = await Subject.countDocuments({
+        _id: { $in: subjectIds }
+      });
+      
+      if (subjectCount !== subjects.length) {
+        return res.status(400).json({
+          success: false,
+          message: "One or more subject IDs are invalid",
+        });
+      }
+      
+      // At this point, all subject IDs are valid
     }
 
-    // Create user account first
-    const user = await User.create({
+    // Create user account for the teacher
+    const salt = await bcrypt.genSalt(10);
+    // Generate a random password (default: first 3 chars of email + last 4 digits of phone)
+    const defaultPassword = email.substring(0, 3) + phone.substring(phone.length - 4);
+    const hashedPassword = await bcrypt.hash(defaultPassword, salt);
+
+    const user = new User({
       name,
       email,
-      password,
+      password: hashedPassword,
+      role: "teacher",
       phone,
       address,
-      role: "teacher",
       gender,
     });
 
-    // Create teacher record
-    const teacher = await Teacher.create({
-      user: user._id,
+    const savedUser = await user.save();
+
+    // Create teacher profile linked to the user
+    const teacher = new Teacher({
       name,
       email,
       phone,
@@ -128,18 +150,21 @@ export const createTeacher = async (req, res) => {
       experience,
       joiningDate,
       salary,
+      status,
       gender,
-      status: status || "active",
+      user: savedUser._id,
     });
+
+    const newTeacher = await teacher.save();
 
     res.status(201).json({
       success: true,
-      data: teacher,
+      data: newTeacher,
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: "Error in creating teacher",
+      message: "Error creating teacher",
       error: error.message,
     });
   }
@@ -260,11 +285,26 @@ export const getTeachersBySubject = async (req, res) => {
   try {
     const { subject } = req.params;
 
-    const teachers = await Teacher.find({
-      subjects: { $in: [subject] },
-      status: "Active",
-    }).select("name email subjects");
+    // Convert subject string to ObjectId to ensure proper matching
+    let subjectId;
+    try {
+      subjectId = new mongoose.Types.ObjectId(subject);
+    } catch (err) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid subject ID format",
+      });
+    }
 
+    const teachers = await Teacher.find({
+      subjects: { $in: [subjectId] },
+      status: "active", // Changed to lowercase to match enum in model
+    })
+    .populate("subjects", "name description")  // Populate subject details
+    .select("name email subjects");
+
+    console.log(`Found ${teachers.length} teachers for subject ${subject}`);
+    
     res.json({
       success: true,
       count: teachers.length,

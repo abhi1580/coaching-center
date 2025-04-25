@@ -25,8 +25,8 @@ const teacherSchema = new mongoose.Schema(
     },
     subjects: [
       {
-        type: String,
-        required: true,
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Subject",
       },
     ],
     qualification: {

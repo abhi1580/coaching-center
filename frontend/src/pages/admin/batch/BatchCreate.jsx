@@ -93,9 +93,39 @@ const BatchCreate = () => {
         teacher: "",
       });
     } else if (name === "subject") {
-      const subjectTeachers = teachers.filter((teacher) =>
-        teacher.subjects?.some((s) => (s._id || s) === value)
-      );
+      console.log(`Selected subject ID: ${value}`);
+      console.log(`Available teachers:`, teachers.length);
+      
+      const subjectTeachers = teachers.filter((teacher) => {
+        if (!teacher.subjects || !Array.isArray(teacher.subjects)) {
+          console.log(`Teacher ${teacher.name} has no subjects array`);
+          return false;
+        }
+        
+        // Log the teacher's subjects for debugging
+        console.log(`Teacher ${teacher.name} subjects:`, 
+          JSON.stringify(teacher.subjects.map(s => typeof s === 'object' ? s._id : s)));
+        
+        return teacher.subjects.some((s) => {
+          // Handle object format (populated subjects)
+          if (typeof s === 'object' && s !== null && s._id) {
+            return s._id === value;
+          }
+          // Handle string format (just ID references)
+          if (typeof s === 'string') {
+            return s === value;
+          }
+          return false;
+        });
+      });
+      
+      console.log(`Filtered ${subjectTeachers.length} teachers for subject ${value}`);
+      
+      if (subjectTeachers.length === 0) {
+        console.log(`No teachers found for subject ID ${value}. All teachers:`, 
+          teachers.map(t => ({ name: t.name, subjects: t.subjects })));
+      }
+      
       setFilteredTeachers(subjectTeachers);
       setFormData({
         ...formData,
