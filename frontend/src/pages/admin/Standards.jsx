@@ -5,6 +5,9 @@ import {
   MenuBook as MenuBookIcon,
   School as SchoolIcon,
   Visibility as VisibilityIcon,
+  Warning as WarningIcon,
+  ErrorOutline as ErrorOutlineIcon,
+  Cancel as CancelIcon,
 } from "@mui/icons-material";
 import {
   Alert,
@@ -78,6 +81,9 @@ const Standards = () => {
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [selectedStandard, setSelectedStandard] = useState(null);
   const [editingStandard, setEditingStandard] = useState(null);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [standardIdToDelete, setStandardIdToDelete] = useState(null);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const isTablet = useMediaQuery(theme.breakpoints.down("md"));
@@ -259,9 +265,19 @@ const Standards = () => {
   };
 
   const handleDelete = (id) => {
-    if (window.confirm("Are you sure you want to delete this standard?")) {
-      dispatch(deleteStandard(id));
-    }
+    setStandardIdToDelete(id);
+    setConfirmDelete(true);
+  };
+
+  const handleConfirmDelete = () => {
+    setDeleting(true);
+    dispatch(deleteStandard(standardIdToDelete))
+      .unwrap()
+      .finally(() => {
+        setDeleting(false);
+        setConfirmDelete(false);
+        setStandardIdToDelete(null);
+      });
   };
 
   // Add loadAllData function for refresh button
@@ -428,7 +444,7 @@ const Standards = () => {
                 color="success.main"
                 sx={{ fontWeight: 600 }}
               >
-                {standardsArray.filter((std) => std.isActive).length}
+                {standardsArray.filter((std) => std && std.isActive).length}
               </Typography>
             </CardContent>
           </Card>
@@ -490,7 +506,7 @@ const Standards = () => {
                 color="text.secondary"
                 sx={{ fontWeight: 600 }}
               >
-                {standardsArray.filter((std) => !std.isActive).length}
+                {standardsArray.filter((std) => std && !std.isActive).length}
               </Typography>
             </CardContent>
           </Card>
@@ -629,7 +645,7 @@ const Standards = () => {
                             return subject ? (
                               <Chip
                                 key={subject._id}
-                                label={subject.name}
+                                label={subject && subject.name ? subject.name : "Unnamed Subject"}
                                 size="small"
                                 color="primary"
                                 variant="outlined"
@@ -764,7 +780,7 @@ const Standards = () => {
                               return subject ? (
                                 <Chip
                                   key={subject._id}
-                                  label={subject.name}
+                                  label={subject && subject.name ? subject.name : "Unnamed Subject"}
                                   size="small"
                                   color="primary"
                                   variant="outlined"
@@ -1102,7 +1118,7 @@ const Standards = () => {
                             return (
                               <Chip
                                 key={subject._id}
-                                label={subject.name || "Unnamed Subject"}
+                                label={subject && subject.name ? subject.name : "Unnamed Subject"}
                                 icon={<MenuBookIcon />}
                                 color="primary"
                                 variant="outlined"
@@ -1180,19 +1196,19 @@ const Standards = () => {
                                           variant="body2"
                                           fontWeight={500}
                                         >
-                                          {subject.name || "Unnamed Subject"}
+                                          {subject && subject.name ? subject.name : "Unnamed Subject"}
                                         </Typography>
                                       </Box>
                                     </TableCell>
                                     <TableCell>
-                                      {subject.duration || "N/A"}
+                                      {subject && subject.duration ? subject.duration : "N/A"}
                                     </TableCell>
                                     <TableCell>
                                       <Chip
-                                        label={subject.status || "unknown"}
+                                        label={subject && subject.status ? subject.status : "unknown"}
                                         size="small"
                                         color={
-                                          subject.status === "active"
+                                          subject && subject.status === "active"
                                             ? "success"
                                             : "default"
                                         }
@@ -1209,8 +1225,9 @@ const Standards = () => {
                                           textOverflow: "ellipsis",
                                         }}
                                       >
-                                        {subject.description ||
-                                          "No description"}
+                                        {subject && subject.description
+                                          ? subject.description
+                                          : "No description"}
                                       </Typography>
                                     </TableCell>
                                   </TableRow>
@@ -1267,14 +1284,8 @@ const Standards = () => {
                 color="error"
                 variant="outlined"
                 onClick={() => {
-                  if (
-                    window.confirm(
-                      "Are you sure you want to delete this standard?"
-                    )
-                  ) {
-                    handleCloseViewDialog();
-                    handleDelete(selectedStandard._id);
-                  }
+                  handleCloseViewDialog();
+                  handleDelete(selectedStandard._id);
                 }}
                 startIcon={<DeleteIcon />}
                 sx={{ borderRadius: 1.5 }}
@@ -1585,6 +1596,98 @@ const Standards = () => {
             </Button>
           </DialogActions>
         </form>
+      </Dialog>
+
+      {/* Confirm Delete Dialog */}
+      <Dialog
+        open={confirmDelete}
+        onClose={() => setConfirmDelete(false)}
+        PaperProps={{
+          sx: {
+            borderRadius: 2,
+            overflow: "hidden",
+            boxShadow: 10,
+            maxHeight: "90vh",
+            display: "flex",
+            flexDirection: "column"
+          },
+        }}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle
+          sx={{
+            bgcolor: theme.palette.error.main,
+            color: "white",
+            p: 2,
+          }}
+        >
+          <Box sx={{ display: "flex", alignItems: "center" }}>
+            <WarningIcon sx={{ mr: 1 }} />
+            <Typography variant="h6" fontWeight={600}>
+              Confirm Delete
+            </Typography>
+          </Box>
+        </DialogTitle>
+        <DialogContent sx={{ pt: 3, pb: 1, overflowY: "auto", flexGrow: 1 }}>
+          <Box sx={{ textAlign: "center", py: 2 }}>
+            <ErrorOutlineIcon
+              color="error"
+              sx={{ fontSize: 60, mb: 2, opacity: 0.8 }}
+            />
+            <Typography variant="subtitle1" fontWeight={500} gutterBottom>
+              Are you sure you want to delete this standard?
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              This action cannot be undone. All related data will be permanently
+              removed, including:
+              <ul style={{ textAlign: 'left', marginTop: '10px' }}>
+                <li>Classes assigned to this standard</li>
+                <li>Student enrollments in this standard</li>
+                <li>Standard-specific curriculum materials</li>
+              </ul>
+            </Typography>
+          </Box>
+        </DialogContent>
+        <DialogActions
+          sx={{
+            px: 3,
+            py: 2,
+            bgcolor: alpha(theme.palette.background.paper, 0.9),
+            position: "sticky",
+            bottom: 0,
+            borderTop: "1px solid",
+            borderColor: "divider"
+          }}
+        >
+          <Button
+            variant="outlined"
+            onClick={() => setConfirmDelete(false)}
+            sx={{
+              borderRadius: 1.5,
+              mr: 1,
+            }}
+            startIcon={<CancelIcon />}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            color="error"
+            onClick={handleConfirmDelete}
+            disabled={deleting}
+            startIcon={
+              deleting ? (
+                <CircularProgress size={20} color="inherit" />
+              ) : (
+                <DeleteIcon />
+              )
+            }
+            sx={{ borderRadius: 1.5 }}
+          >
+            {deleting ? "Deleting..." : "Delete Standard"}
+          </Button>
+        </DialogActions>
       </Dialog>
     </Box>
   );
