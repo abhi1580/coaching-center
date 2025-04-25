@@ -23,6 +23,7 @@ import {
 } from "./pages/admin/batch";
 import AboutUs from "./pages/common/AboutUs";
 import ContactUs from "./pages/common/ContactUs";
+import NotFound from "./pages/common/NotFound";
 import {
   TeacherBatchDetail,
   TeacherBatches,
@@ -233,6 +234,14 @@ function App() {
           </Route>
 
           <Route path="/classes/:classId/attendance-history" element={<AttendanceHistoryPage />} />
+          
+          {/* Catch-all route for 404 Not Found */}
+          <Route path="*" element={
+            <>
+              <MainHeader />
+              <NotFound />
+            </>
+          } />
         </Routes>
       </Router>
     </ThemeProvider>

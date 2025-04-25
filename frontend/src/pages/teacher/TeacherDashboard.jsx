@@ -46,7 +46,7 @@ function TeacherDashboard() {
 
         // Make API request to fetch teacher-specific data
         const response = await axios.get(
-          `${import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL + '/teachers/dashboard' : 'http://localhost:5000/api/teachers/dashboard'}`,
+          `${import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL + '/teacher/dashboard' : 'http://localhost:5000/api/teacher/dashboard'}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         

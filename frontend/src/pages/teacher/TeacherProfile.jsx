@@ -65,6 +65,11 @@ function TeacherProfile() {
   const [passwordChangeLoading, setPasswordChangeLoading] = useState(false);
   const [includePasswordChange, setIncludePasswordChange] = useState(false);
 
+  // Add new validation function for profile fields
+  const [profileErrors, setProfileErrors] = useState({});
+
+  const [subjects, setSubjects] = useState([]);
+
   useEffect(() => {
     const fetchTeacherProfile = async () => {
       try {
@@ -79,11 +84,58 @@ function TeacherProfile() {
         // Fetch the authenticated teacher's profile
         const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
         const response = await axios.get(
-          `${baseUrl}/teachers/me`,
+          `${baseUrl}/teacher/profile`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         
         const profileData = response.data.data || response.data;
+        
+        // Check if we need to fetch subject names (we have IDs but no names)
+        const hasSubjectIds = profileData.subjects && Array.isArray(profileData.subjects) && 
+                             profileData.subjects.some(subject => 
+                               typeof subject === 'string' || 
+                               (typeof subject === 'object' && !subject.name));
+        
+        if (hasSubjectIds) {
+          try {
+            // Fetch all subjects to get their names
+            const subjectsResponse = await axios.get(
+              `${baseUrl}/subjects`,
+              { headers: { Authorization: `Bearer ${token}` } }
+            );
+            
+            const allSubjects = subjectsResponse.data.data || [];
+            setSubjects(allSubjects);
+            
+            // Replace IDs with full subject objects
+            if (profileData.subjects) {
+              profileData.subjects = profileData.subjects.map(subject => {
+                if (typeof subject === 'string') {
+                  const foundSubject = allSubjects.find(s => s._id === subject);
+                  return foundSubject || { _id: subject, name: `Unknown (ID: ${subject.substring(0, 6)}...)` };
+                } else if (typeof subject === 'object' && !subject.name && subject._id) {
+                  const foundSubject = allSubjects.find(s => s._id === subject._id);
+                  return foundSubject || { ...subject, name: `Unknown (ID: ${subject._id.substring(0, 6)}...)` };
+                }
+                return subject;
+              });
+            }
+          } catch (error) {
+            console.error("Error fetching subjects:", error);
+            // Continue with placeholder names if we can't fetch subjects
+            if (profileData.subjects) {
+              profileData.subjects = profileData.subjects.map(subject => {
+                if (typeof subject === 'string') {
+                  return { _id: subject, name: `Subject (ID: ${subject.substring(0, 6)}...)` };
+                } else if (typeof subject === 'object' && !subject.name) {
+                  return { ...subject, name: `Subject (ID: ${subject._id?.substring(0, 6) || 'Unknown'}...)` };
+                }
+                return subject;
+              });
+            }
+          }
+        }
+        
         setProfile(profileData);
         setEditableProfile({ ...profileData });
         setError(null);
@@ -129,6 +181,11 @@ function TeacherProfile() {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setEditableProfile({ ...editableProfile, [name]: value });
+    
+    // Clear errors when typing
+    if (profileErrors[name]) {
+      setProfileErrors(prev => ({ ...prev, [name]: "" }));
+    }
   };
 
   const handlePasswordChange = (e) => {
@@ -170,9 +227,53 @@ function TeacherProfile() {
     return Object.keys(errors).length === 0;
   };
 
+  // Add new validation function for profile fields
+  const validateProfileForm = () => {
+    const errors = {};
+    const phoneRegex = /^[0-9]{10}$/;
+    
+    if (!editableProfile.name || editableProfile.name.trim() === '') {
+      errors.name = "Name is required";
+    } else if (editableProfile.name.length > 100) {
+      errors.name = "Name must be less than 100 characters";
+    }
+    
+    if (!editableProfile.phone || editableProfile.phone.trim() === '') {
+      errors.phone = "Phone number is required";
+    } else if (!phoneRegex.test(editableProfile.phone.replace(/\s+/g, ''))) {
+      errors.phone = "Phone number must be exactly 10 digits";
+    }
+    
+    if (editableProfile.address && editableProfile.address.length > 200) {
+      errors.address = "Address must be less than 200 characters";
+    }
+    
+    if (!editableProfile.qualification || editableProfile.qualification.trim() === '') {
+      errors.qualification = "Qualification is required";
+    }
+    
+    if (!editableProfile.experience || editableProfile.experience.trim() === '') {
+      errors.experience = "Experience is required";
+    }
+    
+    // Set profile validation errors in state
+    setProfileErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleSave = async () => {
     try {
-      // First validate password if password change is included
+      // First validate profile fields
+      if (!validateProfileForm()) {
+        setSnackbar({
+          open: true,
+          message: "Please fix the errors in the form before saving",
+          severity: "error",
+        });
+        return;
+      }
+      
+      // Then validate password if password change is included
       if (includePasswordChange && !validatePasswordForm()) {
         return;
       }
@@ -183,7 +284,7 @@ function TeacherProfile() {
       // Make API request to update teacher profile
       const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
       const response = await axios.put(
-        `${baseUrl}/teachers/me`,
+        `${baseUrl}/teacher/profile`,
         editableProfile,
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -409,6 +510,8 @@ function TeacherProfile() {
                   variant="outlined"
                   required
                   size={isMobile ? "small" : "medium"}
+                  error={!!profileErrors.name}
+                  helperText={profileErrors.name}
                 />
               </Grid>
               <Grid item xs={12} sm={6}>
@@ -437,6 +540,8 @@ function TeacherProfile() {
                   variant="outlined"
                   required
                   size={isMobile ? "small" : "medium"}
+                  error={!!profileErrors.phone}
+                  helperText={profileErrors.phone}
                 />
               </Grid>
               <Grid item xs={12} sm={6}>
@@ -450,6 +555,8 @@ function TeacherProfile() {
                   variant="outlined"
                   required
                   size={isMobile ? "small" : "medium"}
+                  error={!!profileErrors.address}
+                  helperText={profileErrors.address}
                 />
               </Grid>
               <Grid item xs={12} sm={6}>
@@ -463,6 +570,8 @@ function TeacherProfile() {
                   variant="outlined"
                   required
                   size={isMobile ? "small" : "medium"}
+                  error={!!profileErrors.qualification}
+                  helperText={profileErrors.qualification}
                 />
               </Grid>
               <Grid item xs={12} sm={6}>
@@ -476,6 +585,8 @@ function TeacherProfile() {
                   variant="outlined"
                   required
                   size={isMobile ? "small" : "medium"}
+                  error={!!profileErrors.experience}
+                  helperText={profileErrors.experience}
                 />
               </Grid>
               
@@ -684,25 +795,40 @@ function TeacherProfile() {
                   </Box>
                   <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                     {profile?.subjectDetails && Array.isArray(profile.subjectDetails) && profile.subjectDetails.length > 0 ? (
+                      // First priority: use subjectDetails if available
                       profile.subjectDetails.map((subject, index) => (
                         <Chip 
                           key={index} 
-                          label={subject.name} 
+                          label={subject.name || 'Unknown Subject'} 
                           color="primary" 
                           variant="outlined"
                           size="small"
                         />
                       ))
                     ) : profile?.subjects && Array.isArray(profile.subjects) ? (
-                      profile.subjects.map((subject, index) => (
-                        <Chip 
-                          key={index} 
-                          label={typeof subject === 'object' && subject.name ? subject.name : subject} 
-                          color="primary" 
-                          variant="outlined"
-                          size="small"
-                        />
-                      ))
+                      // Second priority: use subjects array with robust rendering logic
+                      profile.subjects.map((subject, index) => {
+                        // Handle all possible data formats
+                        let subjectName = 'Unknown Subject';
+                        
+                        if (typeof subject === 'string') {
+                          // If subject is just a string ID, show placeholder name
+                          subjectName = `Subject ${subject.substring(0, 5)}...`;
+                        } else if (typeof subject === 'object') {
+                          // If subject is an object, try to get the name property
+                          subjectName = subject.name || (subject._id ? `Subject ${subject._id.substring(0, 5)}...` : 'Unknown Subject');
+                        }
+                        
+                        return (
+                          <Chip 
+                            key={index} 
+                            label={subjectName} 
+                            color="primary" 
+                            variant="outlined"
+                            size="small"
+                          />
+                        );
+                      })
                     ) : (
                       <Typography variant="body1" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>
                         No subjects assigned

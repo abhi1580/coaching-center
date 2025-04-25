@@ -68,9 +68,21 @@ export const getTeacherBatches = asyncHandler(async (req, res) => {
     throw new ApiError("Teacher profile not found", 404);
   }
 
-  const batches = await Batch.find({ _id: { $in: teacher.batches } })
+  // Changed query pattern to match dashboard and added enrolledStudents population
+  const batches = await Batch.find({ teacher: teacher._id })
     .populate("standard", "name")
-    .populate("subject", "name");
+    .populate("subject", "name")
+    .populate({
+      path: "enrolledStudents",
+      select: "name email phone"
+    });
+
+  console.log(`Fetched ${batches.length} batches with populated students`);
+  
+  // Debug the content of enrolledStudents for each batch
+  batches.forEach((batch, index) => {
+    console.log(`Batch ${index + 1} (${batch.name}): ${batch.enrolledStudents ? batch.enrolledStudents.length : 0} students`);
+  });
 
   sendSuccess(res, 200, "Teacher batches retrieved successfully", batches);
 });
@@ -116,20 +128,83 @@ export const getTeacherStudents = asyncHandler(async (req, res) => {
     throw new ApiError("Teacher profile not found", 404);
   }
 
-  // Get all batches of this teacher
-  const batches = await Batch.find({ _id: { $in: teacher.batches } });
+  // Get all batches of this teacher with populated student data and subjects/standards
+  const batches = await Batch.find({ teacher: teacher._id })
+    .populate("standard", "name")
+    .populate("subject", "name")
+    .populate({
+      path: "enrolledStudents",
+      select: "name email phone parentPhone standard batches"
+    });
   
-  // Extract all student IDs from all batches
-  const studentIds = batches.reduce((acc, batch) => {
-    return [...acc, ...batch.enrolledStudents];
-  }, []);
+  console.log(`Fetched ${batches.length} batches for teacher`);
+  
+  // Create an array to store all students with batch info
+  const studentsWithBatchInfo = [];
+  
+  // Process students from all batches
+  batches.forEach(batch => {
+    if (batch.enrolledStudents && batch.enrolledStudents.length > 0) {
+      console.log(`Processing ${batch.enrolledStudents.length} students in batch ${batch.name}`);
+      
+      // Create a proper batch info object with all needed details
+      const batchInfo = {
+        id: batch._id.toString(),
+        name: batch.name || "Unnamed Batch",
+        subject: batch.subject?.name || "Not specified",
+        standard: batch.standard?.name || "Not specified",
+      };
+      
+      batch.enrolledStudents.forEach(student => {
+        if (!student) return;
+        
+        // Get the student object ready for conversion
+        const studentObj = student.toObject ? student.toObject() : { ...student };
+        
+        // Check if student already exists in our results array
+        const existingIndex = studentsWithBatchInfo.findIndex(
+          s => s._id.toString() === studentObj._id.toString()
+        );
+        
+        if (existingIndex === -1) {
+          // First time seeing this student - add with first batch
+          studentsWithBatchInfo.push({
+            ...studentObj,
+            batchInfo: batchInfo,  // Include the single batch info
+            batches: [batchInfo]   // Also include in batches array for consistency
+          });
+        } else {
+          // Student already exists - add this batch to their batches array
+          const existingStudent = studentsWithBatchInfo[existingIndex];
+          
+          // Ensure batches array exists
+          if (!existingStudent.batches) {
+            existingStudent.batches = [existingStudent.batchInfo || batchInfo];
+          }
+          
+          // Add current batch if not already in the array
+          const alreadyHasBatch = existingStudent.batches.some(
+            b => b.id === batchInfo.id
+          );
+          
+          if (!alreadyHasBatch) {
+            existingStudent.batches.push(batchInfo);
+          }
+          
+          // Update the student in our array
+          studentsWithBatchInfo[existingIndex] = existingStudent;
+        }
+      });
+    }
+  });
+  
+  console.log(`Processed ${studentsWithBatchInfo.length} unique students`);
+  
+  // Debug the first student's data structure if available
+  if (studentsWithBatchInfo.length > 0) {
+    const firstStudent = studentsWithBatchInfo[0];
+    console.log(`First student ${firstStudent.name} has ${firstStudent.batches ? firstStudent.batches.length : 0} batches`);
+  }
 
-  // Remove duplicates
-  const uniqueStudentIds = [...new Set(studentIds)];
-
-  // Get all students
-  const students = await Student.find({ _id: { $in: uniqueStudentIds } })
-    .select("name email phone parentPhone standard batches");
-
-  sendSuccess(res, 200, "Teacher's students retrieved successfully", students);
+  sendSuccess(res, 200, "Teacher's students retrieved successfully", studentsWithBatchInfo);
 }); 

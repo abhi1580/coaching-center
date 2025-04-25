@@ -59,14 +59,77 @@ function TeacherStudents() {
           return;
         }
 
-        // First get all batches for the teacher
-        const batchesResponse = await axios.get(
-          `${
-            import.meta.env.VITE_API_URL
-              ? import.meta.env.VITE_API_URL + "/teachers/batches"
-              : "http://localhost:5000/api/teachers/batches"
-          }`,
-          { headers: { Authorization: `Bearer ${token}` } }
+        // First try the dedicated students endpoint
+        try {
+          const studentsUrl = import.meta.env.VITE_API_URL
+              ? import.meta.env.VITE_API_URL + "/teacher/students"
+              : "http://localhost:5000/api/teacher/students";
+              
+          const studentsResponse = await axios.get(
+            studentsUrl, 
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+          
+          console.log("Direct students API response:", studentsResponse);
+          const studentsData = studentsResponse.data?.data || studentsResponse.data || [];
+          
+          if (Array.isArray(studentsData) && studentsData.length > 0) {
+            console.log(`Received ${studentsData.length} students directly from students endpoint`);
+            
+            // Make sure each student has the correct batch info structure
+            const processedStudents = studentsData.map(student => {
+              // Log the student structure to debug
+              console.log("Student data:", student);
+              
+              // Check if student already has proper batches array
+              if (student.batches && Array.isArray(student.batches)) {
+                console.log(`Student ${student.name} has ${student.batches.length} batches`);
+                return student;
+              }
+              
+              // If student has batchInfo but no batches array, create it
+              if (student.batchInfo && !student.batches) {
+                console.log(`Converting batchInfo to batches array for ${student.name}`);
+                return {
+                  ...student,
+                  batches: [student.batchInfo]
+                };
+              }
+              
+              // Fallback case - if neither structure exists
+              return student;
+            });
+            
+            setStudents(processedStudents);
+            setFilteredStudents(processedStudents);
+            setLoading(false);
+            return; // Exit early if we got students directly
+          } else {
+            console.log("No students returned from direct endpoint, falling back to processing from batches");
+          }
+        } catch (err) {
+          console.log("Error fetching from students endpoint, falling back to processing from batches:", err);
+        }
+
+        // Fall back to getting students from batches if direct endpoint fails
+        const url = import.meta.env.VITE_API_URL
+            ? import.meta.env.VITE_API_URL + "/teacher/batches"
+            : "http://localhost:5000/api/teacher/batches";
+        const batchesResponse = await axios.get(url, { headers: { Authorization: `Bearer ${token}` } });
+
+        // Debug what we're getting from the API
+        console.log("API batches response:", batchesResponse);
+        console.log("Raw batches data:", batchesResponse.data.data || batchesResponse.data || []);
+        console.log("Students in batches:", 
+          (batchesResponse.data.data || batchesResponse.data || []).map(
+            batch => ({ 
+              name: batch.name, 
+              studentsCount: batch.enrolledStudents ? batch.enrolledStudents.length : 0,
+              firstStudent: batch.enrolledStudents && batch.enrolledStudents.length > 0 
+                ? batch.enrolledStudents[0] 
+                : 'No students'
+            })
+          )
         );
 
         // Safely get batches data from response, ensuring it's an array
@@ -102,26 +165,30 @@ function TeacherStudents() {
               }
 
               // Add batch info to student
+              const batchInfo = {
+                id: batch._id || "unknown",
+                name: batch.name || "Unnamed Batch",
+                subject: batch.subject?.name || "Not specified",
+                standard: batch.standard?.name || "Not specified",
+              };
+              
               const studentWithBatch = {
                 ...student,
-                batchInfo: {
-                  id: batch._id || "unknown",
-                  name: batch.name || "Unnamed Batch",
-                  subject: batch.subject?.name || "Not specified",
-                  standard: batch.standard?.name || "Not specified",
-                },
+                batchInfo
               };
 
               if (!uniqueStudentsMap.has(student._id)) {
+                // First time seeing this student, add with first batch
+                studentWithBatch.batches = [batchInfo];
                 uniqueStudentsMap.set(student._id, studentWithBatch);
               } else {
-                // If student already exists, add this batch to their batches array
+                // Add this batch to existing student's batches array
                 const existingStudent = uniqueStudentsMap.get(student._id);
                 if (!existingStudent.batches) {
-                  existingStudent.batches = [existingStudent.batchInfo];
+                  existingStudent.batches = [batchInfo];
+                } else {
+                  existingStudent.batches.push(batchInfo);
                 }
-
-                existingStudent.batches.push(studentWithBatch.batchInfo);
                 uniqueStudentsMap.set(student._id, existingStudent);
               }
             });
@@ -133,6 +200,7 @@ function TeacherStudents() {
         // Convert map to array
         const uniqueStudents = Array.from(uniqueStudentsMap.values());
         console.log(`Processed ${uniqueStudents.length} unique students`);
+        console.log("First student with batches:", uniqueStudents.length > 0 ? uniqueStudents[0] : "No students");
         
         setStudents(uniqueStudents);
         setFilteredStudents(uniqueStudents);
@@ -267,25 +335,27 @@ function TeacherStudents() {
                   ENROLLED IN
                 </Typography>
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                  {student.batches ? (
+                  {student.batches && student.batches.length > 0 ? (
                     student.batches.map((batch, index) => (
                       <Chip
                         key={index}
-                        label={`${batch.name} (${batch.subject})`}
+                        label={`${batch.name || 'Unnamed'} (${batch.subject || 'Unknown'})`}
                         size="small"
                         color="primary"
                         variant="outlined"
                         sx={{ mb: 0.5, maxWidth: '100%', overflow: 'hidden' }}
                       />
                     ))
-                  ) : (
+                  ) : student.batchInfo ? (
                     <Chip
-                      label={`${student.batchInfo.name} (${student.batchInfo.subject})`}
+                      label={`${student.batchInfo.name || 'Unnamed'} (${student.batchInfo.subject || 'Unknown'})`}
                       size="small"
                       color="primary"
                       variant="outlined"
                       sx={{ maxWidth: '100%', overflow: 'hidden' }}
                     />
+                  ) : (
+                    <Typography variant="body2" color="text.secondary">No batch information</Typography>
                   )}
                 </Box>
               </Grid>
@@ -515,21 +585,23 @@ function TeacherStudents() {
                               student.batches.map((batch, index) => (
                                 <Chip
                                   key={index}
-                                  label={`${batch.name} (${batch.subject})`}
+                                  label={`${batch.name || 'Unnamed'} (${batch.subject || 'Unknown'})`}
                                   size="small"
                                   color="primary"
                                   variant="outlined"
                                   sx={{ mb: 0.5, maxWidth: '100%', overflow: 'hidden' }}
                                 />
                               ))
-                            ) : (
+                            ) : student.batchInfo ? (
                               <Chip
-                                label={`${student.batchInfo.name} (${student.batchInfo.subject})`}
+                                label={`${student.batchInfo.name || 'Unnamed'} (${student.batchInfo.subject || 'Unknown'})`}
                                 size="small"
                                 color="primary"
                                 variant="outlined"
                                 sx={{ maxWidth: '100%', overflow: 'hidden' }}
                               />
+                            ) : (
+                              <Typography variant="body2" color="text.secondary">No batch info</Typography>
                             )}
                           </Box>
                         </TableCell>

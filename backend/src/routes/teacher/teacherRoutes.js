@@ -7,12 +7,16 @@ import {
   getTeacherBatchDetails,
   getTeacherStudents
 } from "../../controllers/teacher/teacherController.js";
+import { getTeacherDashboard } from "../../controllers/teacherController.js";
 
 const router = express.Router();
 
 // Apply protection middleware to all routes - only teachers can access
 router.use(protect);
 router.use(authorize("teacher"));
+
+// Teacher dashboard route
+router.get("/dashboard", getTeacherDashboard);
 
 // Teacher profile routes
 router.route("/profile")
