@@ -1039,6 +1039,9 @@ const Subjects = () => {
           sx: {
             borderRadius: 2,
             overflow: "hidden",
+            maxHeight: "90vh",
+            display: "flex",
+            flexDirection: "column"
           },
         }}
       >
@@ -1074,8 +1077,8 @@ const Subjects = () => {
             <CloseIcon />
           </IconButton>
         </DialogTitle>
-        <form onSubmit={formik.handleSubmit}>
-          <DialogContent dividers sx={{ p: 3 }}>
+        <form onSubmit={formik.handleSubmit} style={{ display: "flex", flexDirection: "column", flexGrow: 1, overflow: "hidden" }}>
+          <DialogContent dividers sx={{ p: 3, overflowY: "auto", flexGrow: 1 }}>
             <Box sx={{ mb: 3 }}>
               <Typography
                 variant="body2"
@@ -1224,6 +1227,10 @@ const Subjects = () => {
               px: 3,
               py: 2,
               bgcolor: alpha(theme.palette.primary.light, 0.05),
+              position: "sticky",
+              bottom: 0,
+              borderTop: "1px solid",
+              borderColor: "divider"
             }}
           >
             <Button
@@ -1273,6 +1280,9 @@ const Subjects = () => {
             borderRadius: 2,
             overflow: "hidden",
             boxShadow: 10,
+            maxHeight: "90vh",
+            display: "flex",
+            flexDirection: "column"
           },
         }}
         maxWidth="xs"
@@ -1292,7 +1302,7 @@ const Subjects = () => {
             </Typography>
           </Box>
         </DialogTitle>
-        <DialogContent sx={{ pt: 3, pb: 1 }}>
+        <DialogContent sx={{ pt: 3, pb: 1, overflowY: "auto", flexGrow: 1 }}>
           <Box sx={{ textAlign: "center", py: 2 }}>
             <ErrorOutlineIcon
               color="error"
