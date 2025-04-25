@@ -1,27 +1,13 @@
 import express from "express";
-import mongoose from "mongoose";
 import cors from "cors";
 import dotenv from "dotenv";
 import connectDB from "./config/db.js";
-import fs from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
-
-// Import route files with standardized naming convention
-import authRoutes from "./routes/authRoutes.js";
-import studentRoutes from "./routes/studentRoutes.js";
-import batchRoutes from "./routes/batchRoutes.js";
-import subjectRoutes from "./routes/subjectRoutes.js";
-import standardRoutes from "./routes/standardRoutes.js";
-import userRoutes from "./routes/userRoutes.js";
-import paymentRoutes from "./routes/paymentRoutes.js";
-import announcementRoutes from "./routes/announcementRoutes.js";
-import teacherRoutes from "./routes/teacherRoutes.js";
-import dashboardRoutes from "./routes/dashboardRoutes.js";
-import attendanceRoutes from "./routes/attendanceRoutes.js";
-
 import cron from "node-cron";
 import { checkAndExpireAnnouncements } from "./utils/announcementExpiry.js";
+import { notFound, errorHandler } from "./middleware/errorMiddleware.js";
+
+// Import all routes from consolidated index
+import routes from "./routes/index.js";
 
 // Load environment variables
 dotenv.config();
@@ -32,7 +18,6 @@ const app = express();
 connectDB();
 
 // Middleware
-
 app.use(
   cors({
     origin: process.env.CLIENT_BASE_URL,
@@ -52,6 +37,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // Request logging middleware
 app.use((req, res, next) => {
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.originalUrl}`);
   next();
 });
 
@@ -60,37 +46,24 @@ cron.schedule("* * * * *", () => {
   checkAndExpireAnnouncements();
 });
 
-// Routes
-app.use("/api/auth", authRoutes);
-app.use("/api/students", studentRoutes);
-app.use("/api/batches", batchRoutes);
-app.use("/api/payments", paymentRoutes);
-app.use("/api/announcements", announcementRoutes);
-app.use("/api/teachers", teacherRoutes);
-app.use("/api/subjects", subjectRoutes);
-app.use("/api/standards", standardRoutes);
-app.use("/api/dashboard", dashboardRoutes);
-app.use("/api/attendance", attendanceRoutes);
+// Mount all routes from the consolidated index
+app.use("/api", routes);
 
-// 404 handler
-app.use((req, res) => {
-  res.status(404).json({
-    success: false,
-    message: "Route not found",
-  });
-});
+// 404 handler for undefined routes
+app.use(notFound);
 
-// Error handling middleware
-app.use((err, req, res, next) => {
-  res.status(500).json({
-    success: false,
-    message: "Something went wrong!",
-    error: err.message,
-  });
-});
+// Global error handler
+app.use(errorHandler);
 
 // Start server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
+});
+
+// Handle unhandled promise rejections
+process.on("unhandledRejection", (err) => {
+  console.error("UNHANDLED REJECTION! Shutting down...");
+  console.error(err.name, err.message);
+  process.exit(1);
 });

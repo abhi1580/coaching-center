@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Box, Container, Typography, Paper, Breadcrumbs, Link } from '@mui/material';
 import { useParams, Link as RouterLink } from 'react-router-dom';
 import { Home as HomeIcon, Class as ClassIcon } from '@mui/icons-material';
-import AttendanceHistory from '../components/attendance/AttendanceHistory';
+import AttendanceHistory from '../../components/attendance/AttendanceHistory';
 
 const AttendanceHistoryPage = () => {
   const { classId } = useParams();

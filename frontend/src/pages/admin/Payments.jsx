@@ -35,7 +35,7 @@ import {
   studentService,
   batchService,
 } from "../../services/api";
-import RefreshButton from "../../components/RefreshButton";
+import RefreshButton from "../../components/common/RefreshButton";
 
 const validationSchema = Yup.object({
   studentId: Yup.string().required("Student is required"),

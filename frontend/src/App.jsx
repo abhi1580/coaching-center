@@ -37,11 +37,10 @@ import { initializeAuth } from "./store/slices/authSlice";
 import { theme } from "./theme";
 
 // Pages
-// import Home from "./pages/Home";
 import LandingPage from "./pages/common/LandingPage";
 import Announcements from "./pages/admin/Announcements";
 import Payments from "./pages/admin/Payments";
-import AttendanceHistoryPage from './pages/AttendanceHistoryPage';
+import AttendanceHistoryPage from './pages/common/AttendanceHistoryPage';
 
 function App() {
   const dispatch = useDispatch();
@@ -212,9 +211,6 @@ function App() {
                 </ProtectedRoute>
               }
             />
-
-            {/* Common routes */}
-            {/* <Route path="home" element={<Home />} /> */}
           </Route>
 
           {/* New Teacher Layout and Routes - No MainHeader here */}

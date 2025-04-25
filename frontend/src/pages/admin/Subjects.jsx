@@ -69,7 +69,7 @@ import {
   deleteSubject,
   resetStatus,
 } from "../../store/slices/subjectSlice";
-import RefreshButton from "../../components/RefreshButton";
+import RefreshButton from "../../components/common/RefreshButton";
 import { alpha } from "@mui/material/styles";
 import { Formik, Field } from "formik";
 

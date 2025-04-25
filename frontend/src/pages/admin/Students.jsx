@@ -73,7 +73,7 @@ import { fetchStandards } from "../../store/slices/standardSlice";
 import { fetchSubjects } from "../../store/slices/subjectSlice";
 import { fetchBatches } from "../../store/slices/batchSlice";
 import { dashboardService } from "../../services/api";
-import RefreshButton from "../../components/RefreshButton";
+import RefreshButton from "../../components/common/RefreshButton";
 import { alpha } from "@mui/material/styles";
 
 const validationSchema = Yup.object({

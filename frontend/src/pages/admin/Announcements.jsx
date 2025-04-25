@@ -55,7 +55,7 @@ import {
   formatDateForInput,
   getStatusColor,
 } from "../../store/slices/announcementSlice";
-import RefreshButton from "../../components/RefreshButton";
+import RefreshButton from "../../components/common/RefreshButton";
 import { alpha } from "@mui/material/styles";
 
 const validationSchema = Yup.object({
