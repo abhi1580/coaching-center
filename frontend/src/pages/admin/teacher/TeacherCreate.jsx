@@ -252,7 +252,6 @@ const TeacherCreate = () => {
                 </Typography>
             </Paper>
 
-            {/* Success/Error Alerts */}
             {submitSuccess && (
                 <Alert
                     severity="success"
@@ -278,7 +277,7 @@ const TeacherCreate = () => {
                     validationSchema={validationSchema}
                     onSubmit={handleSubmit}
                 >
-                    {({ values, errors, touched, handleChange, isSubmitting }) => (
+                    {({ values, errors, touched, handleChange, handleBlur, isSubmitting, setFieldValue }) => (
                         <Form>
                             <Grid container spacing={3}>
                                 {/* Personal Information Section */}
@@ -298,9 +297,11 @@ const TeacherCreate = () => {
                                         variant="outlined"
                                         value={values.name}
                                         onChange={handleChange}
+                                        onBlur={handleBlur}
                                         error={touched.name && Boolean(errors.name)}
                                         helperText={touched.name && errors.name}
                                         disabled={isSubmitting}
+                                        required
                                     />
                                 </Grid>
 
@@ -314,9 +315,11 @@ const TeacherCreate = () => {
                                         variant="outlined"
                                         value={values.gender}
                                         onChange={handleChange}
+                                        onBlur={handleBlur}
                                         error={touched.gender && Boolean(errors.gender)}
                                         helperText={touched.gender && errors.gender}
                                         disabled={isSubmitting}
+                                        required
                                     >
                                         <MenuItem value="">Select Gender</MenuItem>
                                         <MenuItem value="male">Male</MenuItem>
@@ -335,9 +338,11 @@ const TeacherCreate = () => {
                                         type="email"
                                         value={values.email}
                                         onChange={handleChange}
+                                        onBlur={handleBlur}
                                         error={touched.email && Boolean(errors.email)}
                                         helperText={touched.email && errors.email}
                                         disabled={isSubmitting}
+                                        required
                                     />
                                 </Grid>
 
@@ -350,9 +355,11 @@ const TeacherCreate = () => {
                                         variant="outlined"
                                         value={values.phone}
                                         onChange={handleChange}
+                                        onBlur={handleBlur}
                                         error={touched.phone && Boolean(errors.phone)}
                                         helperText={touched.phone && errors.phone}
                                         disabled={isSubmitting}
+                                        required
                                     />
                                 </Grid>
 
@@ -509,7 +516,10 @@ const TeacherCreate = () => {
                                 </Grid>
 
                                 <Grid item xs={12}>
-                                    <FormControl fullWidth>
+                                    <FormControl
+                                        fullWidth
+                                        error={touched.subjects && Boolean(errors.subjects)}
+                                    >
                                         <InputLabel id="subjects-label">Assigned Subjects</InputLabel>
                                         <Select
                                             labelId="subjects-label"
@@ -518,6 +528,7 @@ const TeacherCreate = () => {
                                             multiple
                                             value={values.subjects}
                                             onChange={handleChange}
+                                            onBlur={handleBlur}
                                             input={<OutlinedInput label="Assigned Subjects" />}
                                             renderValue={(selected) => {
                                                 if (!subjects) return "Loading subjects...";
@@ -539,7 +550,8 @@ const TeacherCreate = () => {
                                             ))}
                                         </Select>
                                         <FormHelperText>
-                                            Select subjects that will be taught by this teacher
+                                            {touched.subjects && errors.subjects ? errors.subjects :
+                                                "Select subjects that will be taught by this teacher"}
                                         </FormHelperText>
                                     </FormControl>
                                 </Grid>

@@ -56,7 +56,8 @@ const validationSchema = Yup.object({
         .max(50, "Name must be less than 50 characters")
         .required("Name is required"),
     email: Yup.string()
-        .email("Invalid email address")
+        .email("Invalid email address format")
+        .matches(/@[^.]*\./, "Email must include a domain (e.g., @example.com)")
         .required("Email is required"),
     phone: Yup.string()
         .matches(/^[0-9]{10,15}$/, "Phone number must be between 10-15 digits")
@@ -139,19 +140,15 @@ const TeacherEdit = () => {
         }
     }, [dispatch, id]);
 
-    const handleSubmit = async (values, { setSubmitting }) => {
+    const handleSubmit = async (values, { setSubmitting, setErrors }) => {
         try {
             setSubmitError(null);
             setSubmitSuccess(false);
 
-            // Log the current values for debugging
-            console.log('Current teacher data:', currentTeacher);
-            console.log('Form values:', values);
-
             // Format data for API - ensure all values are properly included
             const teacherData = {
                 name: values.name.trim(),
-                email: values.email.trim(), // Include email in the update
+                email: values.email.trim(),
                 phone: values.phone.trim(),
                 gender: values.gender,
                 qualification: values.qualification.trim(),
@@ -173,30 +170,27 @@ const TeacherEdit = () => {
                 teacherData.password = values.password;
             }
 
-            // Log the data being sent (remove in production)
-            console.log('Updating teacher with data:', {
-                ...teacherData,
-                password: teacherData.password ? '[REDACTED]' : undefined
-            });
-
             // Update the teacher data with all fields including email
             const resultAction = await dispatch(updateTeacher({ id, data: teacherData }));
 
             if (updateTeacher.fulfilled.match(resultAction)) {
                 console.log('Update successful:', resultAction.payload);
-
                 // Refresh the teacher data after successful update
                 dispatch(fetchTeacherById(id));
-
                 setSubmitSuccess(true);
                 // Navigate after a short delay to show success message
                 setTimeout(() => {
                     navigate(`/app/teachers/${id}`);
                 }, 1500);
             } else {
-                const errorMessage = resultAction.error?.message || "Failed to update teacher";
-                console.error("Update error:", errorMessage);
-                setSubmitError(errorMessage);
+                console.error("Update failed:", resultAction);
+
+                // Handle validation errors from backend
+                if (resultAction.payload?.validationErrors) {
+                    setErrors(resultAction.payload.validationErrors);
+                }
+
+                setSubmitError(resultAction.payload?.message || resultAction.error?.message || "Failed to update teacher");
             }
         } catch (error) {
             console.error("Unexpected error during update:", error);
