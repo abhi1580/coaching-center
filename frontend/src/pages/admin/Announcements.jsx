@@ -101,6 +101,7 @@ const Announcements = () => {
   const isAdmin = user && user.role === "admin";
 
   const loadAllData = useCallback(() => {
+    console.log("success");
     dispatch(fetchAnnouncements());
   }, [dispatch]);
 
@@ -328,7 +329,14 @@ const Announcements = () => {
             <RefreshButton
               onClick={loadAllData}
               size={isMobile ? "small" : "medium"}
-              color="secondary"
+              sx={{
+                backgroundColor: "#fff",
+                color: "#000",
+                "&:hover": {
+                  backgroundColor: "#f0f0f0",
+                },
+                border: "1px solid #ccc",
+              }}
             />
           </Box>
         </Box>
@@ -581,7 +589,10 @@ const Announcements = () => {
                           title="Edit"
                           sx={{
                             ml: 1,
-                            backgroundColor: alpha(theme.palette.primary.main, 0.1),
+                            backgroundColor: alpha(
+                              theme.palette.primary.main,
+                              0.1
+                            ),
                             "&:hover": {
                               backgroundColor: alpha(
                                 theme.palette.primary.main,
@@ -602,7 +613,10 @@ const Announcements = () => {
                           title="Delete"
                           sx={{
                             ml: 1,
-                            backgroundColor: alpha(theme.palette.error.main, 0.1),
+                            backgroundColor: alpha(
+                              theme.palette.error.main,
+                              0.1
+                            ),
                             "&:hover": {
                               backgroundColor: alpha(
                                 theme.palette.error.main,
@@ -1293,8 +1307,8 @@ const Announcements = () => {
               <Box sx={{ mb: 3 }}>
                 <Typography variant="body2" color="text.secondary">
                   Fill in the details below to{" "}
-                  {editingAnnouncement ? "update" : "create"} an announcement. All
-                  fields are required.
+                  {editingAnnouncement ? "update" : "create"} an announcement.
+                  All fields are required.
                 </Typography>
               </Box>
 
@@ -1462,7 +1476,8 @@ const Announcements = () => {
                     value={formik.values.startDate}
                     onChange={formik.handleChange}
                     error={
-                      formik.touched.startDate && Boolean(formik.errors.startDate)
+                      formik.touched.startDate &&
+                      Boolean(formik.errors.startDate)
                     }
                     helperText={
                       formik.touched.startDate && formik.errors.startDate

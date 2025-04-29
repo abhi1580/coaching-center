@@ -43,6 +43,7 @@ import { fetchStandards } from "../../../store/slices/standardSlice";
 import { fetchSubjects } from "../../../store/slices/subjectSlice";
 import { fetchTeachers } from "../../../store/slices/teacherSlice";
 import DeleteConfirmationDialog from "../../../components/common/DeleteConfirmationDialog";
+import RefreshButton from "../../../components/common/RefreshButton";
 
 const BatchList = () => {
   const dispatch = useDispatch();
@@ -230,20 +231,27 @@ const BatchList = () => {
           >
             Batches
           </Typography>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={() => navigate("/app/batches/create")}
-            sx={{
-              borderRadius: 2,
-              boxShadow: 2,
-              "&:hover": {
-                boxShadow: 4,
-              },
-            }}
-          >
-            Add Batch
-          </Button>
+          <Box sx={{ display: "flex", gap: 1 }}>
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={() => navigate("/app/batches/create")}
+              sx={{
+                borderRadius: 2,
+                boxShadow: 2,
+                "&:hover": {
+                  boxShadow: 4,
+                },
+              }}
+            >
+              Add Batch
+            </Button>
+            <RefreshButton
+              onRefresh={() => dispatch(fetchBatches())}
+              loading={loading}
+              tooltip="Refresh batches list"
+            />
+          </Box>
         </Box>
 
         {/* Enhanced filters section */}

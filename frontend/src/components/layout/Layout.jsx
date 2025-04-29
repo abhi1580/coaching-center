@@ -204,9 +204,8 @@ const Layout = () => {
         component="main"
         sx={{
           flexGrow: 1,
-          p: { xs: 1.5, sm: 2, md: 3 },
+          p: { xs: 0.5, sm: 0.5, md: 0.5 },
           width: { sm: `calc(100% - ${drawerWidth}px)` },
-          mt: { xs: 7, sm: 8 },
         }}
       >
         <Outlet />

@@ -187,20 +187,26 @@ const SubjectList = () => {
           >
             Subjects
           </Typography>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={() => navigate("/app/subjects/create")}
-            sx={{
-              borderRadius: 2,
-              boxShadow: 2,
-              "&:hover": {
-                boxShadow: 4,
-              },
-            }}
-          >
-            Add Subject
-          </Button>
+          <Box sx={{ display: "flex", gap: 1 }}>
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={() => navigate("/app/subjects/create")}
+              sx={{
+                borderRadius: 2,
+                boxShadow: 2,
+                "&:hover": {
+                  boxShadow: 4,
+                },
+              }}
+            >
+              Add Subject
+            </Button>
+            <RefreshButton
+              onRefresh={loadAllData}
+              tooltip="Refresh subjects"
+            />
+          </Box>
         </Box>
 
         {/* Filter Section */}
@@ -255,9 +261,6 @@ const SubjectList = () => {
             >
               Clear Filters
             </Button>
-            <Box sx={{ ml: 1 }}>
-              <RefreshButton onRefresh={loadAllData} tooltip="Refresh subjects" />
-            </Box>
           </Grid>
         </Grid>
       </Paper>
@@ -389,14 +392,14 @@ const SubjectList = () => {
       ) : (
         // Desktop table view
         <TableContainer component={Paper} sx={{ borderRadius: 2, overflow: "hidden" }}>
-          <Table sx={{ minWidth: 650 }}>
+          <Table>
             <TableHead>
-              <TableRow sx={{ backgroundColor: alpha(theme.palette.primary.main, 0.1) }}>
-                <TableCell sx={{ fontWeight: "bold" }}>Subject Name</TableCell>
-                <TableCell sx={{ fontWeight: "bold" }}>Duration</TableCell>
-                <TableCell sx={{ fontWeight: "bold" }}>Description</TableCell>
-                <TableCell sx={{ fontWeight: "bold" }}>Status</TableCell>
-                <TableCell align="right" sx={{ fontWeight: "bold" }}>Actions</TableCell>
+              <TableRow sx={{ bgcolor: "primary.main" }}>
+                <TableCell sx={{ color: "common.white", py: 2 }}>Subject Name</TableCell>
+                <TableCell sx={{ color: "common.white" }}>Duration</TableCell>
+                <TableCell sx={{ color: "common.white" }}>Description</TableCell>
+                <TableCell sx={{ color: "common.white" }}>Status</TableCell>
+                <TableCell sx={{ color: "common.white" }}>Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -406,7 +409,8 @@ const SubjectList = () => {
                     key={subject._id}
                     sx={{
                       "&:hover": {
-                        backgroundColor: alpha(theme.palette.primary.light, 0.05),
+                        backgroundColor: (theme) =>
+                          alpha(theme.palette.primary.main, 0.04),
                       },
                     }}
                   >
@@ -441,7 +445,7 @@ const SubjectList = () => {
                         sx={{ fontWeight: 500 }}
                       />
                     </TableCell>
-                    <TableCell align="right">
+                    <TableCell>
                       <Box sx={{ display: "flex", gap: 1, justifyContent: "flex-end" }}>
                         <Tooltip title="View Details">
                           <IconButton

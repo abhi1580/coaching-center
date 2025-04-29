@@ -205,20 +205,27 @@ const TeacherList = () => {
                     >
                         Teachers
                     </Typography>
-                    <Button
-                        variant="contained"
-                        startIcon={<AddIcon />}
-                        onClick={() => navigate("/app/teachers/create")}
-                        sx={{
-                            borderRadius: 2,
-                            boxShadow: 2,
-                            "&:hover": {
-                                boxShadow: 4,
-                            },
-                        }}
-                    >
-                        Add Teacher
-                    </Button>
+                    <Box sx={{ display: "flex", gap: 1 }}>
+                        <Button
+                            variant="contained"
+                            startIcon={<AddIcon />}
+                            onClick={() => navigate("/app/teachers/create")}
+                            sx={{
+                                borderRadius: 2,
+                                boxShadow: 2,
+                                "&:hover": {
+                                    boxShadow: 4,
+                                },
+                            }}
+                        >
+                            Add Teacher
+                        </Button>
+                        <RefreshButton
+                            onRefresh={loadAllData}
+                            loading={loading}
+                            tooltip="Refresh teachers list"
+                        />
+                    </Box>
                 </Box>
 
                 {/* Filter section */}
@@ -332,11 +339,7 @@ const TeacherList = () => {
 
                 {/* Refresh button */}
                 <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
-                    <RefreshButton
-                        onClick={loadAllData}
-                        loading={loading}
-                        tooltip="Refresh teachers list"
-                    />
+
                 </Box>
             </Paper>
 
@@ -488,262 +491,180 @@ const TeacherList = () => {
                 </Box>
             ) : (
                 // Desktop table view
-                <Paper
-                    elevation={0}
-                    sx={{
-                        overflow: "hidden",
-                        borderRadius: 2,
-                        border: "1px solid",
-                        borderColor: "divider",
-                    }}
+                <TableContainer
+                    component={Paper}
+                    sx={{ borderRadius: 2, overflow: "hidden" }}
                 >
-                    <TableContainer
-                        component={Box}
-                        sx={{
-                            maxHeight: "calc(100vh - 300px)",
-                            overflowX: "auto",
-                            "&::-webkit-scrollbar": {
-                                height: 10,
-                                width: 10,
-                            },
-                            "&::-webkit-scrollbar-thumb": {
-                                backgroundColor: theme.palette.primary.light,
-                                borderRadius: 2,
-                            },
-                            "&::-webkit-scrollbar-track": {
-                                backgroundColor: theme.palette.grey[200],
-                                borderRadius: 2,
-                            }
-                        }}
-                    >
-                        <Table stickyHeader aria-label="teachers table">
-                            <TableHead>
+                    <Table>
+                        <TableHead>
+                            <TableRow sx={{ bgcolor: "primary.main" }}>
+                                <TableCell sx={{ color: "common.white", py: 2 }}>
+                                    Name
+                                </TableCell>
+                                <TableCell sx={{ color: "common.white" }}>
+                                    Contact Info
+                                </TableCell>
+                                <TableCell sx={{ color: "common.white" }}>
+                                    Qualification
+                                </TableCell>
+                                <TableCell sx={{ color: "common.white" }}>
+                                    Subjects
+                                </TableCell>
+                                <TableCell sx={{ color: "common.white" }}>
+                                    Status
+                                </TableCell>
+                                <TableCell sx={{ color: "common.white" }}>
+                                    Actions
+                                </TableCell>
+                            </TableRow>
+                        </TableHead>
+                        <TableBody>
+                            {loading ? (
                                 <TableRow>
-                                    <TableCell
-                                        width="18%"
-                                        sx={{
-                                            fontWeight: 600,
-                                            backgroundColor: (theme) =>
-                                                alpha(theme.palette.primary.main, 0.05),
-                                            position: "sticky",
-                                            top: 0,
-                                            zIndex: 1,
-                                        }}
-                                    >
-                                        Name
-                                    </TableCell>
-                                    <TableCell
-                                        width="22%"
-                                        sx={{
-                                            fontWeight: 600,
-                                            backgroundColor: (theme) =>
-                                                alpha(theme.palette.primary.main, 0.05),
-                                            position: "sticky",
-                                            top: 0,
-                                            zIndex: 1,
-                                        }}
-                                    >
-                                        Contact Info
-                                    </TableCell>
-                                    <TableCell
-                                        width="18%"
-                                        sx={{
-                                            fontWeight: 600,
-                                            backgroundColor: (theme) =>
-                                                alpha(theme.palette.primary.main, 0.05),
-                                            position: "sticky",
-                                            top: 0,
-                                            zIndex: 1,
-                                        }}
-                                    >
-                                        Qualification
-                                    </TableCell>
-                                    <TableCell
-                                        width="20%"
-                                        sx={{
-                                            fontWeight: 600,
-                                            backgroundColor: (theme) =>
-                                                alpha(theme.palette.primary.main, 0.05),
-                                            position: "sticky",
-                                            top: 0,
-                                            zIndex: 1,
-                                        }}
-                                    >
-                                        Subjects
-                                    </TableCell>
-                                    <TableCell
-                                        width="10%"
-                                        sx={{
-                                            fontWeight: 600,
-                                            backgroundColor: (theme) =>
-                                                alpha(theme.palette.primary.main, 0.05),
-                                            position: "sticky",
-                                            top: 0,
-                                            zIndex: 1,
-                                        }}
-                                    >
-                                        Status
-                                    </TableCell>
-                                    <TableCell
-                                        width="12%"
-                                        align="right"
-                                        sx={{
-                                            fontWeight: 600,
-                                            backgroundColor: (theme) =>
-                                                alpha(theme.palette.primary.main, 0.05),
-                                            position: "sticky",
-                                            top: 0,
-                                            zIndex: 1,
-                                        }}
-                                    >
-                                        Actions
+                                    <TableCell colSpan={6} align="center">
+                                        Loading...
                                     </TableCell>
                                 </TableRow>
-                            </TableHead>
-                            <TableBody>
-                                {loading ? (
-                                    <TableRow>
-                                        <TableCell colSpan={6} align="center">
-                                            Loading...
-                                        </TableCell>
-                                    </TableRow>
-                                ) : filteredTeachers.length === 0 ? (
-                                    <TableRow>
-                                        <TableCell colSpan={6} align="center">
+                            ) : filteredTeachers.length === 0 ? (
+                                <TableRow>
+                                    <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
+                                        <Typography color="text.secondary">
                                             No teachers found.
-                                        </TableCell>
-                                    </TableRow>
-                                ) : (
-                                    filteredTeachers.map((teacher) => (
-                                        <TableRow
-                                            key={teacher._id}
-                                            hover
+                                        </Typography>
+                                    </TableCell>
+                                </TableRow>
+                            ) : (
+                                filteredTeachers.map((teacher) => (
+                                    <TableRow
+                                        key={teacher._id}
+                                        sx={{
+                                            "&:hover": {
+                                                backgroundColor: (theme) =>
+                                                    alpha(theme.palette.primary.main, 0.04),
+                                            },
+                                        }}
+                                    >
+                                        <TableCell
+                                            component="th"
+                                            scope="row"
                                             sx={{
-                                                "&:last-child td, &:last-child th": { border: 0 },
+                                                color: "primary.main",
+                                                fontWeight: 500,
+                                                whiteSpace: "normal",
+                                                wordBreak: "break-word",
                                             }}
                                         >
-                                            <TableCell
-                                                component="th"
-                                                scope="row"
-                                                sx={{
-                                                    color: "primary.main",
-                                                    fontWeight: 500,
-                                                    whiteSpace: "normal",
-                                                    wordBreak: "break-word",
-                                                }}
-                                            >
-                                                {teacher.name}
-                                                {teacher.gender && (
-                                                    <Typography variant="caption" display="block" color="text.secondary">
-                                                        {teacher.gender.charAt(0).toUpperCase() + teacher.gender.slice(1)}
-                                                    </Typography>
-                                                )}
-                                            </TableCell>
-                                            <TableCell sx={{ whiteSpace: "normal", wordBreak: "break-word" }}>
-                                                <Typography variant="body2" sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>
-                                                    <EmailIcon fontSize="small" sx={{ mr: 0.5, opacity: 0.7, fontSize: '1rem', flexShrink: 0 }} />
-                                                    <span>{teacher.email}</span>
+                                            {teacher.name}
+                                            {teacher.gender && (
+                                                <Typography variant="caption" display="block" color="text.secondary">
+                                                    {teacher.gender.charAt(0).toUpperCase() + teacher.gender.slice(1)}
                                                 </Typography>
-                                                {teacher.phone && (
-                                                    <Typography variant="body2" sx={{ display: 'flex', alignItems: 'center' }}>
-                                                        <PhoneIcon fontSize="small" sx={{ mr: 0.5, opacity: 0.7, fontSize: '1rem', flexShrink: 0 }} />
-                                                        <span>{teacher.phone}</span>
+                                            )}
+                                        </TableCell>
+                                        <TableCell sx={{ whiteSpace: "normal", wordBreak: "break-word" }}>
+                                            <Typography variant="body2" sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>
+                                                <EmailIcon fontSize="small" sx={{ mr: 0.5, opacity: 0.7, fontSize: '1rem', flexShrink: 0 }} />
+                                                <span>{teacher.email}</span>
+                                            </Typography>
+                                            {teacher.phone && (
+                                                <Typography variant="body2" sx={{ display: 'flex', alignItems: 'center' }}>
+                                                    <PhoneIcon fontSize="small" sx={{ mr: 0.5, opacity: 0.7, fontSize: '1rem', flexShrink: 0 }} />
+                                                    <span>{teacher.phone}</span>
+                                                </Typography>
+                                            )}
+                                        </TableCell>
+                                        <TableCell sx={{ whiteSpace: "normal", wordBreak: "break-word" }}>
+                                            {teacher.qualification || "N/A"}
+                                            {teacher.experience && (
+                                                <Typography variant="caption" display="block" color="text.secondary">
+                                                    {teacher.experience} {Number(teacher.experience) === 1 ? "year" : "years"} experience
+                                                </Typography>
+                                            )}
+                                        </TableCell>
+                                        <TableCell>
+                                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, maxWidth: '100%' }}>
+                                                {teacher.subjects && teacher.subjects.length > 0 ? (
+                                                    teacher.subjects.map((subject, index) => (
+                                                        <Chip
+                                                            key={index}
+                                                            label={typeof subject === 'object' ? subject.name : subject}
+                                                            size="small"
+                                                            variant="outlined"
+                                                            sx={{ fontSize: '0.7rem', maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                                                        />
+                                                    ))
+                                                ) : (
+                                                    <Typography variant="body2" color="text.secondary">
+                                                        None assigned
                                                     </Typography>
                                                 )}
-                                            </TableCell>
-                                            <TableCell sx={{ whiteSpace: "normal", wordBreak: "break-word" }}>
-                                                {teacher.qualification || "N/A"}
-                                                {teacher.experience && (
-                                                    <Typography variant="caption" display="block" color="text.secondary">
-                                                        {teacher.experience} {Number(teacher.experience) === 1 ? "year" : "years"} experience
-                                                    </Typography>
-                                                )}
-                                            </TableCell>
-                                            <TableCell>
-                                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, maxWidth: '100%' }}>
-                                                    {teacher.subjects && teacher.subjects.length > 0 ? (
-                                                        teacher.subjects.map((subject, index) => (
-                                                            <Chip
-                                                                key={index}
-                                                                label={typeof subject === 'object' ? subject.name : subject}
-                                                                size="small"
-                                                                variant="outlined"
-                                                                sx={{ fontSize: '0.7rem', maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis' }}
-                                                            />
-                                                        ))
-                                                    ) : (
-                                                        <Typography variant="body2" color="text.secondary">
-                                                            None assigned
-                                                        </Typography>
-                                                    )}
-                                                </Box>
-                                            </TableCell>
-                                            <TableCell>
-                                                <Chip
-                                                    label={teacher.status || "Active"}
-                                                    color={teacher.status === "inactive" ? "default" : "success"}
-                                                    size="small"
-                                                    sx={{ fontWeight: 500 }}
-                                                />
-                                            </TableCell>
-                                            <TableCell align="right">
-                                                <Box
-                                                    sx={{ display: "flex", gap: 1, justifyContent: "flex-end" }}
-                                                >
-                                                    <Tooltip title="View Details">
-                                                        <IconButton
-                                                            size="small"
-                                                            onClick={() => navigate(`/app/teachers/${teacher._id}`)}
-                                                            sx={{
-                                                                color: "primary.main",
-                                                                "&:hover": {
-                                                                    backgroundColor: (theme) =>
-                                                                        alpha(theme.palette.primary.main, 0.1),
-                                                                },
-                                                            }}
-                                                        >
-                                                            <VisibilityIcon fontSize="small" />
-                                                        </IconButton>
-                                                    </Tooltip>
-                                                    <Tooltip title="Edit">
-                                                        <IconButton
-                                                            size="small"
-                                                            onClick={() => navigate(`/app/teachers/${teacher._id}/edit`)}
-                                                            sx={{
-                                                                color: "primary.main",
-                                                                "&:hover": {
-                                                                    backgroundColor: (theme) =>
-                                                                        alpha(theme.palette.primary.main, 0.1),
-                                                                },
-                                                            }}
-                                                        >
-                                                            <EditIcon fontSize="small" />
-                                                        </IconButton>
-                                                    </Tooltip>
-                                                    <Tooltip title="Delete">
-                                                        <IconButton
-                                                            size="small"
-                                                            onClick={() => handleDeleteClick(teacher)}
-                                                            sx={{
-                                                                color: "error.main",
-                                                                "&:hover": {
-                                                                    backgroundColor: (theme) =>
-                                                                        alpha(theme.palette.error.main, 0.1),
-                                                                },
-                                                            }}
-                                                        >
-                                                            <DeleteIcon fontSize="small" />
-                                                        </IconButton>
-                                                    </Tooltip>
-                                                </Box>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))
-                                )}
-                            </TableBody>
-                        </Table>
-                    </TableContainer>
-                </Paper>
+                                            </Box>
+                                        </TableCell>
+                                        <TableCell>
+                                            <Chip
+                                                label={teacher.status || "Active"}
+                                                color={teacher.status === "inactive" ? "default" : "success"}
+                                                size="small"
+                                                sx={{ fontWeight: 500 }}
+                                            />
+                                        </TableCell>
+                                        <TableCell align="right">
+                                            <Box
+                                                sx={{ display: "flex", gap: 1, justifyContent: "flex-end" }}
+                                            >
+                                                <Tooltip title="View Details">
+                                                    <IconButton
+                                                        size="small"
+                                                        onClick={() => navigate(`/app/teachers/${teacher._id}`)}
+                                                        sx={{
+                                                            color: "primary.main",
+                                                            "&:hover": {
+                                                                backgroundColor: (theme) =>
+                                                                    alpha(theme.palette.primary.main, 0.1),
+                                                            },
+                                                        }}
+                                                    >
+                                                        <VisibilityIcon fontSize="small" />
+                                                    </IconButton>
+                                                </Tooltip>
+                                                <Tooltip title="Edit">
+                                                    <IconButton
+                                                        size="small"
+                                                        onClick={() => navigate(`/app/teachers/${teacher._id}/edit`)}
+                                                        sx={{
+                                                            color: "primary.main",
+                                                            "&:hover": {
+                                                                backgroundColor: (theme) =>
+                                                                    alpha(theme.palette.primary.main, 0.1),
+                                                            },
+                                                        }}
+                                                    >
+                                                        <EditIcon fontSize="small" />
+                                                    </IconButton>
+                                                </Tooltip>
+                                                <Tooltip title="Delete">
+                                                    <IconButton
+                                                        size="small"
+                                                        onClick={() => handleDeleteClick(teacher)}
+                                                        sx={{
+                                                            color: "error.main",
+                                                            "&:hover": {
+                                                                backgroundColor: (theme) =>
+                                                                    alpha(theme.palette.error.main, 0.1),
+                                                            },
+                                                        }}
+                                                    >
+                                                        <DeleteIcon fontSize="small" />
+                                                    </IconButton>
+                                                </Tooltip>
+                                            </Box>
+                                        </TableCell>
+                                    </TableRow>
+                                ))
+                            )}
+                        </TableBody>
+                    </Table>
+                </TableContainer>
             )}
 
             {/* Delete Confirmation Dialog */}

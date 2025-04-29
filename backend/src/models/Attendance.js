@@ -21,10 +21,6 @@ const AttendanceSchema = new mongoose.Schema(
       enum: ["present", "absent", "late"],
       default: "absent",
     },
-    remarks: {
-      type: String,
-      default: "",
-    },
     markedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
@@ -40,4 +36,4 @@ AttendanceSchema.index({ studentId: 1, batchId: 1, date: 1 }, { unique: true });
 
 const Attendance = mongoose.model("Attendance", AttendanceSchema);
 
-export default Attendance; 
+export default Attendance;
