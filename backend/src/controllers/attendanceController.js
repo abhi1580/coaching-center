@@ -278,8 +278,7 @@ export const getStudentAttendance = asyncHandler(async (req, res) => {
     formattedDate: format(record.date, "yyyy-MM-dd"),
     status: record.status,
     batchId: record.batchId._id,
-    batchName: record.batchId.name,
-    remarks: record.remarks || ""
+    batchName: record.batchId.name
   }));
 
   // Group records by month for summary
