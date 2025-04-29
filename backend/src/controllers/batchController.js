@@ -87,9 +87,9 @@ export const getAllBatches = async (req, res) => {
 
           // If we found students to add, update the batch
           if (studentsToAdd.length > 0) {
-            console.log(
-              `Adding ${studentsToAdd.length} missing students to batch ${batch._id}`
-            );
+            // console.log(
+            //   `Adding ${studentsToAdd.length} missing students to batch ${batch._id}`
+            // );
             await Batch.updateOne(
               { _id: batch._id },
               { $addToSet: { enrolledStudents: { $each: studentsToAdd } } }
@@ -100,9 +100,9 @@ export const getAllBatches = async (req, res) => {
     }
 
     // Log the batch data for debugging
-    console.log(
-      `Fetched ${batches.length} batches, populating enrolledStudents: ${shouldPopulateEnrolledStudents}`
-    );
+    // console.log(
+    //   `Fetched ${batches.length} batches, populating enrolledStudents: ${shouldPopulateEnrolledStudents}`
+    // );
 
     res.json({
       success: true,
@@ -141,8 +141,8 @@ export const getBatchById = async (req, res) => {
         select: "name email phone studentId standard",
         populate: {
           path: "standard",
-          select: "name"
-        }
+          select: "name",
+        },
       });
     }
 
@@ -177,9 +177,9 @@ export const getBatchById = async (req, res) => {
       studentsWithBatch.forEach((student) => {
         if (!existingStudentIds.has(student._id.toString())) {
           // Found a student with this batch in their batches array that isn't in enrolledStudents
-          console.log(
-            `Adding missing student ${student._id} to batch ${batch._id} enrolledStudents`
-          );
+          // console.log(
+          //   `Adding missing student ${student._id} to batch ${batch._id} enrolledStudents`
+          // );
 
           // Add to the existing batch document
           if (!batch.enrolledStudents) {
@@ -204,12 +204,12 @@ export const getBatchById = async (req, res) => {
     }
 
     // Log the batch data for debugging
-    console.log(
-      `Batch ${batch._id} enrolledStudents:`,
-      shouldPopulateEnrolledStudents
-        ? batchData.enrolledStudents?.length || 0
-        : "not populated"
-    );
+    // console.log(
+    //   `Batch ${batch._id} enrolledStudents:`,
+    //   shouldPopulateEnrolledStudents
+    //     ? batchData.enrolledStudents?.length || 0
+    //     : "not populated"
+    // );
 
     res.json({
       success: true,
@@ -509,7 +509,9 @@ export const addStudentToBatch = async (req, res) => {
     await batch.save();
 
     // Get the updated batch with populated students
-    const updatedBatch = await Batch.findById(batchId).populate('enrolledStudents');
+    const updatedBatch = await Batch.findById(batchId).populate(
+      "enrolledStudents"
+    );
 
     return res.json({
       success: true,
@@ -583,9 +585,9 @@ export const removeStudentFromBatch = async (req, res) => {
     await student.save();
     await batch.save();
 
-    console.log(
-      `Removed student ${studentId} from batch ${batchId}, batch now has ${batch.enrolledStudents.length} students`
-    );
+    // console.log(
+    //   `Removed student ${studentId} from batch ${batchId}, batch now has ${batch.enrolledStudents.length} students`
+    // );
 
     // Return the updated batch with populated data
     const updatedBatch = await Batch.findById(batchId)
@@ -615,11 +617,11 @@ export const syncBatchStudents = async (req, res) => {
 
     // Get all batches
     const batches = await Batch.find();
-    console.log(`Found ${batches.length} batches to sync`);
+    // console.log(`Found ${batches.length} batches to sync`);
 
     // Get all students
     const students = await Student.find();
-    console.log(`Found ${students.length} students to check`);
+    // console.log(`Found ${students.length} students to check`);
 
     let updatedBatches = 0;
     let updatedStudents = 0;
@@ -645,9 +647,9 @@ export const syncBatchStudents = async (req, res) => {
         if (studentExists) {
           validStudentIds.push(studentId);
         } else {
-          console.log(
-            `Removing non-existent student ${studentId} from batch ${batchId}`
-          );
+          // console.log(
+          //   `Removing non-existent student ${studentId} from batch ${batchId}`
+          // );
         }
       }
 

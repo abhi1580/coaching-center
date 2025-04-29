@@ -103,7 +103,7 @@ export const createStudent = async (req, res) => {
   session.startTransaction();
 
   try {
-    console.log("Creating student with data:", req.body);
+    // console.log("Creating student with data:", req.body);
 
     const {
       name,

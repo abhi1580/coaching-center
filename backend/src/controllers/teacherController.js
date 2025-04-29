@@ -330,7 +330,7 @@ export const getTeachersBySubject = async (req, res) => {
     .populate("subjects", "name description")  // Populate subject details
     .select("name email subjects");
 
-    console.log(`Found ${teachers.length} teachers for subject ${subject}`);
+    // console.log(`Found ${teachers.length} teachers for subject ${subject}`);
     
     res.json({
       success: true,
@@ -375,16 +375,16 @@ export const getTeacherDashboard = asyncHandler(async (req, res) => {
         select: "name email phone"
       });
 
-    console.log(`Dashboard: Fetched ${batches.length} batches for teacher ${teacher.name}`);
+    // console.log(`Dashboard: Fetched ${batches.length} batches for teacher ${teacher.name}`);
     
     // Debug each batch's student count
     let totalEnrolledStudents = 0;
     batches.forEach((batch, index) => {
       const studentCount = batch.enrolledStudents ? batch.enrolledStudents.length : 0;
       totalEnrolledStudents += studentCount;
-      console.log(`Dashboard - Batch ${index + 1} (${batch.name}): ${studentCount} students`);
+      // console.log(`Dashboard - Batch ${index + 1} (${batch.name}): ${studentCount} students`);
       if (batch.enrolledStudents && batch.enrolledStudents.length > 0) {
-        console.log(`  First student: ${JSON.stringify(batch.enrolledStudents[0])}`);
+        // console.log(`  First student: ${JSON.stringify(batch.enrolledStudents[0])}`);
       }
     });
 
@@ -397,7 +397,7 @@ export const getTeacherDashboard = asyncHandler(async (req, res) => {
       batches: { $in: batchIds }
     }).select('_id name email phone batches');
     
-    console.log(`Found ${studentsWithBatches.length} students with these batches in their record`);
+    // console.log(`Found ${studentsWithBatches.length} students with these batches in their record`);
 
     // Calculate total number of unique students from both sources
   const uniqueStudents = new Set();
@@ -418,7 +418,7 @@ export const getTeacherDashboard = asyncHandler(async (req, res) => {
       uniqueStudents.add(student._id.toString());
     });
     
-    console.log(`Total unique students found: ${uniqueStudents.size}`);
+    // console.log(`Total unique students found: ${uniqueStudents.size}`);
   
   // Get active announcements for the teacher
   const announcements = await Announcement.find({
@@ -513,11 +513,11 @@ export const getTeacherBatches = asyncHandler(async (req, res) => {
         select: "name email phone"
       });
       
-    console.log(`Fetched ${batches.length} batches, populating enrolledStudents: true`);
+    // console.log(`Fetched ${batches.length} batches, populating enrolledStudents: true`);
     
     // Debug the content of enrolledStudents for each batch
     batches.forEach((batch, index) => {
-      console.log(`Batch ${index + 1} (${batch.name}): ${batch.enrolledStudents ? batch.enrolledStudents.length : 0} students`);
+      // console.log(`Batch ${index + 1} (${batch.name}): ${batch.enrolledStudents ? batch.enrolledStudents.length : 0} students`);
     });
 
     // Import Student model
@@ -529,7 +529,7 @@ export const getTeacherBatches = asyncHandler(async (req, res) => {
       batches: { $in: batchIds }
     }).select('_id name email phone batches');
     
-    console.log(`Found ${studentsWithBatches.length} students with these batches in their record`);
+    // console.log(`Found ${studentsWithBatches.length} students with these batches in their record`);
     
     // Create a map to organize students by batch
     const studentsByBatch = {};
@@ -586,9 +586,9 @@ export const getTeacherBatches = asyncHandler(async (req, res) => {
     });
     
     // Log final counts after combining sources
-    console.log("Final batch student counts after combining sources:");
+    // console.log("Final batch student counts after combining sources:");
     batches.forEach((batch, index) => {
-      console.log(`Batch ${index + 1} (${batch.name}): ${batch.enrolledStudents ? batch.enrolledStudents.length : 0} students`);
+      // console.log(`Batch ${index + 1} (${batch.name}): ${batch.enrolledStudents ? batch.enrolledStudents.length : 0} students`);
     });
 
     return res.json({
