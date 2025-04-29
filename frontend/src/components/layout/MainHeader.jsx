@@ -41,7 +41,7 @@ const MainHeader = () => {
     if (!isAuthenticated) {
       return publicPages;
     }
-    
+
     if (user?.role === "admin") {
       return [
         ...publicPages,
@@ -59,6 +59,7 @@ const MainHeader = () => {
         { name: "Dashboard", path: "/app/teacher/dashboard" },
         { name: "My Students", path: "/app/teacher/students" },
         { name: "My Batches", path: "/app/teacher/batches" },
+        { name: "Attendance", path: "/app/teacher/attendance" },
         { name: "Announcements", path: "/app/teacher/announcements" },
         { name: "Profile", path: "/app/teacher/profile" },
       ];
@@ -68,7 +69,7 @@ const MainHeader = () => {
         { name: "Dashboard", path: "/app/student-dashboard" },
       ];
     }
-    
+
     return publicPages;
   }, [isAuthenticated, user]); // Recalculate when auth state changes
 

@@ -51,7 +51,7 @@ api.interceptors.response.use(
     return response;
   },
   async (error) => {
-    // Log error responses
+    // Log error responses with more detail
     console.error(
       `API Error [${error.config?.method?.toUpperCase()} ${
         error.config?.url
@@ -59,6 +59,19 @@ api.interceptors.response.use(
       error.response?.status,
       error.response?.data
     );
+    
+    console.error("Full error object:", {
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      data: error.response?.data,
+      message: error.message,
+      config: {
+        url: error.config?.url,
+        method: error.config?.method,
+        params: error.config?.params,
+        baseURL: error.config?.baseURL
+      }
+    });
 
     if (error.response?.status === 401) {
       // Handle unauthorized access
@@ -153,6 +166,11 @@ export const teacherService = {
   create: (data) => api.post("/teachers", data),
   update: (id, data) => api.put(`/teachers/${id}`, data),
   delete: (id) => api.delete(`/teachers/${id}`),
+  // Get batches assigned to a specific teacher
+  getBatches: () => {
+    console.log(`Fetching teacher's batches`);
+    return api.get(`/teachers/batches`);
+  }
 };
 
 // Subject services
@@ -289,4 +307,33 @@ export const staffService = {
   update: (id, data) => api.put(`/staff/${id}`, data),
   delete: (id) => api.delete(`/staff/${id}`),
   updateStatus: (id, status) => api.patch(`/staff/${id}/status`, { status }),
+};
+
+// Attendance Service
+export const attendanceService = {
+  // Get attendance for a batch on a specific date
+  getBatchAttendance: (batchId, date) => {
+    console.log("API call: getBatchAttendance with params:", { batchId, date });
+    console.log("URL:", `/attendance/${batchId}/${date}`);
+    return api.get(`/attendance/${batchId}/${date}`);
+  },
+  
+  // Submit attendance for a batch
+  submitBatchAttendance: (batchId, data) => {
+    console.log("API call: submitBatchAttendance with batchId:", batchId);
+    console.log("Attendance data:", data);
+    return api.post(`/attendance/batch/${batchId}`, data);
+  },
+  
+  // Get attendance history for a batch within a date range
+  getBatchAttendanceHistory: (batchId, startDate, endDate) => {
+    console.log("API call: getBatchAttendanceHistory with params:", { batchId, startDate, endDate });
+    return api.get(`/attendance/batch/${batchId}/history?startDate=${startDate}&endDate=${endDate}`);
+  },
+    
+  // Get attendance records for a specific student
+  getStudentAttendance: (studentId, batchId, startDate, endDate) => {
+    console.log("API call: getStudentAttendance with params:", { studentId, batchId, startDate, endDate });
+    return api.get(`/attendance/student/${studentId}/batch/${batchId}?startDate=${startDate}&endDate=${endDate}`);
+  },
 };

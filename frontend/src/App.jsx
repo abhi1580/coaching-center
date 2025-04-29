@@ -44,6 +44,7 @@ import { theme } from "./theme";
 import LandingPage from "./pages/common/LandingPage";
 import Announcements from "./pages/admin/Announcements";
 import Payments from "./pages/admin/Payments";
+import TeacherAttendance from "./pages/teacher/TeacherAttendance";
 
 // Import new Standard components
 import StandardList from "./pages/admin/standard/StandardList";
@@ -317,6 +318,7 @@ function App() {
             <Route path="batches" element={<TeacherBatches />} />
             <Route path="batches/:id" element={<TeacherBatchDetail />} />
             <Route path="students" element={<TeacherStudents />} />
+            <Route path="attendance" element={<TeacherAttendance />} />
             <Route path="profile" element={<TeacherProfile />} />
             <Route path="announcements" element={<Announcements />} />
           </Route>

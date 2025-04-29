@@ -9,6 +9,7 @@ import announcementRoutes from "./announcementRoutes.js";
 import dashboardRoutes from "./dashboardRoutes.js";
 import teacherRoutes from "./teacherRoutes.js";
 import studentRoutes from "./studentRoutes.js";
+import attendanceRoutes from "./attendanceRoutes.js";
 
 // Import role-specific routes
 import adminDashboardRoutes from "./admin/dashboardRoutes.js";
@@ -26,6 +27,7 @@ router.use("/announcements", announcementRoutes);
 router.use("/dashboard", dashboardRoutes);
 router.use("/teachers", teacherRoutes);
 router.use("/students", studentRoutes);
+router.use("/attendance", attendanceRoutes);
 
 // Role-specific routes
 router.use("/admin/dashboard", adminDashboardRoutes);
