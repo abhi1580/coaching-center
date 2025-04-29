@@ -5,7 +5,6 @@ import {
   updateStudentProfile,
   getStudentBatches,
   getStudentBatchDetails,
-  getStudentAttendance
 } from "../../controllers/student/studentController.js";
 
 const router = express.Router();
@@ -22,8 +21,5 @@ router.route("/profile")
 // Student batches routes
 router.get("/batches", getStudentBatches);
 router.get("/batches/:id", getStudentBatchDetails);
-
-// Student attendance route
-router.get("/attendance", getStudentAttendance);
 
 export default router; 

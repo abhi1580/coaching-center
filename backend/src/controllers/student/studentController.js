@@ -1,6 +1,5 @@
 import Student from "../../models/Student.js";
 import Batch from "../../models/Batch.js";
-import Attendance from "../../models/Attendance.js";
 import asyncHandler from "../../utils/asyncHandler.js";
 import { sendSuccess } from "../../utils/response/responseHandler.js";
 import { ApiError } from "../../middleware/errorMiddleware.js";
@@ -100,40 +99,4 @@ export const getStudentBatchDetails = asyncHandler(async (req, res) => {
   }
 
   sendSuccess(res, 200, "Batch details retrieved successfully", batch);
-});
-
-/**
- * @desc    Get student's attendance
- * @route   GET /api/student/attendance
- * @access  Private (Student only)
- */
-export const getStudentAttendance = asyncHandler(async (req, res) => {
-  const student = await Student.findOne({ user: req.user.id });
-
-  if (!student) {
-    throw new ApiError("Student profile not found", 404);
-  }
-
-  // Build filter options
-  const filter = { studentId: student._id };
-  
-  // Add optional batch filter
-  if (req.query.batchId) {
-    filter.batchId = req.query.batchId;
-  }
-  
-  // Add optional date range filters
-  if (req.query.startDate) {
-    filter.date = { ...filter.date, $gte: new Date(req.query.startDate) };
-  }
-  
-  if (req.query.endDate) {
-    filter.date = { ...filter.date, $lte: new Date(req.query.endDate) };
-  }
-
-  const attendance = await Attendance.find(filter)
-    .populate("batchId", "name subject")
-    .sort({ date: -1 });
-
-  sendSuccess(res, 200, "Student attendance retrieved successfully", attendance);
 }); 

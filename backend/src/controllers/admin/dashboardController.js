@@ -2,7 +2,6 @@ import Student from "../../models/Student.js";
 import Teacher from "../../models/Teacher.js";
 import Batch from "../../models/Batch.js";
 import Payment from "../../models/Payment.js";
-import Attendance from "../../models/Attendance.js";
 import asyncHandler from "../../utils/asyncHandler.js";
 import { sendSuccess } from "../../utils/response/responseHandler.js";
 
@@ -32,25 +31,6 @@ export const getDashboardSummary = asyncHandler(async (req, res) => {
     .populate("standard", "name")
     .populate("teacher", "name");
   
-  // Today's attendance summary
-  const todayStart = new Date();
-  todayStart.setHours(0, 0, 0, 0);
-  
-  const todayEnd = new Date();
-  todayEnd.setHours(23, 59, 59, 999);
-  
-  const todayAttendance = await Attendance.find({
-    date: { $gte: todayStart, $lte: todayEnd }
-  });
-  
-  const attendanceSummary = {
-    total: todayAttendance.length,
-    present: todayAttendance.filter(a => a.status === "present").length,
-    absent: todayAttendance.filter(a => a.status === "absent").length,
-    late: todayAttendance.filter(a => a.status === "late").length,
-    excused: todayAttendance.filter(a => a.status === "excused").length,
-  };
-  
   const dashboardData = {
     counts: {
       students: studentCount,
@@ -59,7 +39,6 @@ export const getDashboardSummary = asyncHandler(async (req, res) => {
     },
     recentStudents,
     recentBatches,
-    attendanceSummary,
   };
   
   sendSuccess(res, 200, "Dashboard summary retrieved successfully", dashboardData);

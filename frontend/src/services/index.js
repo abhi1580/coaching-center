@@ -1,7 +1,6 @@
 // Common services
 import apiClient from './common/apiClient';
 import authService from './common/authService';
-import attendanceService from './common/attendanceService';
 import announcementService from './common/announcementService';
 import batchService from './common/batchService';
 
@@ -14,7 +13,6 @@ export {
   // Common
   apiClient,
   authService,
-  attendanceService,
   announcementService,
   batchService,
   

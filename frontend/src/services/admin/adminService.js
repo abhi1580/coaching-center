@@ -95,7 +95,6 @@ const adminService = {
   dashboard: {
     getSummary: () => api.get("/dashboard/summary"),
     getRevenue: () => api.get("/dashboard/revenue"),
-    getAttendance: () => api.get("/dashboard/attendance"),
   }
 };
 

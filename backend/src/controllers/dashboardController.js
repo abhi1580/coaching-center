@@ -76,7 +76,6 @@ export const getStats = async (req, res) => {
 
       stats = {
         mySubjects: studentSubjects.length,
-        attendance: await calculateAttendance(user._id, subjectIds),
         averageScore: await calculateAverageScore(user._id, subjectIds),
       };
     }
@@ -269,21 +268,6 @@ const calculateAveragePerformance = async (subjectIds) => {
     return Math.floor(Math.random() * 25) + 70;
   } catch (error) {
     console.error("Error calculating average performance:", error);
-    return 0;
-  }
-};
-
-const calculateAttendance = async (studentId, subjectIds) => {
-  try {
-    // This is a placeholder. In a real application, you would:
-    // 1. Calculate the total number of classes for these subjects
-    // 2. Calculate how many the student attended
-    // 3. Return a percentage
-    
-    // For now, return a random value between 80-100%
-    return Math.floor(Math.random() * 20) + 80;
-  } catch (error) {
-    console.error("Error calculating attendance:", error);
     return 0;
   }
 };

@@ -38,7 +38,6 @@ const studentService = {
   },
   update: (id, data) => api.put(`/students/${id}`, data),
   delete: (id) => api.delete(`/students/${id}`),
-  getAttendance: (studentId) => api.get(`/students/${studentId}/attendance`),
   getPayments: (studentId) => api.get(`/students/${studentId}/payments`),
 };
 
