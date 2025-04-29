@@ -36,10 +36,17 @@ export const getTeachers = async (req, res) => {
 // @access  Private (Admin only)
 export const getTeacher = async (req, res) => {
   try {
-    const teacher = await Teacher.findById(req.params.id).populate(
-      "batches",
-      "name subject schedule"
-    );
+    const teacher = await Teacher.findById(req.params.id)
+      .populate("batches", "name subject schedule")
+      .populate("subjects", "name description")
+      .populate({
+        path: "batches",
+        populate: {
+          path: "students",
+          model: "Student",
+          select: "name email phone studentId status"
+        }
+      });
 
     if (!teacher) {
       return res.status(404).json({
@@ -48,9 +55,26 @@ export const getTeacher = async (req, res) => {
       });
     }
 
+    // Extract students from batches to create a students array for the teacher
+    const studentsSet = new Set();
+    if (teacher.batches && teacher.batches.length > 0) {
+      teacher.batches.forEach(batch => {
+        if (batch.students && batch.students.length > 0) {
+          batch.students.forEach(student => {
+            studentsSet.add(JSON.stringify(student));
+          });
+        }
+      });
+    }
+    
+    // Convert back to objects and attach to the teacher object
+    const students = Array.from(studentsSet).map(student => JSON.parse(student));
+    const teacherWithStudents = teacher.toObject();
+    teacherWithStudents.students = students;
+
     res.json({
       success: true,
-      data: teacher,
+      data: teacherWithStudents,
     });
   } catch (error) {
     res.status(500).json({
@@ -177,6 +201,7 @@ export const updateTeacher = async (req, res) => {
   try {
     const {
       name,
+      email,
       phone,
       address,
       subjects,
@@ -200,6 +225,7 @@ export const updateTeacher = async (req, res) => {
 
     // Update teacher fields
     teacher.name = name || teacher.name;
+    teacher.email = email || teacher.email;
     teacher.phone = phone || teacher.phone;
     teacher.address = address || teacher.address;
     teacher.subjects = subjects || teacher.subjects;
@@ -218,6 +244,7 @@ export const updateTeacher = async (req, res) => {
       const user = await User.findById(teacher.user);
       if (user) {
         user.name = name || user.name;
+        user.email = email || user.email;
         user.phone = phone || user.phone;
         user.address = address || user.address;
         user.gender = gender || user.gender;

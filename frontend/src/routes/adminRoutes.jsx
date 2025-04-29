@@ -1,7 +1,7 @@
 import React from "react";
 import { Routes, Route } from "react-router-dom";
 import Dashboard from "../pages/Dashboard";
-import Teachers from "../pages/Teachers";
+import { TeacherList } from "../pages/admin/teacher";
 import Students from "../pages/Students";
 import Classes from "../pages/Classes";
 import Standards from "../pages/Standards";
@@ -12,7 +12,7 @@ const AdminRoutes = () => {
     <Layout>
       <Routes>
         <Route path="/" element={<Dashboard />} />
-        <Route path="/teachers" element={<Teachers />} />
+        <Route path="/teachers" element={<TeacherList />} />
         <Route path="/students" element={<Students />} />
         <Route path="/classes" element={<Classes />} />
         <Route path="/standards" element={<Standards />} />

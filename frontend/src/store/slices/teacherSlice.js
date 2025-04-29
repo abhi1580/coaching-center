@@ -17,6 +17,31 @@ export const fetchTeachers = createAsyncThunk(
   }
 );
 
+export const fetchTeacherById = createAsyncThunk(
+  "teachers/fetchTeacherById",
+  async (id, { rejectWithValue }) => {
+    try {
+      const response = await teacherService.getById(id);
+      
+      // Handle different possible response formats
+      if (response.data.data) {
+        // Format: { data: { ... } }
+        return response.data.data;
+      } else if (response.data) {
+        // Format: { ... }
+        return response.data;
+      }
+      
+      // Fallback to empty object
+      console.error("Unexpected API response format:", response);
+      return {};
+    } catch (error) {
+      console.error("Error fetching teacher:", error);
+      return rejectWithValue(error.response?.data?.message || error.message || "Failed to fetch teacher details");
+    }
+  }
+);
+
 export const createTeacher = createAsyncThunk(
   "teachers/createTeacher",
   async (teacherData) => {
@@ -43,6 +68,7 @@ export const deleteTeacher = createAsyncThunk(
 
 const initialState = {
   teachers: [],
+  currentTeacher: null,
   loading: false,
   error: null,
 };
@@ -66,6 +92,19 @@ const teacherSlice = createSlice({
         state.loading = false;
         state.error = action.error.message;
       })
+      // Fetch Teacher By Id
+      .addCase(fetchTeacherById.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchTeacherById.fulfilled, (state, action) => {
+        state.loading = false;
+        state.currentTeacher = action.payload;
+      })
+      .addCase(fetchTeacherById.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message;
+      })
       // Create Teacher
       .addCase(createTeacher.fulfilled, (state, action) => {
         state.teachers.push(action.payload);
@@ -78,12 +117,20 @@ const teacherSlice = createSlice({
         if (index !== -1) {
           state.teachers[index] = action.payload;
         }
+        // If we're updating the current teacher, update that as well
+        if (state.currentTeacher && state.currentTeacher._id === action.payload._id) {
+          state.currentTeacher = action.payload;
+        }
       })
       // Delete Teacher
       .addCase(deleteTeacher.fulfilled, (state, action) => {
         state.teachers = state.teachers.filter(
           (teacher) => teacher._id !== action.payload
         );
+        // If the current teacher is deleted, clear it
+        if (state.currentTeacher && state.currentTeacher._id === action.payload) {
+          state.currentTeacher = null;
+        }
       });
   },
 });

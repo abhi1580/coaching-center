@@ -11,16 +11,20 @@ import TeacherLayout from "./components/teacher/TeacherLayout";
 import TeacherRedirect from "./components/teacher/TeacherRedirect";
 import Login from "./pages/common/Login";
 import Dashboard from "./pages/admin/Dashboard";
-import Standards from "./pages/admin/Standards";
 import Students from "./pages/admin/Students";
 import Subjects from "./pages/admin/Subjects";
-import Teachers from "./pages/admin/Teachers";
 import {
   BatchCreate,
   BatchEdit,
   BatchList,
   BatchView,
 } from "./pages/admin/batch";
+import {
+  SubjectList,
+  SubjectCreate,
+  SubjectView,
+  SubjectEdit,
+} from "./pages/admin/subject";
 import AboutUs from "./pages/common/AboutUs";
 import ContactUs from "./pages/common/ContactUs";
 import NotFound from "./pages/common/NotFound";
@@ -43,6 +47,19 @@ import Announcements from "./pages/admin/Announcements";
 import Payments from "./pages/admin/Payments";
 import AttendanceHistoryPage from './pages/common/AttendanceHistoryPage';
 
+// Import new Standard components
+import StandardList from "./pages/admin/standard/StandardList";
+import StandardView from "./pages/admin/standard/StandardView";
+import StandardEdit from "./pages/admin/standard/StandardEdit";
+import StandardCreate from "./pages/admin/standard/StandardCreate";
+
+import {
+  TeacherList,
+  TeacherCreate,
+  TeacherView,
+  TeacherEdit,
+} from "./pages/admin/teacher";
+
 function App() {
   const dispatch = useDispatch();
 
@@ -56,41 +73,41 @@ function App() {
       <Router>
         <Routes>
           {/* Public routes */}
-          <Route 
-            path="/" 
+          <Route
+            path="/"
             element={
               <>
                 <MainHeader />
                 <LandingPage />
               </>
-            } 
+            }
           />
-          <Route 
-            path="/login" 
+          <Route
+            path="/login"
             element={
               <>
                 <MainHeader />
                 <Login />
               </>
-            } 
+            }
           />
-          <Route 
-            path="/about" 
+          <Route
+            path="/about"
             element={
               <>
                 <MainHeader />
                 <AboutUs />
               </>
-            } 
+            }
           />
-          <Route 
-            path="/contact" 
+          <Route
+            path="/contact"
             element={
               <>
                 <MainHeader />
                 <ContactUs />
               </>
-            } 
+            }
           />
 
           {/* Protected Admin routes */}
@@ -120,11 +137,37 @@ function App() {
                 </ProtectedRoute>
               }
             />
+            {/* Legacy Subjects route */}
             <Route
               path="subjects"
               element={
                 <ProtectedRoute allowedRoles={["admin"]}>
-                  <Subjects />
+                  <SubjectList />
+                </ProtectedRoute>
+              }
+            />
+            {/* New Subject routes with dedicated pages */}
+            <Route
+              path="subjects/create"
+              element={
+                <ProtectedRoute allowedRoles={["admin"]}>
+                  <SubjectCreate />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="subjects/:id"
+              element={
+                <ProtectedRoute allowedRoles={["admin"]}>
+                  <SubjectView />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="subjects/:id/edit"
+              element={
+                <ProtectedRoute allowedRoles={["admin"]}>
+                  <SubjectEdit />
                 </ProtectedRoute>
               }
             />
@@ -148,7 +191,31 @@ function App() {
               path="teachers"
               element={
                 <ProtectedRoute allowedRoles={["admin"]}>
-                  <Teachers />
+                  <TeacherList />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="teachers/create"
+              element={
+                <ProtectedRoute allowedRoles={["admin"]}>
+                  <TeacherCreate />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="teachers/:id"
+              element={
+                <ProtectedRoute allowedRoles={["admin"]}>
+                  <TeacherView />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="teachers/:id/edit"
+              element={
+                <ProtectedRoute allowedRoles={["admin"]}>
+                  <TeacherEdit />
                 </ProtectedRoute>
               }
             />
@@ -156,7 +223,31 @@ function App() {
               path="standards"
               element={
                 <ProtectedRoute allowedRoles={["admin"]}>
-                  <Standards />
+                  <StandardList />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="standards/create"
+              element={
+                <ProtectedRoute allowedRoles={["admin"]}>
+                  <StandardCreate />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="standards/:id"
+              element={
+                <ProtectedRoute allowedRoles={["admin"]}>
+                  <StandardView />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="standards/:id/edit"
+              element={
+                <ProtectedRoute allowedRoles={["admin"]}>
+                  <StandardEdit />
                 </ProtectedRoute>
               }
             />
@@ -192,7 +283,7 @@ function App() {
                 </ProtectedRoute>
               }
             />
-            
+
             {/* Legacy teacher routes - redirect to new teacher dashboard */}
             <Route
               path="teacher-dashboard"
@@ -234,7 +325,7 @@ function App() {
           </Route>
 
           <Route path="/classes/:classId/attendance-history" element={<AttendanceHistoryPage />} />
-          
+
           {/* Catch-all route for 404 Not Found */}
           <Route path="*" element={
             <>

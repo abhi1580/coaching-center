@@ -25,6 +25,8 @@ import {
   CardActions,
   Stack,
   Tooltip,
+  Breadcrumbs,
+  Link,
 } from "@mui/material";
 import {
   Add as AddIcon,
@@ -33,11 +35,14 @@ import {
   Visibility as VisibilityIcon,
   Person as PersonIcon,
   Search as SearchIcon,
+  Home as HomeIcon,
+  Class as ClassIcon,
 } from "@mui/icons-material";
 import { fetchBatches, deleteBatch } from "../../../store/slices/batchSlice";
 import { fetchStandards } from "../../../store/slices/standardSlice";
 import { fetchSubjects } from "../../../store/slices/subjectSlice";
 import { fetchTeachers } from "../../../store/slices/teacherSlice";
+import DeleteConfirmationDialog from "../../../components/common/DeleteConfirmationDialog";
 
 const BatchList = () => {
   const dispatch = useDispatch();
@@ -57,6 +62,11 @@ const BatchList = () => {
   const [standardFilter, setStandardFilter] = useState("");
   const [teacherFilter, setTeacherFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+
+  // Delete confirmation state
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [batchToDelete, setBatchToDelete] = useState(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   // Load initial data
   useEffect(() => {
@@ -119,13 +129,27 @@ const BatchList = () => {
     statusFilter,
   ]);
 
-  const handleDelete = async (id) => {
-    if (window.confirm("Are you sure you want to delete this batch?")) {
-      try {
-        await dispatch(deleteBatch(id)).unwrap();
-      } catch (error) {
-        alert("Failed to delete batch: " + error.message);
-      }
+  const openDeleteDialog = (batch) => {
+    setBatchToDelete(batch);
+    setDeleteDialogOpen(true);
+  };
+
+  const closeDeleteDialog = () => {
+    setDeleteDialogOpen(false);
+    setBatchToDelete(null);
+  };
+
+  const confirmDelete = async () => {
+    if (!batchToDelete) return;
+
+    try {
+      setDeleteLoading(true);
+      await dispatch(deleteBatch(batchToDelete._id)).unwrap();
+      closeDeleteDialog();
+    } catch (error) {
+      alert("Failed to delete batch: " + error.message);
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
@@ -154,6 +178,27 @@ const BatchList = () => {
 
   return (
     <Box sx={{ p: { xs: 1, sm: 2, md: 3 } }}>
+      {/* Breadcrumbs */}
+      <Breadcrumbs
+        aria-label="breadcrumb"
+        sx={{ mb: 2, mt: 1 }}
+        separator="›"
+      >
+        <Link
+          underline="hover"
+          color="inherit"
+          href="/app/dashboard"
+          sx={{ display: 'flex', alignItems: 'center' }}
+        >
+          <HomeIcon sx={{ mr: 0.5 }} fontSize="small" />
+          Dashboard
+        </Link>
+        <Typography color="text.primary" sx={{ display: 'flex', alignItems: 'center' }}>
+          <ClassIcon sx={{ mr: 0.5 }} fontSize="small" />
+          Batches
+        </Typography>
+      </Breadcrumbs>
+
       {/* Header section with enhanced styling */}
       <Paper
         elevation={0}
@@ -356,7 +401,7 @@ const BatchList = () => {
                   size="small"
                   color="error"
                   startIcon={<DeleteIcon />}
-                  onClick={() => handleDelete(batch._id)}
+                  onClick={() => openDeleteDialog(batch)}
                   sx={{ borderRadius: 1.5, ml: "auto" }}
                 >
                   Delete
@@ -458,7 +503,7 @@ const BatchList = () => {
                       <Tooltip title="Delete">
                         <IconButton
                           size="small"
-                          onClick={() => handleDelete(batch._id)}
+                          onClick={() => openDeleteDialog(batch)}
                           sx={{
                             color: "error.main",
                             "&:hover": {
@@ -491,6 +536,17 @@ const BatchList = () => {
           </Table>
         </TableContainer>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <DeleteConfirmationDialog
+        open={deleteDialogOpen}
+        onClose={closeDeleteDialog}
+        onConfirm={confirmDelete}
+        loading={deleteLoading}
+        itemName={batchToDelete?.name}
+        title="Delete Batch"
+        message="Are you sure you want to delete batch"
+      />
     </Box>
   );
 };

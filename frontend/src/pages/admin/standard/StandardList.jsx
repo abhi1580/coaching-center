@@ -1,0 +1,540 @@
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import {
+    Box,
+    Button,
+    Paper,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TableRow,
+    Typography,
+    Chip,
+    IconButton,
+    TextField,
+    MenuItem,
+    Grid,
+    useTheme,
+    useMediaQuery,
+    alpha,
+    Card,
+    CardContent,
+    CardActions,
+    Stack,
+    Tooltip,
+    Breadcrumbs,
+    Link,
+} from "@mui/material";
+import {
+    Add as AddIcon,
+    Edit as EditIcon,
+    Delete as DeleteIcon,
+    Visibility as VisibilityIcon,
+    School as SchoolIcon,
+    Search as SearchIcon,
+    Clear as ClearIcon,
+    Home as HomeIcon,
+} from "@mui/icons-material";
+import { fetchStandards, deleteStandard } from "../../../store/slices/standardSlice";
+import RefreshButton from "../../../components/common/RefreshButton";
+import DeleteConfirmationDialog from "../../../components/common/DeleteConfirmationDialog";
+
+const StandardList = () => {
+    const dispatch = useDispatch();
+    const navigate = useNavigate();
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+    const isTablet = useMediaQuery(theme.breakpoints.down("md"));
+
+    const { standards, loading } = useSelector((state) => state.standards);
+
+    const [filteredStandards, setFilteredStandards] = useState([]);
+    const [nameFilter, setNameFilter] = useState("");
+    const [isActiveFilter, setIsActiveFilter] = useState("");
+
+    // Delete confirmation state
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [standardToDelete, setStandardToDelete] = useState(null);
+    const [deleteLoading, setDeleteLoading] = useState(false);
+
+    useEffect(() => {
+        dispatch(fetchStandards());
+    }, [dispatch]);
+
+    useEffect(() => {
+        if (!standards) return;
+
+        let results = [...standards];
+
+        // Filter by name
+        if (nameFilter) {
+            results = results.filter((standard) =>
+                standard.name.toLowerCase().includes(nameFilter.toLowerCase())
+            );
+        }
+
+        // Filter by active status
+        if (isActiveFilter !== "") {
+            const activeStatus = isActiveFilter === "active";
+            results = results.filter((standard) => standard.isActive === activeStatus);
+        }
+
+        setFilteredStandards(results);
+    }, [standards, nameFilter, isActiveFilter]);
+
+    const handleDeleteClick = (standard) => {
+        setStandardToDelete(standard);
+        setDeleteDialogOpen(true);
+    };
+
+    const handleDeleteConfirm = async () => {
+        if (!standardToDelete) return;
+
+        setDeleteLoading(true);
+        try {
+            await dispatch(deleteStandard(standardToDelete._id)).unwrap();
+            setDeleteDialogOpen(false);
+            setStandardToDelete(null);
+        } catch (error) {
+            console.error("Error deleting standard:", error);
+        } finally {
+            setDeleteLoading(false);
+        }
+    };
+
+    // Add loadAllData function for refresh button
+    const loadAllData = () => {
+        dispatch(fetchStandards());
+    };
+
+    return (
+        <Box sx={{ p: { xs: 1, sm: 2, md: 3 } }}>
+            {/* Breadcrumbs */}
+            <Breadcrumbs
+                aria-label="breadcrumb"
+                sx={{ mb: 2, mt: 1 }}
+                separator="›"
+            >
+                <Link
+                    underline="hover"
+                    color="inherit"
+                    href="/app/dashboard"
+                    sx={{ display: 'flex', alignItems: 'center' }}
+                >
+                    <HomeIcon sx={{ mr: 0.5 }} fontSize="small" />
+                    Dashboard
+                </Link>
+                <Typography color="text.primary" sx={{ display: 'flex', alignItems: 'center' }}>
+                    <SchoolIcon sx={{ mr: 0.5 }} fontSize="small" />
+                    Standards
+                </Typography>
+            </Breadcrumbs>
+
+            {/* Header section with enhanced styling */}
+            <Paper
+                elevation={0}
+                sx={{
+                    p: { xs: 2, sm: 3 },
+                    mb: 3,
+                    backgroundColor: (theme) => alpha(theme.palette.primary.light, 0.05),
+                    borderRadius: 2,
+                }}
+            >
+                <Box
+                    sx={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        flexWrap: "wrap",
+                        gap: 2,
+                        mb: 3,
+                    }}
+                >
+                    <Typography
+                        variant="h4"
+                        component="h1"
+                        sx={{
+                            fontSize: { xs: "1.5rem", sm: "2rem" },
+                            fontWeight: 600,
+                            color: "primary.main",
+                        }}
+                    >
+                        Standards
+                    </Typography>
+                    <Button
+                        variant="contained"
+                        startIcon={<AddIcon />}
+                        onClick={() => navigate("/app/standards/create")}
+                        sx={{
+                            borderRadius: 2,
+                            boxShadow: 2,
+                            "&:hover": {
+                                boxShadow: 4,
+                            },
+                        }}
+                    >
+                        Add Standard
+                    </Button>
+                </Box>
+
+                {/* Filter Controls */}
+                <Grid container spacing={2} sx={{ mb: 3 }}>
+                    <Grid item xs={12} sm={6} md={4}>
+                        <TextField
+                            fullWidth
+                            variant="outlined"
+                            size="small"
+                            label="Search by name"
+                            value={nameFilter}
+                            onChange={(e) => setNameFilter(e.target.value)}
+                            InputProps={{
+                                startAdornment: <SearchIcon fontSize="small" sx={{ mr: 1, color: "action.active" }} />,
+                                endAdornment: nameFilter && (
+                                    <IconButton
+                                        size="small"
+                                        onClick={() => setNameFilter("")}
+                                        edge="end"
+                                        sx={{ mr: -0.5 }}
+                                    >
+                                        <ClearIcon fontSize="small" />
+                                    </IconButton>
+                                ),
+                            }}
+                            sx={{ bgcolor: "background.paper" }}
+                        />
+                    </Grid>
+                    <Grid item xs={12} sm={6} md={4}>
+                        <TextField
+                            fullWidth
+                            select
+                            variant="outlined"
+                            size="small"
+                            label="Filter by status"
+                            value={isActiveFilter}
+                            onChange={(e) => setIsActiveFilter(e.target.value)}
+                            sx={{ bgcolor: "background.paper" }}
+                        >
+                            <MenuItem value="">All Standards</MenuItem>
+                            <MenuItem value="active">Active</MenuItem>
+                            <MenuItem value="inactive">Inactive</MenuItem>
+                        </TextField>
+                    </Grid>
+                    <Grid
+                        item
+                        xs={12}
+                        md={4}
+                        sx={{
+                            display: "flex",
+                            justifyContent: { xs: "flex-start", md: "flex-end" },
+                        }}
+                    >
+                        <RefreshButton
+                            onClick={loadAllData}
+                            loading={loading}
+                            tooltip="Refresh standards list"
+                        />
+                    </Grid>
+                </Grid>
+            </Paper>
+
+            {/* Standards List */}
+            {isMobile ? (
+                // Mobile card view
+                <Box>
+                    {loading ? (
+                        <Typography sx={{ textAlign: "center", py: 4 }}>
+                            Loading...
+                        </Typography>
+                    ) : filteredStandards.length === 0 ? (
+                        <Typography sx={{ textAlign: "center", py: 4 }}>
+                            No standards found.
+                        </Typography>
+                    ) : (
+                        <Stack spacing={2}>
+                            {filteredStandards.map((standard) => (
+                                <Card key={standard._id} sx={{ borderRadius: 2, boxShadow: 2 }}>
+                                    <CardContent>
+                                        <Box
+                                            sx={{
+                                                display: "flex",
+                                                justifyContent: "space-between",
+                                                alignItems: "center",
+                                                mb: 1,
+                                            }}
+                                        >
+                                            <Typography
+                                                variant="h6"
+                                                gutterBottom
+                                                sx={{
+                                                    fontWeight: 600,
+                                                    fontSize: "1.1rem",
+                                                    color: "primary.main",
+                                                }}
+                                            >
+                                                {standard.name}
+                                            </Typography>
+                                            <Chip
+                                                label={standard.isActive ? "Active" : "Inactive"}
+                                                color={standard.isActive ? "success" : "default"}
+                                                size="small"
+                                                sx={{ fontWeight: 500 }}
+                                            />
+                                        </Box>
+                                        <Typography
+                                            variant="body2"
+                                            color="text.secondary"
+                                            sx={{
+                                                mb: 1,
+                                                display: "flex",
+                                                alignItems: "center",
+                                            }}
+                                        >
+                                            <SchoolIcon
+                                                fontSize="small"
+                                                sx={{ mr: 0.5, opacity: 0.7 }}
+                                            />
+                                            Level: {standard.level || "Not specified"}
+                                        </Typography>
+                                        <Typography
+                                            variant="body2"
+                                            color="text.secondary"
+                                            sx={{
+                                                display: "-webkit-box",
+                                                WebkitLineClamp: 2,
+                                                WebkitBoxOrient: "vertical",
+                                                overflow: "hidden",
+                                                textOverflow: "ellipsis",
+                                            }}
+                                        >
+                                            {standard.description || "No description"}
+                                        </Typography>
+                                    </CardContent>
+                                    <CardActions sx={{ justifyContent: "flex-end", px: 2, pb: 2 }}>
+                                        <Tooltip title="View Details">
+                                            <IconButton
+                                                size="small"
+                                                onClick={() => navigate(`/app/standards/${standard._id}`)}
+                                                sx={{
+                                                    color: "primary.main",
+                                                    bgcolor: (theme) => alpha(theme.palette.primary.main, 0.1),
+                                                    "&:hover": {
+                                                        bgcolor: (theme) => alpha(theme.palette.primary.main, 0.2),
+                                                    },
+                                                    mr: 1,
+                                                }}
+                                            >
+                                                <VisibilityIcon fontSize="small" />
+                                            </IconButton>
+                                        </Tooltip>
+                                        <Tooltip title="Edit">
+                                            <IconButton
+                                                size="small"
+                                                onClick={() => navigate(`/app/standards/${standard._id}/edit`)}
+                                                sx={{
+                                                    color: "primary.main",
+                                                    bgcolor: (theme) => alpha(theme.palette.primary.main, 0.1),
+                                                    "&:hover": {
+                                                        bgcolor: (theme) => alpha(theme.palette.primary.main, 0.2),
+                                                    },
+                                                    mr: 1,
+                                                }}
+                                            >
+                                                <EditIcon fontSize="small" />
+                                            </IconButton>
+                                        </Tooltip>
+                                        <Tooltip title="Delete">
+                                            <IconButton
+                                                size="small"
+                                                onClick={() => handleDeleteClick(standard)}
+                                                sx={{
+                                                    color: "error.main",
+                                                    bgcolor: (theme) => alpha(theme.palette.error.main, 0.1),
+                                                    "&:hover": {
+                                                        bgcolor: (theme) => alpha(theme.palette.error.main, 0.2),
+                                                    },
+                                                }}
+                                            >
+                                                <DeleteIcon fontSize="small" />
+                                            </IconButton>
+                                        </Tooltip>
+                                    </CardActions>
+                                </Card>
+                            ))}
+                        </Stack>
+                    )}
+                </Box>
+            ) : (
+                // Desktop table view
+                <Paper
+                    elevation={0}
+                    sx={{
+                        overflow: "hidden",
+                        borderRadius: 2,
+                        border: "1px solid",
+                        borderColor: "divider",
+                    }}
+                >
+                    <TableContainer
+                        component={Box}
+                        sx={{ maxHeight: "calc(100vh - 250px)" }}
+                    >
+                        <Table stickyHeader sx={{ minWidth: 650 }}>
+                            <TableHead>
+                                <TableRow>
+                                    <TableCell
+                                        sx={{
+                                            fontWeight: 600,
+                                            backgroundColor: (theme) =>
+                                                alpha(theme.palette.primary.main, 0.05),
+                                        }}
+                                    >
+                                        Name
+                                    </TableCell>
+                                    <TableCell
+                                        sx={{
+                                            fontWeight: 600,
+                                            backgroundColor: (theme) =>
+                                                alpha(theme.palette.primary.main, 0.05),
+                                        }}
+                                    >
+                                        Level
+                                    </TableCell>
+                                    <TableCell
+                                        sx={{
+                                            fontWeight: 600,
+                                            backgroundColor: (theme) =>
+                                                alpha(theme.palette.primary.main, 0.05),
+                                        }}
+                                    >
+                                        Status
+                                    </TableCell>
+                                    <TableCell
+                                        align="right"
+                                        sx={{
+                                            fontWeight: 600,
+                                            backgroundColor: (theme) =>
+                                                alpha(theme.palette.primary.main, 0.05),
+                                        }}
+                                    >
+                                        Actions
+                                    </TableCell>
+                                </TableRow>
+                            </TableHead>
+                            <TableBody>
+                                {loading ? (
+                                    <TableRow>
+                                        <TableCell colSpan={4} align="center">
+                                            Loading...
+                                        </TableCell>
+                                    </TableRow>
+                                ) : filteredStandards.length === 0 ? (
+                                    <TableRow>
+                                        <TableCell colSpan={4} align="center">
+                                            No standards found.
+                                        </TableCell>
+                                    </TableRow>
+                                ) : (
+                                    filteredStandards.map((standard) => (
+                                        <TableRow
+                                            key={standard._id}
+                                            hover
+                                            sx={{
+                                                "&:last-child td, &:last-child th": { border: 0, },
+                                            }}
+                                        >
+                                            <TableCell
+                                                component="th"
+                                                scope="row"
+                                                sx={{
+                                                    color: "primary.main",
+                                                    fontWeight: 500,
+                                                }}
+                                            >
+                                                {standard.name}
+                                            </TableCell>
+                                            <TableCell>{standard.level || "Not specified"}</TableCell>
+                                            <TableCell>
+                                                <Chip
+                                                    label={standard.isActive ? "Active" : "Inactive"}
+                                                    color={standard.isActive ? "success" : "default"}
+                                                    size="small"
+                                                    sx={{ fontWeight: 500 }}
+                                                />
+                                            </TableCell>
+                                            <TableCell align="right">
+                                                <Box
+                                                    sx={{ display: "flex", gap: 1, justifyContent: "flex-end" }}
+                                                >
+                                                    <Tooltip title="View Details">
+                                                        <IconButton
+                                                            size="small"
+                                                            onClick={() => navigate(`/app/standards/${standard._id}`)}
+                                                            sx={{
+                                                                color: "primary.main",
+                                                                "&:hover": {
+                                                                    backgroundColor: (theme) =>
+                                                                        alpha(theme.palette.primary.main, 0.1),
+                                                                },
+                                                            }}
+                                                        >
+                                                            <VisibilityIcon fontSize="small" />
+                                                        </IconButton>
+                                                    </Tooltip>
+                                                    <Tooltip title="Edit">
+                                                        <IconButton
+                                                            size="small"
+                                                            onClick={() => navigate(`/app/standards/${standard._id}/edit`)}
+                                                            sx={{
+                                                                color: "primary.main",
+                                                                "&:hover": {
+                                                                    backgroundColor: (theme) =>
+                                                                        alpha(theme.palette.primary.main, 0.1),
+                                                                },
+                                                            }}
+                                                        >
+                                                            <EditIcon fontSize="small" />
+                                                        </IconButton>
+                                                    </Tooltip>
+                                                    <Tooltip title="Delete">
+                                                        <IconButton
+                                                            size="small"
+                                                            onClick={() => handleDeleteClick(standard)}
+                                                            sx={{
+                                                                color: "error.main",
+                                                                "&:hover": {
+                                                                    backgroundColor: (theme) =>
+                                                                        alpha(theme.palette.error.main, 0.1),
+                                                                },
+                                                            }}
+                                                        >
+                                                            <DeleteIcon fontSize="small" />
+                                                        </IconButton>
+                                                    </Tooltip>
+                                                </Box>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))
+                                )}
+                            </TableBody>
+                        </Table>
+                    </TableContainer>
+                </Paper>
+            )}
+
+            {/* Delete Confirmation Dialog */}
+            <DeleteConfirmationDialog
+                open={deleteDialogOpen}
+                onClose={() => setDeleteDialogOpen(false)}
+                onConfirm={handleDeleteConfirm}
+                loading={deleteLoading}
+                itemName={standardToDelete?.name || "this standard"}
+                itemType="standard"
+            />
+        </Box>
+    );
+};
+
+export default StandardList; 

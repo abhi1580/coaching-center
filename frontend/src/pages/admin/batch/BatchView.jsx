@@ -35,14 +35,18 @@ import {
   ListItemButton,
   ListItemText,
   Checkbox,
+  Breadcrumbs,
+  Link,
+  Stack,
 } from "@mui/material";
 import {
   Edit as EditIcon,
   Delete as DeleteIcon,
   PersonAdd as PersonAddIcon,
   Person as PersonIcon,
-  ArrowBack as ArrowBackIcon,
   Search as SearchIcon,
+  Home as HomeIcon,
+  Class as ClassIcon,
 } from "@mui/icons-material";
 import { fetchBatches, deleteBatch } from "../../../store/slices/batchSlice";
 import { fetchStudents, createStudent } from "../../../store/slices/studentSlice";
@@ -50,6 +54,7 @@ import { batchService } from "../../../services/api";
 import { studentService } from "../../../services/api";
 import { Formik, Form, Field } from "formik";
 import * as Yup from "yup";
+import DeleteConfirmationDialog from "../../../components/common/DeleteConfirmationDialog";
 
 const newStudentValidationSchema = Yup.object().shape({
   name: Yup.string().required("Name is required"),
@@ -97,6 +102,11 @@ const BatchView = () => {
   const [selectedExistingStudents, setSelectedExistingStudents] = useState([]);
   const [submitting, setSubmitting] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+
+  // Only keep student removal state
+  const [studentRemovalDialogOpen, setStudentRemovalDialogOpen] = useState(false);
+  const [studentToRemove, setStudentToRemove] = useState(null);
+  const [studentRemovalLoading, setStudentRemovalLoading] = useState(false);
 
   // Load batch data
   useEffect(() => {
@@ -149,14 +159,33 @@ const BatchView = () => {
     }
   };
 
-  const handleDelete = async () => {
-    if (window.confirm("Are you sure you want to delete this batch?")) {
-      try {
-        await dispatch(deleteBatch(id)).unwrap();
-        navigate("/app/batches");
-      } catch (error) {
-        alert("Failed to delete batch: " + error.message);
+  const openStudentRemovalDialog = (student) => {
+    setStudentToRemove(student);
+    setStudentRemovalDialogOpen(true);
+  };
+
+  const closeStudentRemovalDialog = () => {
+    setStudentRemovalDialogOpen(false);
+    setStudentToRemove(null);
+  };
+
+  const confirmStudentRemoval = async () => {
+    if (!studentToRemove) return;
+
+    try {
+      setStudentRemovalLoading(true);
+      const response = await batchService.removeStudentFromBatch(id, studentToRemove._id);
+      if (response?.data?.success) {
+        setSelectedBatch(response.data.data);
+      } else {
+        throw new Error('Failed to remove student');
       }
+      closeStudentRemovalDialog();
+    } catch (error) {
+      console.error('Error removing student:', error);
+      alert("Failed to remove student: " + error.message);
+    } finally {
+      setStudentRemovalLoading(false);
     }
   };
 
@@ -164,7 +193,7 @@ const BatchView = () => {
     try {
       const response = await studentService.getAll();
       const studentsResponse = response.data.data;
-      
+
       const batchStudentIds = selectedBatch.enrolledStudents?.map(
         (student) => student._id
       ) || [];
@@ -192,7 +221,7 @@ const BatchView = () => {
       const selectedStudents = availableStudentsForBatch.filter(
         student => selectedExistingStudents.includes(student._id)
       );
-      
+
       if (selectedStudents.length === 0) {
         alert("No valid students selected");
         setSubmitting(false);
@@ -203,7 +232,7 @@ const BatchView = () => {
       for (const student of selectedStudents) {
         try {
           const response = await batchService.addStudentToBatch(id, student._id);
-          
+
           if (response?.data?.success && response?.data?.data) {
             setSelectedBatch(response.data.data);
           } else {
@@ -246,22 +275,6 @@ const BatchView = () => {
     await processNextStudent();
   };
 
-  const handleRemoveStudent = async (studentId) => {
-    if (window.confirm("Are you sure you want to remove this student from the batch?")) {
-      try {
-        const response = await batchService.removeStudentFromBatch(id, studentId);
-        if (response?.data?.success) {
-          setSelectedBatch(response.data.data);
-        } else {
-          throw new Error('Failed to remove student');
-        }
-      } catch (error) {
-        console.error('Error removing student:', error);
-        alert("Failed to remove student: " + error.message);
-      }
-    }
-  };
-
   const filteredStudents = searchQuery ? availableStudentsForBatch.filter(
     (student) => {
       const searchLower = searchQuery.toLowerCase();
@@ -279,10 +292,10 @@ const BatchView = () => {
       // Get all students to find the latest ID
       const response = await studentService.getAll();
       const students = response.data.data;
-      
+
       // Get current year
       const currentYear = new Date().getFullYear();
-      
+
       // Find the highest number for the current year
       let maxNumber = 0;
       students.forEach(student => {
@@ -296,7 +309,7 @@ const BatchView = () => {
           }
         }
       });
-      
+
       // Generate new ID
       const newNumber = (maxNumber + 1).toString().padStart(3, '0');
       return `${currentYear}-${newNumber}`;
@@ -317,6 +330,35 @@ const BatchView = () => {
 
   return (
     <Box sx={{ p: { xs: 1, sm: 2, md: 3 } }}>
+      {/* Breadcrumbs */}
+      <Breadcrumbs
+        aria-label="breadcrumb"
+        sx={{ mb: 2, mt: 1 }}
+        separator="›"
+      >
+        <Link
+          underline="hover"
+          color="inherit"
+          href="/app/dashboard"
+          sx={{ display: 'flex', alignItems: 'center' }}
+        >
+          <HomeIcon sx={{ mr: 0.5 }} fontSize="small" />
+          Dashboard
+        </Link>
+        <Link
+          underline="hover"
+          color="inherit"
+          href="/app/batches"
+          sx={{ display: 'flex', alignItems: 'center' }}
+        >
+          <ClassIcon sx={{ mr: 0.5 }} fontSize="small" />
+          Batches
+        </Link>
+        <Typography color="text.primary" sx={{ display: 'flex', alignItems: 'center' }}>
+          {selectedBatch.name}
+        </Typography>
+      </Breadcrumbs>
+
       {/* Enhanced Header */}
       <Paper
         elevation={0}
@@ -331,16 +373,6 @@ const BatchView = () => {
           flexWrap: "wrap",
         }}
       >
-        <IconButton
-          onClick={() => navigate("/app/batches")}
-          sx={{
-            bgcolor: "background.paper",
-            boxShadow: 1,
-            "&:hover": { boxShadow: 2 },
-          }}
-        >
-          <ArrowBackIcon />
-        </IconButton>
         <Typography
           variant="h4"
           component="h1"
@@ -348,19 +380,22 @@ const BatchView = () => {
             fontSize: { xs: "1.5rem", sm: "2rem" },
             fontWeight: 600,
             color: "primary.main",
-            flex: 1,
           }}
         >
-          {selectedBatch.name}
+          {loading ? "Loading Batch..." : `Batch: ${selectedBatch?.name}`}
         </Typography>
-        <Chip
-          label={
-            selectedBatch.status.charAt(0).toUpperCase() +
-            selectedBatch.status.slice(1)
-          }
-          color={getStatusColor(selectedBatch.status)}
-          sx={{ fontWeight: 500 }}
-        />
+
+        {/* Action Buttons - Keep only Edit button */}
+        <Box sx={{ flexGrow: 1 }} />
+        {!loading && (
+          <Button
+            variant="outlined"
+            color="primary"
+            onClick={() => navigate(`/app/batches/${id}/edit`)}
+          >
+            Edit Batch
+          </Button>
+        )}
       </Paper>
 
       <Grid container spacing={3}>
@@ -585,7 +620,7 @@ const BatchView = () => {
                   disabled={
                     selectedBatch.capacity &&
                     selectedBatch.enrolledStudents?.length >=
-                      selectedBatch.capacity
+                    selectedBatch.capacity
                   }
                   sx={{ borderRadius: 2 }}
                 >
@@ -598,7 +633,7 @@ const BatchView = () => {
                   disabled={
                     selectedBatch.capacity &&
                     selectedBatch.enrolledStudents?.length >=
-                      selectedBatch.capacity
+                    selectedBatch.capacity
                   }
                   sx={{ borderRadius: 2 }}
                 >
@@ -635,7 +670,7 @@ const BatchView = () => {
                           <Tooltip title="Remove from batch">
                             <IconButton
                               size="small"
-                              onClick={() => handleRemoveStudent(student._id)}
+                              onClick={() => openStudentRemovalDialog(student)}
                               sx={{
                                 color: "error.main",
                                 "&:hover": {
@@ -663,27 +698,6 @@ const BatchView = () => {
           </Paper>
         </Grid>
       </Grid>
-
-      {/* Action Buttons */}
-      <Box sx={{ mt: 3, display: "flex", gap: 2, justifyContent: "flex-end" }}>
-        <Button
-          variant="outlined"
-          color="error"
-          startIcon={<DeleteIcon />}
-          onClick={handleDelete}
-          sx={{ borderRadius: 2 }}
-        >
-          Delete Batch
-        </Button>
-        <Button
-          variant="contained"
-          startIcon={<EditIcon />}
-          onClick={() => navigate(`/app/batches/${id}/edit`)}
-          sx={{ borderRadius: 2 }}
-        >
-          Edit Batch
-        </Button>
-      </Box>
 
       {/* Add Existing Student Dialog */}
       <Dialog
@@ -1232,6 +1246,17 @@ const BatchView = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Add Delete Confirmation Dialogs at the bottom of the component before the closing Box */}
+      <DeleteConfirmationDialog
+        open={studentRemovalDialogOpen}
+        onClose={closeStudentRemovalDialog}
+        onConfirm={confirmStudentRemoval}
+        loading={studentRemovalLoading}
+        itemName={studentToRemove?.name}
+        title="Remove Student"
+        message="Are you sure you want to remove student"
+      />
     </Box>
   );
 };

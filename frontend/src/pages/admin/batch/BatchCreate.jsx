@@ -17,13 +17,15 @@ import {
   InputAdornment,
   IconButton,
   CircularProgress,
+  Breadcrumbs,
+  Link,
+  alpha,
 } from "@mui/material";
-import { alpha } from "@mui/material/styles";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { createBatch } from "../../../store/slices/batchSlice";
 import { fetchStandards } from "../../../store/slices/standardSlice";
 import { fetchSubjects } from "../../../store/slices/subjectSlice";
 import { fetchTeachers } from "../../../store/slices/teacherSlice";
+import { Home as HomeIcon, Class as ClassIcon } from "@mui/icons-material";
 
 const DAYS_OF_WEEK = [
   "Monday",
@@ -81,8 +83,8 @@ const BatchCreate = () => {
       const standard = standards.find((s) => s._id === value);
       const standardSubjects = standard
         ? subjects.filter((subject) =>
-            standard.subjects?.some((s) => (s._id || s) === subject._id)
-          )
+          standard.subjects?.some((s) => (s._id || s) === subject._id)
+        )
         : [];
       setFilteredSubjects(standardSubjects);
       setFilteredTeachers([]);
@@ -95,17 +97,17 @@ const BatchCreate = () => {
     } else if (name === "subject") {
       console.log(`Selected subject ID: ${value}`);
       console.log(`Available teachers:`, teachers.length);
-      
+
       const subjectTeachers = teachers.filter((teacher) => {
         if (!teacher.subjects || !Array.isArray(teacher.subjects)) {
           console.log(`Teacher ${teacher.name} has no subjects array`);
           return false;
         }
-        
+
         // Log the teacher's subjects for debugging
-        console.log(`Teacher ${teacher.name} subjects:`, 
+        console.log(`Teacher ${teacher.name} subjects:`,
           JSON.stringify(teacher.subjects.map(s => typeof s === 'object' ? s._id : s)));
-        
+
         return teacher.subjects.some((s) => {
           // Handle object format (populated subjects)
           if (typeof s === 'object' && s !== null && s._id) {
@@ -118,14 +120,14 @@ const BatchCreate = () => {
           return false;
         });
       });
-      
+
       console.log(`Filtered ${subjectTeachers.length} teachers for subject ${value}`);
-      
+
       if (subjectTeachers.length === 0) {
-        console.log(`No teachers found for subject ID ${value}. All teachers:`, 
+        console.log(`No teachers found for subject ID ${value}. All teachers:`,
           teachers.map(t => ({ name: t.name, subjects: t.subjects })));
       }
-      
+
       setFilteredTeachers(subjectTeachers);
       setFormData({
         ...formData,
@@ -189,6 +191,33 @@ const BatchCreate = () => {
 
   return (
     <Box sx={{ p: { xs: 1, sm: 2, md: 3 } }}>
+      {/* Breadcrumbs */}
+      <Breadcrumbs
+        aria-label="breadcrumb"
+        sx={{ mb: 2, mt: 1 }}
+        separator="›"
+      >
+        <Link
+          underline="hover"
+          color="inherit"
+          href="/app/dashboard"
+          sx={{ display: 'flex', alignItems: 'center' }}
+        >
+          <HomeIcon sx={{ mr: 0.5 }} fontSize="small" />
+          Dashboard
+        </Link>
+        <Link
+          underline="hover"
+          color="inherit"
+          href="/app/batches"
+          sx={{ display: 'flex', alignItems: 'center' }}
+        >
+          <ClassIcon sx={{ mr: 0.5 }} fontSize="small" />
+          Batches
+        </Link>
+        <Typography color="text.primary">Create Batch</Typography>
+      </Breadcrumbs>
+
       {/* Enhanced Header */}
       <Paper
         elevation={0}
@@ -203,16 +232,6 @@ const BatchCreate = () => {
           flexWrap: "wrap",
         }}
       >
-        <IconButton
-          onClick={() => navigate("/app/batches")}
-          sx={{
-            bgcolor: "background.paper",
-            boxShadow: 1,
-            "&:hover": { boxShadow: 2 },
-          }}
-        >
-          <ArrowBackIcon />
-        </IconButton>
         <Typography
           variant="h4"
           component="h1"

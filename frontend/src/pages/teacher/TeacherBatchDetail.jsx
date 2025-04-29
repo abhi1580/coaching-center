@@ -49,7 +49,7 @@ function TeacherBatchDetail() {
   const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  
+
   const [batch, setBatch] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -71,7 +71,7 @@ function TeacherBatchDetail() {
           `${baseUrl}/batches/${id}?populate=enrolledStudents`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
-        
+
         setBatch(response.data.data || response.data);
         setError(null);
       } catch (err) {
@@ -109,7 +109,7 @@ function TeacherBatchDetail() {
     if (!daysArray || !Array.isArray(daysArray) || daysArray.length === 0) {
       return "No days set";
     }
-    
+
     const dayNames = {
       0: "Sunday",
       1: "Monday",
@@ -204,8 +204,8 @@ function TeacherBatchDetail() {
         <ListItem
           key={student._id}
           alignItems="flex-start"
-          sx={{ 
-            flexDirection: 'column', 
+          sx={{
+            flexDirection: 'column',
             alignItems: 'flex-start',
             borderBottom: '1px solid',
             borderColor: 'divider',
@@ -223,7 +223,7 @@ function TeacherBatchDetail() {
               secondary={student.studentId || "ID: N/A"}
             />
           </Box>
-          
+
           <Box sx={{ pl: 9, width: '100%' }}>
             <Stack spacing={1}>
               <Box sx={{ display: "flex", alignItems: "center" }}>
@@ -232,14 +232,14 @@ function TeacherBatchDetail() {
                   {student.standard?.name || student.standard || "N/A"}
                 </Typography>
               </Box>
-              
+
               <Box sx={{ display: "flex", alignItems: "center" }}>
                 <EmailIcon fontSize="small" sx={{ mr: 1, color: "text.secondary" }} />
                 <Typography variant="body2" sx={{ wordBreak: 'break-word' }}>
                   {student.email}
                 </Typography>
               </Box>
-              
+
               <Box sx={{ display: "flex", alignItems: "center" }}>
                 <PhoneIcon fontSize="small" sx={{ mr: 1, color: "text.secondary" }} />
                 <Typography variant="body2">
@@ -256,33 +256,20 @@ function TeacherBatchDetail() {
   return (
     <Box sx={{ p: { xs: 1, sm: 2, md: 3 } }}>
       {/* Breadcrumbs */}
-      {!isMobile && (
-        <Breadcrumbs sx={{ mb: 2 }} separator="›" aria-label="breadcrumb">
-          <Link
-            underline="hover"
-            color="inherit"
-            onClick={() => navigate("/app/teacher/batches")}
-            sx={{ cursor: "pointer" }}
-          >
-            My Batches
-          </Link>
-          <Typography color="text.primary">
-            {batch.name}
-          </Typography>
-        </Breadcrumbs>
-      )}
-
-      {/* Back button */}
-      <Box sx={{ mb: isMobile ? 2 : 3 }}>
-        <Button
-          startIcon={<ArrowBackIcon />}
+      <Breadcrumbs sx={{ mb: 2, mt: 1 }} separator="›" aria-label="breadcrumb">
+        <Link
+          underline="hover"
+          color="inherit"
           onClick={() => navigate("/app/teacher/batches")}
-          sx={{ mb: 1 }}
-          size={isMobile ? "small" : "medium"}
+          sx={{ cursor: "pointer", display: 'flex', alignItems: 'center' }}
         >
-          Back to Batches
-        </Button>
-      </Box>
+          <SchoolIcon sx={{ mr: 0.5 }} fontSize="small" />
+          My Batches
+        </Link>
+        <Typography color="text.primary" sx={{ display: 'flex', alignItems: 'center' }}>
+          {batch.name}
+        </Typography>
+      </Breadcrumbs>
 
       {/* Batch header */}
       <Paper
@@ -342,11 +329,11 @@ function TeacherBatchDetail() {
           <Chip
             label={batch.status || "Unknown"}
             color={getStatusColor(batch.status)}
-            sx={{ 
+            sx={{
               fontWeight: "medium",
-              position: isMobile ? "absolute" : "relative", 
-              top: isMobile ? 16 : "auto", 
-              right: isMobile ? 16 : "auto" 
+              position: isMobile ? "absolute" : "relative",
+              top: isMobile ? 16 : "auto",
+              right: isMobile ? 16 : "auto"
             }}
             size={isMobile ? "small" : "medium"}
           />
@@ -529,9 +516,9 @@ function TeacherBatchDetail() {
         <Typography
           variant="h5"
           component="h2"
-          sx={{ 
-            mb: 2, 
-            fontWeight: 600, 
+          sx={{
+            mb: 2,
+            fontWeight: 600,
             color: "primary.main",
             fontSize: { xs: '1.25rem', sm: '1.5rem' }
           }}

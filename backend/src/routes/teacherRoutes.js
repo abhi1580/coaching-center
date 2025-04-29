@@ -16,6 +16,8 @@ import {
   createTeacherValidator,
   updateTeacherValidator,
 } from "../middleware/validators/teacherValidators.js";
+import Teacher from "../models/Teacher.js";
+import User from "../models/User.js";
 
 const router = express.Router();
 

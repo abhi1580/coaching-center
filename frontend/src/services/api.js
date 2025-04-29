@@ -138,7 +138,18 @@ export const studentService = {
 // Teacher services
 export const teacherService = {
   getAll: () => api.get("/teachers"),
-  getById: (id) => api.get(`/teachers/${id}`),
+  getById: (id) => {
+    console.log(`Fetching teacher with ID: ${id}`);
+    return api.get(`/teachers/${id}`)
+      .then(response => {
+        console.log(`Received teacher data:`, response.data);
+        return response;
+      })
+      .catch(error => {
+        console.error(`Error fetching teacher ${id}:`, error);
+        throw error;
+      });
+  },
   create: (data) => api.post("/teachers", data),
   update: (id, data) => api.put(`/teachers/${id}`, data),
   delete: (id) => api.delete(`/teachers/${id}`),
