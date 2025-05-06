@@ -73,11 +73,27 @@ api.interceptors.response.use(
       }
     });
 
+    // Check if this is a specific teacher dashboard error that shouldn't trigger a redirect
+    if (error.config?.url?.includes('/teacher/dashboard')) {
+      // Don't redirect for teacher dashboard errors, just let component handle it
+      return Promise.reject(error);
+    }
+
     if (error.response?.status === 401) {
-      // Handle unauthorized access
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
-      window.location.href = "/login";
+      // Check if we're in a teacher route
+      const currentPath = window.location.pathname;
+      const isTeacherRoute = currentPath.includes('/app/teacher');
+      
+      // Only clear auth and redirect if not already on login page
+      if (!window.location.pathname.includes('/login')) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        
+        // Only redirect if not from a teacher route
+        if (!isTeacherRoute) {
+          window.location.href = "/login";
+        }
+      }
     }
     return Promise.reject(error);
   }
@@ -88,10 +104,17 @@ export const authService = {
   login: (data) => api.post("/auth/login", data),
   register: (data) => api.post("/auth/register", data),
   logout: () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    delete api.defaults.headers.common["Authorization"];
-    return api.post("/auth/logout");
+    // Store the token temporarily
+    const token = localStorage.getItem("token");
+    
+    // Make the API call first
+    return api.post("/auth/logout")
+      .finally(() => {
+        // Remove items from localStorage after API call (whether successful or not)
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        delete api.defaults.headers.common["Authorization"];
+      });
   },
   getProfile: () => api.get("/auth/profile"),
   forgotPassword: (email) => api.post("/auth/forgot-password", { email }),

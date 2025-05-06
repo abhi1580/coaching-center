@@ -49,7 +49,7 @@ function TeacherDashboard() {
           `${import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL + '/teacher/dashboard' : 'http://localhost:5000/api/teacher/dashboard'}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
-        
+
         // Handle the response data safely
         if (response.data && response.data.data) {
           setStats({
@@ -77,9 +77,27 @@ function TeacherDashboard() {
           activeAnnouncements: [],
           upcomingClasses: []
         });
-        setError(
-          err.response?.data?.message || "Failed to load dashboard data"
-        );
+
+        // Improve error handling to prevent refresh loops
+        // Check for specific error types
+        if (err.response) {
+          // The request was made and the server responded with a status code
+          // that falls out of the range of 2xx
+          const status = err.response.status;
+          if (status === 401) {
+            setError("Your session has expired. Please login again.");
+          } else if (status === 403) {
+            setError("You don't have permission to access this resource.");
+          } else {
+            setError(err.response.data?.message || "Failed to load dashboard data");
+          }
+        } else if (err.request) {
+          // The request was made but no response was received
+          setError("Network error. Please check your connection.");
+        } else {
+          // Something happened in setting up the request that triggered an Error
+          setError("An unexpected error occurred. Please try again later.");
+        }
       } finally {
         setLoading(false);
       }
@@ -180,18 +198,18 @@ function TeacherDashboard() {
   // Format date function
   const formatDate = (dateString) => {
     if (!dateString) return 'Not scheduled';
-    
+
     try {
       const date = new Date(dateString);
       if (isNaN(date.getTime())) return 'Invalid date';
-      
-      const options = { 
-        weekday: 'short', 
-        day: 'numeric', 
+
+      const options = {
+        weekday: 'short',
+        day: 'numeric',
         month: 'short',
         year: 'numeric',
-        hour: '2-digit', 
-        minute: '2-digit' 
+        hour: '2-digit',
+        minute: '2-digit'
       };
       return date.toLocaleDateString('en-US', options);
     } catch (error) {
@@ -203,7 +221,7 @@ function TeacherDashboard() {
   // Format time function for displaying class times
   const formatTime = (timeString) => {
     if (!timeString) return '';
-    
+
     try {
       // Handle time strings like "14:30" or "2:30 PM"
       if (timeString.includes(':')) {
@@ -234,11 +252,11 @@ function TeacherDashboard() {
         <Typography
           variant="h4"
           component="h1"
-          sx={{ 
+          sx={{
             fontSize: { xs: "1.5rem", sm: "1.8rem", md: "2rem" },
             fontWeight: 600,
             mb: 1,
-            color: "primary.main" 
+            color: "primary.main"
           }}
         >
           Welcome, {user?.name || "Teacher"}!
@@ -278,7 +296,7 @@ function TeacherDashboard() {
           Upcoming Classes
         </Typography>
         <Divider sx={{ mb: 2 }} />
-        
+
         {stats.upcomingClasses.length === 0 ? (
           <Typography variant="body1" color="text.secondary">
             No upcoming classes scheduled.
@@ -304,9 +322,9 @@ function TeacherDashboard() {
                     <Typography variant="body2" color="text.secondary" gutterBottom>
                       <strong>Next Class:</strong> {formatDate(classItem.date)}
                     </Typography>
-                    <Chip 
-                      size="small" 
-                      label="Scheduled" 
+                    <Chip
+                      size="small"
+                      label="Scheduled"
                       color="primary"
                       sx={{ mt: 1 }}
                     />
@@ -328,7 +346,7 @@ function TeacherDashboard() {
           Recent Announcements
         </Typography>
         <Divider sx={{ mb: 2 }} />
-        
+
         {stats.activeAnnouncements.length === 0 ? (
           <Typography variant="body1" color="text.secondary">
             No active announcements.
@@ -337,11 +355,11 @@ function TeacherDashboard() {
           <Grid container spacing={2}>
             {stats.activeAnnouncements.slice(0, 3).map((announcement, index) => (
               <Grid item xs={12} key={index}>
-                <Card 
-                  variant="outlined" 
-                  sx={{ 
+                <Card
+                  variant="outlined"
+                  sx={{
                     borderRadius: 2,
-                    borderLeft: `4px solid ${theme.palette.primary.main}` 
+                    borderLeft: `4px solid ${theme.palette.primary.main}`
                   }}
                 >
                   <CardContent>

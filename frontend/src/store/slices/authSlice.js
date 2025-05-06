@@ -26,6 +26,21 @@ export const login = createAsyncThunk(
   }
 );
 
+// Async thunk for logout
+export const logoutUser = createAsyncThunk(
+  "auth/logout",
+  async (_, { rejectWithValue }) => {
+    try {
+      await authService.logout();
+      return { success: true };
+    } catch (error) {
+      console.error("Logout error:", error);
+      // Still clear local state even if the API call fails
+      return { success: true };
+    }
+  }
+);
+
 // Initialize state from localStorage if available
 const initialState = {
   user: (() => {
@@ -44,8 +59,8 @@ const authSlice = createSlice({
   name: "auth",
   initialState,
   reducers: {
+    // Keep a simple synchronous logout for backward compatibility
     logout: (state) => {
-      authService.logout(); // This will handle token removal and headers
       state.user = null;
       state.isAuthenticated = false;
       state.error = null;
@@ -89,6 +104,22 @@ const authSlice = createSlice({
         state.error = action.payload?.message || "Login failed";
         state.user = null;
         state.isAuthenticated = false;
+      })
+      // Add logout cases
+      .addCase(logoutUser.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(logoutUser.fulfilled, (state) => {
+        state.loading = false;
+        state.user = null;
+        state.isAuthenticated = false;
+        state.error = null;
+      })
+      .addCase(logoutUser.rejected, (state) => {
+        state.loading = false;
+        state.user = null;
+        state.isAuthenticated = false;
+        state.error = null;
       });
   },
 });
