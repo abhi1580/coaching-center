@@ -17,7 +17,7 @@ import {
 } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
 import { useSelector, useDispatch } from "react-redux";
-import { logout } from "../../store/slices/authSlice";
+import { logoutUser } from "../../store/slices/authSlice";
 
 // Define public pages for unauthenticated users
 const publicPages = [
@@ -66,7 +66,7 @@ const MainHeader = () => {
     } else if (user?.role === "student") {
       return [
         ...publicPages,
-        { name: "Dashboard", path: "/app/student-dashboard" },
+        { name: "Dashboard", path: "/app/student/dashboard" },
       ];
     }
 
@@ -88,9 +88,15 @@ const MainHeader = () => {
     setAnchorElUser(null);
   };
 
-  const handleLogout = () => {
-    dispatch(logout());
+  const handleLogout = async () => {
+    try {
+      await dispatch(logoutUser()).unwrap();
+      navigate("/login");
+    } catch (error) {
+      console.error("Logout failed:", error);
+      // Navigate anyway even if the API call fails
     navigate("/login");
+    }
   };
 
   return (
@@ -252,7 +258,7 @@ const MainHeader = () => {
                     } else if (user?.role === "teacher") {
                       navigate("/app/teacher/dashboard");
                     } else if (user?.role === "student") {
-                      navigate("/app/student-dashboard");
+                      navigate("/app/student/dashboard");
                     } else {
                       navigate("/app");
                     }

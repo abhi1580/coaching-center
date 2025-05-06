@@ -201,13 +201,13 @@ const StandardList = () => {
                                 endAdornment: (
                                     <Box sx={{ display: 'flex', alignItems: 'center' }}>
                                         {nameFilter && (
-                                            <IconButton
-                                                size="small"
-                                                onClick={() => setNameFilter("")}
-                                                edge="end"
-                                            >
-                                                <ClearIcon fontSize="small" />
-                                            </IconButton>
+                                    <IconButton
+                                        size="small"
+                                        onClick={() => setNameFilter("")}
+                                        edge="end"
+                                    >
+                                        <ClearIcon fontSize="small" />
+                                    </IconButton>
                                         )}
                                         <SearchIcon fontSize="small" sx={{ ml: 0.5, color: "action.active" }} />
                                     </Box>

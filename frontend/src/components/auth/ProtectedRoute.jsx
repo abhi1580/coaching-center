@@ -14,7 +14,7 @@ const ProtectedRoute = ({ children, allowedRoles = [] }) => {
     if (user?.role === "teacher") {
       return <Navigate to="/app/teacher/dashboard" />;
     } else if (user?.role === "student") {
-      return <Navigate to="/app/student-dashboard" />;
+      return <Navigate to="/app/student/dashboard" />;
     } else if (user?.role === "admin") {
       return <Navigate to="/app/dashboard" />;
     }

@@ -58,14 +58,43 @@ const userSchema = new mongoose.Schema(
 // User schema pre-save hook for password hashing
 userSchema.pre("save", async function (next) {
   try {
+    // Only hash the password if it has been modified (or is new)
     if (!this.isModified("password")) {
       return next();
     }
 
+    console.log("Hashing password for user:", this._id);
     const salt = await bcrypt.genSalt(10);
     this.password = await bcrypt.hash(this.password, salt);
     next();
   } catch (error) {
+    console.error("Error in pre-save hook:", error);
+    next(error);
+  }
+});
+
+// Simplified middleware for all update operations
+userSchema.pre(/^findOneAndUpdate|updateOne|findByIdAndUpdate/, async function (next) {
+  try {
+    const update = this.getUpdate();
+    
+    // Check if password field exists in the update
+    if (update && update.password) {
+      console.log("Hashing password in update operation");
+      const salt = await bcrypt.genSalt(10);
+      update.password = await bcrypt.hash(update.password, salt);
+    }
+    
+    // Check if $ operators are being used (like $set)
+    if (update && update.$set && update.$set.password) {
+      console.log("Hashing password in $set operation");
+      const salt = await bcrypt.genSalt(10);
+      update.$set.password = await bcrypt.hash(update.$set.password, salt);
+    }
+    
+    next();
+  } catch (error) {
+    console.error("Error in update middleware:", error);
     next(error);
   }
 });
@@ -95,6 +124,16 @@ userSchema.methods.getResetPasswordToken = function () {
     this.resetPasswordExpire = Date.now() + 10 * 60 * 1000; // 10 minutes
 
     return resetToken;
+  } catch (error) {
+    throw error;
+  }
+};
+
+// Static method to hash password separately
+userSchema.statics.hashPassword = async function(password) {
+  try {
+    const salt = await bcrypt.genSalt(10);
+    return await bcrypt.hash(password, salt);
   } catch (error) {
     throw error;
   }

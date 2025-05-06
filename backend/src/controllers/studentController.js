@@ -122,10 +122,11 @@ export const createStudent = async (req, res) => {
       previousPercentage,
       joiningDate,
       studentId,
+      password,
     } = req.body;
 
     // Validate required fields
-    const requiredFields = ["name", "email", "phone", "gender", "address"];
+    const requiredFields = ["name", "email", "phone", "gender", "address", "password"];
     const missingFields = requiredFields.filter((field) => !req.body[field]);
 
     if (missingFields.length > 0) {
@@ -149,9 +150,7 @@ export const createStudent = async (req, res) => {
       });
     }
 
-    // Create user account for the student
-    const password = phone.slice(-6); // Simple password from phone number
-
+    // Create user account for the student with the provided password
     try {
       const user = await User.create(
         [
@@ -228,6 +227,13 @@ export const createStudent = async (req, res) => {
 // @access  Private
 export const updateStudent = async (req, res) => {
   try {
+    const { id } = req.params;
+    
+    // Validate object ID
+    if (!validateObjectId(id)) {
+      return errorResponse(res, 400, "Invalid student ID");
+    }
+    
     const {
       name,
       email,
@@ -244,17 +250,36 @@ export const updateStudent = async (req, res) => {
       schoolName,
       previousPercentage,
       joiningDate,
+      password,
+      status,
     } = req.body;
 
+    // Check if student exists
+    const existingStudent = await Student.findById(id)
+      .populate("user", "gender"); // Populate existing user to get current gender
+    
+    if (!existingStudent) {
+      return errorResponse(res, 404, "Student not found");
+    }
+
+    // Check if email is already taken by another user
+    if (email && email !== existingStudent.email) {
+      const emailExists = await Student.findOne({ email, _id: { $ne: id } });
+      if (emailExists) {
+        return errorResponse(res, 400, "Email is already in use");
+      }
+    }
+
+    // Update student document
     const student = await Student.findByIdAndUpdate(
-      req.params.id,
+      id,
       {
         name,
         email,
         phone,
         standard,
-        subjects: subjects || [],
-        batches: batches || [],
+        subjects: subjects || existingStudent.subjects,
+        batches: batches || existingStudent.batches,
         parentName,
         parentPhone,
         address,
@@ -264,6 +289,7 @@ export const updateStudent = async (req, res) => {
         schoolName,
         previousPercentage,
         joiningDate,
+        status: status || existingStudent.status,
       },
       {
         new: true,
@@ -271,22 +297,54 @@ export const updateStudent = async (req, res) => {
       }
     );
 
-    if (!student) {
-      return res.status(404).json({
-        success: false,
-        message: "Student not found",
-      });
+    // If student has a linked user account, update that too
+    if (student.user) {
+      // Get current user data to ensure we have all required fields
+      const currentUser = await User.findById(student.user);
+      
+      if (!currentUser) {
+        return errorResponse(res, 404, "Associated user account not found");
+      }
+      
+      // Ensure gender is always provided
+      const userGender = gender || existingStudent.gender || currentUser.gender;
+      
+      try {
+        if (password) {
+          // When updating password, we want to ensure it's hashed
+          // APPROACH 1: Use save method to trigger the pre-save hook
+          const user = await User.findById(student.user);
+          if (user) {
+            // Update all user fields
+            user.name = name || currentUser.name;
+            user.email = email || currentUser.email;
+            user.phone = phone || currentUser.phone;
+            user.gender = userGender;
+            user.address = address || currentUser.address;
+            user.password = password; // This will be hashed by pre-save hook
+            await user.save();
+            console.log("Updated user with password using save method");
+          }
+        } else {
+          // For non-password updates, use findByIdAndUpdate
+          await User.findByIdAndUpdate(student.user, {
+            name: name || currentUser.name,
+            email: email || currentUser.email,
+            phone: phone || currentUser.phone,
+            gender: userGender,
+            address: address || currentUser.address,
+          });
+        }
+      } catch (error) {
+        console.error("Error updating user:", error);
+        return errorResponse(res, 500, `Error updating user account: ${error.message}`);
+      }
     }
 
-    res.status(200).json({
-      success: true,
-      data: student,
-    });
+    return successResponse(res, 200, "Student updated successfully", student);
   } catch (err) {
-    res.status(400).json({
-      success: false,
-      message: err.message,
-    });
+    console.error("Error updating student:", err);
+    return errorResponse(res, 400, err.message);
   }
 };
 

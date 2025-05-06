@@ -5,6 +5,8 @@ import {
   updateStudentProfile,
   getStudentBatches,
   getStudentBatchDetails,
+  getStudentAttendance,
+  getStudentDetails
 } from "../../controllers/student/studentController.js";
 
 const router = express.Router();
@@ -18,8 +20,15 @@ router.route("/profile")
   .get(getStudentProfile)
   .put(updateStudentProfile);
 
+// Get student's own details (used by student dashboard)
+router.get("/details", getStudentDetails);
+
 // Student batches routes
 router.get("/batches", getStudentBatches);
 router.get("/batches/:id", getStudentBatchDetails);
+
+// Student attendance routes
+router.get("/attendance", getStudentAttendance);
+router.get("/attendance/:batchId", getStudentAttendance);
 
 export default router; 

@@ -29,7 +29,7 @@ import {
   Logout as LogoutIcon,
 } from "@mui/icons-material";
 import { useSelector, useDispatch } from "react-redux";
-import { logout } from "../../store/slices/authSlice";
+import { logoutUser } from "../../store/slices/authSlice";
 
 const drawerWidth = 240;
 
@@ -68,9 +68,15 @@ const Layout = () => {
     }
   };
 
-  const handleLogout = () => {
-    dispatch(logout());
-    navigate("/login");
+  const handleLogout = async () => {
+    try {
+      await dispatch(logoutUser()).unwrap();
+      navigate("/login");
+    } catch (error) {
+      console.error("Logout failed:", error);
+      // Navigate anyway even if the API call fails
+      navigate("/login");
+    }
   };
 
   const drawer = (

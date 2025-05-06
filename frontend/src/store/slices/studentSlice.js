@@ -52,11 +52,17 @@ export const createStudent = createAsyncThunk(
 
 export const updateStudent = createAsyncThunk(
   "students/update",
-  async ({ id, data }, { rejectWithValue }) => {
+  async ({ id, studentData }, { rejectWithValue }) => {
     try {
-      const response = await studentService.update(id, data);
+      console.log(
+        "updateStudent action called with data:",
+        JSON.stringify(studentData, null, 2)
+      );
+      
+      const response = await studentService.update(id, studentData);
       return response.data.data || response.data;
     } catch (error) {
+      console.error("Error in updateStudent:", error.response?.data);
       return rejectWithValue(
         error.response?.data || { message: "Failed to update student" }
       );

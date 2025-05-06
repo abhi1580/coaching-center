@@ -8,6 +8,10 @@ export const createStudentValidator = [
   check("parentName", "Parent name is required").not().isEmpty(),
   check("parentPhone", "Parent phone number is required").not().isEmpty(),
   check("classes", "Classes must be an array").optional().isArray(),
+  check("password", "Password is required and must be at least 6 characters")
+    .isLength({ min: 6 })
+    .not()
+    .isEmpty(),
 ];
 
 export const updateStudentValidator = [
@@ -24,4 +28,9 @@ export const updateStudentValidator = [
   check("status", "Status must be either active or inactive")
     .optional()
     .isIn(["active", "inactive"]),
+  // Password is optional for updates
+  check("password")
+    .optional()
+    .isLength({ min: 6 })
+    .withMessage("Password must be at least 6 characters"),
 ];

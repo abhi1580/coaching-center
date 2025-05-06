@@ -68,6 +68,7 @@ import {
   updateStudent,
   deleteStudent,
   resetStatus,
+  createStudent,
 } from "../../store/slices/studentSlice";
 import { fetchStandards } from "../../store/slices/standardSlice";
 import { fetchSubjects } from "../../store/slices/subjectSlice";
@@ -76,7 +77,7 @@ import { dashboardService } from "../../services/api";
 import RefreshButton from "../../components/common/RefreshButton";
 import { alpha } from "@mui/material/styles";
 
-const validationSchema = Yup.object({
+const validationSchema = Yup.object().shape({
   name: Yup.string().required("Name is required"),
   email: Yup.string().email("Invalid email").required("Email is required"),
   phone: Yup.string()
@@ -102,6 +103,9 @@ const validationSchema = Yup.object({
     .transform((value) => (isNaN(value) ? null : value))
     .notRequired(),
   joiningDate: Yup.date().required("Joining date is required"),
+  password: Yup.string()
+    .min(6, "Password must be at least 6 characters")
+    .nullable(),
 });
 
 const Students = () => {
@@ -238,24 +242,35 @@ const Students = () => {
       schoolName: "",
       previousPercentage: "",
       joiningDate: "",
+      password: "",
     },
     validationSchema: validationSchema,
+    validateOnChange: true,
+    validateOnBlur: true,
+    context: { isEditing: true },
     onSubmit: async (values, { setSubmitting, setFieldError, setStatus }) => {
       setStatus(null);
 
       try {
-        console.log("Form values:", values);
+        // Extract only personal details to update
+        const personalDetails = {
+          name: values.name,
+          email: values.email,
+          phone: values.phone,
+          address: values.address,
+          password: values.password || undefined // Only include if provided
+        };
 
-        // Only update functionality
-        if (editingStudent) {
-          await dispatch(
-            updateStudent({
-              id: editingStudent._id,
-              studentData: values,
-            })
-          ).unwrap();
-          console.log("Student updated successfully");
-        }
+        console.log("Updating personal details:", personalDetails);
+
+        // Only update existing student with personal details
+        await dispatch(
+          updateStudent({
+            id: editingStudent._id,
+            studentData: personalDetails,
+          })
+        ).unwrap();
+        console.log("Student updated successfully");
       } catch (error) {
         console.error("Error updating student:", error);
 
@@ -268,8 +283,8 @@ const Students = () => {
 
         setStatus(
           error.response?.data?.message ||
-            error.message ||
-            "An error occurred. Please try again."
+          error.message ||
+          "An error occurred. Please try again."
         );
       } finally {
         setSubmitting(false);
@@ -277,45 +292,50 @@ const Students = () => {
     },
   });
 
+  useEffect(() => {
+    // Update validation context whenever editingStudent changes
+    // Since Formik doesn't have a setContext method, we recreate the formik instance
+    // This is handled automatically during initialization
+  }, [editingStudent]);
+
   const handleStandardChange = (e) => {
     formik.setFieldValue("standard", e.target.value);
     formik.setFieldValue("subjects", []);
   };
 
-  const handleOpen = (student = null) => {
-    if (student) {
-      setEditingStudent(student);
+  const handleOpen = (student) => {
+    if (!student) return; // Only allow editing existing students
 
-      // Format dates for the form
-      const dateOfBirth = student.dateOfBirth
-        ? new Date(student.dateOfBirth).toISOString().split("T")[0]
-        : "";
-      const joiningDate = student.joiningDate
-        ? new Date(student.joiningDate).toISOString().split("T")[0]
-        : "";
+    setEditingStudent(student);
 
-      // Set formik values
-      formik.setValues({
-        name: student.name || "",
-        email: student.email || "",
-        phone: student.phone || "",
-        standard: student.standard?._id || student.standard || "",
-        subjects: student.subjects?.map((s) => s._id || s) || [],
-        batches: student.batches?.map((b) => b._id || b) || [],
-        parentName: student.parentName || "",
-        parentPhone: student.parentPhone || "",
-        address: student.address || "",
-        dateOfBirth: dateOfBirth,
-        gender: student.gender || "",
-        board: student.board || "",
-        schoolName: student.schoolName || "",
-        previousPercentage: student.previousPercentage || "",
-        joiningDate: joiningDate,
-      });
-    } else {
-      setEditingStudent(null);
-      formik.resetForm();
-    }
+    // Convert dates to ISO string format for form fields
+    const formattedDob = student.dateOfBirth
+      ? new Date(student.dateOfBirth).toISOString().split("T")[0]
+      : "";
+    const formattedJoiningDate = student.joiningDate
+      ? new Date(student.joiningDate).toISOString().split("T")[0]
+      : "";
+
+    // Set formik values for personal details only
+    formik.setValues({
+      name: student.name || "",
+      email: student.email || "",
+      phone: student.phone || "",
+      standard: student.standard?._id || student.standard || "",
+      subjects: student.subjects?.map((s) => s._id || s) || [],
+      batches: student.batches?.map((b) => b._id || b) || [],
+      parentName: student.parentName || "",
+      parentPhone: student.parentPhone || "",
+      address: student.address || "",
+      dateOfBirth: formattedDob,
+      gender: student.gender || "",
+      board: student.board || "",
+      schoolName: student.schoolName || "",
+      previousPercentage: student.previousPercentage || "",
+      joiningDate: formattedJoiningDate,
+      password: "", // Empty for editing
+    });
+
     setOpen(true);
   };
 
@@ -471,11 +491,10 @@ const Students = () => {
             </Typography>
             {(nameFilter || standardFilter || genderFilter) && (
               <Chip
-                label={`${
-                  (nameFilter ? 1 : 0) +
+                label={`${(nameFilter ? 1 : 0) +
                   (standardFilter ? 1 : 0) +
                   (genderFilter ? 1 : 0)
-                } active`}
+                  } active`}
                 size="small"
                 color="primary"
                 variant="outlined"
@@ -649,269 +668,440 @@ const Students = () => {
           )}
         </Paper>
       ) : (
-        <Grid container spacing={2.5}>
-          {filteredStudentsList.map((student) => (
-            <Grid item xs={12} sm={6} md={4} key={student._id}>
-              <Card
-                sx={{
-                  borderRadius: 2,
-                  boxShadow: theme.shadows[1],
-                  transition: "all 0.3s ease",
-                  height: "100%",
-                  display: "flex",
-                  flexDirection: "column",
-                  "&:hover": {
-                    boxShadow: theme.shadows[4],
-                    transform: "translateY(-2px)",
-                  },
-                }}
-              >
-                <CardContent
-                  sx={{
-                    p: 2.5,
-                    flexGrow: 1,
-                    display: "flex",
-                    flexDirection: "column",
-                  }}
-                >
-                  <Box
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 1.5,
-                      mb: 2,
-                    }}
-                  >
-                    <Avatar
-                      sx={{
-                        bgcolor: (theme) =>
-                          student.gender === "female"
-                            ? theme.palette.info.main
-                            : student.gender === "male"
-                            ? theme.palette.primary.main
-                            : theme.palette.grey[500],
-                        width: 50,
-                        height: 50,
-                        fontSize: "1.2rem",
-                        fontWeight: 600,
-                      }}
-                    >
-                      {student.name?.charAt(0)?.toUpperCase() || "S"}
-                    </Avatar>
-
-                    <Box sx={{ flexGrow: 1 }}>
-                      <Typography
-                        variant="h6"
-                        fontWeight={600}
-                        sx={{
-                          whiteSpace: "nowrap",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                        }}
-                      >
-                        {student.name}
-                      </Typography>
-                      <Box
-                        sx={{
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "space-between",
-                        }}
-                      >
-                        <Typography
-                          variant="caption"
-                          color="text.secondary"
-                          sx={{
-                            textTransform: "capitalize",
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 0.5,
-                          }}
-                        >
-                          <Badge
+        <>
+          {/* Table view for desktop */}
+          <Box sx={{ display: { xs: 'none', md: 'block' } }}>
+            <TableContainer component={Paper} sx={{ borderRadius: 2, boxShadow: theme.shadows[1] }}>
+              <Table>
+                <TableHead sx={{ bgcolor: (theme) => alpha(theme.palette.primary.main, 0.05) }}>
+                  <TableRow>
+                    <TableCell>Student</TableCell>
+                    <TableCell>Contact</TableCell>
+                    <TableCell>Standard</TableCell>
+                    <TableCell>Batches</TableCell>
+                    <TableCell>Actions</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {filteredStudentsList.map((student) => (
+                    <TableRow key={student._id} hover>
+                      <TableCell>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                          <Avatar
                             sx={{
-                              "& .MuiBadge-badge": {
-                                bgcolor:
-                                  student.gender === "female"
-                                    ? theme.palette.info.main
-                                    : student.gender === "male"
+                              bgcolor: (theme) =>
+                                student.gender === "female"
+                                  ? theme.palette.info.main
+                                  : student.gender === "male"
                                     ? theme.palette.primary.main
                                     : theme.palette.grey[500],
-                                color: "white",
-                                height: 6,
-                                minWidth: 6,
-                                p: 0,
-                              },
+                              width: 40,
+                              height: 40,
+                              fontSize: "1rem",
+                              fontWeight: 600,
                             }}
-                          />
-                          {student.gender || "Not specified"}
+                          >
+                            {student.name?.charAt(0)?.toUpperCase() || "S"}
+                          </Avatar>
+                          <Box>
+                            <Typography variant="body1" fontWeight={500}>{student.name}</Typography>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                              <Badge
+                                sx={{
+                                  "& .MuiBadge-badge": {
+                                    bgcolor:
+                                      student.gender === "female"
+                                        ? theme.palette.info.main
+                                        : student.gender === "male"
+                                          ? theme.palette.primary.main
+                                          : theme.palette.grey[500],
+                                    color: "white",
+                                    height: 6,
+                                    minWidth: 6,
+                                    p: 0,
+                                  },
+                                }}
+                              />
+                              <Typography variant="caption" color="text.secondary">
+                                {student.gender || "Not specified"}
+                              </Typography>
+                            </Box>
+                          </Box>
+                        </Box>
+                      </TableCell>
+                      <TableCell>
+                        <Stack spacing={0.5}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                            <PhoneIcon fontSize="small" sx={{ color: 'text.secondary', fontSize: '0.9rem' }} />
+                            <Typography variant="body2">{student.phone}</Typography>
+                          </Box>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                            <EmailIcon fontSize="small" sx={{ color: 'text.secondary', fontSize: '0.9rem' }} />
+                            <Typography variant="body2">{student.email}</Typography>
+                          </Box>
+                        </Stack>
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2">
+                          {getRelatedData(
+                            student.standard?._id || student.standard,
+                            standards
+                          )?.name || "No standard"}
                         </Typography>
-                        {student.studentId && (
-                          <Chip
-                            label={student.studentId}
-                            size="small"
-                            color="primary"
-                            variant="outlined"
-                            sx={{
-                              height: 20,
-                              fontSize: "0.7rem",
-                              fontWeight: 500,
-                            }}
-                          />
+                      </TableCell>
+                      <TableCell>
+                        {student.batches?.length > 0 ? (
+                          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                            {student.batches.slice(0, 2).map((batch) => {
+                              const batchData = getRelatedData(
+                                batch._id || batch,
+                                batches
+                              );
+                              return (
+                                <Chip
+                                  key={batch._id || batch}
+                                  label={batchData?.name || "Batch"}
+                                  size="small"
+                                  sx={{
+                                    borderRadius: 1,
+                                    bgcolor: batchData
+                                      ? alpha(
+                                        getBatchStatusColor(batchData.status),
+                                        0.1
+                                      )
+                                      : "primary.light",
+                                    color: batchData
+                                      ? getBatchStatusColor(batchData.status)
+                                      : "primary.main",
+                                    fontSize: "0.7rem",
+                                    height: 22,
+                                  }}
+                                />
+                              );
+                            })}
+                            {student.batches.length > 2 && (
+                              <Chip
+                                label={`+${student.batches.length - 2}`}
+                                size="small"
+                                sx={{
+                                  borderRadius: 1,
+                                  fontSize: "0.7rem",
+                                  height: 22,
+                                }}
+                              />
+                            )}
+                          </Box>
+                        ) : (
+                          <Typography variant="body2" color="text.secondary">
+                            No batches
+                          </Typography>
                         )}
-                      </Box>
-                    </Box>
-                  </Box>
+                      </TableCell>
+                      <TableCell>
+                        <Box sx={{ display: 'flex', gap: 1 }}>
+                          <Tooltip title="View Details">
+                            <IconButton
+                              size="small"
+                              onClick={() => handleViewStudent(student)}
+                              color="default"
+                            >
+                              <VisibilityIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="Edit Student">
+                            <IconButton
+                              size="small"
+                              onClick={() => handleOpen(student)}
+                              color="primary"
+                            >
+                              <EditIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="Delete Student">
+                            <IconButton
+                              size="small"
+                              onClick={() => handleDelete(student._id)}
+                              color="error"
+                            >
+                              <DeleteIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        </Box>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </Box>
 
-                  <Divider sx={{ mb: 2 }} />
-
-                  <Stack spacing={1.5}>
-                    <Box
+          {/* Card view for mobile and tablet */}
+          <Box sx={{ display: { xs: 'block', md: 'none' } }}>
+            <Grid container spacing={2.5}>
+              {filteredStudentsList.map((student) => (
+                <Grid item xs={12} sm={6} key={student._id}>
+                  <Card
+                    sx={{
+                      borderRadius: 2,
+                      boxShadow: theme.shadows[1],
+                      transition: "all 0.3s ease",
+                      height: "100%",
+                      display: "flex",
+                      flexDirection: "column",
+                      "&:hover": {
+                        boxShadow: theme.shadows[4],
+                        transform: "translateY(-2px)",
+                      },
+                    }}
+                  >
+                    <CardContent
                       sx={{
+                        p: 2.5,
+                        flexGrow: 1,
                         display: "flex",
-                        alignItems: "center",
-                        gap: 1,
+                        flexDirection: "column",
                       }}
                     >
-                      <PhoneIcon
-                        fontSize="small"
-                        sx={{ color: "text.secondary" }}
-                      />
-                      <Typography variant="body2">{student.phone}</Typography>
-                    </Box>
-
-                    <Box
-                      sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 1,
-                      }}
-                    >
-                      <EmailIcon
-                        fontSize="small"
-                        sx={{ color: "text.secondary" }}
-                      />
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          whiteSpace: "nowrap",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                        }}
-                      >
-                        {student.email}
-                      </Typography>
-                    </Box>
-
-                    <Box
-                      sx={{
-                        display: "flex",
-                        alignItems: "flex-start",
-                        gap: 1,
-                      }}
-                    >
-                      <SchoolIcon
-                        fontSize="small"
-                        sx={{ color: "text.secondary" }}
-                      />
-                      <Typography variant="body2">
-                        {getRelatedData(
-                          student.standard?._id || student.standard,
-                          standards
-                        )?.name || "No standard"}
-                      </Typography>
-                    </Box>
-
-                    {student.batches?.length > 0 && (
                       <Box
                         sx={{
                           display: "flex",
                           alignItems: "center",
-                          gap: 0.5,
-                          flexWrap: "wrap",
-                          mt: 0.5,
+                          gap: 1.5,
+                          mb: 2,
                         }}
                       >
-                        {student.batches.slice(0, 2).map((batch) => {
-                          const batchData = getRelatedData(
-                            batch._id || batch,
-                            batches
-                          );
-                          return (
-                            <Chip
-                              key={batch._id || batch}
-                              label={batchData?.name || "Batch"}
-                              size="small"
-                              sx={{
-                                borderRadius: 1,
-                                bgcolor: batchData
-                                  ? alpha(
-                                      getBatchStatusColor(batchData.status),
-                                      0.1
-                                    )
-                                  : "primary.light",
-                                color: batchData
-                                  ? getBatchStatusColor(batchData.status)
-                                  : "primary.main",
-                                fontSize: "0.7rem",
-                                height: 22,
-                              }}
-                            />
-                          );
-                        })}
-                        {student.batches.length > 2 && (
-                          <Chip
-                            label={`+${student.batches.length - 2}`}
-                            size="small"
-                            sx={{
-                              borderRadius: 1,
-                              fontSize: "0.7rem",
-                              height: 22,
-                            }}
-                          />
-                        )}
-                      </Box>
-                    )}
-                  </Stack>
-                </CardContent>
+                        <Avatar
+                          sx={{
+                            bgcolor: (theme) =>
+                              student.gender === "female"
+                                ? theme.palette.info.main
+                                : student.gender === "male"
+                                  ? theme.palette.primary.main
+                                  : theme.palette.grey[500],
+                            width: 50,
+                            height: 50,
+                            fontSize: "1.2rem",
+                            fontWeight: 600,
+                          }}
+                        >
+                          {student.name?.charAt(0)?.toUpperCase() || "S"}
+                        </Avatar>
 
-                <CardActions
-                  sx={{
-                    p: 1.5,
-                    borderTop: `1px solid ${alpha(theme.palette.divider, 0.3)}`,
-                    display: "flex",
-                    justifyContent: "space-between",
-                  }}
-                >
-                  <Button
-                    size="small"
-                    startIcon={<VisibilityIcon />}
-                    onClick={() => handleViewStudent(student)}
-                  >
-                    View
-                  </Button>
-                  <Box>
-                    <IconButton
-                      size="small"
-                      color="primary"
-                      onClick={() => handleOpen(student)}
-                      sx={{ mr: 0.5 }}
+                        <Box sx={{ flexGrow: 1 }}>
+                          <Typography
+                            variant="h6"
+                            fontWeight={600}
+                            sx={{
+                              whiteSpace: "nowrap",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                            }}
+                          >
+                            {student.name}
+                          </Typography>
+                          <Box
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "space-between",
+                            }}
+                          >
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                              sx={{
+                                textTransform: "capitalize",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 0.5,
+                              }}
+                            >
+                              <Badge
+                                sx={{
+                                  "& .MuiBadge-badge": {
+                                    bgcolor:
+                                      student.gender === "female"
+                                        ? theme.palette.info.main
+                                        : student.gender === "male"
+                                          ? theme.palette.primary.main
+                                          : theme.palette.grey[500],
+                                    color: "white",
+                                    height: 6,
+                                    minWidth: 6,
+                                    p: 0,
+                                  },
+                                }}
+                              />
+                              {student.gender || "Not specified"}
+                            </Typography>
+                            {student.studentId && (
+                              <Chip
+                                label={student.studentId}
+                                size="small"
+                                color="primary"
+                                variant="outlined"
+                                sx={{
+                                  height: 20,
+                                  fontSize: "0.7rem",
+                                  fontWeight: 500,
+                                }}
+                              />
+                            )}
+                          </Box>
+                        </Box>
+                      </Box>
+
+                      <Divider sx={{ mb: 2 }} />
+
+                      <Stack spacing={1.5}>
+                        <Box
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 1,
+                          }}
+                        >
+                          <PhoneIcon
+                            fontSize="small"
+                            sx={{ color: "text.secondary" }}
+                          />
+                          <Typography variant="body2">{student.phone}</Typography>
+                        </Box>
+
+                        <Box
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 1,
+                          }}
+                        >
+                          <EmailIcon
+                            fontSize="small"
+                            sx={{ color: "text.secondary" }}
+                          />
+                          <Typography
+                            variant="body2"
+                            sx={{
+                              whiteSpace: "nowrap",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                            }}
+                          >
+                            {student.email}
+                          </Typography>
+                        </Box>
+
+                        <Box
+                          sx={{
+                            display: "flex",
+                            alignItems: "flex-start",
+                            gap: 1,
+                          }}
+                        >
+                          <SchoolIcon
+                            fontSize="small"
+                            sx={{ color: "text.secondary" }}
+                          />
+                          <Typography variant="body2">
+                            {getRelatedData(
+                              student.standard?._id || student.standard,
+                              standards
+                            )?.name || "No standard"}
+                          </Typography>
+                        </Box>
+
+                        {student.batches?.length > 0 && (
+                          <Box
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 0.5,
+                              flexWrap: "wrap",
+                              mt: 0.5,
+                            }}
+                          >
+                            {student.batches.slice(0, 2).map((batch) => {
+                              const batchData = getRelatedData(
+                                batch._id || batch,
+                                batches
+                              );
+                              return (
+                                <Chip
+                                  key={batch._id || batch}
+                                  label={batchData?.name || "Batch"}
+                                  size="small"
+                                  sx={{
+                                    borderRadius: 1,
+                                    bgcolor: batchData
+                                      ? alpha(
+                                        getBatchStatusColor(batchData.status),
+                                        0.1
+                                      )
+                                      : "primary.light",
+                                    color: batchData
+                                      ? getBatchStatusColor(batchData.status)
+                                      : "primary.main",
+                                    fontSize: "0.7rem",
+                                    height: 22,
+                                  }}
+                                />
+                              );
+                            })}
+                            {student.batches.length > 2 && (
+                              <Chip
+                                label={`+${student.batches.length - 2}`}
+                                size="small"
+                                sx={{
+                                  borderRadius: 1,
+                                  fontSize: "0.7rem",
+                                  height: 22,
+                                }}
+                              />
+                            )}
+                          </Box>
+                        )}
+                      </Stack>
+                    </CardContent>
+
+                    <CardActions
+                      sx={{
+                        p: 1.5,
+                        borderTop: `1px solid ${alpha(theme.palette.divider, 0.3)}`,
+                        display: "flex",
+                        justifyContent: "space-between",
+                      }}
                     >
-                      <EditIcon fontSize="small" />
-                    </IconButton>
-                    <IconButton
-                      size="small"
-                      color="error"
-                      onClick={() => handleDelete(student._id)}
-                    >
-                      <DeleteIcon fontSize="small" />
-                    </IconButton>
-                  </Box>
-                </CardActions>
-              </Card>
+                      <Button
+                        size="small"
+                        startIcon={<VisibilityIcon />}
+                        onClick={() => handleViewStudent(student)}
+                      >
+                        View
+                      </Button>
+                      <Box>
+                        <IconButton
+                          size="small"
+                          color="primary"
+                          onClick={() => handleOpen(student)}
+                          sx={{ mr: 0.5 }}
+                        >
+                          <EditIcon fontSize="small" />
+                        </IconButton>
+                        <IconButton
+                          size="small"
+                          color="error"
+                          onClick={() => handleDelete(student._id)}
+                        >
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
+                      </Box>
+                    </CardActions>
+                  </Card>
+                </Grid>
+              ))}
             </Grid>
-          ))}
-        </Grid>
+          </Box>
+        </>
       )}
 
       {/* Edit Student Dialog */}
@@ -938,7 +1128,7 @@ const Students = () => {
           }}
         >
           <Typography variant="h6">
-            {editingStudent ? "Edit Student" : "Add New Student"}
+            Edit Personal Details: {editingStudent?.name}
           </Typography>
         </DialogTitle>
         <form onSubmit={formik.handleSubmit}>
@@ -950,8 +1140,145 @@ const Students = () => {
               pb: 3,
             }}
           >
-            {/* Form content remains the same */}
-            {/* ... */}
+            <Grid container spacing={2}>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label="Name"
+                  name="name"
+                  value={formik.values.name}
+                  onChange={formik.handleChange}
+                  error={!!formik.errors.name}
+                  helperText={formik.errors.name}
+                  required
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label="Email"
+                  name="email"
+                  type="email"
+                  value={formik.values.email}
+                  onChange={formik.handleChange}
+                  error={!!formik.errors.email}
+                  helperText={formik.errors.email}
+                  required
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label="Phone"
+                  name="phone"
+                  type="tel"
+                  value={formik.values.phone}
+                  onChange={formik.handleChange}
+                  error={!!formik.errors.phone}
+                  helperText={formik.errors.phone}
+                  required
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label="Address"
+                  name="address"
+                  value={formik.values.address}
+                  onChange={formik.handleChange}
+                  error={!!formik.errors.address}
+                  helperText={formik.errors.address}
+                  required
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label="Password (Optional)"
+                  name="password"
+                  type="password"
+                  value={formik.values.password}
+                  onChange={formik.handleChange}
+                  error={!!formik.errors.password}
+                  helperText={formik.errors.password || "Leave blank to keep current password"}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label="Parent Name"
+                  name="parentName"
+                  value={formik.values.parentName}
+                  InputProps={{ readOnly: true }}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label="Parent Phone"
+                  name="parentPhone"
+                  value={formik.values.parentPhone}
+                  InputProps={{ readOnly: true }}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label="Date of Birth"
+                  name="dateOfBirth"
+                  type="date"
+                  value={formik.values.dateOfBirth}
+                  InputProps={{ readOnly: true }}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label="Gender"
+                  name="gender"
+                  value={formik.values.gender}
+                  InputProps={{ readOnly: true }}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label="Board"
+                  name="board"
+                  value={formik.values.board}
+                  InputProps={{ readOnly: true }}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label="School Name"
+                  name="schoolName"
+                  value={formik.values.schoolName}
+                  InputProps={{ readOnly: true }}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label="Previous Percentage"
+                  name="previousPercentage"
+                  type="number"
+                  value={formik.values.previousPercentage}
+                  InputProps={{ readOnly: true }}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label="Joining Date"
+                  name="joiningDate"
+                  type="date"
+                  value={formik.values.joiningDate}
+                  InputProps={{ readOnly: true }}
+                />
+              </Grid>
+            </Grid>
           </DialogContent>
           <DialogActions
             sx={{
@@ -978,10 +1305,8 @@ const Students = () => {
                   <CircularProgress size={20} sx={{ mr: 1 }} />
                   Saving...
                 </>
-              ) : editingStudent ? (
-                "Update Student"
               ) : (
-                "Add Student"
+                "Update Personal Details"
               )}
             </Button>
           </DialogActions>
@@ -1036,8 +1361,8 @@ const Students = () => {
                           viewStudent.gender === "female"
                             ? theme.palette.info.main
                             : viewStudent.gender === "male"
-                            ? theme.palette.primary.main
-                            : theme.palette.grey[500],
+                              ? theme.palette.primary.main
+                              : theme.palette.grey[500],
                         width: 70,
                         height: 70,
                         fontSize: "1.8rem",
@@ -1070,8 +1395,8 @@ const Students = () => {
                                   viewStudent.gender === "female"
                                     ? theme.palette.info.main
                                     : viewStudent.gender === "male"
-                                    ? theme.palette.primary.main
-                                    : theme.palette.grey[500],
+                                      ? theme.palette.primary.main
+                                      : theme.palette.grey[500],
                                 color: "white",
                                 height: 6,
                                 minWidth: 6,
@@ -1376,11 +1701,11 @@ const Students = () => {
                                       height: 22,
                                       bgcolor: batchData
                                         ? alpha(
-                                            getBatchStatusColor(
-                                              batchData.status
-                                            ),
-                                            0.1
-                                          )
+                                          getBatchStatusColor(
+                                            batchData.status
+                                          ),
+                                          0.1
+                                        )
                                         : "default",
                                       color: batchData
                                         ? getBatchStatusColor(batchData.status)

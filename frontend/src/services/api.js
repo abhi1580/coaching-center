@@ -73,9 +73,19 @@ api.interceptors.response.use(
       }
     });
 
-    // Check if this is a specific teacher dashboard error that shouldn't trigger a redirect
-    if (error.config?.url?.includes('/teacher/dashboard')) {
-      // Don't redirect for teacher dashboard errors, just let component handle it
+    // Create a list of endpoints that should not trigger automatic logout on 401
+    const ignoreLogoutEndpoints = [
+      '/teacher/dashboard',
+      '/auth/change-password'  // Add password change endpoint to the ignore list
+    ];
+
+    // Check if the current request is for an endpoint that should not trigger logout
+    const shouldIgnoreLogout = ignoreLogoutEndpoints.some(endpoint => 
+      error.config?.url?.includes(endpoint)
+    );
+
+    if (shouldIgnoreLogout) {
+      // Don't trigger logout for these specific endpoints
       return Promise.reject(error);
     }
 
@@ -103,18 +113,20 @@ api.interceptors.response.use(
 export const authService = {
   login: (data) => api.post("/auth/login", data),
   register: (data) => api.post("/auth/register", data),
-  logout: () => {
-    // Store the token temporarily
-    const token = localStorage.getItem("token");
-    
-    // Make the API call first
-    return api.post("/auth/logout")
-      .finally(() => {
-        // Remove items from localStorage after API call (whether successful or not)
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
-        delete api.defaults.headers.common["Authorization"];
-      });
+  logout: async () => {
+    try {
+      // First remove all authentication data from localStorage
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      // Remove authorization header
+      delete api.defaults.headers.common["Authorization"];
+      // Then call the API endpoint to invalidate the session on server
+      return await api.post("/auth/logout");
+    } catch (error) {
+      console.error("Error during API logout:", error);
+      // Even if API call fails, we've already removed local auth data
+      return { success: true };
+    }
   },
   getProfile: () => api.get("/auth/profile"),
   forgotPassword: (email) => api.post("/auth/forgot-password", { email }),
@@ -124,15 +136,111 @@ export const authService = {
 
 // Student services
 export const studentService = {
+  // General methods used by admin/staff
   getAll: () => api.get("/students"),
   getById: (id) => api.get(`/students/${id}`),
+  
+  // Student-specific methods used when logged in as a student
+  getStudentProfile: () => {
+    console.log("Fetching student profile from endpoint: /student/profile");
+    return api.get("/student/profile")
+      .then(response => {
+        console.log("Student profile response:", response.data);
+        return response;
+      })
+      .catch(error => {
+        console.error("Error fetching student profile:", error);
+        throw error;
+      });
+  },
+  
+  updateStudentProfile: (data) => {
+    console.log("Updating student profile with data:", data);
+    return api.put("/student/profile", data)
+      .then(response => {
+        console.log("Profile update response:", response.data);
+        return response;
+      })
+      .catch(error => {
+        console.error("Error updating student profile:", error);
+        throw error;
+      });
+  },
+  
+  updatePassword: (data) => {
+    console.log("Updating password");
+    return api.post("/auth/change-password", data)
+      .then(response => {
+        console.log("Password update response:", response.data);
+        return response;
+      })
+      .catch(error => {
+        console.error("Error updating password:", error);
+        throw error;
+      });
+  },
+  
+  getStudentDetails: (id) => {
+    console.log(`Fetching student details for ID: ${id} from endpoint: /student/details`);
+    // Use student-specific route instead of general route
+    return api.get(`/student/details`)
+      .then(response => {
+        console.log("Student details API response status:", response.status);
+        console.log("Student details API response headers:", response.headers);
+        console.log("Student details raw data:", response.data);
+        
+        // Check if data has the expected structure
+        const hasData = response.data && response.data.data;
+        const hasBatches = hasData && Array.isArray(response.data.data.batches);
+        
+        console.log("Response has data property:", !!hasData);
+        console.log("Response has batches array:", hasBatches);
+        
+        if (hasBatches) {
+          console.log("Number of batches in response:", response.data.data.batches.length);
+        }
+        
+        return response;
+      })
+      .catch(error => {
+        console.error("Error fetching student details:", error);
+        console.error("Error response data:", error.response?.data);
+        console.error("Error request URL:", error.config?.url);
+        throw error;
+      });
+  },
+  
+  getStudentAttendance: (id, batchId, startDate, endDate) => {
+    console.log(`Fetching student attendance for ID: ${id}`, { batchId, startDate, endDate });
+    
+    // Build URL based on parameters
+    let url = `/student/attendance`;
+    
+    // Add batch ID to path if provided
+    if (batchId) {
+      url += `/${batchId}`;
+    }
+    
+    // Add date params if provided
+    const params = new URLSearchParams();
+    if (startDate) params.append('startDate', startDate);
+    if (endDate) params.append('endDate', endDate);
+    
+    const queryString = params.toString();
+    if (queryString) {
+      url += `?${queryString}`;
+    }
+    
+    return api.get(url);
+  },
+  
+  // These methods will still use the general API endpoints
   create: (data) => {
     console.log(
       "studentService.create called with data:",
       JSON.stringify(data, null, 2)
     );
 
-    // Ensure the required fields are explicitly set in the payload
     const payload = {
       ...data,
       gender:
@@ -160,7 +268,6 @@ export const studentService = {
 
     console.log("Final payload to API:", JSON.stringify(payload, null, 2));
 
-    // Use a direct axios call to better control the request
     return api.post("/students", payload, {
       headers: {
         "Content-Type": "application/json",

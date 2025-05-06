@@ -80,6 +80,9 @@ const newStudentValidationSchema = Yup.object().shape({
     .max(100, "Percentage cannot exceed 100")
     .nullable(),
   joiningDate: Yup.date().required("Joining date is required"),
+  password: Yup.string()
+    .min(6, "Password must be at least 6 characters")
+    .required("Password is required"),
 });
 
 const BatchView = () => {
@@ -862,6 +865,7 @@ const BatchView = () => {
             schoolName: "",
             previousPercentage: "",
             joiningDate: new Date().toISOString().split("T")[0],
+            password: "",
           }}
           validationSchema={newStudentValidationSchema}
           onSubmit={async (
@@ -1163,6 +1167,25 @@ const BatchView = () => {
                             touched.previousPercentage &&
                             errors.previousPercentage
                           }
+                          sx={{
+                            "& .MuiOutlinedInput-root": { borderRadius: 2 },
+                          }}
+                        />
+                      )}
+                    </Field>
+                  </Grid>
+
+                  <Grid item xs={12} sm={6}>
+                    <Field name="password">
+                      {({ field }) => (
+                        <TextField
+                          {...field}
+                          fullWidth
+                          label="Password"
+                          type="password"
+                          error={touched.password && Boolean(errors.password)}
+                          helperText={touched.password && errors.password}
+                          required
                           sx={{
                             "& .MuiOutlinedInput-root": { borderRadius: 2 },
                           }}

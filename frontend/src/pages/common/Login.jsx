@@ -80,7 +80,7 @@ function Login() {
         } else if (result.user.role === "teacher") {
           navigate("/app/teacher/dashboard");
         } else if (result.user.role === "student") {
-          navigate("/app/student-dashboard");
+          navigate("/app/student/dashboard");
         } else {
           navigate("/app");
         }

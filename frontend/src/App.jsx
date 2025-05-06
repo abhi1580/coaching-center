@@ -9,9 +9,9 @@ import Layout from "./components/layout/Layout";
 import MainHeader from "./components/layout/MainHeader";
 import TeacherLayout from "./components/teacher/TeacherLayout";
 import TeacherRedirect from "./components/teacher/TeacherRedirect";
+import StudentLayout from "./components/student/StudentLayout";
 import Login from "./pages/common/Login";
 import Dashboard from "./pages/admin/Dashboard";
-import Students from "./pages/admin/Students";
 import Subjects from "./pages/admin/Subjects";
 import {
   BatchCreate,
@@ -58,6 +58,21 @@ import {
   TeacherView,
   TeacherEdit,
 } from "./pages/admin/teacher";
+
+// Import new Student components
+import {
+  StudentList,
+  StudentCreate,
+  StudentView,
+  StudentEdit,
+} from "./pages/admin/student";
+
+// Import student components
+import StudentDashboard from "./pages/student/StudentDashboard";
+import StudentBatches from "./pages/student/StudentBatches";
+import StudentAttendance from "./pages/student/StudentAttendance";
+import StudentProfile from "./pages/student/StudentProfile";
+import StudentSchedule from "./pages/student/StudentSchedule";
 
 function App() {
   const dispatch = useDispatch();
@@ -128,11 +143,36 @@ function App() {
                 </ProtectedRoute>
               }
             />
+            {/* Student routes */}
             <Route
               path="students"
               element={
                 <ProtectedRoute allowedRoles={["admin"]}>
-                  <Students />
+                  <StudentList />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="students/create"
+              element={
+                <ProtectedRoute allowedRoles={["admin"]}>
+                  <StudentCreate />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="students/:id"
+              element={
+                <ProtectedRoute allowedRoles={["admin"]}>
+                  <StudentView />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="students/:id/edit"
+              element={
+                <ProtectedRoute allowedRoles={["admin"]}>
+                  <StudentEdit />
                 </ProtectedRoute>
               }
             />
@@ -292,16 +332,6 @@ function App() {
                 </ProtectedRoute>
               }
             />
-
-            {/* Student routes */}
-            <Route
-              path="student-dashboard"
-              element={
-                <ProtectedRoute allowedRoles={["student"]}>
-                  <Dashboard />
-                </ProtectedRoute>
-              }
-            />
           </Route>
 
           {/* New Teacher Layout and Routes - No MainHeader here */}
@@ -321,6 +351,24 @@ function App() {
             <Route path="attendance" element={<TeacherAttendance />} />
             <Route path="profile" element={<TeacherProfile />} />
             <Route path="announcements" element={<Announcements />} />
+          </Route>
+
+          {/* New Student Layout and Routes */}
+          <Route
+            path="/app/student"
+            element={
+              <ProtectedRoute allowedRoles={["student"]}>
+                <StudentLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route index element={<StudentDashboard />} />
+            <Route path="dashboard" element={<StudentDashboard />} />
+            <Route path="batches" element={<StudentBatches />} />
+            <Route path="attendance" element={<StudentAttendance />} />
+            <Route path="announcements" element={<Announcements />} />
+            <Route path="profile" element={<StudentProfile />} />
+            <Route path="schedule" element={<StudentSchedule />} />
           </Route>
 
           {/* Catch-all route for 404 Not Found */}
