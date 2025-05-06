@@ -11,7 +11,7 @@ export const createTeacherValidator = [
     .normalizeEmail(),
   check("phone")
     .not().isEmpty().withMessage("Phone number is required")
-    .matches(/^[0-9]{10,15}$/).withMessage("Phone number must be between 10-15 digits"),
+    .matches(/^[0-9]{10}$/).withMessage("Phone number must be exactly 10 digits"),
   check("gender")
     .isIn(["male", "female", "other"]).withMessage("Gender must be male, female, or other"),
   check("address")
@@ -44,7 +44,7 @@ export const updateTeacherValidator = [
     .normalizeEmail(),
   check("phone")
     .optional()
-    .matches(/^[0-9]{10,15}$/).withMessage("Phone number must be between 10-15 digits"),
+    .matches(/^[0-9]{10}$/).withMessage("Phone number must be exactly 10 digits"),
   check("gender")
     .optional()
     .isIn(["male", "female", "other"]).withMessage("Gender must be male, female, or other"),

@@ -198,16 +198,19 @@ const StandardList = () => {
                             value={nameFilter}
                             onChange={(e) => setNameFilter(e.target.value)}
                             InputProps={{
-                                startAdornment: <SearchIcon fontSize="small" sx={{ mr: 1, color: "action.active" }} />,
-                                endAdornment: nameFilter && (
-                                    <IconButton
-                                        size="small"
-                                        onClick={() => setNameFilter("")}
-                                        edge="end"
-                                        sx={{ mr: -0.5 }}
-                                    >
-                                        <ClearIcon fontSize="small" />
-                                    </IconButton>
+                                endAdornment: (
+                                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                        {nameFilter && (
+                                            <IconButton
+                                                size="small"
+                                                onClick={() => setNameFilter("")}
+                                                edge="end"
+                                            >
+                                                <ClearIcon fontSize="small" />
+                                            </IconButton>
+                                        )}
+                                        <SearchIcon fontSize="small" sx={{ ml: 0.5, color: "action.active" }} />
+                                    </Box>
                                 ),
                             }}
                             sx={{ bgcolor: "background.paper" }}
@@ -299,10 +302,41 @@ const StandardList = () => {
                                                 WebkitBoxOrient: "vertical",
                                                 overflow: "hidden",
                                                 textOverflow: "ellipsis",
+                                                mb: 1
                                             }}
                                         >
                                             {standard.description || "No description"}
                                         </Typography>
+
+                                        {/* Subjects section */}
+                                        <Box sx={{ mt: 1 }}>
+                                            <Typography
+                                                variant="body2"
+                                                color="text.secondary"
+                                                sx={{ fontWeight: 500, mb: 0.5 }}
+                                            >
+                                                Subjects:
+                                            </Typography>
+
+                                            {standard.subjects && Array.isArray(standard.subjects) && standard.subjects.length > 0 ? (
+                                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                                    {standard.subjects.map((subject, index) => (
+                                                        <Chip
+                                                            key={subject?._id || index}
+                                                            label={subject?.name || "Unnamed Subject"}
+                                                            size="small"
+                                                            color="primary"
+                                                            variant="outlined"
+                                                            sx={{ mb: 0.5 }}
+                                                        />
+                                                    ))}
+                                                </Box>
+                                            ) : (
+                                                <Typography variant="body2" color="text.secondary">
+                                                    No subjects assigned
+                                                </Typography>
+                                            )}
+                                        </Box>
                                     </CardContent>
                                     <CardActions sx={{ justifyContent: "flex-end", px: 2, pb: 2 }}>
                                         <Tooltip title="View Details">
@@ -374,6 +408,9 @@ const StandardList = () => {
                                     Level
                                 </TableCell>
                                 <TableCell sx={{ color: "common.white" }}>
+                                    Subjects
+                                </TableCell>
+                                <TableCell sx={{ color: "common.white" }}>
                                     Status
                                 </TableCell>
                                 <TableCell sx={{ color: "common.white" }}>
@@ -384,13 +421,13 @@ const StandardList = () => {
                         <TableBody>
                             {loading ? (
                                 <TableRow>
-                                    <TableCell colSpan={4} align="center">
+                                    <TableCell colSpan={5} align="center">
                                         Loading...
                                     </TableCell>
                                 </TableRow>
                             ) : filteredStandards.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={4} align="center" sx={{ py: 4 }}>
+                                    <TableCell colSpan={5} align="center" sx={{ py: 4 }}>
                                         <Typography color="text.secondary">
                                             No standards found.
                                         </Typography>
@@ -418,6 +455,33 @@ const StandardList = () => {
                                             {standard.name}
                                         </TableCell>
                                         <TableCell>{standard.level || "Not specified"}</TableCell>
+                                        <TableCell>
+                                            {standard.subjects && Array.isArray(standard.subjects) && standard.subjects.length > 0 ? (
+                                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                                    {standard.subjects.slice(0, 3).map((subject, index) => (
+                                                        <Chip
+                                                            key={subject?._id || index}
+                                                            label={subject?.name || "Unnamed Subject"}
+                                                            size="small"
+                                                            color="primary"
+                                                            variant="outlined"
+                                                        />
+                                                    ))}
+                                                    {standard.subjects.length > 3 && (
+                                                        <Chip
+                                                            label={`+${standard.subjects.length - 3} more`}
+                                                            size="small"
+                                                            color="default"
+                                                            variant="outlined"
+                                                        />
+                                                    )}
+                                                </Box>
+                                            ) : (
+                                                <Typography variant="body2" color="text.secondary">
+                                                    No subjects
+                                                </Typography>
+                                            )}
+                                        </TableCell>
                                         <TableCell>
                                             <Chip
                                                 label={standard.isActive ? "Active" : "Inactive"}

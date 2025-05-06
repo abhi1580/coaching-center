@@ -6,7 +6,7 @@ export const fetchStandards = createAsyncThunk(
   "standards/fetchAll",
   async (_, { rejectWithValue }) => {
     try {
-      const response = await standardService.getAll();
+      const response = await standardService.getAll("/standards?populate=subjects");
       return response.data;
     } catch (error) {
       return rejectWithValue(
@@ -61,11 +61,48 @@ export const deleteStandard = createAsyncThunk(
   }
 );
 
+// Add new thunk to check for duplicates
+export const checkDuplicateStandard = createAsyncThunk(
+  "standards/checkDuplicate",
+  async ({ name, level }, { getState, rejectWithValue }) => {
+    try {
+      const { standards } = getState().standards;
+      
+      // Check if a standard with the same name already exists
+      const nameExists = standards.some(
+        (standard) => standard.name.toLowerCase() === name.toLowerCase()
+      );
+      
+      // Check if a standard with the same level already exists
+      const levelExists = standards.some(
+        (standard) => standard.level === Number(level)
+      );
+      
+      if (nameExists || levelExists) {
+        return {
+          isDuplicate: true,
+          duplicateType: {
+            name: nameExists,
+            level: levelExists
+          }
+        };
+      }
+      
+      return { isDuplicate: false };
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data || { message: "Failed to check for duplicates" }
+      );
+    }
+  }
+);
+
 const initialState = {
   standards: [],
   loading: false,
   error: null,
   success: false,
+  duplicateCheck: null
 };
 
 const standardSlice = createSlice({
@@ -100,7 +137,17 @@ const standardSlice = createSlice({
       })
       .addCase(createStandard.fulfilled, (state, action) => {
         state.loading = false;
-        state.standards.push(action.payload.data);
+        
+        // Handle different response formats
+        const standardData = action.payload?.data || action.payload;
+        
+        // Make sure we have a valid standard object before pushing
+        if (standardData && typeof standardData === 'object') {
+          state.standards.push(standardData);
+        } else {
+          console.error("Invalid standard data format:", standardData);
+        }
+        
         state.success = true;
       })
       .addCase(createStandard.rejected, (state, action) => {
@@ -143,6 +190,16 @@ const standardSlice = createSlice({
       .addCase(deleteStandard.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload?.message || "Failed to delete standard";
+      })
+      // Check Duplicate Standard
+      .addCase(checkDuplicateStandard.pending, (state) => {
+        state.duplicateCheck = null;
+      })
+      .addCase(checkDuplicateStandard.fulfilled, (state, action) => {
+        state.duplicateCheck = action.payload;
+      })
+      .addCase(checkDuplicateStandard.rejected, (state, action) => {
+        state.duplicateCheck = { error: action.payload?.message || "Failed to check for duplicates" };
       });
   },
 });

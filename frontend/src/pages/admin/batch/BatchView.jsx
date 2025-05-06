@@ -778,15 +778,15 @@ const BatchView = () => {
                         primary={student.name}
                         secondary={
                           <>
-                            <Typography component="span" variant="body2" color="text.primary">
+                            <Typography key="student-id" component="span" variant="body2" color="text.primary">
                               ID: {student.studentId}
                             </Typography>
                             <br />
-                            <Typography component="span" variant="body2" color="text.secondary">
+                            <Typography key="student-email" component="span" variant="body2" color="text.secondary">
                               Email: {student.email}
                             </Typography>
                             <br />
-                            <Typography component="span" variant="body2" color="text.secondary">
+                            <Typography key="student-phone" component="span" variant="body2" color="text.secondary">
                               Phone: {student.phone}
                             </Typography>
                           </>

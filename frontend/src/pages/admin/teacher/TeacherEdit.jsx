@@ -60,7 +60,7 @@ const validationSchema = Yup.object({
         .matches(/@[^.]*\./, "Email must include a domain (e.g., @example.com)")
         .required("Email is required"),
     phone: Yup.string()
-        .matches(/^[0-9]{10,15}$/, "Phone number must be between 10-15 digits")
+        .matches(/^[0-9]{10}$/, "Phone number must be exactly 10 digits")
         .required("Phone number is required"),
     gender: Yup.string()
         .oneOf(["male", "female", "other"], "Please select a valid gender")

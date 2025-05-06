@@ -28,8 +28,9 @@ import {
     School as SchoolIcon,
     Home as HomeIcon,
     Save as SaveIcon,
+    Error as ErrorIcon,
 } from "@mui/icons-material";
-import { createStandard } from "../../../store/slices/standardSlice";
+import { createStandard, checkDuplicateStandard, fetchStandards } from "../../../store/slices/standardSlice";
 import { fetchSubjects } from "../../../store/slices/subjectSlice";
 import * as Yup from "yup";
 import { Formik, Form } from "formik";
@@ -51,10 +52,13 @@ const StandardCreate = () => {
     const navigate = useNavigate();
     const theme = useTheme();
     const { subjects } = useSelector((state) => state.subjects);
+    const { standards, duplicateCheck } = useSelector((state) => state.standards);
     const [loading, setLoading] = useState(false);
+    const [duplicateError, setDuplicateError] = useState(null);
 
     useEffect(() => {
         dispatch(fetchSubjects());
+        dispatch(fetchStandards());
     }, [dispatch]);
 
     const initialValues = {
@@ -69,6 +73,27 @@ const StandardCreate = () => {
         try {
             setSubmitting(true);
             setLoading(true);
+            setDuplicateError(null);
+
+            // Check for duplicates first
+            const duplicateResult = await dispatch(
+                checkDuplicateStandard({
+                    name: values.name,
+                    level: values.level
+                })
+            ).unwrap();
+
+            if (duplicateResult.isDuplicate) {
+                setDuplicateError({
+                    name: duplicateResult.duplicateType.name
+                        ? "A standard with this name already exists"
+                        : null,
+                    level: duplicateResult.duplicateType.level
+                        ? "A standard with this level already exists"
+                        : null
+                });
+                return;
+            }
 
             // Format the data as needed for the API
             const formattedData = {
@@ -165,6 +190,36 @@ const StandardCreate = () => {
                     {({ values, errors, touched, handleChange, setFieldValue, isSubmitting }) => (
                         <Form>
                             <Grid container spacing={3}>
+                                {duplicateError && (
+                                    <Grid item xs={12}>
+                                        <Paper
+                                            sx={{
+                                                p: 2,
+                                                mb: 2,
+                                                backgroundColor: (theme) => alpha(theme.palette.error.main, 0.1),
+                                                color: "error.main",
+                                                display: "flex",
+                                                alignItems: "center",
+                                                gap: 1,
+                                                borderRadius: 1
+                                            }}
+                                        >
+                                            <ErrorIcon color="error" />
+                                            <Box>
+                                                <Typography variant="subtitle2" fontWeight="bold">
+                                                    Duplicate Standard Detected
+                                                </Typography>
+                                                {duplicateError.name && (
+                                                    <Typography variant="body2">{duplicateError.name}</Typography>
+                                                )}
+                                                {duplicateError.level && (
+                                                    <Typography variant="body2">{duplicateError.level}</Typography>
+                                                )}
+                                            </Box>
+                                        </Paper>
+                                    </Grid>
+                                )}
+
                                 <Grid item xs={12} md={6}>
                                     <TextField
                                         fullWidth

@@ -28,8 +28,9 @@ import {
     School as SchoolIcon,
     Home as HomeIcon,
     Save as SaveIcon,
+    Error as ErrorIcon,
 } from "@mui/icons-material";
-import { updateStandard } from "../../../store/slices/standardSlice";
+import { updateStandard, checkDuplicateStandard, fetchStandards } from "../../../store/slices/standardSlice";
 import { fetchSubjects } from "../../../store/slices/subjectSlice";
 import { standardService } from "../../../services/api";
 import * as Yup from "yup";
@@ -53,11 +54,13 @@ const StandardEdit = () => {
     const navigate = useNavigate();
     const theme = useTheme();
     const { subjects } = useSelector((state) => state.subjects);
+    const { standards } = useSelector((state) => state.standards);
 
     const [standard, setStandard] = useState(null);
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState(null);
+    const [duplicateError, setDuplicateError] = useState(null);
 
     useEffect(() => {
         const fetchStandardDetails = async () => {
@@ -76,6 +79,7 @@ const StandardEdit = () => {
 
         fetchStandardDetails();
         dispatch(fetchSubjects());
+        dispatch(fetchStandards());
     }, [id, dispatch]);
 
     if (loading) {
@@ -122,12 +126,35 @@ const StandardEdit = () => {
     const handleSubmit = async (values, { setSubmitting, setErrors }) => {
         try {
             setSubmitting(true);
-            setSubmitting(true);
+            setDuplicateError(null);
+
+            // Format the data for duplicate check
+            const formattedLevel = Number(values.level);
+
+            // Check for duplicates with other standards (excluding the current one)
+            const nameExists = standards.some(
+                (s) => s._id !== standard._id &&
+                    s.name.toLowerCase() === values.name.toLowerCase()
+            );
+
+            const levelExists = standards.some(
+                (s) => s._id !== standard._id &&
+                    s.level === formattedLevel
+            );
+
+            // If duplicates are found, show error and stop submission
+            if (nameExists || levelExists) {
+                setDuplicateError({
+                    name: nameExists ? "A standard with this name already exists" : null,
+                    level: levelExists ? "A standard with this level already exists" : null
+                });
+                return;
+            }
 
             // Format the data as needed for the API
             const formattedData = {
                 ...values,
-                level: Number(values.level),
+                level: formattedLevel,
             };
 
             await dispatch(updateStandard({
@@ -229,6 +256,36 @@ const StandardEdit = () => {
                     {({ values, errors, touched, handleChange, setFieldValue, isSubmitting }) => (
                         <Form>
                             <Grid container spacing={3}>
+                                {duplicateError && (
+                                    <Grid item xs={12}>
+                                        <Paper
+                                            sx={{
+                                                p: 2,
+                                                mb: 2,
+                                                backgroundColor: (theme) => alpha(theme.palette.error.main, 0.1),
+                                                color: "error.main",
+                                                display: "flex",
+                                                alignItems: "center",
+                                                gap: 1,
+                                                borderRadius: 1
+                                            }}
+                                        >
+                                            <ErrorIcon color="error" />
+                                            <Box>
+                                                <Typography variant="subtitle2" fontWeight="bold">
+                                                    Duplicate Standard Detected
+                                                </Typography>
+                                                {duplicateError.name && (
+                                                    <Typography variant="body2">{duplicateError.name}</Typography>
+                                                )}
+                                                {duplicateError.level && (
+                                                    <Typography variant="body2">{duplicateError.level}</Typography>
+                                                )}
+                                            </Box>
+                                        </Paper>
+                                    </Grid>
+                                )}
+
                                 <Grid item xs={12} md={6}>
                                     <TextField
                                         fullWidth

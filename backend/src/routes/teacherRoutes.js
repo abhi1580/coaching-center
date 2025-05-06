@@ -40,12 +40,12 @@ router.put("/me", authorize("teacher"), updateTeacherProfile);
 router
   .route("/")
   .get(authorize("admin", "staff"), getTeachers)
-  .post(authorize("admin"), createTeacher);
+  .post(authorize("admin"), createTeacherValidator, validate, createTeacher);
 
 router
   .route("/:id")
   .get(authorize("admin", "staff"), getTeacher)
-  .put(authorize("admin"), updateTeacher)
+  .put(authorize("admin"), updateTeacherValidator, validate, updateTeacher)
   .delete(authorize("admin"), deleteTeacher);
 
 export default router;

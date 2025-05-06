@@ -3,7 +3,7 @@ import CssBaseline from "@mui/material/CssBaseline";
 import "bootstrap/dist/css/bootstrap.min.css";
 import React, { useEffect } from "react";
 import { useDispatch } from "react-redux";
-import { Route, BrowserRouter as Router, Routes } from "react-router-dom";
+import { Route, BrowserRouter, Routes } from "react-router-dom";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import Layout from "./components/layout/Layout";
 import MainHeader from "./components/layout/MainHeader";
@@ -69,7 +69,7 @@ function App() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <Router>
+      <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <Routes>
           {/* Public routes */}
           <Route
@@ -331,7 +331,7 @@ function App() {
             </>
           } />
         </Routes>
-      </Router>
+      </BrowserRouter>
     </ThemeProvider>
   );
 }

@@ -263,8 +263,8 @@ const BatchList = () => {
               value={nameFilter}
               onChange={(e) => setNameFilter(e.target.value)}
               InputProps={{
-                startAdornment: (
-                  <SearchIcon sx={{ color: "text.secondary", mr: 1 }} />
+                endAdornment: (
+                  <SearchIcon sx={{ color: "text.secondary", ml: 1 }} />
                 ),
               }}
               sx={{
