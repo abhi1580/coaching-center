@@ -26,6 +26,7 @@ import {
   School as SchoolIcon,
   Logout as LogoutIcon,
   EventNote as AttendanceIcon,
+  Description as NotesIcon,
 } from "@mui/icons-material";
 import { useSelector, useDispatch } from "react-redux";
 import { logoutUser } from "../../store/slices/authSlice";
@@ -38,6 +39,7 @@ const teacherMenuItems = [
   { text: "My Batches", icon: <ClassIcon />, path: "/app/teacher/batches" },
   { text: "My Students", icon: <SchoolIcon />, path: "/app/teacher/students" },
   { text: "Attendance", icon: <AttendanceIcon />, path: "/app/teacher/attendance" },
+  { text: "Study Materials", icon: <NotesIcon />, path: "/app/teacher/notes" },
   { text: "Announcements", icon: <AnnouncementIcon />, path: "/app/teacher/announcements" },
   { text: "Profile", icon: <PersonIcon />, path: "/app/teacher/profile" },
 ];

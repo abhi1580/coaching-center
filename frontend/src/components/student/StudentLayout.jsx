@@ -28,6 +28,7 @@ import {
     Announcement as AnnouncementIcon,
     Person as PersonIcon,
     Schedule as ScheduleIcon,
+    Description as NotesIcon,
 } from "@mui/icons-material";
 import { useSelector, useDispatch } from "react-redux";
 import { logoutUser } from "../../store/slices/authSlice";
@@ -38,6 +39,7 @@ const drawerWidth = 240;
 const studentMenuItems = [
     { text: "Dashboard", icon: <DashboardIcon />, path: "/app/student/dashboard" },
     { text: "My Batches", icon: <ClassIcon />, path: "/app/student/batches" },
+    { text: "Study Materials", icon: <NotesIcon />, path: "/app/student/notes" },
     { text: "Schedule", icon: <ScheduleIcon />, path: "/app/student/schedule" },
     { text: "Attendance", icon: <AttendanceIcon />, path: "/app/student/attendance" },
     { text: "Announcements", icon: <AnnouncementIcon />, path: "/app/student/announcements" },

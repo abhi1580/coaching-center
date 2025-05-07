@@ -73,6 +73,8 @@ import StudentBatches from "./pages/student/StudentBatches";
 import StudentAttendance from "./pages/student/StudentAttendance";
 import StudentProfile from "./pages/student/StudentProfile";
 import StudentSchedule from "./pages/student/StudentSchedule";
+import StudentNotes from "./pages/student/StudentNotes";
+import NotesPage from "./pages/teacher/NotesPage";
 
 function App() {
   const dispatch = useDispatch();
@@ -349,6 +351,7 @@ function App() {
             <Route path="batches/:id" element={<TeacherBatchDetail />} />
             <Route path="students" element={<TeacherStudents />} />
             <Route path="attendance" element={<TeacherAttendance />} />
+            <Route path="notes" element={<NotesPage />} />
             <Route path="profile" element={<TeacherProfile />} />
             <Route path="announcements" element={<Announcements />} />
           </Route>
@@ -365,6 +368,7 @@ function App() {
             <Route index element={<StudentDashboard />} />
             <Route path="dashboard" element={<StudentDashboard />} />
             <Route path="batches" element={<StudentBatches />} />
+            <Route path="notes" element={<StudentNotes />} />
             <Route path="attendance" element={<StudentAttendance />} />
             <Route path="announcements" element={<Announcements />} />
             <Route path="profile" element={<StudentProfile />} />
