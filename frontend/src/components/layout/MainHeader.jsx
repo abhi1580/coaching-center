@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from "react";
-import { Link as RouterLink, useNavigate } from "react-router-dom";
+import React, { useState } from "react";
+import { Link as RouterLink, useNavigate, useLocation } from "react-router-dom";
 import {
   AppBar,
   Box,
@@ -8,136 +8,95 @@ import {
   Typography,
   Menu,
   Container,
-  Avatar,
   Button,
-  Tooltip,
   MenuItem,
   useTheme,
   useMediaQuery,
 } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
-import { useSelector, useDispatch } from "react-redux";
-import { logoutUser } from "../../store/slices/authSlice";
 
-// Define public pages for unauthenticated users
-const publicPages = [
+const pages = [
   { name: "Home", path: "/" },
-  { name: "About", path: "/about" },
-  { name: "Contact", path: "/contact" },
+  { name: "Courses", path: "/courses" },
+  { name: "Resources", path: "/resources" },
+  { name: "Admission", path: "/admission" },
+  { name: "About Us", path: "/about" },
+  { name: "Contact Us", path: "/contact" },
 ];
 
 const MainHeader = () => {
   const [anchorElNav, setAnchorElNav] = useState(null);
-  const [anchorElUser, setAnchorElUser] = useState(null);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
-  const isSmallMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const navigate = useNavigate();
-  const dispatch = useDispatch();
-  const { user, isAuthenticated } = useSelector((state) => state.auth);
-
-  // Determine pages based on user role
-  const pages = useMemo(() => {
-    if (!isAuthenticated) {
-      return publicPages;
-    }
-
-    if (user?.role === "admin") {
-      return [
-        ...publicPages,
-        { name: "Dashboard", path: "/app/dashboard" },
-        { name: "Students", path: "/app/students" },
-        { name: "Teachers", path: "/app/teachers" },
-        { name: "Standards", path: "/app/standards" },
-        { name: "Subjects", path: "/app/subjects" },
-        { name: "Announcements", path: "/app/announcements" },
-        { name: "Payments", path: "/app/payments" },
-      ];
-    } else if (user?.role === "teacher") {
-      return [
-        ...publicPages,
-        { name: "Dashboard", path: "/app/teacher/dashboard" },
-        { name: "My Students", path: "/app/teacher/students" },
-        { name: "My Batches", path: "/app/teacher/batches" },
-        { name: "Attendance", path: "/app/teacher/attendance" },
-        { name: "Announcements", path: "/app/teacher/announcements" },
-        { name: "Profile", path: "/app/teacher/profile" },
-      ];
-    } else if (user?.role === "student") {
-      return [
-        ...publicPages,
-        { name: "Dashboard", path: "/app/student/dashboard" },
-      ];
-    }
-
-    return publicPages;
-  }, [isAuthenticated, user]); // Recalculate when auth state changes
+  const location = useLocation();
 
   const handleOpenNavMenu = (event) => {
     setAnchorElNav(event.currentTarget);
   };
-  const handleOpenUserMenu = (event) => {
-    setAnchorElUser(event.currentTarget);
-  };
-
   const handleCloseNavMenu = () => {
     setAnchorElNav(null);
   };
 
-  const handleCloseUserMenu = () => {
-    setAnchorElUser(null);
-  };
-
-  const handleLogout = async () => {
-    try {
-      await dispatch(logoutUser()).unwrap();
-      navigate("/login");
-    } catch (error) {
-      console.error("Logout failed:", error);
-      // Navigate anyway even if the API call fails
-    navigate("/login");
-    }
+  // Check if current path matches navigation item
+  const isActive = (path) => {
+    return location.pathname === path;
   };
 
   return (
-    <AppBar position="static">
+    <AppBar
+      position="sticky"
+      sx={{
+        bgcolor: "white",
+        color: "black",
+        boxShadow: "0 4px 6px rgba(0,0,0,0.05)",
+        py: 1,
+      }}
+    >
       <Container maxWidth="xl" sx={{ px: { xs: 1, sm: 2, md: 3 } }}>
         <Toolbar disableGutters sx={{ minHeight: { xs: 56, sm: 64 } }}>
-          {isMobile ? (
-            <>
-              <Box
-                sx={{ display: "flex", alignItems: "center", width: "100%" }}
-              >
-                <IconButton
-                  size="large"
-                  aria-label="menu"
-                  aria-controls="menu-appbar"
-                  aria-haspopup="true"
-                  onClick={handleOpenNavMenu}
-                  color="inherit"
-                  sx={{
-                    p: { xs: 1 },
-                    mr: { xs: 1 },
-                  }}
-                >
-                  <MenuIcon />
-                </IconButton>
+          {/* Brand */}
+          <Typography
+            variant="h5"
+            component={RouterLink}
+            to="/"
+            sx={{
+              flexGrow: isMobile ? 1 : 0,
+              fontWeight: "bold",
+              color: "var(--accent-yellow)",
+              textDecoration: "none",
+              fontSize: { xs: "1.25rem", sm: "1.5rem" },
+              fontFamily: "Poppins, sans-serif",
+              transition: "transform 0.3s ease",
+              "&:hover": {
+                transform: "scale(1.05)",
+              },
+            }}
+          >
+            Physics Station
+          </Typography>
 
-                <Typography
-                  variant="h6"
-                  noWrap
-                  component="div"
-                  sx={{
-                    flexGrow: 1,
-                    fontFamily: "monospace",
-                    fontWeight: 700,
-                    fontSize: { xs: "1rem", sm: "1.2rem" },
-                    letterSpacing: ".1rem",
-                  }}
-                >
-                  COACHING CENTER
-                </Typography>
-              </Box>
+          {/* Mobile menu icon */}
+          {isMobile && (
+            <>
+              <IconButton
+                size="large"
+                aria-label="menu"
+                aria-controls="menu-appbar"
+                aria-haspopup="true"
+                onClick={handleOpenNavMenu}
+                color="inherit"
+                sx={{
+                  ml: "auto",
+                  transition: "transform 0.3s ease",
+                  "&:hover": {
+                    transform: "scale(1.1)",
+                    bgcolor: "transparent"
+                  }
+                }}
+              >
+                <MenuIcon />
+              </IconButton>
 
               <Menu
                 id="menu-appbar"
@@ -154,11 +113,18 @@ const MainHeader = () => {
                 open={Boolean(anchorElNav)}
                 onClose={handleCloseNavMenu}
                 sx={{
-                  "& .MuiMenu-list": {
-                    py: 0.5,
+                  "& .MuiMenu-paper": {
+                    borderRadius: "10px",
+                    boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
                   },
+                  "& .MuiMenu-list": { py: 0.5 },
                   "& .MuiMenuItem-root": {
                     py: 1.5,
+                    fontFamily: "Poppins, sans-serif",
+                    transition: "background-color 0.3s ease",
+                    "&:hover": {
+                      backgroundColor: "#f8f9fa"
+                    }
                   },
                 }}
               >
@@ -166,126 +132,87 @@ const MainHeader = () => {
                   <MenuItem
                     key={page.name}
                     onClick={() => {
-                      handleCloseNavMenu();
                       navigate(page.path);
+                      handleCloseNavMenu();
+                    }}
+                    sx={{
+                      borderLeft: isActive(page.path) ? "3px solid var(--accent-yellow)" : "none",
+                      fontWeight: isActive(page.path) ? "600" : "400",
                     }}
                   >
-                    <Typography textAlign="center">{page.name}</Typography>
+                    {page.name}
                   </MenuItem>
                 ))}
+                <MenuItem
+                  onClick={() => {
+                    navigate("/login");
+                    handleCloseNavMenu();
+                  }}
+                  sx={{
+                    borderLeft: isActive("/login") ? "3px solid var(--accent-yellow)" : "none",
+                    fontWeight: isActive("/login") ? "600" : "400",
+                  }}
+                >
+                  Login
+                </MenuItem>
               </Menu>
             </>
-          ) : (
-            <Typography
-              variant="h6"
-              noWrap
-              component={RouterLink}
-              to="/"
-              sx={{
-                mr: 2,
-                display: { xs: "none", md: "flex" },
-                fontFamily: "monospace",
-                fontWeight: 700,
-                letterSpacing: ".3rem",
-                color: "inherit",
-                textDecoration: "none",
-              }}
-            >
-              COACHING CENTER
-            </Typography>
           )}
 
-          <Box sx={{ flexGrow: 1, display: { xs: "none", md: "flex" } }}>
-            {pages.map((page) => (
-              <Button
-                key={page.name}
-                onClick={() => navigate(page.path)}
-                sx={{ my: 2, color: "white", display: "block", mx: 1 }}
-              >
-                {page.name}
-              </Button>
-            ))}
-          </Box>
-
-          <Box sx={{ flexGrow: isMobile ? 0 : 0, ml: isMobile ? 1 : 0 }}>
-            {isAuthenticated ? (
-              <>
-                <Tooltip title="Open settings">
-                  <IconButton
-                    onClick={handleOpenUserMenu}
-                    sx={{
-                      p: { xs: 0.5, sm: 1 },
-                    }}
-                  >
-                    <Avatar
-                      alt={user?.name}
-                      src="/static/images/avatar/2.jpg"
-                      sx={{
-                        width: { xs: 32, sm: 40 },
-                        height: { xs: 32, sm: 40 },
-                      }}
-                    />
-                  </IconButton>
-                </Tooltip>
-                <Menu
+          {/* Desktop menu */}
+          {!isMobile && (
+            <Box
+              sx={{
+                flexGrow: 1,
+                display: "flex",
+                justifyContent: "flex-end",
+                alignItems: "center",
+                gap: 3,
+                ml: 4,
+              }}
+            >
+              {pages.map((page) => (
+                <Button
+                  className="nav-item-link"
+                  key={page.name}
+                  onClick={() => navigate(page.path)}
                   sx={{
-                    mt: "45px",
-                    "& .MuiMenu-list": {
-                      py: 0.5,
-                    },
-                    "& .MuiMenuItem-root": {
-                      py: 1.5,
-                    },
+                    color: isActive(page.path) ? "var(--accent-yellow)" : "#161616",
+                    fontWeight: isActive(page.path) ? "600" : "500",
+                    fontSize: "1rem",
+                    textTransform: "none",
+                    textDecoration: isActive(page.path) ? "underline" : "none",
+                    textDecorationColor: "var(--accent-yellow)",
+                    textUnderlineOffset: "5px",
+                    padding: "8px 12px",
+                    borderRadius: "8px",
                   }}
-                  id="menu-appbar"
-                  anchorEl={anchorElUser}
-                  anchorOrigin={{
-                    vertical: "top",
-                    horizontal: "right",
-                  }}
-                  keepMounted
-                  transformOrigin={{
-                    vertical: "top",
-                    horizontal: "right",
-                  }}
-                  open={Boolean(anchorElUser)}
-                  onClose={handleCloseUserMenu}
                 >
-                  <MenuItem onClick={() => {
-                    // Redirect based on user role
-                    if (user?.role === "admin") {
-                      navigate("/app/dashboard");
-                    } else if (user?.role === "teacher") {
-                      navigate("/app/teacher/dashboard");
-                    } else if (user?.role === "student") {
-                      navigate("/app/student/dashboard");
-                    } else {
-                      navigate("/app");
-                    }
-                    handleCloseUserMenu();
-                  }}>
-                    <Typography textAlign="center">Dashboard</Typography>
-                  </MenuItem>
-                  <MenuItem onClick={handleLogout}>
-                    <Typography textAlign="center">Logout</Typography>
-                  </MenuItem>
-                </Menu>
-              </>
-            ) : (
+                  {page.name}
+                </Button>
+              ))}
               <Button
-                color="inherit"
+                className="login-btn"
                 onClick={() => navigate("/login")}
                 sx={{
-                  ml: 2,
-                  fontSize: { xs: "0.8rem", sm: "0.875rem" },
-                  py: { xs: 0.5, sm: 0.75 },
-                  px: { xs: 1.5, sm: 2 },
+                  color: "#fff",
+                  backgroundColor: "var(--accent-yellow)",
+                  padding: "8px 20px",
+                  borderRadius: "50px",
+                  fontWeight: "500",
+                  textTransform: "none",
+                  boxShadow: "0 4px 10px rgba(0,0,0,0.1)",
+                  transition: "all 0.3s ease",
+                  "&:hover": {
+                    backgroundColor: "var(--dark-yellow)",
+                    transform: "scale(1.05)",
+                  }
                 }}
               >
                 Login
               </Button>
-            )}
-          </Box>
+            </Box>
+          )}
         </Toolbar>
       </Container>
     </AppBar>

@@ -1,295 +1,145 @@
-import React from "react";
-import {
-  Container,
-  Typography,
-  Box,
-  Paper,
-  Grid,
-  Card,
-  CardContent,
-  CardMedia,
-  useMediaQuery,
-  useTheme,
-} from "@mui/material";
-import SchoolIcon from "@mui/icons-material/School";
-import GroupsIcon from "@mui/icons-material/Groups";
-import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
-import PsychologyIcon from "@mui/icons-material/Psychology";
+import { Container, Row, Col, Card } from "react-bootstrap";
+import founderImg from "../../assets/images/founderImg.jpg";
+import profImg from "../../assets/images/profImg.jpg";
+import coordinatorImg from "../../assets/images/coordinatorImg.jpg";
 
-const AboutUs = () => {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-  const isTablet = useMediaQuery(theme.breakpoints.down("md"));
-
-  const features = [
-    {
-      icon: <SchoolIcon sx={{ fontSize: 40 }} />,
-      title: "Quality Education",
-      description:
-        "We provide high-quality education with experienced teachers and modern teaching methods.",
-    },
-    {
-      icon: <GroupsIcon sx={{ fontSize: 40 }} />,
-      title: "Small Class Sizes",
-      description:
-        "Our small class sizes ensure personalized attention for every student.",
-    },
-    {
-      icon: <EmojiEventsIcon sx={{ fontSize: 40 }} />,
-      title: "Proven Track Record",
-      description:
-        "Consistently producing excellent results and helping students achieve their goals.",
-    },
-    {
-      icon: <PsychologyIcon sx={{ fontSize: 40 }} />,
-      title: "Holistic Development",
-      description:
-        "Focusing on both academic excellence and personal development of students.",
-    },
-  ];
-
+function AboutUs() {
   const teamMembers = [
     {
-      name: "John Doe",
-      role: "Founder & CEO",
-      image: "https://via.placeholder.com/150",
-      bio: "John has over 15 years of experience in education and believes in transforming the traditional coaching methods through technology.",
+      name: "Prof. Abhishek Ankulge (Founder & Main Professor)",
+      title:
+        "M.Sc.(General & Nuclear Physics), B.Ed, GATE(IIT Kanpur), SET(SPPU), PhD(Pursuing)",
+      image: profImg,
     },
+    { name: "Mrs. Gitanjali Kale", title: "Co-Founder", image: founderImg },
     {
-      name: "Jane Smith",
-      role: "Academic Director",
-      image: "https://via.placeholder.com/150",
-      bio: "With a PhD in Education, Jane oversees all academic programs and ensures quality teaching across all courses.",
-    },
-    {
-      name: "Mike Johnson",
-      role: "Technology Head",
-      image: "https://via.placeholder.com/150",
-      bio: "Mike leads our technology initiatives, ensuring seamless digital experiences for students and teachers alike.",
+      name: "Mr. Abhijit Ankulge",
+      title: "Management Head",
+      image: coordinatorImg,
     },
   ];
 
   return (
-    <Box sx={{ py: { xs: 4, md: 8 } }}>
-      <Container maxWidth="lg">
-        <Typography
-          variant="h2"
-          component="h1"
-          align="center"
-          gutterBottom
-          sx={{
-            fontSize: { xs: "2rem", sm: "2.5rem", md: "3rem" },
-            mb: { xs: 3, md: 6 },
-            fontWeight: 700,
-          }}
-        >
-          About Our Coaching Center
-        </Typography>
+    <div className="py-5">
+      <Container>
+        {/* Mission */}
+        <section className="mb-5">
+          <h2 className="text-center mb-4 section-title">Our Mission</h2>
+          <p className="text-start lead">
+            At Physics Station, our mission is to ignite a passion for physics
+            through clear, concept-based learning and personalized guidance. We
+            aim to build strong foundational understanding, foster critical
+            thinking, and equip students with the problem-solving skills needed
+            to excel in academic and competitive examinations. By creating an
+            engaging and supportive environment, we strive to make physics
+            approachable, enjoyable, and deeply rewarding for every learner.
+          </p>
+        </section>
 
-        <Box sx={{ mb: { xs: 4, md: 8 } }}>
-          <Paper
-            elevation={2}
-            sx={{
-              p: { xs: 2, sm: 3, md: 4 },
-              borderRadius: 2,
-              backgroundColor: theme.palette.background.paper,
-            }}
-          >
-            <Typography
-              variant="h5"
-              component="h2"
-              gutterBottom
-              sx={{
-                mb: 2,
-                fontSize: { xs: "1.25rem", sm: "1.5rem" },
-                fontWeight: 600,
-              }}
-            >
-              Our Mission
-            </Typography>
+        {/* Vision */}
+        <section className="mb-5">
+          <h2 className="text-center mb-4 section-title">Our Vision</h2>
+          <p className="text-start lead">
+            Our vision at Physics Station is to become a leading center of
+            excellence in physics education, inspiring students to explore,
+            innovate, and achieve their full potential. We envision a future
+            where every learner, regardless of background, gains the confidence
+            and curiosity to pursue science with enthusiasm. Through continuous
+            innovation in teaching methods and commitment to academic integrity,
+            we aim to shape future scientists, engineers, and thinkers who will
+            contribute meaningfully to society.
+          </p>
+        </section>
 
-            <Typography
-              paragraph
-              sx={{
-                mb: 3,
-                fontSize: { xs: "0.9rem", sm: "1rem" },
-                lineHeight: 1.7,
-              }}
-            >
-              We are dedicated to providing exceptional educational coaching
-              that empowers students to achieve academic excellence. Our
-              personalized approach focuses on developing critical thinking
-              skills, building confidence, and fostering a lifelong love for
-              learning.
-            </Typography>
+        {/* Teaching Method */}
+        <section className="mb-5">
+          <h2 className="text-center mb-4 section-title">
+            Rules and Regulations
+          </h2>
+          <div className="custom-accordion">
+            <ul className="list-unstyled">
+              <li>
+                <strong>Punctuality:</strong> Students must arrive on time for all
+                classes. Late entry beyond 10 minutes may result in denied entry for
+                that session.
+              </li>
+              <li>
+                <strong>Attendance:</strong> Regular attendance is mandatory. In
+                case of absence, prior notice must be given, and students are
+                responsible for covering missed topics.
+              </li>
+              <li>
+                <strong>Respect:</strong> Students are expected to maintain a
+                respectful and positive environment. Disruptive behavior will not be
+                tolerated.
+              </li>
+              <li>
+                <strong>Discipline:</strong> Maintain decorum and respect in the
+                classroom. Misbehavior or disruptive conduct will lead to
+                disciplinary action.
+              </li>
+              <li>
+                <strong>Mobile Phones:</strong> Mobile phones must be on silent or
+                switched off during class. Unauthorized use during lectures is
+                prohibited.
+              </li>
+              <li>
+                <strong>Assignments & Tests:</strong> Timely submission of homework
+                and active participation in tests is expected from all students.
+              </li>
+              <li>
+                <strong>Fees:</strong> All fees must be paid in advance as per the
+                schedule. No refunds will be entertained once the payment is made.
+              </li>
+              <li>
+                <strong>Materials:</strong> Students must bring their notebooks,
+                textbooks, and writing tools to every class. Borrowing during class
+                is discouraged.
+              </li>
+              <li>
+                <strong>Classroom Cleanliness:</strong> Maintain cleanliness and
+                avoid littering in and around the premises.
+              </li>
+              <li>
+                <strong>Parental Involvement:</strong> Parents are encouraged to
+                track their child's progress. Regular parent-teacher interactions
+                will be held.
+              </li>
+              <li>
+                <strong>Property Damage:</strong> Any damage to institute property
+                will be charged to the student responsible.
+              </li>
+            </ul>
+          </div>
+        </section>
 
-            <Typography
-              variant="h5"
-              component="h2"
-              gutterBottom
-              sx={{
-                mb: 2,
-                fontSize: { xs: "1.25rem", sm: "1.5rem" },
-                fontWeight: 600,
-              }}
-            >
-              Our Vision
-            </Typography>
-
-            <Typography
-              paragraph
-              sx={{
-                mb: 3,
-                fontSize: { xs: "0.9rem", sm: "1rem" },
-                lineHeight: 1.7,
-              }}
-            >
-              To be the leading educational institution that transforms students
-              into confident, knowledgeable individuals prepared for future
-              academic and career challenges. We strive to create an inclusive
-              learning environment that adapts to each student's needs.
-            </Typography>
-
-            <Typography
-              variant="h5"
-              component="h2"
-              gutterBottom
-              sx={{
-                mb: 2,
-                fontSize: { xs: "1.25rem", sm: "1.5rem" },
-                fontWeight: 600,
-              }}
-            >
-              Our Approach
-            </Typography>
-
-            <Typography
-              paragraph
-              sx={{
-                fontSize: { xs: "0.9rem", sm: "1rem" },
-                lineHeight: 1.7,
-              }}
-            >
-              We believe that every student has unique abilities and learning
-              styles. Our coaching methodology combines traditional teaching
-              with modern technology to deliver customized learning experiences.
-              We focus on conceptual understanding rather than memorization,
-              enabling students to apply their knowledge effectively.
-            </Typography>
-          </Paper>
-        </Box>
-
-        <Typography
-          variant="h3"
-          component="h2"
-          align="center"
-          gutterBottom
-          sx={{
-            fontSize: { xs: "1.75rem", sm: "2rem", md: "2.5rem" },
-            mb: { xs: 3, md: 4 },
-            fontWeight: 600,
-          }}
-        >
-          Our Team
-        </Typography>
-
-        <Grid container spacing={3} justifyContent="center">
-          {teamMembers.map((member, index) => (
-            <Grid item xs={12} sm={6} md={4} key={index}>
-              <Card
-                elevation={2}
-                sx={{
-                  height: "100%",
-                  display: "flex",
-                  flexDirection: "column",
-                  borderRadius: 2,
-                  transition: "transform 0.3s ease",
-                  "&:hover": {
-                    transform: "translateY(-5px)",
-                  },
-                }}
-              >
-                <CardMedia
-                  component="img"
-                  height={isMobile ? "180" : "200"}
-                  image={member.image}
-                  alt={member.name}
-                  sx={{ objectFit: "cover" }}
-                />
-                <CardContent sx={{ flexGrow: 1, p: { xs: 2, sm: 3 } }}>
-                  <Typography
-                    variant="h6"
-                    component="h3"
-                    gutterBottom
-                    sx={{
-                      fontSize: { xs: "1.1rem", sm: "1.25rem" },
-                      fontWeight: 600,
+        {/* Founders/Teachers */}
+        <section>
+          <h2 className="text-center mb-4 section-title">Meet Our Team</h2>
+          <Row>
+            {teamMembers.map((teacher, i) => (
+              <Col md={4} key={i} className="mb-4">
+                <Card className="why-card h-100">
+                  <Card.Img
+                    variant="top"
+                    src={teacher.image}
+                    style={{
+                      height: "220px",
+                      objectFit: "cover",
                     }}
-                  >
-                    {member.name}
-                  </Typography>
-                  <Typography
-                    variant="subtitle1"
-                    color="text.secondary"
-                    gutterBottom
-                    sx={{
-                      fontSize: { xs: "0.85rem", sm: "0.95rem" },
-                      mb: 1.5,
-                    }}
-                  >
-                    {member.role}
-                  </Typography>
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      fontSize: { xs: "0.8rem", sm: "0.9rem" },
-                      lineHeight: 1.6,
-                    }}
-                  >
-                    {member.bio}
-                  </Typography>
-                </CardContent>
-              </Card>
-            </Grid>
-          ))}
-        </Grid>
-
-        <Box
-          sx={{
-            mt: { xs: 4, md: 8 },
-            p: { xs: 2, sm: 3, md: 4 },
-            backgroundColor: theme.palette.primary.main,
-            color: "white",
-            borderRadius: 2,
-          }}
-        >
-          <Typography
-            variant="h4"
-            component="h2"
-            align="center"
-            gutterBottom
-            sx={{
-              fontSize: { xs: "1.5rem", sm: "1.75rem", md: "2rem" },
-              fontWeight: 600,
-            }}
-          >
-            Join Our Coaching Center
-          </Typography>
-          <Typography
-            align="center"
-            sx={{
-              fontSize: { xs: "0.9rem", sm: "1rem" },
-              lineHeight: 1.7,
-            }}
-          >
-            Experience excellence in education with our personalized coaching
-            programs. We are committed to helping you achieve your academic
-            goals through quality teaching and innovative learning strategies.
-          </Typography>
-        </Box>
+                  />
+                  <Card.Body>
+                    <Card.Title className="why-card-title">{teacher.name}</Card.Title>
+                    <Card.Text className="why-card-text">{teacher.title}</Card.Text>
+                  </Card.Body>
+                </Card>
+              </Col>
+            ))}
+          </Row>
+        </section>
       </Container>
-    </Box>
+    </div>
   );
-};
+}
 
 export default AboutUs;

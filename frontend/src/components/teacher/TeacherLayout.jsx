@@ -16,6 +16,7 @@ import {
   useMediaQuery,
   Button,
   ListItemButton,
+  Container,
 } from "@mui/material";
 import {
   Menu as MenuIcon,
@@ -30,6 +31,7 @@ import {
 } from "@mui/icons-material";
 import { useSelector, useDispatch } from "react-redux";
 import { logoutUser } from "../../store/slices/authSlice";
+import Swal from 'sweetalert2';
 
 const drawerWidth = 240;
 
@@ -67,19 +69,52 @@ const TeacherLayout = () => {
   const handleLogout = async () => {
     try {
       await dispatch(logoutUser()).unwrap();
-      navigate("/login");
+
+      // Show success message with SweetAlert2 that auto-closes after 3 seconds
+      Swal.fire({
+        title: 'Logged Out',
+        text: 'You have been successfully logged out',
+        icon: 'success',
+        confirmButtonColor: 'var(--accent-yellow)',
+        timer: 2000,
+        timerProgressBar: true,
+        showConfirmButton: false
+      }).then(() => {
+        navigate("/login");
+      });
     } catch (error) {
       console.error("Logout failed:", error);
-      // Navigate anyway even if the API call fails
-      navigate("/login");
+
+      // Show error message with SweetAlert2 that auto-closes after 3 seconds
+      Swal.fire({
+        title: 'Logout Failed',
+        text: 'There was an issue logging you out. Please try again.',
+        icon: 'warning',
+        confirmButtonColor: 'var(--accent-yellow)',
+        timer: 2000,
+        timerProgressBar: true,
+        showConfirmButton: false
+      }).then(() => {
+        // Navigate anyway even if the API call fails
+        navigate("/login");
+      });
     }
   };
 
   const drawer = (
     <div>
       <Toolbar sx={{ minHeight: { xs: 56, sm: 64 } }}>
-        <Typography variant="h6" noWrap component="div">
-          Teacher Portal
+        <Typography
+          variant="h6"
+          noWrap
+          component="div"
+          sx={{
+            fontWeight: "bold",
+            color: "var(--accent-yellow)",
+            fontFamily: "Poppins, sans-serif",
+          }}
+        >
+          Physics Station
         </Typography>
       </Toolbar>
       <Divider />
@@ -91,6 +126,12 @@ const TeacherLayout = () => {
               sx={{
                 minHeight: { xs: 48, sm: 48 },
                 px: 2.5,
+                fontFamily: "Poppins, sans-serif",
+                transition: "all 0.3s ease",
+                "&:hover": {
+                  bgcolor: "rgba(0, 0, 0, 0.04)",
+                  transform: "translateX(4px)",
+                },
               }}
             >
               <ListItemIcon
@@ -98,6 +139,7 @@ const TeacherLayout = () => {
                   minWidth: 0,
                   mr: 3,
                   justifyContent: "center",
+                  color: "var(--accent-yellow)",
                 }}
               >
                 {item.icon}
@@ -107,6 +149,8 @@ const TeacherLayout = () => {
                 primaryTypographyProps={{
                   fontSize: { xs: 14, sm: 16 },
                   fontWeight: "medium",
+                  fontFamily: "Poppins, sans-serif",
+                  color: "#343a40",
                 }}
               />
             </ListItemButton>
@@ -123,47 +167,67 @@ const TeacherLayout = () => {
         sx={{
           width: { sm: `calc(100% - ${drawerWidth}px)` },
           ml: { sm: `${drawerWidth}px` },
-          bgcolor: "primary.main",
+          bgcolor: "white",
+          color: "black",
+          boxShadow: "0 4px 6px rgba(0,0,0,0.05)",
         }}
       >
-        <Toolbar sx={{ minHeight: { xs: 56, sm: 64 } }}>
-          <IconButton
-            color="inherit"
-            aria-label="open drawer"
-            edge="start"
-            onClick={handleDrawerToggle}
-            sx={{
-              mr: 2,
-              display: { sm: "none" },
-              padding: { xs: "8px" },
-            }}
-          >
-            <MenuIcon />
-          </IconButton>
-          <Typography
-            variant="h6"
-            noWrap
-            component="div"
-            sx={{
-              flexGrow: 1,
-              fontSize: { xs: "1rem", sm: "1.25rem" },
-            }}
-          >
-            {user?.name ? `Welcome, ${user.name}` : "Teacher Portal"}
-          </Typography>
-          <Button
-            color="inherit"
-            startIcon={<LogoutIcon />}
-            onClick={handleLogout}
-            sx={{
-              fontSize: { xs: "0.8rem", sm: "0.875rem" },
-              py: { xs: 0.5, sm: 0.75 },
-              minWidth: { xs: 0, sm: 64 },
-            }}
-          >
-            {!isMobile && "Logout"}
-          </Button>
-        </Toolbar>
+        <Container maxWidth="xl" sx={{ px: { xs: 1, sm: 2, md: 3 } }}>
+          <Toolbar sx={{ minHeight: { xs: 56, sm: 64 } }}>
+            <IconButton
+              color="inherit"
+              aria-label="open drawer"
+              edge="start"
+              onClick={handleDrawerToggle}
+              sx={{
+                mr: 2,
+                display: { sm: "none" },
+                transition: "transform 0.3s ease",
+                "&:hover": {
+                  transform: "scale(1.1)",
+                  bgcolor: "transparent"
+                }
+              }}
+            >
+              <MenuIcon />
+            </IconButton>
+            <Typography
+              variant="h6"
+              noWrap
+              component="div"
+              sx={{
+                flexGrow: 1,
+                fontSize: { xs: "1.1rem", sm: "1.3rem" },
+                fontWeight: "600",
+                fontFamily: "Poppins, sans-serif",
+                color: "#343a40",
+              }}
+            >
+              {user?.name ? `Welcome, ${user.name}` : "Teacher Portal"}
+            </Typography>
+            <Button
+              startIcon={<LogoutIcon />}
+              onClick={handleLogout}
+              sx={{
+                bgcolor: "var(--accent-yellow)",
+                color: "#fff",
+                padding: "8px 15px",
+                borderRadius: "50px",
+                fontWeight: "500",
+                textTransform: "none",
+                fontFamily: "Poppins, sans-serif",
+                boxShadow: "0 4px 10px rgba(0,0,0,0.1)",
+                transition: "all 0.3s ease",
+                "&:hover": {
+                  bgcolor: "var(--dark-yellow)",
+                  transform: "scale(1.05)",
+                }
+              }}
+            >
+              {!isMobile && "Logout"}
+            </Button>
+          </Toolbar>
+        </Container>
       </AppBar>
       <Box
         component="nav"
@@ -182,6 +246,8 @@ const TeacherLayout = () => {
               "& .MuiDrawer-paper": {
                 boxSizing: "border-box",
                 width: drawerWidth,
+                bgcolor: "#fff",
+                boxShadow: "0 0 15px rgba(0, 0, 0, 0.1)",
               },
             }}
           >
@@ -195,6 +261,9 @@ const TeacherLayout = () => {
               "& .MuiDrawer-paper": {
                 boxSizing: "border-box",
                 width: drawerWidth,
+                bgcolor: "#fff",
+                boxShadow: "0 0 15px rgba(0, 0, 0, 0.1)",
+                border: "none",
               },
             }}
             open
