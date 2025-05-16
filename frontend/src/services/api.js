@@ -121,16 +121,21 @@ export const authService = {
   register: (data) => api.post("/auth/register", data),
   logout: async () => {
     try {
-      // First remove all authentication data from localStorage
+      // Do NOT remove token/user from localStorage or Authorization header before API call
+      // Call the API endpoint to invalidate the session on server first
+      const response = await api.post("/auth/logout");
+      // Now remove all authentication data from localStorage
       localStorage.removeItem("token");
       localStorage.removeItem("user");
       // Remove authorization header
       delete api.defaults.headers.common["Authorization"];
-      // Then call the API endpoint to invalidate the session on server
-      return await api.post("/auth/logout");
+      return response;
     } catch (error) {
+      // Even if API call fails, remove local auth data
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      delete api.defaults.headers.common["Authorization"];
       console.error("Error during API logout:", error);
-      // Even if API call fails, we've already removed local auth data
       return { success: true };
     }
   },
