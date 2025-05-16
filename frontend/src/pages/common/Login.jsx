@@ -15,7 +15,7 @@ import { useFormik } from "formik";
 import * as Yup from "yup";
 import { useDispatch, useSelector } from "react-redux";
 import { login } from "../../store/slices/authSlice";
-import { School, Group, EmojiEvents, Psychology } from "@mui/icons-material";
+import { School, Group, EmojiEvents, Psychology, Visibility, VisibilityOff } from "@mui/icons-material";
 import Swal from 'sweetalert2';
 
 const validationSchema = Yup.object({
@@ -31,6 +31,7 @@ function Login() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { loading, error } = useSelector((state) => state.auth);
+  const [showPassword, setShowPassword] = useState(false);
 
   const features = [
     {
@@ -219,7 +220,7 @@ function Login() {
                     fullWidth
                     name="password"
                     label="Password"
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     id="password"
                     autoComplete="current-password"
                     value={formik.values.password}
@@ -240,6 +241,19 @@ function Login() {
                       "& .Mui-focused .MuiOutlinedInput-notchedOutline": {
                         borderColor: "var(--accent-yellow) !important",
                       },
+                    }}
+                    InputProps={{
+                      endAdornment: (
+                        <Button
+                          onClick={() => setShowPassword((show) => !show)}
+                          onMouseDown={(e) => e.preventDefault()}
+                          tabIndex={-1}
+                          sx={{ minWidth: 0, padding: 0, color: 'var(--accent-yellow)' }}
+                          aria-label={showPassword ? "Hide password" : "Show password"}
+                        >
+                          {showPassword ? <VisibilityOff /> : <Visibility />}
+                        </Button>
+                      ),
                     }}
                   />
                   <Button
