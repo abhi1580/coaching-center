@@ -93,15 +93,21 @@ api.interceptors.response.use(
       // Check if we're in a teacher route
       const currentPath = window.location.pathname;
       const isTeacherRoute = currentPath.includes('/app/teacher');
-      
       // Only clear auth and redirect if not already on login page
-      if (!window.location.pathname.includes('/login')) {
+      // ADDITION: Do not force reload if user is already logging out or on login page
+      const isLoggingOut = error.config?.url?.includes('/auth/logout');
+      if (!window.location.pathname.includes('/login') && !isLoggingOut) {
         localStorage.removeItem("token");
         localStorage.removeItem("user");
-        
         // Only redirect if not from a teacher route
         if (!isTeacherRoute) {
-          window.location.href = "/login";
+          // Instead of hard reload, use client-side navigation if possible
+          // If React Router is available, use navigate. Otherwise, fallback to reload.
+          if (window.reactNavigate) {
+            window.reactNavigate('/login');
+          } else {
+            window.location.replace('/login'); // softer than href
+          }
         }
       }
     }
