@@ -162,8 +162,7 @@ const BatchList = () => {
         return "info";
       case "completed":
         return "warning";
-      case "cancelled":
-        return "error";
+
       default:
         return "default";
     }
@@ -180,21 +179,20 @@ const BatchList = () => {
   return (
     <Box sx={{ p: { xs: 1, sm: 2, md: 3 } }}>
       {/* Breadcrumbs */}
-      <Breadcrumbs
-        aria-label="breadcrumb"
-        sx={{ mb: 2, mt: 1 }}
-        separator="›"
-      >
+      <Breadcrumbs aria-label="breadcrumb" sx={{ mb: 2, mt: 1 }} separator="›">
         <Link
           underline="hover"
           color="inherit"
           href="/app/dashboard"
-          sx={{ display: 'flex', alignItems: 'center' }}
+          sx={{ display: "flex", alignItems: "center" }}
         >
           <HomeIcon sx={{ mr: 0.5 }} fontSize="small" />
           Dashboard
         </Link>
-        <Typography color="text.primary" sx={{ display: 'flex', alignItems: 'center' }}>
+        <Typography
+          color="text.primary"
+          sx={{ display: "flex", alignItems: "center" }}
+        >
           <ClassIcon sx={{ mr: 0.5 }} fontSize="small" />
           Batches
         </Typography>

@@ -37,7 +37,7 @@ const DAYS_OF_WEEK = [
   "Sunday",
 ];
 
-const STATUS_OPTIONS = ["upcoming", "active", "completed", "cancelled"];
+const STATUS_OPTIONS = ["upcoming", "active", "completed"];
 
 const BatchCreate = () => {
   const dispatch = useDispatch();
@@ -83,8 +83,8 @@ const BatchCreate = () => {
       const standard = standards.find((s) => s._id === value);
       const standardSubjects = standard
         ? subjects.filter((subject) =>
-          standard.subjects?.some((s) => (s._id || s) === subject._id)
-        )
+            standard.subjects?.some((s) => (s._id || s) === subject._id)
+          )
         : [];
       setFilteredSubjects(standardSubjects);
       setFilteredTeachers([]);
@@ -105,27 +105,35 @@ const BatchCreate = () => {
         }
 
         // Log the teacher's subjects for debugging
-        console.log(`Teacher ${teacher.name} subjects:`,
-          JSON.stringify(teacher.subjects.map(s => typeof s === 'object' ? s._id : s)));
+        console.log(
+          `Teacher ${teacher.name} subjects:`,
+          JSON.stringify(
+            teacher.subjects.map((s) => (typeof s === "object" ? s._id : s))
+          )
+        );
 
         return teacher.subjects.some((s) => {
           // Handle object format (populated subjects)
-          if (typeof s === 'object' && s !== null && s._id) {
+          if (typeof s === "object" && s !== null && s._id) {
             return s._id === value;
           }
           // Handle string format (just ID references)
-          if (typeof s === 'string') {
+          if (typeof s === "string") {
             return s === value;
           }
           return false;
         });
       });
 
-      console.log(`Filtered ${subjectTeachers.length} teachers for subject ${value}`);
+      console.log(
+        `Filtered ${subjectTeachers.length} teachers for subject ${value}`
+      );
 
       if (subjectTeachers.length === 0) {
-        console.log(`No teachers found for subject ID ${value}. All teachers:`,
-          teachers.map(t => ({ name: t.name, subjects: t.subjects })));
+        console.log(
+          `No teachers found for subject ID ${value}. All teachers:`,
+          teachers.map((t) => ({ name: t.name, subjects: t.subjects }))
+        );
       }
 
       setFilteredTeachers(subjectTeachers);
@@ -192,16 +200,12 @@ const BatchCreate = () => {
   return (
     <Box sx={{ p: { xs: 1, sm: 2, md: 3 } }}>
       {/* Breadcrumbs */}
-      <Breadcrumbs
-        aria-label="breadcrumb"
-        sx={{ mb: 2, mt: 1 }}
-        separator="›"
-      >
+      <Breadcrumbs aria-label="breadcrumb" sx={{ mb: 2, mt: 1 }} separator="›">
         <Link
           underline="hover"
           color="inherit"
           href="/app/dashboard"
-          sx={{ display: 'flex', alignItems: 'center' }}
+          sx={{ display: "flex", alignItems: "center" }}
         >
           <HomeIcon sx={{ mr: 0.5 }} fontSize="small" />
           Dashboard
@@ -210,7 +214,7 @@ const BatchCreate = () => {
           underline="hover"
           color="inherit"
           href="/app/batches"
-          sx={{ display: 'flex', alignItems: 'center' }}
+          sx={{ display: "flex", alignItems: "center" }}
         >
           <ClassIcon sx={{ mr: 0.5 }} fontSize="small" />
           Batches

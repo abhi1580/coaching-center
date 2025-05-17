@@ -384,8 +384,7 @@ const Students = () => {
         return theme.palette.info.main;
       case "completed":
         return theme.palette.warning.main;
-      case "cancelled":
-        return theme.palette.error.main;
+      
       default:
         return theme.palette.grey[500];
     }

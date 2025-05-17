@@ -40,7 +40,7 @@ function TeacherBatches() {
   const [filteredBatches, setFilteredBatches] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  
+
   // Filter states
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
@@ -63,41 +63,45 @@ function TeacherBatches() {
         }
 
         // Make API request to fetch batches allocated to this teacher
-        const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+        const baseUrl =
+          import.meta.env.VITE_API_URL || "http://localhost:5000/api";
         const response = await axios.get(
           `${baseUrl}/teacher/batches?populate=enrolledStudents`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
-        
+
         // Debug what we're getting from the API
         console.log("API response:", response);
         console.log("Batches data:", response.data.data || response.data || []);
-        console.log("Raw enrolled students data:", 
-          (response.data.data || response.data || []).map(
-            batch => ({ 
-              name: batch.name, 
-              students: batch.enrolledStudents ? batch.enrolledStudents.length : 0
-            })
-          )
+        console.log(
+          "Raw enrolled students data:",
+          (response.data.data || response.data || []).map((batch) => ({
+            name: batch.name,
+            students: batch.enrolledStudents
+              ? batch.enrolledStudents.length
+              : 0,
+          }))
         );
-        
+
         const batchesData = response.data.data || response.data || [];
         setBatches(batchesData);
         setFilteredBatches(batchesData);
-        
+
         // Extract unique standards and subjects for filters
-        const uniqueStandards = [...new Set(batchesData.map(batch => batch.standard?.name || ""))];
-        const uniqueSubjects = [...new Set(batchesData.map(batch => batch.subject?.name || ""))];
-        
+        const uniqueStandards = [
+          ...new Set(batchesData.map((batch) => batch.standard?.name || "")),
+        ];
+        const uniqueSubjects = [
+          ...new Set(batchesData.map((batch) => batch.subject?.name || "")),
+        ];
+
         setStandards(uniqueStandards);
         setSubjects(uniqueSubjects);
 
         setError(null);
       } catch (err) {
         console.error("Error fetching teacher batches:", err);
-        setError(
-          err.response?.data?.message || "Failed to load batches"
-        );
+        setError(err.response?.data?.message || "Failed to load batches");
       } finally {
         setLoading(false);
       }
@@ -112,64 +116,69 @@ function TeacherBatches() {
       setFilteredBatches([]);
       return;
     }
-    
+
     let filtered = [...batches];
-    
+
     // Apply text search filter
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(
-        batch => 
+        (batch) =>
           batch.name?.toLowerCase().includes(query) ||
           batch.standard?.name?.toLowerCase().includes(query) ||
           batch.subject?.name?.toLowerCase().includes(query)
       );
     }
-    
+
     // Apply status filter
     if (statusFilter) {
-      filtered = filtered.filter(batch => batch.status === statusFilter);
+      filtered = filtered.filter((batch) => batch.status === statusFilter);
     }
-    
+
     // Apply standard filter
     if (standardFilter) {
-      filtered = filtered.filter(batch => batch.standard?.name === standardFilter);
+      filtered = filtered.filter(
+        (batch) => batch.standard?.name === standardFilter
+      );
     }
-    
+
     // Apply subject filter
     if (subjectFilter) {
-      filtered = filtered.filter(batch => batch.subject?.name === subjectFilter);
+      filtered = filtered.filter(
+        (batch) => batch.subject?.name === subjectFilter
+      );
     }
-    
+
     setFilteredBatches(filtered);
   }, [batches, searchQuery, statusFilter, standardFilter, subjectFilter]);
 
   const handleViewBatch = (batchId) => {
     navigate(`/app/teacher/batches/${batchId}`);
   };
-  
+
   const getStatusColor = (status) => {
     switch (status?.toLowerCase()) {
-      case 'active':
-        return 'success';
-      case 'upcoming':
-        return 'info';
-      case 'completed':
-        return 'warning';
-      case 'cancelled':
-        return 'error';
+      case "active":
+        return "success";
+      case "upcoming":
+        return "info";
+      case "completed":
+        return "warning";
       default:
-        return 'default';
+        return "default";
     }
   };
 
   // Format time function
   const formatTime = (timeString) => {
-    if (!timeString) return 'Not scheduled';
-    
+    if (!timeString) return "Not scheduled";
+
     try {
-      const options = { hour: '2-digit', minute: '2-digit' };
-      return new Date(`2000-01-01T${timeString}`).toLocaleTimeString([], options);
+      const options = { hour: "2-digit", minute: "2-digit" };
+      return new Date(`2000-01-01T${timeString}`).toLocaleTimeString(
+        [],
+        options
+      );
     } catch (error) {
       return timeString;
     }
@@ -178,14 +187,20 @@ function TeacherBatches() {
   // Format days function
   const formatDays = (daysArray) => {
     if (!daysArray || !Array.isArray(daysArray) || daysArray.length === 0) {
-      return 'No days set';
+      return "No days set";
     }
-    
+
     const dayNames = {
-      0: 'Sun', 1: 'Mon', 2: 'Tue', 3: 'Wed', 4: 'Thu', 5: 'Fri', 6: 'Sat'
+      0: "Sun",
+      1: "Mon",
+      2: "Tue",
+      3: "Wed",
+      4: "Thu",
+      5: "Fri",
+      6: "Sat",
     };
-    
-    return daysArray.map(day => dayNames[day] || day).join(', ');
+
+    return daysArray.map((day) => dayNames[day] || day).join(", ");
   };
 
   if (loading) {
@@ -258,7 +273,7 @@ function TeacherBatches() {
                     <SearchIcon />
                   </InputAdornment>
                 ),
-                sx: { borderRadius: 2 }
+                sx: { borderRadius: 2 },
               }}
               size="small"
             />
@@ -278,7 +293,6 @@ function TeacherBatches() {
                     <MenuItem value="active">Active</MenuItem>
                     <MenuItem value="upcoming">Upcoming</MenuItem>
                     <MenuItem value="completed">Completed</MenuItem>
-                    <MenuItem value="cancelled">Cancelled</MenuItem>
                   </Select>
                 </FormControl>
               </Grid>
@@ -322,24 +336,27 @@ function TeacherBatches() {
           </Grid>
         </Grid>
       </Paper>
-      
+
       {/* Batches grid */}
       {filteredBatches.length === 0 ? (
-        <Paper 
-          sx={{ 
-            p: 3, 
-            textAlign: 'center',
+        <Paper
+          sx={{
+            p: 3,
+            textAlign: "center",
             borderRadius: 2,
-            bgcolor: alpha(theme.palette.background.paper, 0.7)
+            bgcolor: alpha(theme.palette.background.paper, 0.7),
           }}
         >
-          <ClassIcon color="disabled" sx={{ fontSize: 48, mb: 2, opacity: 0.6 }} />
+          <ClassIcon
+            color="disabled"
+            sx={{ fontSize: 48, mb: 2, opacity: 0.6 }}
+          />
           <Typography variant="h6" color="text.secondary" gutterBottom>
             No batches found
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            {batches.length === 0 
-              ? "You don't have any assigned batches yet." 
+            {batches.length === 0
+              ? "You don't have any assigned batches yet."
               : "No batches match your current filter criteria. Try changing your filters."}
           </Typography>
         </Paper>
@@ -347,30 +364,33 @@ function TeacherBatches() {
         <Grid container spacing={3}>
           {filteredBatches.map((batch) => (
             <Grid item xs={12} sm={6} md={4} key={batch._id}>
-              <Card 
-                sx={{ 
-                  height: '100%', 
-                  display: 'flex', 
-                  flexDirection: 'column',
+              <Card
+                sx={{
+                  height: "100%",
+                  display: "flex",
+                  flexDirection: "column",
                   borderRadius: 2,
-                  transition: 'transform 0.2s, box-shadow 0.2s',
-                  '&:hover': {
-                    transform: 'translateY(-4px)',
-                    boxShadow: 4
-                  }
+                  transition: "transform 0.2s, box-shadow 0.2s",
+                  "&:hover": {
+                    transform: "translateY(-4px)",
+                    boxShadow: 4,
+                  },
                 }}
               >
-                <Box 
-                  sx={{ 
-                    bgcolor: alpha(theme.palette[getStatusColor(batch.status)].light, 0.2),
+                <Box
+                  sx={{
+                    bgcolor: alpha(
+                      theme.palette[getStatusColor(batch.status)].light,
+                      0.2
+                    ),
                     p: 1,
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center'
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
                   }}
                 >
-                  <Chip 
-                    label={batch.status || "Unknown"} 
+                  <Chip
+                    label={batch.status || "Unknown"}
                     color={getStatusColor(batch.status)}
                     size="small"
                   />
@@ -378,68 +398,79 @@ function TeacherBatches() {
                     {batch.enrolledStudents?.length || 0} students
                   </Typography>
                 </Box>
-                
+
                 <CardContent sx={{ flexGrow: 1 }}>
-                  <Typography 
-                    variant="h6" 
-                    component="h2" 
+                  <Typography
+                    variant="h6"
+                    component="h2"
                     gutterBottom
-                    sx={{ 
-                      color: 'primary.main',
+                    sx={{
+                      color: "primary.main",
                       fontWeight: 600,
-                      display: '-webkit-box',
-                      overflow: 'hidden',
-                      WebkitBoxOrient: 'vertical',
+                      display: "-webkit-box",
+                      overflow: "hidden",
+                      WebkitBoxOrient: "vertical",
                       WebkitLineClamp: 1,
                     }}
                   >
                     {batch.name}
                   </Typography>
-                  
+
                   <Box sx={{ mb: 2 }}>
-                    <Typography variant="body2" color="text.secondary" gutterBottom>
-                      <strong>Standard:</strong> {batch.standard?.name || "Not specified"}
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                      gutterBottom
+                    >
+                      <strong>Standard:</strong>{" "}
+                      {batch.standard?.name || "Not specified"}
                     </Typography>
-                    <Typography variant="body2" color="text.secondary" gutterBottom>
-                      <strong>Subject:</strong> {batch.subject?.name || "Not specified"}
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                      gutterBottom
+                    >
+                      <strong>Subject:</strong>{" "}
+                      {batch.subject?.name || "Not specified"}
                     </Typography>
                   </Box>
-                  
+
                   <Divider sx={{ my: 1 }} />
-                  
-                  <Box 
-                    sx={{ 
-                      display: 'flex', 
-                      alignItems: 'center',
-                      mb: 1
+
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      mb: 1,
                     }}
                   >
-                    <ScheduleIcon 
-                      fontSize="small" 
-                      sx={{ color: 'text.secondary', mr: 1 }} 
+                    <ScheduleIcon
+                      fontSize="small"
+                      sx={{ color: "text.secondary", mr: 1 }}
                     />
                     <Typography variant="body2">
-                      {formatTime(batch.schedule?.startTime)} - {formatTime(batch.schedule?.endTime)}
+                      {formatTime(batch.schedule?.startTime)} -{" "}
+                      {formatTime(batch.schedule?.endTime)}
                     </Typography>
                   </Box>
-                  
-                  <Box 
-                    sx={{ 
-                      display: 'flex', 
-                      alignItems: 'center',
+
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
                     }}
                   >
-                    <CalendarIcon 
-                      fontSize="small" 
-                      sx={{ color: 'text.secondary', mr: 1 }} 
+                    <CalendarIcon
+                      fontSize="small"
+                      sx={{ color: "text.secondary", mr: 1 }}
                     />
                     <Typography variant="body2">
                       {formatDays(batch.schedule?.days)}
                     </Typography>
                   </Box>
                 </CardContent>
-                
-                <CardActions sx={{ justifyContent: 'flex-end', p: 2, pt: 0 }}>
+
+                <CardActions sx={{ justifyContent: "flex-end", p: 2, pt: 0 }}>
                   <Button
                     variant="outlined"
                     size="small"
@@ -458,4 +489,4 @@ function TeacherBatches() {
   );
 }
 
-export default TeacherBatches; 
+export default TeacherBatches;

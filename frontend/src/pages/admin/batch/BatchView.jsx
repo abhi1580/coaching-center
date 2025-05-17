@@ -49,7 +49,10 @@ import {
   Class as ClassIcon,
 } from "@mui/icons-material";
 import { fetchBatches, deleteBatch } from "../../../store/slices/batchSlice";
-import { fetchStudents, createStudent } from "../../../store/slices/studentSlice";
+import {
+  fetchStudents,
+  createStudent,
+} from "../../../store/slices/studentSlice";
 import { batchService } from "../../../services/api";
 import { studentService } from "../../../services/api";
 import { Formik, Form, Field } from "formik";
@@ -107,7 +110,8 @@ const BatchView = () => {
   const [searchQuery, setSearchQuery] = useState("");
 
   // Only keep student removal state
-  const [studentRemovalDialogOpen, setStudentRemovalDialogOpen] = useState(false);
+  const [studentRemovalDialogOpen, setStudentRemovalDialogOpen] =
+    useState(false);
   const [studentToRemove, setStudentToRemove] = useState(null);
   const [studentRemovalLoading, setStudentRemovalLoading] = useState(false);
 
@@ -155,8 +159,7 @@ const BatchView = () => {
         return "info";
       case "completed":
         return "warning";
-      case "cancelled":
-        return "error";
+
       default:
         return "default";
     }
@@ -177,15 +180,18 @@ const BatchView = () => {
 
     try {
       setStudentRemovalLoading(true);
-      const response = await batchService.removeStudentFromBatch(id, studentToRemove._id);
+      const response = await batchService.removeStudentFromBatch(
+        id,
+        studentToRemove._id
+      );
       if (response?.data?.success) {
         setSelectedBatch(response.data.data);
       } else {
-        throw new Error('Failed to remove student');
+        throw new Error("Failed to remove student");
       }
       closeStudentRemovalDialog();
     } catch (error) {
-      console.error('Error removing student:', error);
+      console.error("Error removing student:", error);
       alert("Failed to remove student: " + error.message);
     } finally {
       setStudentRemovalLoading(false);
@@ -197,9 +203,8 @@ const BatchView = () => {
       const response = await studentService.getAll();
       const studentsResponse = response.data.data;
 
-      const batchStudentIds = selectedBatch.enrolledStudents?.map(
-        (student) => student._id
-      ) || [];
+      const batchStudentIds =
+        selectedBatch.enrolledStudents?.map((student) => student._id) || [];
 
       const availableStudents = studentsResponse.filter(
         (student) => !batchStudentIds.includes(student._id)
@@ -208,7 +213,7 @@ const BatchView = () => {
       setAvailableStudentsForBatch(availableStudents);
       setExistingStudentDialogOpen(true);
     } catch (error) {
-      console.error('Error fetching available students:', error);
+      console.error("Error fetching available students:", error);
       alert("Failed to fetch available students: " + error.message);
     }
   };
@@ -221,8 +226,8 @@ const BatchView = () => {
 
     try {
       setSubmitting(true);
-      const selectedStudents = availableStudentsForBatch.filter(
-        student => selectedExistingStudents.includes(student._id)
+      const selectedStudents = availableStudentsForBatch.filter((student) =>
+        selectedExistingStudents.includes(student._id)
       );
 
       if (selectedStudents.length === 0) {
@@ -234,16 +239,19 @@ const BatchView = () => {
       // Process each student one by one
       for (const student of selectedStudents) {
         try {
-          const response = await batchService.addStudentToBatch(id, student._id);
+          const response = await batchService.addStudentToBatch(
+            id,
+            student._id
+          );
 
           if (response?.data?.success && response?.data?.data) {
             setSelectedBatch(response.data.data);
           } else {
-            throw new Error('Invalid response from server');
+            throw new Error("Invalid response from server");
           }
         } catch (error) {
           const errorMessage = error.response?.data?.message || error.message;
-          if (errorMessage.includes('already enrolled')) {
+          if (errorMessage.includes("already enrolled")) {
             alert(`Student ${student.name} is already enrolled in this batch`);
           } else {
             alert(`Failed to enroll student ${student.name}: ${errorMessage}`);
@@ -256,7 +264,7 @@ const BatchView = () => {
       setSelectedExistingStudents([]);
       setSearchQuery("");
     } catch (error) {
-      console.error('Error enrolling students:', error);
+      console.error("Error enrolling students:", error);
       alert(`Failed to enroll students: ${error.message}`);
     } finally {
       setSubmitting(false);
@@ -278,17 +286,17 @@ const BatchView = () => {
     await processNextStudent();
   };
 
-  const filteredStudents = searchQuery ? availableStudentsForBatch.filter(
-    (student) => {
-      const searchLower = searchQuery.toLowerCase();
-      return (
-        (student?.name?.toLowerCase() || '').includes(searchLower) ||
-        (student?.studentId?.toLowerCase() || '').includes(searchLower) ||
-        (student?.email?.toLowerCase() || '').includes(searchLower) ||
-        (student?.phone?.toLowerCase() || '').includes(searchLower)
-      );
-    }
-  ) : [];
+  const filteredStudents = searchQuery
+    ? availableStudentsForBatch.filter((student) => {
+        const searchLower = searchQuery.toLowerCase();
+        return (
+          (student?.name?.toLowerCase() || "").includes(searchLower) ||
+          (student?.studentId?.toLowerCase() || "").includes(searchLower) ||
+          (student?.email?.toLowerCase() || "").includes(searchLower) ||
+          (student?.phone?.toLowerCase() || "").includes(searchLower)
+        );
+      })
+    : [];
 
   const generateStudentId = async () => {
     try {
@@ -301,9 +309,9 @@ const BatchView = () => {
 
       // Find the highest number for the current year
       let maxNumber = 0;
-      students.forEach(student => {
+      students.forEach((student) => {
         if (student.studentId) {
-          const [year, number] = student.studentId.split('-');
+          const [year, number] = student.studentId.split("-");
           if (year === currentYear.toString()) {
             const num = parseInt(number);
             if (num > maxNumber) {
@@ -314,10 +322,10 @@ const BatchView = () => {
       });
 
       // Generate new ID
-      const newNumber = (maxNumber + 1).toString().padStart(3, '0');
+      const newNumber = (maxNumber + 1).toString().padStart(3, "0");
       return `${currentYear}-${newNumber}`;
     } catch (error) {
-      console.error('Error generating student ID:', error);
+      console.error("Error generating student ID:", error);
       // Fallback to current year with 001 if there's an error
       return `${new Date().getFullYear()}-001`;
     }
@@ -334,16 +342,12 @@ const BatchView = () => {
   return (
     <Box sx={{ p: { xs: 1, sm: 2, md: 3 } }}>
       {/* Breadcrumbs */}
-      <Breadcrumbs
-        aria-label="breadcrumb"
-        sx={{ mb: 2, mt: 1 }}
-        separator="›"
-      >
+      <Breadcrumbs aria-label="breadcrumb" sx={{ mb: 2, mt: 1 }} separator="›">
         <Link
           underline="hover"
           color="inherit"
           href="/app/dashboard"
-          sx={{ display: 'flex', alignItems: 'center' }}
+          sx={{ display: "flex", alignItems: "center" }}
         >
           <HomeIcon sx={{ mr: 0.5 }} fontSize="small" />
           Dashboard
@@ -352,12 +356,15 @@ const BatchView = () => {
           underline="hover"
           color="inherit"
           href="/app/batches"
-          sx={{ display: 'flex', alignItems: 'center' }}
+          sx={{ display: "flex", alignItems: "center" }}
         >
           <ClassIcon sx={{ mr: 0.5 }} fontSize="small" />
           Batches
         </Link>
-        <Typography color="text.primary" sx={{ display: 'flex', alignItems: 'center' }}>
+        <Typography
+          color="text.primary"
+          sx={{ display: "flex", alignItems: "center" }}
+        >
           {selectedBatch.name}
         </Typography>
       </Breadcrumbs>
@@ -623,7 +630,7 @@ const BatchView = () => {
                   disabled={
                     selectedBatch.capacity &&
                     selectedBatch.enrolledStudents?.length >=
-                    selectedBatch.capacity
+                      selectedBatch.capacity
                   }
                   sx={{ borderRadius: 2 }}
                 >
@@ -636,7 +643,7 @@ const BatchView = () => {
                   disabled={
                     selectedBatch.capacity &&
                     selectedBatch.enrolledStudents?.length >=
-                    selectedBatch.capacity
+                      selectedBatch.capacity
                   }
                   sx={{ borderRadius: 2 }}
                 >
@@ -744,13 +751,21 @@ const BatchView = () => {
               ),
             }}
           />
-          <Box sx={{ maxHeight: 400, overflow: 'auto' }}>
+          <Box sx={{ maxHeight: 400, overflow: "auto" }}>
             {!searchQuery ? (
-              <Typography variant="body1" color="text.secondary" sx={{ textAlign: 'center', py: 2 }}>
+              <Typography
+                variant="body1"
+                color="text.secondary"
+                sx={{ textAlign: "center", py: 2 }}
+              >
                 Start typing to search for students
               </Typography>
             ) : filteredStudents.length === 0 ? (
-              <Typography variant="body1" color="text.secondary" sx={{ textAlign: 'center', py: 2 }}>
+              <Typography
+                variant="body1"
+                color="text.secondary"
+                sx={{ textAlign: "center", py: 2 }}
+              >
                 No students found matching your search
               </Typography>
             ) : (
@@ -759,21 +774,28 @@ const BatchView = () => {
                   <ListItem
                     key={student._id}
                     sx={{
-                      border: '1px solid',
-                      borderColor: 'divider',
+                      border: "1px solid",
+                      borderColor: "divider",
                       borderRadius: 1,
                       mb: 1,
-                      '&:hover': {
-                        bgcolor: 'action.hover',
+                      "&:hover": {
+                        bgcolor: "action.hover",
                       },
                     }}
                   >
                     <ListItemButton
                       onClick={() => {
                         if (selectedExistingStudents.includes(student._id)) {
-                          setSelectedExistingStudents(selectedExistingStudents.filter(id => id !== student._id));
+                          setSelectedExistingStudents(
+                            selectedExistingStudents.filter(
+                              (id) => id !== student._id
+                            )
+                          );
                         } else {
-                          setSelectedExistingStudents([...selectedExistingStudents, student._id]);
+                          setSelectedExistingStudents([
+                            ...selectedExistingStudents,
+                            student._id,
+                          ]);
                         }
                       }}
                     >
@@ -781,15 +803,30 @@ const BatchView = () => {
                         primary={student.name}
                         secondary={
                           <>
-                            <Typography key="student-id" component="span" variant="body2" color="text.primary">
+                            <Typography
+                              key="student-id"
+                              component="span"
+                              variant="body2"
+                              color="text.primary"
+                            >
                               ID: {student.studentId}
                             </Typography>
                             <br />
-                            <Typography key="student-email" component="span" variant="body2" color="text.secondary">
+                            <Typography
+                              key="student-email"
+                              component="span"
+                              variant="body2"
+                              color="text.secondary"
+                            >
                               Email: {student.email}
                             </Typography>
                             <br />
-                            <Typography key="student-phone" component="span" variant="body2" color="text.secondary">
+                            <Typography
+                              key="student-phone"
+                              component="span"
+                              variant="body2"
+                              color="text.secondary"
+                            >
                               Phone: {student.phone}
                             </Typography>
                           </>

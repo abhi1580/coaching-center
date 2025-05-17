@@ -190,8 +190,7 @@ const StudentBatches = () => {
         return "info";
       case "completed":
         return "warning";
-      case "cancelled":
-        return "error";
+
       default:
         return "default";
     }
