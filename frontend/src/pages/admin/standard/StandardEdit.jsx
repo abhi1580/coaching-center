@@ -35,6 +35,7 @@ import { fetchSubjects } from "../../../store/slices/subjectSlice";
 import { standardService } from "../../../services/api";
 import * as Yup from "yup";
 import { Formik, Form, Field } from "formik";
+import Swal from "sweetalert2";
 
 const validationSchema = Yup.object({
     name: Yup.string().required("Name is required"),
@@ -44,8 +45,10 @@ const validationSchema = Yup.object({
         .positive("Level must be a positive number")
         .integer("Level must be an integer"),
     description: Yup.string().required("Description is required"),
-    isActive: Yup.boolean().required("Status is required"),
-    subjects: Yup.array().of(Yup.string()),
+    subjects: Yup.array()
+        .of(Yup.string())
+        .min(1, "At least one subject must be selected")
+        .required("Please select at least one subject"),
 });
 
 const StandardEdit = () => {
@@ -119,7 +122,6 @@ const StandardEdit = () => {
         name: standard.name || "",
         level: standard.level || "",
         description: standard.description || "",
-        isActive: standard.isActive === false ? false : true,
         subjects: getInitialSubjects(),
     };
 
@@ -151,10 +153,16 @@ const StandardEdit = () => {
                 return;
             }
 
-            // Format the data as needed for the API
+            // Format the data for the API
             const formattedData = {
                 ...values,
                 level: formattedLevel,
+                subjects: Array.isArray(values.subjects)
+                    ? values.subjects.map(subject =>
+                        typeof subject === 'object' && subject._id
+                            ? subject._id
+                            : subject)
+                    : []
             };
 
             await dispatch(updateStandard({
@@ -162,10 +170,25 @@ const StandardEdit = () => {
                 data: formattedData
             })).unwrap();
 
-            alert("Standard updated successfully!");
+            // Success notification
+            Swal.fire({
+                icon: 'success',
+                title: 'Standard Updated!',
+                text: `${values.name} has been successfully updated.`,
+                confirmButtonColor: theme.palette.primary.main,
+            });
+
             navigate(`/app/standards/${id}`);
         } catch (error) {
             console.error("Failed to update standard:", error);
+
+            // Error notification
+            Swal.fire({
+                icon: 'error',
+                title: 'Update Failed',
+                text: error.message || "Failed to update standard. Please try again.",
+                confirmButtonColor: theme.palette.primary.main,
+            });
 
             // Handle API validation errors
             if (error.response?.data?.errors) {
@@ -174,8 +197,12 @@ const StandardEdit = () => {
                     apiErrors[err.param] = err.msg;
                 });
                 setErrors(apiErrors);
-            } else {
-                alert("Failed to update standard: " + (error.message || "Unknown error"));
+            } else if (error.message === "One or more subjects are invalid" ||
+                (error.response?.data?.message === "One or more subjects are invalid")) {
+                // Handle invalid subjects error
+                setErrors({
+                    subjects: "One or more selected subjects are invalid or no longer exist"
+                });
             }
         } finally {
             setSubmitting(false);
@@ -335,8 +362,11 @@ const StandardEdit = () => {
                                 </Grid>
 
                                 <Grid item xs={12}>
-                                    <FormControl fullWidth>
-                                        <InputLabel id="subjects-label">Associated Subjects</InputLabel>
+                                    <FormControl
+                                        fullWidth
+                                        error={touched.subjects && Boolean(errors.subjects)}
+                                    >
+                                        <InputLabel id="subjects-label">Associated Subjects *</InputLabel>
                                         <Select
                                             labelId="subjects-label"
                                             id="subjects"
@@ -344,7 +374,7 @@ const StandardEdit = () => {
                                             multiple
                                             value={values.subjects}
                                             onChange={handleChange}
-                                            input={<OutlinedInput label="Associated Subjects" />}
+                                            input={<OutlinedInput label="Associated Subjects *" />}
                                             renderValue={(selected) => {
                                                 if (!subjects) return "Loading subjects...";
                                                 return selected
@@ -365,28 +395,11 @@ const StandardEdit = () => {
                                             ))}
                                         </Select>
                                         <FormHelperText>
-                                            Select subjects that will be taught in this standard
+                                            {touched.subjects && errors.subjects
+                                                ? errors.subjects
+                                                : "Select subjects that will be taught in this standard"}
                                         </FormHelperText>
                                     </FormControl>
-                                </Grid>
-
-                                <Grid item xs={12}>
-                                    <FormControlLabel
-                                        control={
-                                            <Switch
-                                                checked={values.isActive}
-                                                onChange={(e) => setFieldValue("isActive", e.target.checked)}
-                                                disabled={isSubmitting}
-                                            />
-                                        }
-                                        label={values.isActive ? "Active" : "Inactive"}
-                                        sx={{ mb: 2 }}
-                                    />
-                                    <FormHelperText>
-                                        {values.isActive
-                                            ? "Standard is currently active and will be shown in all relevant lists."
-                                            : "Standard is currently inactive and will be hidden from relevant lists."}
-                                    </FormHelperText>
                                 </Grid>
 
                                 <Grid item xs={12} sx={{ display: "flex", justifyContent: "flex-end", gap: 2, mt: 2 }}>

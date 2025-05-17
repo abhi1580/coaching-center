@@ -23,8 +23,6 @@ export const ADMIN_ROUTES = {
   SUBJECT_CREATE: "/app/subjects/create",
   SUBJECT_VIEW: "/app/subjects/:id",
   SUBJECT_EDIT: "/app/subjects/:id/edit",
-  // Payment routes
-  PAYMENTS: "/app/payments",
   // Announcement routes
   ANNOUNCEMENTS: "/app/announcements",
   // Teacher routes

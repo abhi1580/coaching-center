@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { authService } from "../../services/api";
+import { isValidUserData, safeStringify } from "../../utils/helpers";
 
 // Async thunk for login
 export const login = createAsyncThunk(
@@ -9,7 +10,8 @@ export const login = createAsyncThunk(
       const response = await authService.login(credentials);
       const { token, user } = response.data;
 
-      if (!user || !user.role) {
+      if (!isValidUserData(user)) {
+        console.error("Invalid user data received:", safeStringify(user));
         return rejectWithValue({ message: "Invalid user data received" });
       }
 
@@ -63,16 +65,20 @@ const authSlice = createSlice({
       const userStr = localStorage.getItem("user");
       try {
         const user = JSON.parse(userStr);
-        if (token && user && user.role) {
+        // More thorough validation using our helper
+        if (token && isValidUserData(user)) {
           state.user = user;
           state.isAuthenticated = true;
+          console.log("Auth initialized with valid user:", safeStringify(user));
         } else {
+          console.warn("Invalid user data found in localStorage:", safeStringify(user));
           state.user = null;
           state.isAuthenticated = false;
           localStorage.removeItem("token");
           localStorage.removeItem("user");
         }
-      } catch {
+      } catch (error) {
+        console.error("Error parsing user from localStorage:", error);
         state.user = null;
         state.isAuthenticated = false;
         localStorage.removeItem("token");

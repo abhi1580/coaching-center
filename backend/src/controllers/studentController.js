@@ -1,8 +1,7 @@
 import Student from "../models/Student.js";
 import User from "../models/User.js";
-import Payment from "../models/Payment.js";
 import { validateObjectId } from "../utils/validation.js";
-import { errorResponse, successResponse } from "../utils/errorResponse.js";
+import { errorResponse, successResponse } from "../utils/responseUtil.js";
 import mongoose from "mongoose";
 
 // @desc    Get all students
@@ -352,6 +351,10 @@ export const updateStudent = async (req, res) => {
 // @route   DELETE /api/students/:id
 // @access  Private
 export const deleteStudent = async (req, res) => {
+  // Start a session for transaction
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
   try {
     const { id } = req.params;
     if (!validateObjectId(id)) {
@@ -363,23 +366,47 @@ export const deleteStudent = async (req, res) => {
       return errorResponse(res, 404, "Student not found");
     }
 
-    // Delete the associated user account
+    // Import all models that might reference the student
+    const [Batch, Attendance, Note] = await Promise.all([
+      import("../models/Batch.js").then(module => module.default),
+      import("../models/Attendance.js").then(module => module.default),
+      import("../models/note.model.js").then(module => module.default)
+    ]);
+
+    // 1. Delete the associated user account
     if (student.user) {
-      await User.findByIdAndDelete(student.user);
+      await User.findByIdAndDelete(student.user).session(session);
+      console.log(`Deleted user account ${student.user}`);
     }
 
-    // Remove student from all batches
-    const Batch = (await import("../models/Batch.js")).default;
+    // 2. Delete all attendance records for this student
+    const deletedAttendance = await Attendance.deleteMany(
+      { studentId: id },
+      { session }
+    );
+    console.log(`Deleted ${deletedAttendance.deletedCount} attendance records`);
+
+    // 3. Remove student from all batches
     await Batch.updateMany(
       { enrolledStudents: id },
-      { $pull: { enrolledStudents: id } }
+      { $pull: { enrolledStudents: id } },
+      { session }
     );
+    console.log(`Removed student from all batches`);
 
-    // Delete the student document
-    await Student.findByIdAndDelete(id);
+    // 4. Delete the student document
+    await Student.findByIdAndDelete(id).session(session);
+    console.log(`Deleted student document ${id}`);
 
-    return successResponse(res, 200, "Student deleted successfully", null);
+    // Commit the transaction
+    await session.commitTransaction();
+    session.endSession();
+
+    return successResponse(res, 200, "Student and all related data deleted successfully", null);
   } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+    console.error("Error deleting student:", error);
     return errorResponse(res, 500, "Error deleting student", {
       error: error.message,
     });
@@ -415,27 +442,4 @@ export const getStudentClasses = async (req, res) => {
   }
 };
 
-// @desc    Get student's payment history
-// @route   GET /api/students/:id/payments
-// @access  Private
-export const getStudentPayments = async (req, res) => {
-  try {
-    const { id } = req.params;
-    if (!validateObjectId(id)) {
-      return res.status(400).json({ message: "Invalid student ID" });
-    }
 
-    const student = await Student.findById(id).populate(
-      "payments",
-      "amount date status description"
-    );
-
-    if (!student) {
-      return res.status(404).json({ message: "Student not found" });
-    }
-
-    res.json(student.payments);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};

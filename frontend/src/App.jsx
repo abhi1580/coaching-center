@@ -43,7 +43,6 @@ const componentMap = {
 
   // Admin pages
   Dashboard: lazy(() => import('./pages/admin/Dashboard')),
-  Payments: lazy(() => import('./pages/admin/Payments')),
   Announcements: lazy(() => import('./pages/admin/Announcements')),
 
   // Admin - Students
@@ -105,7 +104,14 @@ const getComponent = (componentName) => {
     console.error(`Component ${componentName} not found in componentMap`);
     return componentMap.NotFound;
   }
-  return Component;
+  // Return a wrapped component that handles potential errors during lazy loading
+  return (props) => (
+    <ErrorBoundary>
+      <Suspense fallback={<LoadingFallback />}>
+        <Component {...props} />
+      </Suspense>
+    </ErrorBoundary>
+  );
 };
 
 function App() {
@@ -154,11 +160,9 @@ function App() {
                       key={route.path}
                       path={route.path}
                       element={
-                        <ErrorBoundary>
-                          <MemoizedProtectedRoute allowedRoles={["admin"]}>
-                            <Component />
-                          </MemoizedProtectedRoute>
-                        </ErrorBoundary>
+                        <MemoizedProtectedRoute allowedRoles={["admin"]}>
+                          <Component />
+                        </MemoizedProtectedRoute>
                       }
                     />
                   );

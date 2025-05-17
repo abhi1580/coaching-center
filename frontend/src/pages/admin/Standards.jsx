@@ -68,7 +68,10 @@ const validationSchema = Yup.object({
     .max(12, "Level must not exceed 12")
     .integer("Level must be a whole number"),
   description: Yup.string().required("Description is required"),
-  isActive: Yup.boolean().default(true),
+  subjects: Yup.array()
+    .of(Yup.string())
+    .min(1, "At least one subject must be selected")
+    .required("Please select at least one subject"),
 });
 
 const Standards = () => {
@@ -95,7 +98,6 @@ const Standards = () => {
       name: "",
       level: "",
       description: "",
-      isActive: true,
       subjects: [],
     },
     validationSchema: validationSchema,
@@ -235,7 +237,6 @@ const Standards = () => {
         level:
           typeof standard.level === "number" ? standard.level.toString() : "",
         description: standard.description || "",
-        isActive: standard.isActive === false ? false : true,
         subjects: subjectIds,
       };
 
@@ -303,10 +304,10 @@ const Standards = () => {
     return isNaN(date.getTime())
       ? "Invalid Date"
       : date.toLocaleDateString(undefined, {
-          year: "numeric",
-          month: "long",
-          day: "numeric",
-        });
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      });
   };
 
   // Handle loading state correctly
@@ -437,14 +438,14 @@ const Standards = () => {
                 variant={isMobile ? "body2" : "body1"}
                 sx={{ fontWeight: 500 }}
               >
-                Active Standards
+                Standards
               </Typography>
               <Typography
                 variant={isMobile ? "h5" : "h4"}
                 color="success.main"
                 sx={{ fontWeight: 600 }}
               >
-                {standardsArray.filter((std) => std && std.isActive).length}
+                {standardsArray.length}
               </Typography>
             </CardContent>
           </Card>
@@ -499,14 +500,14 @@ const Standards = () => {
                 variant={isMobile ? "body2" : "body1"}
                 sx={{ fontWeight: 500 }}
               >
-                Inactive Standards
+                Additional Standards
               </Typography>
               <Typography
                 variant={isMobile ? "h5" : "h4"}
                 color="text.secondary"
                 sx={{ fontWeight: 600 }}
               >
-                {standardsArray.filter((std) => std && !std.isActive).length}
+                0
               </Typography>
             </CardContent>
           </Card>
@@ -582,15 +583,7 @@ const Standards = () => {
                   >
                     {standard.name}
                   </Typography>
-                  <Chip
-                    label={standard.isActive ? "Active" : "Inactive"}
-                    size="small"
-                    color={standard.isActive ? "success" : "default"}
-                    sx={{
-                      fontWeight: 500,
-                      height: 24,
-                    }}
-                  />
+
                 </Box>
 
                 <CardContent sx={{ pb: 1, pt: 2 }}>
@@ -712,9 +705,7 @@ const Standards = () => {
                 <TableCell sx={{ color: "white", fontWeight: "bold" }}>
                   Level
                 </TableCell>
-                <TableCell sx={{ color: "white", fontWeight: "bold" }}>
-                  Status
-                </TableCell>
+
                 <TableCell sx={{ color: "white", fontWeight: "bold" }}>
                   Subjects
                 </TableCell>
@@ -763,14 +754,7 @@ const Standards = () => {
                         </Typography>
                       </Box>
                     </TableCell>
-                    <TableCell>
-                      <Chip
-                        label={standard.isActive ? "Active" : "Inactive"}
-                        size="small"
-                        color={standard.isActive ? "success" : "default"}
-                        sx={{ fontWeight: 500 }}
-                      />
-                    </TableCell>
+
                     <TableCell>
                       <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
                         {standard.subjects && standard.subjects.length > 0 ? (
@@ -906,12 +890,7 @@ const Standards = () => {
                     Class {selectedStandard.level}
                   </Typography>
                 </Box>
-                <Chip
-                  label={selectedStandard.isActive ? "Active" : "Inactive"}
-                  color={selectedStandard.isActive ? "success" : "default"}
-                  size="small"
-                  sx={{ fontWeight: 500 }}
-                />
+
               </Box>
             </DialogTitle>
 
@@ -1013,38 +992,7 @@ const Standards = () => {
                         </Box>
                       </Box>
                     </Grid>
-                    <Grid item xs={12} sm={6} md={4}>
-                      <Box
-                        sx={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                          pb: 1,
-                          borderBottom: `1px solid ${alpha(
-                            theme.palette.divider,
-                            0.3
-                          )}`,
-                        }}
-                      >
-                        <Typography
-                          variant="body2"
-                          color="text.secondary"
-                          fontWeight={500}
-                        >
-                          Status:
-                        </Typography>
-                        <Chip
-                          label={
-                            selectedStandard.isActive ? "Active" : "Inactive"
-                          }
-                          color={
-                            selectedStandard.isActive ? "success" : "default"
-                          }
-                          size="small"
-                          sx={{ fontWeight: 500 }}
-                        />
-                      </Box>
-                    </Grid>
+
                     <Grid item xs={12}>
                       <Typography
                         variant="body2"
@@ -1099,7 +1047,7 @@ const Standards = () => {
                   </Typography>
 
                   {selectedStandard.subjects &&
-                  selectedStandard.subjects.length > 0 ? (
+                    selectedStandard.subjects.length > 0 ? (
                     <>
                       <Box
                         sx={{
@@ -1154,9 +1102,6 @@ const Standards = () => {
                                 Duration
                               </TableCell>
                               <TableCell sx={{ fontWeight: 600 }}>
-                                Status
-                              </TableCell>
-                              <TableCell sx={{ fontWeight: 600 }}>
                                 Description
                               </TableCell>
                             </TableRow>
@@ -1202,18 +1147,6 @@ const Standards = () => {
                                     </TableCell>
                                     <TableCell>
                                       {subject && subject.duration ? subject.duration : "N/A"}
-                                    </TableCell>
-                                    <TableCell>
-                                      <Chip
-                                        label={subject && subject.status ? subject.status : "unknown"}
-                                        size="small"
-                                        color={
-                                          subject && subject.status === "active"
-                                            ? "success"
-                                            : "default"
-                                        }
-                                        sx={{ fontWeight: 500 }}
-                                      />
                                     </TableCell>
                                     <TableCell>
                                       <Typography
@@ -1454,8 +1387,12 @@ const Standards = () => {
               </Grid>
 
               <Grid item xs={12}>
-                <FormControl fullWidth sx={{ mb: 1 }}>
-                  <InputLabel id="subjects-label">Subjects</InputLabel>
+                <FormControl
+                  fullWidth
+                  sx={{ mb: 1 }}
+                  error={formik.touched.subjects && Boolean(formik.errors.subjects)}
+                >
+                  <InputLabel id="subjects-label">Subjects *</InputLabel>
                   <Select
                     labelId="subjects-label"
                     multiple
@@ -1500,61 +1437,16 @@ const Standards = () => {
                       </MenuItem>
                     ))}
                   </Select>
+                  <FormHelperText>
+                    {formik.touched.subjects && formik.errors.subjects
+                      ? formik.errors.subjects
+                      : "Select the subjects associated with this standard"}
+                  </FormHelperText>
                 </FormControl>
-                <Typography
-                  variant="body2"
-                  color="text.secondary"
-                  fontSize="0.75rem"
-                >
-                  Select the subjects associated with this standard
-                </Typography>
               </Grid>
 
-              <Grid item xs={12} sx={{ mt: 1 }}>
-                <Typography
-                  variant="subtitle1"
-                  color="primary"
-                  fontWeight={600}
-                  gutterBottom
-                >
-                  Status
-                </Typography>
-              </Grid>
 
-              <Grid item xs={12}>
-                <Paper
-                  variant="outlined"
-                  sx={{
-                    p: 2,
-                    borderRadius: 1,
-                    backgroundColor: alpha(theme.palette.primary.light, 0.03),
-                  }}
-                >
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        name="isActive"
-                        checked={formik.values.isActive}
-                        onChange={formik.handleChange}
-                        color="success"
-                      />
-                    }
-                    label={
-                      <Box sx={{ display: "flex", alignItems: "center" }}>
-                        <Typography sx={{ mr: 1 }}>
-                          {formik.values.isActive ? "Active" : "Inactive"}
-                        </Typography>
-                        <Chip
-                          label={formik.values.isActive ? "Active" : "Inactive"}
-                          size="small"
-                          color={formik.values.isActive ? "success" : "default"}
-                          sx={{ fontWeight: 500 }}
-                        />
-                      </Box>
-                    }
-                  />
-                </Paper>
-              </Grid>
+
             </Grid>
           </DialogContent>
 

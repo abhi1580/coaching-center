@@ -6,14 +6,10 @@ import {
   updateStudent,
   deleteStudent,
   getStudentClasses,
-  getStudentPayments,
 } from "../controllers/studentController.js";
-import { protect, authorize } from "../middleware/auth.js";
+import { protect, authorize } from "../middleware/authMiddleware.js";
 import { validate } from "../middleware/validate.js";
-import {
-  createStudentValidator,
-  updateStudentValidator,
-} from "../middleware/validators/studentValidators.js";
+import {  createStudentValidator,  updateStudentValidator,} from "../validators/studentValidators.js";
 
 const router = express.Router();
 
@@ -36,9 +32,5 @@ router
 router
   .route("/:id/classes")
   .get(authorize("admin", "staff", "teacher"), getStudentClasses);
-
-router
-  .route("/:id/payments")
-  .get(authorize("admin", "staff"), getStudentPayments);
 
 export default router;

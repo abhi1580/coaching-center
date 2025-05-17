@@ -1,6 +1,6 @@
 import Announcement from "../models/Announcement.js";
-import { validateMongoDbId } from "../utils/validateMongoDbId.js";
-import { handleError } from "../utils/errorHandler.js";
+import { validateMongoDbId } from "../utils/validation.js";
+import { handleError } from "../utils/responseUtil.js";
 
 // Helper functions
 const validateAnnouncementFields = (fields) => {

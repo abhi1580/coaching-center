@@ -86,7 +86,6 @@ export const createSubject = asyncHandler(async (req, res) => {
     name: req.body.name,
     description: req.body.description,
     duration: req.body.duration,
-    status: req.body.status || "active",
   };
 
   const subject = await Subject.create(subjectData);
@@ -121,7 +120,6 @@ export const updateSubject = asyncHandler(async (req, res) => {
     name: req.body.name,
     description: req.body.description,
     duration: req.body.duration,
-    status: req.body.status,
   };
 
   subject = await Subject.findByIdAndUpdate(req.params.id, updateData, {

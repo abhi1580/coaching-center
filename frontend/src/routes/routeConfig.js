@@ -33,8 +33,6 @@ export const adminRoutes = [
   { path: 'subjects/create', component: 'SubjectCreate' },
   { path: 'subjects/:id', component: 'SubjectView' },
   { path: 'subjects/:id/edit', component: 'SubjectEdit' },
-  // Payment routes
-  { path: 'payments', component: 'Payments' },
   // Announcement routes
   { path: 'announcements', component: 'Announcements' },
   // Teacher routes

@@ -6,12 +6,9 @@ import {
   updateSubject,
   deleteSubject,
 } from "../controllers/subjectController.js";
-import { protect, authorize } from "../middleware/auth.js";
+import { protect, authorize } from "../middleware/authMiddleware.js";
 import { validate } from "../middleware/validate.js";
-import {
-  createSubjectValidator,
-  updateSubjectValidator,
-} from "../middleware/validators/subjectValidators.js";
+import {  createSubjectValidator,  updateSubjectValidator,} from "../validators/subjectValidators.js";
 
 const router = express.Router();
 

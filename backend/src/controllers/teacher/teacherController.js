@@ -2,11 +2,7 @@ import Teacher from "../../models/Teacher.js";
 import Batch from "../../models/Batch.js";
 import Student from "../../models/Student.js";
 import asyncHandler from "../../utils/asyncHandler.js";
-import {
-  sendSuccess,
-  sendNotFound,
-  sendBadRequest,
-} from "../../utils/response/responseHandler.js";
+import {  sendSuccess,  sendNotFound,  sendBadRequest,} from "../../utils/responseUtil.js";
 import { ApiError } from "../../middleware/errorMiddleware.js";
 
 /**

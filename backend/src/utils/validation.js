@@ -1,8 +1,15 @@
 import mongoose from "mongoose";
 
-// Validate MongoDB ObjectId
+// Validate MongoDB ObjectId (returns boolean)
 export const validateObjectId = (id) => {
   return mongoose.Types.ObjectId.isValid(id);
+};
+
+// Validate MongoDB ObjectId (throws error)
+export const validateMongoDbId = (id) => {
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    throw new Error("Invalid MongoDB ID");
+  }
 };
 
 // Validate email format

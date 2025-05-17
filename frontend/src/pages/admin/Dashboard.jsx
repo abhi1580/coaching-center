@@ -27,7 +27,6 @@ import {
   Class as ClassIcon,
   Grade as GradeIcon,
   People as PeopleIcon,
-  Payment as PaymentIcon,
   Announcement as AnnouncementIcon,
   Book as BookIcon,
   Refresh as RefreshIcon,
@@ -50,12 +49,9 @@ function Dashboard() {
     totalBatches: 0,
     totalSubjects: 0,
     totalStandards: 0,
-    totalPayments: 0,
-    totalRevenue: 0,
     totalAnnouncements: 0,
     studentGrowth: 0,
     teacherGrowth: 0,
-    revenueGrowth: 0,
     upcomingAnnouncements: [],
     activeAnnouncements: [],
     scheduledAnnouncements: [],
@@ -148,12 +144,9 @@ function Dashboard() {
         totalBatches: responseData.totalBatches || 0,
         totalSubjects: responseData.totalSubjects || 0,
         totalStandards: responseData.totalStandards || 0,
-        totalPayments: responseData.totalPayments || 0,
-        totalRevenue: responseData.totalRevenue || 0,
         totalAnnouncements: announcementsData.length,
         studentGrowth: responseData.studentGrowth || 0,
         teacherGrowth: responseData.teacherGrowth || 0,
-        revenueGrowth: responseData.revenueGrowth || 0,
         upcomingAnnouncements,
         activeAnnouncements,
         scheduledAnnouncements,
@@ -443,15 +436,7 @@ function Dashboard() {
                 onClick={() => navigate("/app/subjects")}
               />
             </Grid>
-            <Grid item xs={6} sm={4} md={3}>
-              <StatCard
-                icon={PaymentIcon}
-                title="Payments"
-                value={stats.totalPayments}
-                color="info"
-                onClick={() => navigate("/app/payments")}
-              />
-            </Grid>
+
             <Grid item xs={6} sm={4} md={3}>
               <StatCard
                 icon={AnnouncementIcon}
@@ -576,9 +561,9 @@ function Dashboard() {
                                     >
                                       {announcement.title.length > 30
                                         ? `${announcement.title.substring(
-                                            0,
-                                            30
-                                          )}...`
+                                          0,
+                                          30
+                                        )}...`
                                         : announcement.title}
                                     </Typography>
                                   }
@@ -635,8 +620,8 @@ function Dashboard() {
                                           announcement.priority === "High"
                                             ? "error"
                                             : announcement.priority === "Medium"
-                                            ? "warning"
-                                            : "success"
+                                              ? "warning"
+                                              : "success"
                                         }
                                         sx={{
                                           height: 20,
@@ -791,9 +776,9 @@ function Dashboard() {
                                     >
                                       {announcement.title.length > 30
                                         ? `${announcement.title.substring(
-                                            0,
-                                            30
-                                          )}...`
+                                          0,
+                                          30
+                                        )}...`
                                         : announcement.title}
                                     </Typography>
                                   }
@@ -850,8 +835,8 @@ function Dashboard() {
                                           announcement.type === "Emergency"
                                             ? "error"
                                             : announcement.type === "Event"
-                                            ? "success"
-                                            : "primary"
+                                              ? "success"
+                                              : "primary"
                                         }
                                         sx={{
                                           height: 20,
@@ -880,8 +865,8 @@ function Dashboard() {
                               </ListItem>
                               {index <
                                 stats.scheduledAnnouncements.length - 1 && (
-                                <Divider sx={{ mx: { xs: 2, sm: 3 } }} />
-                              )}
+                                  <Divider sx={{ mx: { xs: 2, sm: 3 } }} />
+                                )}
                             </React.Fragment>
                           )
                         )}

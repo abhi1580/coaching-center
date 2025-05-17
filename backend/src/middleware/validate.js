@@ -1,6 +1,7 @@
-import { validationError } from "../utils/response.js";
+import { validationError } from "../utils/responseUtil.js";
 import { validationResult } from "express-validator";
 
+// Basic validation using express-validator
 export const validate = (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -16,6 +17,10 @@ export const validate = (req, res, next) => {
   next();
 };
 
+// Alias for backward compatibility with validateRequest.js
+export const validateRequest = validate;
+
+// Validate query parameters using Joi schema
 export const validateQuery = (schema) => {
   return (req, res, next) => {
     const { error } = schema.validate(req.query, {
@@ -35,6 +40,7 @@ export const validateQuery = (schema) => {
   };
 };
 
+// Validate route parameters using Joi schema
 export const validateParams = (schema) => {
   return (req, res, next) => {
     const { error } = schema.validate(req.params, {

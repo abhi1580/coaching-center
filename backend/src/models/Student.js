@@ -79,12 +79,6 @@ const studentSchema = new mongoose.Schema(
       min: 0,
       max: 100,
     },
-    payments: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Payment",
-      },
-    ],
     status: {
       type: String,
       enum: ["Active", "Inactive"],

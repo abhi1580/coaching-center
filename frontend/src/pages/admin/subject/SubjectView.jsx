@@ -7,7 +7,6 @@ import {
   Paper,
   Typography,
   Grid,
-  Chip,
   CircularProgress,
   Divider,
   Breadcrumbs,
@@ -132,11 +131,6 @@ const SubjectView = () => {
         >
           {subject.name}
         </Typography>
-        <Chip
-          label={subject.status.charAt(0).toUpperCase() + subject.status.slice(1)}
-          color={subject.status === "active" ? "success" : "default"}
-          sx={{ fontWeight: 500 }}
-        />
       </Paper>
 
       {/* Subject Details */}
@@ -164,20 +158,6 @@ const SubjectView = () => {
                     <AccessTimeIcon fontSize="small" color="action" />
                     {subject.duration || "Not specified"}
                   </Typography>
-                </Box>
-              </Grid>
-
-              <Grid item xs={12} md={6}>
-                <Box sx={{ mb: 3 }}>
-                  <Typography variant="subtitle1" color="text.secondary" gutterBottom>
-                    Status
-                  </Typography>
-                  <Chip
-                    label={subject.status.charAt(0).toUpperCase() + subject.status.slice(1)}
-                    color={subject.status === "active" ? "success" : "default"}
-                    size="small"
-                    sx={{ fontWeight: 500 }}
-                  />
                 </Box>
               </Grid>
 

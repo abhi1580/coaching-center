@@ -10,11 +10,8 @@ import {
   removeStudentFromBatch,
   syncBatchStudents,
 } from "../controllers/batchController.js";
-import {
-  createBatchValidator,
-  updateBatchValidator,
-} from "../middleware/validators/batchValidators.js";
-import { protect, authorize } from "../middleware/auth.js";
+import {  createBatchValidator,  updateBatchValidator,} from "../validators/batchValidators.js";
+import { protect, authorize } from "../middleware/authMiddleware.js";
 import { validate } from "../middleware/validate.js";
 
 const router = express.Router();

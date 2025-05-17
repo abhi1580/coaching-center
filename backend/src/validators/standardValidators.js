@@ -46,4 +46,4 @@ export const updateStandardValidator = [
     .withMessage("Subjects must be an array")
     .notEmpty()
     .withMessage("At least one subject is required"),
-];
+]; 

@@ -11,7 +11,6 @@ export const createStandard = async (req, res) => {
       try {
         const subjects = await Subject.find({
           _id: { $in: req.body.subjects },
-          status: "active",
         });
 
         if (subjects.length !== req.body.subjects.length) {
@@ -72,7 +71,6 @@ export const updateStandard = async (req, res) => {
         // Find all active subjects
         const subjects = await Subject.find({
           _id: { $in: req.body.subjects },
-          status: "active",
         });
 
         if (subjects.length !== req.body.subjects.length) {
@@ -127,13 +125,7 @@ export const updateStandard = async (req, res) => {
 // @access  Private (Admin only)
 export const deleteStandard = async (req, res) => {
   try {
-    const standard = await Standard.findByIdAndUpdate(
-      req.params.id,
-      { isActive: false },
-      {
-        new: true,
-      }
-    );
+        const standard = await Standard.findByIdAndDelete(req.params.id);
 
     if (!standard) {
       return res.status(404).json({

@@ -6,7 +6,7 @@ import Subject from "../models/Subject.js";
 // @access  Private
 export const getStandards = async (req, res) => {
   try {
-    const standards = await Standard.find({ isActive: true }).populate(
+    const standards = await Standard.find().populate(
       "subjects",
       "name description duration price"
     );
@@ -70,7 +70,6 @@ export const createStandard = async (req, res) => {
       try {
         const subjects = await Subject.find({
           _id: { $in: req.body.subjects },
-          status: "active",
         });
 
         if (subjects.length !== req.body.subjects.length) {
@@ -136,10 +135,9 @@ export const updateStandard = async (req, res) => {
           });
         }
 
-        // Find all active subjects
+        // Find all subjects
         const subjects = await Subject.find({
           _id: { $in: req.body.subjects },
-          status: "active",
         });
 
         if (subjects.length !== req.body.subjects.length) {
@@ -202,13 +200,7 @@ export const deleteStandard = async (req, res) => {
       });
     }
 
-    const standard = await Standard.findByIdAndUpdate(
-      req.params.id,
-      { isActive: false },
-      {
-        new: true,
-      }
-    );
+    const standard = await Standard.findByIdAndDelete(req.params.id);
 
     if (!standard) {
       return res.status(404).json({

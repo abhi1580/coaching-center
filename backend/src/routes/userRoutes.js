@@ -4,8 +4,8 @@ import {
   login,
   getCurrentUser,
 } from "../controllers/userController.js";
-import { createUserValidator } from "../middleware/validators/userValidators.js";
-import { protect, authorize } from "../middleware/auth.js";
+import { createUserValidator } from "../validators/userValidators.js";
+import { protect, authorize } from "../middleware/authMiddleware.js";
 import { validate } from "../middleware/validate.js";
 
 const router = express.Router();

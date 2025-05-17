@@ -1,4 +1,4 @@
-const asyncHandler = (fn) => (req, res, next) =>
-  Promise.resolve(fn(req, res, next)).catch(next);
+// Re-export asyncHandler from utils for backward compatibility
+import asyncHandler from "../utils/asyncHandler.js";
 
 export default asyncHandler;

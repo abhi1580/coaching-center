@@ -5,11 +5,8 @@ import {
   deleteStandard,
 } from "../../controllers/admin/standardController.js";
 import { protect, authorize } from "../../middleware/authMiddleware.js";
-import { validateRequest } from "../../middleware/validateRequest.js";
-import {
-  standardValidator,
-  updateStandardValidator,
-} from "../../middleware/validators/standardValidators.js";
+import { validateRequest } from "../../middleware/validate.js";
+import {  standardValidator,  updateStandardValidator,} from "../../validators/standardValidators.js";
 
 const router = express.Router();
 

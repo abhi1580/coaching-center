@@ -41,7 +41,7 @@ import {
 } from "@mui/icons-material";
 import { fetchSubjects, deleteSubject } from "../../../store/slices/subjectSlice";
 import RefreshButton from "../../../components/common/RefreshButton";
-import DeleteConfirmationDialog from "../../../components/common/DeleteConfirmationDialog";
+import Swal from 'sweetalert2';
 
 const SubjectList = () => {
   const dispatch = useDispatch();
@@ -54,11 +54,6 @@ const SubjectList = () => {
 
   const [filteredSubjects, setFilteredSubjects] = useState([]);
   const [nameFilter, setNameFilter] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
-
-  // Delete confirmation state
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [subjectToDelete, setSubjectToDelete] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
   useEffect(() => {
@@ -77,41 +72,53 @@ const SubjectList = () => {
       );
     }
 
-    if (statusFilter) {
-      results = results.filter((subject) => subject.status === statusFilter);
-    }
-
     setFilteredSubjects(results);
-  }, [subjects, nameFilter, statusFilter]);
+  }, [subjects, nameFilter]);
 
   const openDeleteDialog = (subject) => {
-    setSubjectToDelete(subject);
-    setDeleteDialogOpen(true);
+    Swal.fire({
+      title: 'Delete Subject',
+      text: `Are you sure you want to delete "${subject.name}"? This action cannot be undone.`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: theme.palette.error.main,
+      cancelButtonColor: theme.palette.grey[500],
+      confirmButtonText: 'Yes, delete it!',
+      cancelButtonText: 'Cancel'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        confirmDelete(subject._id);
+      }
+    });
   };
 
-  const closeDeleteDialog = () => {
-    setDeleteDialogOpen(false);
-    setSubjectToDelete(null);
-  };
-
-  const confirmDelete = async () => {
-    if (!subjectToDelete) return;
-
+  const confirmDelete = async (subjectId) => {
     try {
       setDeleteLoading(true);
-      await dispatch(deleteSubject(subjectToDelete._id)).unwrap();
+      await dispatch(deleteSubject(subjectId)).unwrap();
+
+      Swal.fire({
+        icon: 'success',
+        title: 'Deleted!',
+        text: 'Subject has been deleted successfully.',
+        showConfirmButton: false,
+        timer: 1500
+      });
     } catch (error) {
       console.error("Failed to delete subject:", error);
-      alert("Failed to delete subject: " + (error.message || "Unknown error"));
+
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: `Failed to delete subject: ${error.message || "Unknown error"}`,
+      });
     } finally {
       setDeleteLoading(false);
-      closeDeleteDialog();
     }
   };
 
   const clearFilters = () => {
     setNameFilter("");
-    setStatusFilter("");
   };
 
   const loadAllData = () => {
@@ -234,28 +241,12 @@ const SubjectList = () => {
               sx={{ borderRadius: 1 }}
             />
           </Grid>
-          <Grid item xs={12} sm={6} md={4}>
-            <TextField
-              select
-              fullWidth
-              label="Status"
-              variant="outlined"
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              size="small"
-              sx={{ borderRadius: 1 }}
-            >
-              <MenuItem value="">All Status</MenuItem>
-              <MenuItem value="active">Active</MenuItem>
-              <MenuItem value="inactive">Inactive</MenuItem>
-            </TextField>
-          </Grid>
           <Grid item xs={12} sm={6} md={4} sx={{ display: "flex", alignItems: "center" }}>
             <Button
               variant="outlined"
               startIcon={<ClearIcon />}
               onClick={clearFilters}
-              disabled={!nameFilter && !statusFilter}
+              disabled={!nameFilter}
               size="medium"
               sx={{ borderRadius: 1.5, height: "100%" }}
             >
@@ -305,15 +296,6 @@ const SubjectList = () => {
                       {subject.name || "Unnamed Subject"}
                     </Typography>
                   </Box>
-                  <Chip
-                    label={subject.status || "Unknown"}
-                    size="small"
-                    color={subject.status === "active" ? "success" : "default"}
-                    sx={{
-                      fontWeight: 500,
-                      height: 24,
-                    }}
-                  />
                 </Box>
                 <CardContent sx={{ p: 2 }}>
                   <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
@@ -398,7 +380,6 @@ const SubjectList = () => {
                 <TableCell sx={{ color: "common.white", py: 2 }}>Subject Name</TableCell>
                 <TableCell sx={{ color: "common.white" }}>Duration</TableCell>
                 <TableCell sx={{ color: "common.white" }}>Description</TableCell>
-                <TableCell sx={{ color: "common.white" }}>Status</TableCell>
                 <TableCell sx={{ color: "common.white" }}>Actions</TableCell>
               </TableRow>
             </TableHead>
@@ -438,14 +419,6 @@ const SubjectList = () => {
                       {subject.description || "No description available"}
                     </TableCell>
                     <TableCell>
-                      <Chip
-                        label={subject.status.charAt(0).toUpperCase() + subject.status.slice(1)}
-                        color={subject.status === "active" ? "success" : "default"}
-                        size="small"
-                        sx={{ fontWeight: 500 }}
-                      />
-                    </TableCell>
-                    <TableCell>
                       <Box sx={{ display: "flex", gap: 1, justifyContent: "flex-end" }}>
                         <Tooltip title="View Details">
                           <IconButton
@@ -453,9 +426,9 @@ const SubjectList = () => {
                             onClick={() => navigate(`/app/subjects/${subject._id}`)}
                             sx={{
                               color: "primary.main",
+                              bgcolor: (theme) => alpha(theme.palette.primary.main, 0.1),
                               "&:hover": {
-                                backgroundColor: (theme) =>
-                                  alpha(theme.palette.primary.main, 0.1),
+                                bgcolor: (theme) => alpha(theme.palette.primary.main, 0.2),
                               },
                             }}
                           >
@@ -468,9 +441,9 @@ const SubjectList = () => {
                             onClick={() => navigate(`/app/subjects/${subject._id}/edit`)}
                             sx={{
                               color: "primary.main",
+                              bgcolor: (theme) => alpha(theme.palette.primary.main, 0.1),
                               "&:hover": {
-                                backgroundColor: (theme) =>
-                                  alpha(theme.palette.primary.main, 0.1),
+                                bgcolor: (theme) => alpha(theme.palette.primary.main, 0.2),
                               },
                             }}
                           >
@@ -483,9 +456,9 @@ const SubjectList = () => {
                             onClick={() => openDeleteDialog(subject)}
                             sx={{
                               color: "error.main",
+                              bgcolor: (theme) => alpha(theme.palette.error.main, 0.1),
                               "&:hover": {
-                                backgroundColor: (theme) =>
-                                  alpha(theme.palette.error.main, 0.1),
+                                bgcolor: (theme) => alpha(theme.palette.error.main, 0.2),
                               },
                             }}
                           >
@@ -498,7 +471,7 @@ const SubjectList = () => {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={5} align="center" sx={{ py: 3 }}>
+                  <TableCell colSpan={4} align="center" sx={{ py: 4 }}>
                     <Typography variant="body1" color="text.secondary">
                       No subjects found
                     </Typography>
@@ -506,7 +479,7 @@ const SubjectList = () => {
                       variant="contained"
                       startIcon={<AddIcon />}
                       onClick={() => navigate("/app/subjects/create")}
-                      sx={{ mt: 2, borderRadius: 1.5 }}
+                      sx={{ mt: 2, borderRadius: 2 }}
                     >
                       Add Subject
                     </Button>
@@ -517,16 +490,6 @@ const SubjectList = () => {
           </Table>
         </TableContainer>
       )}
-
-      <DeleteConfirmationDialog
-        open={deleteDialogOpen}
-        onClose={closeDeleteDialog}
-        onConfirm={confirmDelete}
-        loading={deleteLoading}
-        itemName={subjectToDelete?.name}
-        title="Delete Subject"
-        message="Are you sure you want to delete subject"
-      />
     </Box>
   );
 };

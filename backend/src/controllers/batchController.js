@@ -99,6 +99,18 @@ export const getAllBatches = async (req, res) => {
       }
     }
 
+    // Clean up batch enrolledStudents by removing any that don't exist in the Student collection
+    if (shouldPopulateEnrolledStudents) {
+      for (const batch of batches) {
+        if (batch.enrolledStudents && batch.enrolledStudents.length > 0) {
+          // Filter to keep only students with valid _id property (existing students)
+          batch.enrolledStudents = batch.enrolledStudents.filter(
+            (student) => student && student._id
+          );
+        }
+      }
+    }
+
     // Log the batch data for debugging
     // console.log(
     //   `Fetched ${batches.length} batches, populating enrolledStudents: ${shouldPopulateEnrolledStudents}`
@@ -200,6 +212,21 @@ export const getBatchById = async (req, res) => {
       // Update the batch document to ensure data consistency
       if (studentsWithBatch.length > 0) {
         await batch.save();
+      }
+      
+      // Clean up enrolledStudents by removing any that don't exist in the Student collection
+      if (batchData.enrolledStudents && batchData.enrolledStudents.length > 0) {
+        // Filter to keep only students with valid _id property (existing students)
+        batchData.enrolledStudents = batchData.enrolledStudents.filter(
+          (student) => student && student._id
+        );
+        
+        // Also update the actual batch document
+        if (batch.enrolledStudents && batch.enrolledStudents.length > 0) {
+          const validStudentIds = batchData.enrolledStudents.map(student => student._id);
+          batch.enrolledStudents = validStudentIds;
+          await batch.save();
+        }
       }
     }
 
@@ -617,14 +644,21 @@ export const syncBatchStudents = async (req, res) => {
 
     // Get all batches
     const batches = await Batch.find();
-    // console.log(`Found ${batches.length} batches to sync`);
+    console.log(`Found ${batches.length} batches to sync`);
 
     // Get all students
     const students = await Student.find();
-    // console.log(`Found ${students.length} students to check`);
+    console.log(`Found ${students.length} students to check`);
+
+    // Create a map of student IDs for quick lookup
+    const studentMap = new Map();
+    students.forEach(student => {
+      studentMap.set(student._id.toString(), student);
+    });
 
     let updatedBatches = 0;
     let updatedStudents = 0;
+    let removedInvalidStudents = 0;
     let errors = [];
 
     // For each batch, ensure all enrolledStudents have this batch in their batches array
@@ -641,15 +675,17 @@ export const syncBatchStudents = async (req, res) => {
       // Fix any non-existing students in enrolledStudents
       const validStudentIds = [];
       for (const studentId of batch.enrolledStudents) {
-        const studentExists = students.some(
-          (s) => s._id.toString() === studentId.toString()
-        );
-        if (studentExists) {
-          validStudentIds.push(studentId);
-        } else {
-          // console.log(
-          //   `Removing non-existent student ${studentId} from batch ${batchId}`
-          // );
+        try {
+          const studentIdStr = studentId.toString();
+          if (studentMap.has(studentIdStr)) {
+            validStudentIds.push(studentId);
+          } else {
+            console.log(`Removing non-existent student ${studentId} from batch ${batchId}`);
+            removedInvalidStudents++;
+          }
+        } catch (error) {
+          console.error(`Error processing student ID ${studentId}: ${error.message}`);
+          errors.push(`Invalid student ID format in batch ${batchId}: ${error.message}`);
         }
       }
 
@@ -659,11 +695,11 @@ export const syncBatchStudents = async (req, res) => {
       }
 
       // For each student in enrolledStudents
-      for (const studentId of batch.enrolledStudents) {
+      for (const studentId of validStudentIds) {
         try {
-          const student = students.find(
-            (s) => s._id.toString() === studentId.toString()
-          );
+          const studentIdStr = studentId.toString();
+          const student = studentMap.get(studentIdStr);
+          
           if (student) {
             // Ensure student has this batch in their batches array
             if (!student.batches || !Array.isArray(student.batches)) {
@@ -687,11 +723,25 @@ export const syncBatchStudents = async (req, res) => {
           if (
             student.batches &&
             Array.isArray(student.batches) &&
-            student.batches.some((b) => b.toString() === batchId)
+            student.batches.some((b) => {
+              try {
+                return b.toString() === batchId;
+              } catch (error) {
+                errors.push(`Invalid batch ID format in student ${student._id}: ${error.message}`);
+                return false;
+              }
+            })
           ) {
             if (
               !batch.enrolledStudents.some(
-                (s) => s.toString() === student._id.toString()
+                (s) => {
+                  try {
+                    return s.toString() === student._id.toString();
+                  } catch (error) {
+                    errors.push(`Invalid student ID format in batch ${batchId}: ${error.message}`);
+                    return false;
+                  }
+                }
               )
             ) {
               // Add student to batch.enrolledStudents
@@ -708,14 +758,18 @@ export const syncBatchStudents = async (req, res) => {
 
       // Save batch if updated
       if (batchUpdated) {
-        await batch.save();
-        updatedBatches++;
+        try {
+          await batch.save();
+          updatedBatches++;
+        } catch (error) {
+          errors.push(`Error saving batch ${batchId}: ${error.message}`);
+        }
       }
     }
 
     res.json({
       success: true,
-      message: `Sync complete: Updated ${updatedBatches} batches and ${updatedStudents} students`,
+      message: `Sync complete: Updated ${updatedBatches} batches and ${updatedStudents} students, removed ${removedInvalidStudents} invalid student references`,
       errors: errors.length > 0 ? errors : undefined,
     });
   } catch (error) {

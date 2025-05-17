@@ -82,4 +82,4 @@ export const changePasswordValidator = [
     .withMessage("New password is required")
     .isLength({ min: 6 })
     .withMessage("Password must be at least 6 characters long"),
-];
+]; 

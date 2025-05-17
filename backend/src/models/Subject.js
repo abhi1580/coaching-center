@@ -17,11 +17,6 @@ const subjectSchema = new mongoose.Schema(
       required: [true, "Please add duration"],
       trim: true,
     },
-    status: {
-      type: String,
-      enum: ["active", "inactive"],
-      default: "active",
-    },
   },
   {
     timestamps: true,

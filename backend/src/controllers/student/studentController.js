@@ -1,7 +1,7 @@
 import Student from "../../models/Student.js";
 import Batch from "../../models/Batch.js";
 import asyncHandler from "../../utils/asyncHandler.js";
-import { sendSuccess } from "../../utils/response/responseHandler.js";
+import { sendSuccess } from "../../utils/responseUtil.js";
 import { ApiError } from "../../middleware/errorMiddleware.js";
 
 /**

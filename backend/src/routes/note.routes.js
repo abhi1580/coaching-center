@@ -1,5 +1,5 @@
 import express from 'express';
-import { protect, authorize } from '../middleware/auth.js';
+import { protect, authorize } from '../middleware/authMiddleware.js';
 import { uploadNote, getTeacherNotes, getBatchNotes, deleteNote } from '../controllers/note.controller.js';
 import { upload, uploadToCloudinary } from '../utils/cloudinary.js';
 import path from 'path';

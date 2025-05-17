@@ -34,6 +34,7 @@ import { createStandard, checkDuplicateStandard, fetchStandards } from "../../..
 import { fetchSubjects } from "../../../store/slices/subjectSlice";
 import * as Yup from "yup";
 import { Formik, Form } from "formik";
+import Swal from "sweetalert2";
 
 const validationSchema = Yup.object({
     name: Yup.string().required("Name is required"),
@@ -43,8 +44,10 @@ const validationSchema = Yup.object({
         .positive("Level must be a positive number")
         .integer("Level must be an integer"),
     description: Yup.string().required("Description is required"),
-    isActive: Yup.boolean().required("Status is required"),
-    subjects: Yup.array().of(Yup.string()),
+    subjects: Yup.array()
+        .of(Yup.string())
+        .min(1, "At least one subject must be selected")
+        .required("Please select at least one subject"),
 });
 
 const StandardCreate = () => {
@@ -65,61 +68,79 @@ const StandardCreate = () => {
         name: "",
         level: "",
         description: "",
-        isActive: true,
         subjects: [],
     };
 
-    const handleSubmit = async (values, { setSubmitting, setErrors }) => {
+    const handleSubmit = async (values, { setSubmitting, setErrors, resetForm }) => {
+        setSubmitting(true);
         try {
-            setSubmitting(true);
             setLoading(true);
             setDuplicateError(null);
 
-            // Check for duplicates first
-            const duplicateResult = await dispatch(
-                checkDuplicateStandard({
+            // Check for duplicates if we're not already in error state
+            if (!duplicateError) {
+                const duplicateCheck = await dispatch(checkDuplicateStandard({
                     name: values.name,
                     level: values.level
-                })
-            ).unwrap();
+                })).unwrap();
 
-            if (duplicateResult.isDuplicate) {
-                setDuplicateError({
-                    name: duplicateResult.duplicateType.name
-                        ? "A standard with this name already exists"
-                        : null,
-                    level: duplicateResult.duplicateType.level
-                        ? "A standard with this level already exists"
-                        : null
-                });
-                return;
+                if (duplicateCheck.isDuplicate) {
+                    let errorMsg = "A standard with this ";
+                    if (duplicateCheck.duplicateType.name) {
+                        errorMsg += "name ";
+                        if (duplicateCheck.duplicateType.level) {
+                            errorMsg += "and level ";
+                        }
+                    } else if (duplicateCheck.duplicateType.level) {
+                        errorMsg += "level ";
+                    }
+                    errorMsg += "already exists.";
+
+                    setDuplicateError(errorMsg);
+                    setLoading(false);
+                    setSubmitting(false);
+                    return;
+                }
             }
 
-            // Format the data as needed for the API
+            // Format the data for the API
             const formattedData = {
                 ...values,
                 level: Number(values.level),
+                // Ensure subjects is always processed as an array of IDs
+                subjects: Array.isArray(values.subjects)
+                    ? values.subjects.map(subject =>
+                        typeof subject === 'object' && subject._id
+                            ? subject._id
+                            : subject)
+                    : []
             };
 
-            const result = await dispatch(createStandard(formattedData)).unwrap();
+            await dispatch(createStandard(formattedData)).unwrap();
 
-            alert("Standard created successfully!");
+            // Success notification
+            Swal.fire({
+                icon: 'success',
+                title: 'Standard Created!',
+                text: `${values.name} has been successfully created.`,
+                confirmButtonColor: theme.palette.primary.main,
+            });
+
+            resetForm();
             navigate("/app/standards");
         } catch (error) {
-            console.error("Failed to create standard:", error);
+            console.error("Error creating standard:", error);
 
-            // Handle API validation errors
-            if (error.response?.data?.errors) {
-                const apiErrors = {};
-                error.response.data.errors.forEach((err) => {
-                    apiErrors[err.param] = err.msg;
-                });
-                setErrors(apiErrors);
-            } else {
-                alert("Failed to create standard: " + (error.message || "Unknown error"));
-            }
-        } finally {
+            // Error notification
+            Swal.fire({
+                icon: 'error',
+                title: 'Creation Failed',
+                text: error.message || "Failed to create standard. Please try again.",
+                confirmButtonColor: theme.palette.primary.main,
+            });
+
             setSubmitting(false);
+        } finally {
             setLoading(false);
         }
     };
@@ -196,26 +217,20 @@ const StandardCreate = () => {
                                             sx={{
                                                 p: 2,
                                                 mb: 2,
-                                                backgroundColor: (theme) => alpha(theme.palette.error.main, 0.1),
-                                                color: "error.main",
-                                                display: "flex",
-                                                alignItems: "center",
-                                                gap: 1,
-                                                borderRadius: 1
+                                                bgcolor: (theme) => alpha(theme.palette.error.light, 0.1),
+                                                border: `1px solid ${theme.palette.error.light}`,
+                                                borderRadius: 1,
                                             }}
                                         >
-                                            <ErrorIcon color="error" />
-                                            <Box>
-                                                <Typography variant="subtitle2" fontWeight="bold">
+                                            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                                                <ErrorIcon color="error" />
+                                                <Typography variant="subtitle1" color="error.main" fontWeight={500}>
                                                     Duplicate Standard Detected
                                                 </Typography>
-                                                {duplicateError.name && (
-                                                    <Typography variant="body2">{duplicateError.name}</Typography>
-                                                )}
-                                                {duplicateError.level && (
-                                                    <Typography variant="body2">{duplicateError.level}</Typography>
-                                                )}
                                             </Box>
+                                            <Typography variant="body2" color="error">
+                                                {duplicateError}
+                                            </Typography>
                                         </Paper>
                                     </Grid>
                                 )}
@@ -269,8 +284,11 @@ const StandardCreate = () => {
                                 </Grid>
 
                                 <Grid item xs={12}>
-                                    <FormControl fullWidth>
-                                        <InputLabel id="subjects-label">Associated Subjects</InputLabel>
+                                    <FormControl
+                                        fullWidth
+                                        error={touched.subjects && Boolean(errors.subjects)}
+                                    >
+                                        <InputLabel id="subjects-label">Associated Subjects *</InputLabel>
                                         <Select
                                             labelId="subjects-label"
                                             id="subjects"
@@ -278,7 +296,7 @@ const StandardCreate = () => {
                                             multiple
                                             value={values.subjects}
                                             onChange={handleChange}
-                                            input={<OutlinedInput label="Associated Subjects" />}
+                                            input={<OutlinedInput label="Associated Subjects *" />}
                                             renderValue={(selected) => {
                                                 if (!subjects) return "Loading subjects...";
                                                 return selected
@@ -299,28 +317,11 @@ const StandardCreate = () => {
                                             ))}
                                         </Select>
                                         <FormHelperText>
-                                            Select subjects that will be taught in this standard
+                                            {touched.subjects && errors.subjects
+                                                ? errors.subjects
+                                                : "Select subjects that will be taught in this standard"}
                                         </FormHelperText>
                                     </FormControl>
-                                </Grid>
-
-                                <Grid item xs={12}>
-                                    <FormControlLabel
-                                        control={
-                                            <Switch
-                                                checked={values.isActive}
-                                                onChange={(e) => setFieldValue("isActive", e.target.checked)}
-                                                disabled={isSubmitting}
-                                            />
-                                        }
-                                        label={values.isActive ? "Active" : "Inactive"}
-                                        sx={{ mb: 2 }}
-                                    />
-                                    <FormHelperText>
-                                        {values.isActive
-                                            ? "Standard will be active and shown in all relevant lists."
-                                            : "Standard will be inactive and hidden from relevant lists."}
-                                    </FormHelperText>
                                 </Grid>
 
                                 <Grid item xs={12} sx={{ display: "flex", justifyContent: "flex-end", gap: 2, mt: 2 }}>

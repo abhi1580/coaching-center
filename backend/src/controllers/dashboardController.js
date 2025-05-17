@@ -1,6 +1,5 @@
 import User from "../models/User.js";
 import Subject from "../models/Subject.js";
-import Payment from "../models/Payment.js";
 import Batch from "../models/Batch.js";
 import Standard from "../models/Standard.js";
 import Announcement from "../models/Announcement.js";
@@ -26,17 +25,6 @@ export const getStats = async (req, res) => {
       // Get total standards
       const totalStandards = await Standard.countDocuments();
 
-      // Get total payments and revenue
-      const paymentStats = await Payment.aggregate([
-        {
-          $group: {
-            _id: null,
-            totalPayments: { $sum: 1 },
-            totalRevenue: { $sum: "$amount" },
-          },
-        },
-      ]).then((result) => result[0] || { totalPayments: 0, totalRevenue: 0 });
-
       // Get total announcements
       const totalAnnouncements = await Announcement.countDocuments();
 
@@ -46,8 +34,6 @@ export const getStats = async (req, res) => {
         totalBatches,
         totalSubjects,
         totalStandards,
-        totalPayments: paymentStats.totalPayments,
-        totalRevenue: paymentStats.totalRevenue,
         totalAnnouncements,
         // Calculate percentages for growth indicators
         studentGrowth: await calculateGrowthPercentage(User, {
@@ -55,8 +41,7 @@ export const getStats = async (req, res) => {
         }),
         teacherGrowth: await calculateGrowthPercentage(User, {
           role: "teacher",
-        }),
-        revenueGrowth: await calculateRevenueGrowth(),
+        })
       };
     } else if (user.role === "teacher") {
       const teacherSubjects = await Subject.find({ teacher: user._id });
@@ -109,13 +94,7 @@ export const getRecentActivities = async (req, res) => {
         .limit(5)
         .select("name email role createdAt");
 
-      // 3. Recent payments
-      const recentPayments = await Payment.find({})
-        .sort({ createdAt: -1 })
-        .limit(5)
-        .select("amount paymentDate status");
-
-      // 4. Recent announcements
+      // 3. Recent announcements
       const recentAnnouncements = await Announcement.find({})
         .sort({ createdAt: -1 })
         .limit(5)
@@ -138,13 +117,6 @@ export const getRecentActivities = async (req, res) => {
           email: teacher.email,
           date: teacher.createdAt,
           details: `New teacher registered`
-        })),
-        ...recentPayments.map(payment => ({
-          type: 'payment',
-          amount: payment.amount,
-          date: payment.paymentDate || payment.createdAt,
-          status: payment.status,
-          details: `Payment of $${payment.amount} (${payment.status})`
         })),
         ...recentAnnouncements.map(announcement => ({
           type: 'announcement',
@@ -305,39 +277,4 @@ const calculateGrowthPercentage = async (Model, query = {}) => {
   return ((currentCount - lastMonthCount) / lastMonthCount) * 100;
 };
 
-// Helper function to calculate revenue growth
-const calculateRevenueGrowth = async () => {
-  const now = new Date();
-  const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
 
-  const currentRevenue = await Payment.aggregate([
-    {
-      $match: {
-        createdAt: { $lte: now },
-      },
-    },
-    {
-      $group: {
-        _id: null,
-        total: { $sum: "$amount" },
-      },
-    },
-  ]).then((result) => result[0]?.total || 0);
-
-  const lastMonthRevenue = await Payment.aggregate([
-    {
-      $match: {
-        createdAt: { $lte: lastMonth },
-      },
-    },
-    {
-      $group: {
-        _id: null,
-        total: { $sum: "$amount" },
-      },
-    },
-  ]).then((result) => result[0]?.total || 0);
-
-  if (lastMonthRevenue === 0) return 100;
-  return ((currentRevenue - lastMonthRevenue) / lastMonthRevenue) * 100;
-};

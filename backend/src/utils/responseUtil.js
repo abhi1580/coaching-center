@@ -1,5 +1,5 @@
 /**
- * Utility functions for standardized API responses
+ * Unified response utility functions for standardized API responses
  */
 
 /**
@@ -107,4 +107,52 @@ export const sendForbidden = (
   message = "Forbidden access",
 ) => {
   return sendError(res, 403, message);
+};
+
+/**
+ * Legacy response functions (for backward compatibility)
+ */
+
+// For compatibility with response.js
+export const successResponse = (
+  res,
+  statusCode = 200,
+  message = "Success",
+  data = null
+) => {
+  return sendSuccess(res, statusCode, message, data);
+};
+
+export const errorResponse = (
+  res,
+  statusCode = 500,
+  message = "Error occurred",
+  errors = null
+) => {
+  return sendError(res, statusCode, message, errors);
+};
+
+export const validationError = (res, errors) => {
+  return sendError(res, 422, "Validation failed", errors);
+};
+
+export const notFoundError = (res, message = "Resource not found") => {
+  return sendNotFound(res, message);
+};
+
+export const unauthorizedError = (res, message = "Unauthorized access") => {
+  return sendUnauthorized(res, message);
+};
+
+export const forbiddenError = (res, message = "Forbidden access") => {
+  return sendForbidden(res, message);
+};
+
+/**
+ * Simple error handler (for backward compatibility with errorHandler.js)
+ * @param {object} res - Express response object
+ * @param {Error} error - Error object
+ */
+export const handleError = (res, error) => {
+  return sendError(res, 500, error.message || "Internal Server Error");
 }; 

@@ -42,7 +42,6 @@ const menuItems = [
   { text: "Teachers", icon: <PersonIcon />, path: "/app/teachers" },
   { text: "Batches", icon: <ClassIcon />, path: "/app/batches" },
   { text: "Students", icon: <SchoolIcon />, path: "/app/students" },
-  { text: "Payments", icon: <PaymentIcon />, path: "/app/payments" },
   {
     text: "Announcements",
     icon: <AnnouncementIcon />,

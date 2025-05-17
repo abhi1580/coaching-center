@@ -27,6 +27,7 @@ import {
     Tooltip,
     Breadcrumbs,
     Link,
+    InputAdornment
 } from "@mui/material";
 import {
     Add as AddIcon,
@@ -40,7 +41,7 @@ import {
 } from "@mui/icons-material";
 import { fetchStandards, deleteStandard } from "../../../store/slices/standardSlice";
 import RefreshButton from "../../../components/common/RefreshButton";
-import DeleteConfirmationDialog from "../../../components/common/DeleteConfirmationDialog";
+import Swal from "sweetalert2";
 
 const StandardList = () => {
     const dispatch = useDispatch();
@@ -53,12 +54,6 @@ const StandardList = () => {
 
     const [filteredStandards, setFilteredStandards] = useState([]);
     const [nameFilter, setNameFilter] = useState("");
-    const [isActiveFilter, setIsActiveFilter] = useState("");
-
-    // Delete confirmation state
-    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-    const [standardToDelete, setStandardToDelete] = useState(null);
-    const [deleteLoading, setDeleteLoading] = useState(false);
 
     useEffect(() => {
         dispatch(fetchStandards());
@@ -69,45 +64,57 @@ const StandardList = () => {
 
         let results = [...standards];
 
-        // Filter by name
-        if (nameFilter) {
+        if (nameFilter.trim() !== "") {
             results = results.filter((standard) =>
                 standard.name.toLowerCase().includes(nameFilter.toLowerCase())
             );
         }
 
-        // Filter by active status
-        if (isActiveFilter !== "") {
-            const activeStatus = isActiveFilter === "active";
-            results = results.filter((standard) => standard.isActive === activeStatus);
-        }
-
         setFilteredStandards(results);
-    }, [standards, nameFilter, isActiveFilter]);
+    }, [standards, nameFilter]);
 
     const handleDeleteClick = (standard) => {
-        setStandardToDelete(standard);
-        setDeleteDialogOpen(true);
-    };
+        Swal.fire({
+            title: 'Delete Standard?',
+            text: `Are you sure you want to delete ${standard.name}? This action cannot be undone.`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: theme.palette.error.main,
+            cancelButtonColor: theme.palette.grey[500],
+            confirmButtonText: 'Yes, delete it!',
+            cancelButtonText: 'Cancel',
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                try {
+                    await dispatch(deleteStandard(standard._id)).unwrap();
 
-    const handleDeleteConfirm = async () => {
-        if (!standardToDelete) return;
+                    Swal.fire({
+                        title: 'Deleted!',
+                        text: `${standard.name} has been successfully deleted.`,
+                        icon: 'success',
+                        confirmButtonColor: theme.palette.primary.main,
+                    });
+                } catch (error) {
+                    console.error("Error deleting standard:", error);
 
-        setDeleteLoading(true);
-        try {
-            await dispatch(deleteStandard(standardToDelete._id)).unwrap();
-            setDeleteDialogOpen(false);
-            setStandardToDelete(null);
-        } catch (error) {
-            console.error("Error deleting standard:", error);
-        } finally {
-            setDeleteLoading(false);
-        }
+                    Swal.fire({
+                        title: 'Deletion Failed',
+                        text: error.message || 'An error occurred while deleting the standard.',
+                        icon: 'error',
+                        confirmButtonColor: theme.palette.primary.main,
+                    });
+                }
+            }
+        });
     };
 
     // Add loadAllData function for refresh button
     const loadAllData = () => {
         dispatch(fetchStandards());
+    };
+
+    const clearFilters = () => {
+        setNameFilter("");
     };
 
     return (
@@ -201,13 +208,13 @@ const StandardList = () => {
                                 endAdornment: (
                                     <Box sx={{ display: 'flex', alignItems: 'center' }}>
                                         {nameFilter && (
-                                    <IconButton
-                                        size="small"
-                                        onClick={() => setNameFilter("")}
-                                        edge="end"
-                                    >
-                                        <ClearIcon fontSize="small" />
-                                    </IconButton>
+                                            <IconButton
+                                                size="small"
+                                                onClick={() => setNameFilter("")}
+                                                edge="end"
+                                            >
+                                                <ClearIcon fontSize="small" />
+                                            </IconButton>
                                         )}
                                         <SearchIcon fontSize="small" sx={{ ml: 0.5, color: "action.active" }} />
                                     </Box>
@@ -216,21 +223,17 @@ const StandardList = () => {
                             sx={{ bgcolor: "background.paper" }}
                         />
                     </Grid>
-                    <Grid item xs={12} sm={6} md={4}>
-                        <TextField
-                            fullWidth
-                            select
+                    <Grid item xs={12} sm={6} md={4} sx={{ display: "flex", alignItems: "center" }}>
+                        <Button
                             variant="outlined"
-                            size="small"
-                            label="Filter by status"
-                            value={isActiveFilter}
-                            onChange={(e) => setIsActiveFilter(e.target.value)}
-                            sx={{ bgcolor: "background.paper" }}
+                            startIcon={<ClearIcon />}
+                            onClick={clearFilters}
+                            disabled={!nameFilter}
+                            size="medium"
+                            sx={{ borderRadius: 1.5, height: "100%" }}
                         >
-                            <MenuItem value="">All Standards</MenuItem>
-                            <MenuItem value="active">Active</MenuItem>
-                            <MenuItem value="inactive">Inactive</MenuItem>
-                        </TextField>
+                            Clear Filters
+                        </Button>
                     </Grid>
                 </Grid>
             </Paper>
@@ -271,12 +274,6 @@ const StandardList = () => {
                                             >
                                                 {standard.name}
                                             </Typography>
-                                            <Chip
-                                                label={standard.isActive ? "Active" : "Inactive"}
-                                                color={standard.isActive ? "success" : "default"}
-                                                size="small"
-                                                sx={{ fontWeight: 500 }}
-                                            />
                                         </Box>
                                         <Typography
                                             variant="body2"
@@ -411,9 +408,6 @@ const StandardList = () => {
                                     Subjects
                                 </TableCell>
                                 <TableCell sx={{ color: "common.white" }}>
-                                    Status
-                                </TableCell>
-                                <TableCell sx={{ color: "common.white" }}>
                                     Actions
                                 </TableCell>
                             </TableRow>
@@ -483,14 +477,6 @@ const StandardList = () => {
                                             )}
                                         </TableCell>
                                         <TableCell>
-                                            <Chip
-                                                label={standard.isActive ? "Active" : "Inactive"}
-                                                color={standard.isActive ? "success" : "default"}
-                                                size="small"
-                                                sx={{ fontWeight: 500 }}
-                                            />
-                                        </TableCell>
-                                        <TableCell>
                                             <Box
                                                 sx={{ display: "flex", gap: 1, justifyContent: "flex-end" }}
                                             >
@@ -548,16 +534,6 @@ const StandardList = () => {
                     </Table>
                 </TableContainer>
             )}
-
-            {/* Delete Confirmation Dialog */}
-            <DeleteConfirmationDialog
-                open={deleteDialogOpen}
-                onClose={() => setDeleteDialogOpen(false)}
-                onConfirm={handleDeleteConfirm}
-                loading={deleteLoading}
-                itemName={standardToDelete?.name || "this standard"}
-                itemType="standard"
-            />
         </Box>
     );
 };

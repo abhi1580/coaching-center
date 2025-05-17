@@ -73,4 +73,4 @@ export const updateTeacherValidator = [
     .optional()
     .isLength({ min: 6, max: 30 }).withMessage("Password must be between 6-30 characters")
     .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/).withMessage("Password must contain at least one uppercase letter, one lowercase letter, and one number"),
-];
+]; 

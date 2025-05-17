@@ -6,4 +6,4 @@ export const validateAnnouncement = [
   check("priority", "Invalid priority level")
     .optional()
     .isIn(["low", "normal", "high"]),
-];
+]; 

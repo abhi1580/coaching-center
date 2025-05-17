@@ -22,14 +22,12 @@ import {
 import { createSubject } from "../../../store/slices/subjectSlice";
 import * as Yup from "yup";
 import { Formik, Form, Field } from "formik";
+import Swal from 'sweetalert2';
 
 const validationSchema = Yup.object({
   name: Yup.string().required("Name is required"),
   description: Yup.string().required("Description is required"),
   duration: Yup.string().required("Duration is required"),
-  status: Yup.string()
-    .oneOf(["active", "inactive"], "Invalid status")
-    .required("Status is required"),
 });
 
 const SubjectCreate = () => {
@@ -42,7 +40,15 @@ const SubjectCreate = () => {
     try {
       setSubmitting(true);
       await dispatch(createSubject(values)).unwrap();
-      alert("Subject created successfully!");
+
+      Swal.fire({
+        icon: 'success',
+        title: 'Success!',
+        text: 'Subject created successfully!',
+        showConfirmButton: false,
+        timer: 1500
+      });
+
       navigate("/app/subjects");
     } catch (error) {
       console.error("Failed to create subject:", error);
@@ -55,7 +61,11 @@ const SubjectCreate = () => {
         });
         setErrors(apiErrors);
       } else {
-        alert("Failed to create subject: " + (error.message || "Unknown error"));
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: `Failed to create subject: ${error.message || "Unknown error"}`,
+        });
       }
     } finally {
       setSubmitting(false);
@@ -125,7 +135,6 @@ const SubjectCreate = () => {
             name: "",
             description: "",
             duration: "",
-            status: "active",
           }}
           validationSchema={validationSchema}
           onSubmit={handleSubmit}
@@ -181,29 +190,6 @@ const SubjectCreate = () => {
                           "& .MuiOutlinedInput-root": { borderRadius: 2 },
                         }}
                       />
-                    )}
-                  </Field>
-                </Grid>
-
-                {/* Status */}
-                <Grid item xs={12} sm={6}>
-                  <Field name="status">
-                    {({ field }) => (
-                      <TextField
-                        {...field}
-                        select
-                        fullWidth
-                        label="Status"
-                        required
-                        error={touched.status && Boolean(errors.status)}
-                        helperText={touched.status && errors.status}
-                        sx={{
-                          "& .MuiOutlinedInput-root": { borderRadius: 2 },
-                        }}
-                      >
-                        <MenuItem value="active">Active</MenuItem>
-                        <MenuItem value="inactive">Inactive</MenuItem>
-                      </TextField>
                     )}
                   </Field>
                 </Grid>

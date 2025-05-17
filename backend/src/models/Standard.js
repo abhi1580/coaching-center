@@ -23,10 +23,7 @@ const standardSchema = new mongoose.Schema(
         ref: "Subject",
       },
     ],
-    isActive: {
-      type: Boolean,
-      default: true,
-    },
+
   },
   {
     timestamps: true,

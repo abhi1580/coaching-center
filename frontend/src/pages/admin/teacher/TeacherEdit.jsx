@@ -46,7 +46,7 @@ import {
 } from "../../../store/slices/teacherSlice";
 import { fetchSubjects } from "../../../store/slices/subjectSlice";
 import { teacherService } from "../../../services/api";
-import Loader from "../../../components/Loader";
+import Loader from "../../../components/common/Loader";
 
 // Define validation schema
 const validationSchema = Yup.object({

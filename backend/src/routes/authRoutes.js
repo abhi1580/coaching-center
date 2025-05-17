@@ -9,15 +9,9 @@ import {
   logout,
   changePassword,
 } from "../controllers/authController.js";
-import { protect } from "../middleware/auth.js";
+import { protect } from "../middleware/authMiddleware.js";
 import { validate } from "../middleware/validate.js";
-import {
-  loginValidator,
-  forgotPasswordValidator,
-  resetPasswordValidator,
-  createAdminValidator,
-  changePasswordValidator,
-} from "../middleware/validators/authValidators.js";
+import {  loginValidator,  forgotPasswordValidator,  resetPasswordValidator,  createAdminValidator,  changePasswordValidator,} from "../validators/authValidators.js";
 
 const router = express.Router();
 

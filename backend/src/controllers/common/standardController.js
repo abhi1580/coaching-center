@@ -5,7 +5,7 @@ import Standard from "../../models/Standard.js";
 // @access  Private
 export const getStandards = async (req, res) => {
   try {
-    const standards = await Standard.find({ isActive: true }).populate(
+    const standards = await Standard.find().populate(
       "subjects",
       "name description duration price"
     );

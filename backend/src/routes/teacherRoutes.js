@@ -10,12 +10,9 @@ import {
   getTeacherProfile,
   updateTeacherProfile
 } from "../controllers/teacherController.js";
-import { protect, authorize } from "../middleware/auth.js";
+import { protect, authorize } from "../middleware/authMiddleware.js";
 import { validate } from "../middleware/validate.js";
-import {
-  createTeacherValidator,
-  updateTeacherValidator,
-} from "../middleware/validators/teacherValidators.js";
+import {  createTeacherValidator,  updateTeacherValidator,} from "../validators/teacherValidators.js";
 import Teacher from "../models/Teacher.js";
 import User from "../models/User.js";
 

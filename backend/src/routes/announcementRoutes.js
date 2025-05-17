@@ -6,8 +6,8 @@ import {
   updateAnnouncement,
   deleteAnnouncement,
 } from "../controllers/announcementController.js";
-import { protect } from "../middleware/auth.js";
-import { validateAnnouncement } from "../middleware/validators/announcementValidators.js";
+import { protect } from "../middleware/authMiddleware.js";
+import { validateAnnouncement } from "../validators/announcementValidators.js";
 
 const router = express.Router();
 

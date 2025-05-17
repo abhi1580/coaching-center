@@ -3,7 +3,9 @@ import asyncHandler from "../utils/asyncHandler.js";
 import { ApiError } from "./errorMiddleware.js";
 import User from "../models/User.js";
 import Student from "../models/Student.js";
+import { errorResponse } from "../utils/responseUtil.js";
 
+// Main authentication middleware
 export const protect = asyncHandler(async (req, res, next) => {
   let token;
 
@@ -40,13 +42,21 @@ export const protect = asyncHandler(async (req, res, next) => {
   }
 });
 
+// Alias for backward compatibility with auth.js
+export const authenticateToken = protect;
+
+// Role-based authorization middleware
 export const authorize = (...roles) => {
   return (req, res, next) => {
     if (!req.user) {
       throw new ApiError("Not authorized, no user found", 401);
     }
     
-    if (!roles.includes(req.user.role)) {
+    // Ensure role is a string and convert to lowercase for case-insensitive comparison
+    const userRole = String(req.user.role).toLowerCase();
+    const allowedRoles = roles.map((role) => String(role).toLowerCase());
+    
+    if (!allowedRoles.includes(userRole)) {
       throw new ApiError(`User role '${req.user.role}' is not authorized to access this route. Required roles: ${roles.join(', ')}`, 403);
     }
     
@@ -54,6 +64,7 @@ export const authorize = (...roles) => {
   };
 };
 
+// Student data access control middleware
 export const studentOwnData = asyncHandler(async (req, res, next) => {
   if (!req.user) {
     throw new ApiError("Not authorized, no user found", 401);

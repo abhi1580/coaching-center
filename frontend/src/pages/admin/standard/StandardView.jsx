@@ -44,8 +44,15 @@ const StandardView = () => {
             try {
                 setLoading(true);
                 const response = await standardService.getById(id);
-                setStandard(response.data.data);
-                setError(null);
+                
+                // Ensure we have valid data before setting state
+                if (response.data?.data && typeof response.data.data === 'object') {
+                    setStandard(response.data.data);
+                    setError(null);
+                } else {
+                    console.error("Invalid response format:", response.data);
+                    setError("Received invalid data format from server");
+                }
             } catch (error) {
                 console.error("Error fetching standard details:", error);
                 setError("Failed to load standard details. Please try again.");
@@ -137,11 +144,6 @@ const StandardView = () => {
                 >
                     {standard.name}
                 </Typography>
-                <Chip
-                    label={standard.isActive ? "Active" : "Inactive"}
-                    color={standard.isActive ? "success" : "default"}
-                    sx={{ fontWeight: 500 }}
-                />
             </Paper>
 
             {/* Standard Details */}
@@ -169,20 +171,6 @@ const StandardView = () => {
                                         <SchoolIcon fontSize="small" color="action" />
                                         {standard.level || "Not specified"}
                                     </Typography>
-                                </Box>
-                            </Grid>
-
-                            <Grid item xs={12} md={6}>
-                                <Box sx={{ mb: 3 }}>
-                                    <Typography variant="subtitle1" color="text.secondary" gutterBottom>
-                                        Status
-                                    </Typography>
-                                    <Chip
-                                        label={standard.isActive ? "Active" : "Inactive"}
-                                        color={standard.isActive ? "success" : "default"}
-                                        size="small"
-                                        sx={{ fontWeight: 500 }}
-                                    />
                                 </Box>
                             </Grid>
 

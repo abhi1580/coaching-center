@@ -342,8 +342,16 @@ export const subjectService = {
 export const standardService = {
   getAll: () => api.get("/standards"),
   getById: (id) => api.get(`/standards/${id}`),
-  create: (data) => api.post("/standards", data),
-  update: (id, data) => api.put(`/standards/${id}`, data),
+  create: (data) => {
+    // Make sure we don't include isActive in new standard creation 
+    const { isActive, ...cleanData } = data;
+    return api.post("/standards", cleanData);
+  },
+  update: (id, data) => {
+    // Make sure we don't include isActive in standard updates
+    const { isActive, ...cleanData } = data;
+    return api.put(`/standards/${id}`, cleanData);
+  },
   delete: (id) => api.delete(`/standards/${id}`),
 };
 
@@ -415,15 +423,6 @@ export const classService = {
   create: (data) => api.post("/classes", data),
   update: (id, data) => api.put(`/classes/${id}`, data),
   delete: (id) => api.delete(`/classes/${id}`),
-};
-
-// Payment services
-export const paymentService = {
-  getAll: () => api.get("/payments"),
-  getById: (id) => api.get(`/payments/${id}`),
-  create: (data) => api.post("/payments", data),
-  update: (id, data) => api.put(`/payments/${id}`, data),
-  delete: (id) => api.delete(`/payments/${id}`),
 };
 
 // Announcement services
