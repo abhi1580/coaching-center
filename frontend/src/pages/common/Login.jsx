@@ -15,8 +15,15 @@ import { useFormik } from "formik";
 import * as Yup from "yup";
 import { useDispatch, useSelector } from "react-redux";
 import { login } from "../../store/slices/authSlice";
-import { School, Group, EmojiEvents, Psychology, Visibility, VisibilityOff } from "@mui/icons-material";
-import Swal from 'sweetalert2';
+import {
+  School,
+  Group,
+  EmojiEvents,
+  Psychology,
+  Visibility,
+  VisibilityOff,
+} from "@mui/icons-material";
+import Swal from "sweetalert2";
 
 const validationSchema = Yup.object({
   email: Yup.string()
@@ -47,7 +54,9 @@ function Login() {
         "Our small class sizes ensure personalized attention for every student.",
     },
     {
-      icon: <EmojiEvents sx={{ fontSize: 40, color: "var(--accent-yellow)" }} />,
+      icon: (
+        <EmojiEvents sx={{ fontSize: 40, color: "var(--accent-yellow)" }} />
+      ),
       title: "Proven Track Record",
       description:
         "Consistently producing excellent results and helping students achieve their goals.",
@@ -72,13 +81,13 @@ function Login() {
 
         // Show success message with SweetAlert2 that auto-closes after 3 seconds
         Swal.fire({
-          title: 'Login Successful!',
+          title: "Login Successful!",
           text: `Welcome back, ${userData.user.name || userData.user.email}!`,
-          icon: 'success',
-          confirmButtonColor: 'var(--accent-yellow)',
+          icon: "success",
+          confirmButtonColor: "var(--accent-yellow)",
           timer: 2000,
           timerProgressBar: true,
-          showConfirmButton: false
+          showConfirmButton: false,
         }).then(() => {
           // Navigate based on user role
           if (userData.user.role === "admin") {
@@ -94,13 +103,13 @@ function Login() {
       } catch (err) {
         // Show error message with SweetAlert2 that auto-closes after 3 seconds
         Swal.fire({
-          title: 'Login Failed',
-          text: err.message || 'Invalid credentials. Please try again.',
-          icon: 'error',
-          confirmButtonColor: 'var(--accent-yellow)',
+          title: "Login Failed",
+          text: err.message || "Invalid credentials. Please try again.",
+          icon: "error",
+          confirmButtonColor: "var(--accent-yellow)",
           timer: 2000,
           timerProgressBar: true,
-          showConfirmButton: false
+          showConfirmButton: false,
         });
       }
     },
@@ -248,8 +257,14 @@ function Login() {
                           onClick={() => setShowPassword((show) => !show)}
                           onMouseDown={(e) => e.preventDefault()}
                           tabIndex={-1}
-                          sx={{ minWidth: 0, padding: 0, color: 'var(--accent-yellow)' }}
-                          aria-label={showPassword ? "Hide password" : "Show password"}
+                          sx={{
+                            minWidth: 0,
+                            padding: 0,
+                            color: "var(--accent-yellow)",
+                          }}
+                          aria-label={
+                            showPassword ? "Hide password" : "Show password"
+                          }
                         >
                           {showPassword ? <VisibilityOff /> : <Visibility />}
                         </Button>
@@ -309,7 +324,9 @@ function Login() {
                       flexDirection: "column",
                     }}
                   >
-                    <Box sx={{ display: "flex", alignItems: "center", mb: 1.5 }}>
+                    <Box
+                      sx={{ display: "flex", alignItems: "center", mb: 1.5 }}
+                    >
                       <Box sx={{ mr: 1.5 }}>{feature.icon}</Box>
                       <Typography className="why-card-title">
                         {feature.title}
