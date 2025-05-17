@@ -27,7 +27,9 @@ import {
     Tooltip,
     Breadcrumbs,
     Link,
-    InputAdornment
+    InputAdornment,
+    CircularProgress,
+    TablePagination
 } from "@mui/material";
 import {
     Add as AddIcon,
@@ -38,6 +40,7 @@ import {
     Search as SearchIcon,
     Clear as ClearIcon,
     Home as HomeIcon,
+    Book as BookIcon,
 } from "@mui/icons-material";
 import { fetchStandards, deleteStandard } from "../../../store/slices/standardSlice";
 import RefreshButton from "../../../components/common/RefreshButton";
@@ -54,6 +57,10 @@ const StandardList = () => {
 
     const [filteredStandards, setFilteredStandards] = useState([]);
     const [nameFilter, setNameFilter] = useState("");
+    
+    // Update pagination state to be responsive
+    const [page, setPage] = useState(0);
+    const [rowsPerPage, setRowsPerPage] = useState(isMobile ? 5 : 10);
 
     useEffect(() => {
         dispatch(fetchStandards());
@@ -115,6 +122,21 @@ const StandardList = () => {
 
     const clearFilters = () => {
         setNameFilter("");
+    };
+
+    // Handle pagination
+    const handleChangePage = (event, newPage) => {
+        setPage(newPage);
+    };
+
+    const handleChangeRowsPerPage = (event) => {
+        setRowsPerPage(parseInt(event.target.value, 10));
+        setPage(0);
+    };
+
+    // Get paginated data
+    const getPaginatedData = () => {
+        return filteredStandards.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
     };
 
     return (
@@ -236,6 +258,16 @@ const StandardList = () => {
                         </Button>
                     </Grid>
                 </Grid>
+
+                {/* Add this after the filter controls in the header section: */}
+                <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>
+                        {filteredStandards.length === 0 
+                            ? "No standards found" 
+                            : `Showing ${filteredStandards.length} standard${filteredStandards.length !== 1 ? 's' : ''}`}
+                        {nameFilter && ` matching "${nameFilter}"`}
+                    </Typography>
+                </Box>
             </Paper>
 
             {/* Standards List */}
@@ -243,18 +275,38 @@ const StandardList = () => {
                 // Mobile card view
                 <Box>
                     {loading ? (
-                        <Typography sx={{ textAlign: "center", py: 4 }}>
-                            Loading...
-                        </Typography>
+                        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 4 }}>
+                            <CircularProgress size={28} sx={{ mr: 2 }} />
+                            <Typography variant="body1">Loading standards...</Typography>
+                        </Box>
                     ) : filteredStandards.length === 0 ? (
-                        <Typography sx={{ textAlign: "center", py: 4 }}>
-                            No standards found.
-                        </Typography>
+                        <Paper sx={{ textAlign: "center", py: 4, px: 2, borderRadius: 2, boxShadow: 2 }}>
+                            <Typography color="text.secondary" sx={{ mb: 2, fontWeight: 500 }}>
+                                No standards found matching your filters
+                            </Typography>
+                            <Button
+                                variant="outlined"
+                                startIcon={<ClearIcon />}
+                                onClick={clearFilters}
+                                size="small"
+                            >
+                                Clear Filters
+                            </Button>
+                        </Paper>
                     ) : (
                         <Stack spacing={2}>
-                            {filteredStandards.map((standard) => (
-                                <Card key={standard._id} sx={{ borderRadius: 2, boxShadow: 2 }}>
-                                    <CardContent>
+                            {getPaginatedData().map((standard) => (
+                                <Card key={standard._id} sx={{
+                                    borderRadius: 2,
+                                    boxShadow: 2,
+                                    transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+                                    '&:hover': {
+                                        transform: 'translateY(-2px)',
+                                        boxShadow: 3
+                                    },
+                                    borderLeft: `4px solid ${theme.palette.primary.main}`
+                                }}>
+                                    <CardContent sx={{ pb: 1 }}>
                                         <Box
                                             sx={{
                                                 display: "flex",
@@ -265,7 +317,6 @@ const StandardList = () => {
                                         >
                                             <Typography
                                                 variant="h6"
-                                                gutterBottom
                                                 sx={{
                                                     fontWeight: 600,
                                                     fontSize: "1.1rem",
@@ -274,22 +325,18 @@ const StandardList = () => {
                                             >
                                                 {standard.name}
                                             </Typography>
-                                        </Box>
-                                        <Typography
-                                            variant="body2"
-                                            color="text.secondary"
-                                            sx={{
-                                                mb: 1,
-                                                display: "flex",
-                                                alignItems: "center",
-                                            }}
-                                        >
-                                            <SchoolIcon
-                                                fontSize="small"
-                                                sx={{ mr: 0.5, opacity: 0.7 }}
+                                            <Chip
+                                                label={`Level ${standard.level || "N/A"}`}
+                                                size="small"
+                                                color="primary"
+                                                variant="outlined"
+                                                sx={{
+                                                    fontWeight: 500,
+                                                    backgroundColor: alpha(theme.palette.primary.main, 0.08),
+                                                    borderColor: alpha(theme.palette.primary.main, 0.3)
+                                                }}
                                             />
-                                            Level: {standard.level || "Not specified"}
-                                        </Typography>
+                                        </Box>
                                         <Typography
                                             variant="body2"
                                             color="text.secondary"
@@ -299,19 +346,26 @@ const StandardList = () => {
                                                 WebkitBoxOrient: "vertical",
                                                 overflow: "hidden",
                                                 textOverflow: "ellipsis",
-                                                mb: 1
+                                                mb: 1.5,
+                                                fontStyle: 'italic'
                                             }}
                                         >
                                             {standard.description || "No description"}
                                         </Typography>
 
                                         {/* Subjects section */}
-                                        <Box sx={{ mt: 1 }}>
+                                        <Box sx={{ mt: 1.5 }}>
                                             <Typography
                                                 variant="body2"
                                                 color="text.secondary"
-                                                sx={{ fontWeight: 500, mb: 0.5 }}
+                                                sx={{
+                                                    fontWeight: 500,
+                                                    mb: 0.5,
+                                                    display: 'flex',
+                                                    alignItems: 'center'
+                                                }}
                                             >
+                                                <BookIcon fontSize="small" sx={{ mr: 0.5, opacity: 0.7 }} />
                                                 Subjects:
                                             </Typography>
 
@@ -322,29 +376,39 @@ const StandardList = () => {
                                                             key={subject?._id || index}
                                                             label={subject?.name || "Unnamed Subject"}
                                                             size="small"
-                                                            color="primary"
+                                                            color="secondary"
                                                             variant="outlined"
-                                                            sx={{ mb: 0.5 }}
+                                                            sx={{
+                                                                mb: 0.5,
+                                                                fontWeight: 400,
+                                                                backgroundColor: alpha(theme.palette.secondary.main, 0.05)
+                                                            }}
                                                         />
                                                     ))}
                                                 </Box>
                                             ) : (
-                                                <Typography variant="body2" color="text.secondary">
+                                                <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
                                                     No subjects assigned
                                                 </Typography>
                                             )}
                                         </Box>
                                     </CardContent>
-                                    <CardActions sx={{ justifyContent: "flex-end", px: 2, pb: 2 }}>
+                                    <CardActions sx={{
+                                        justifyContent: "flex-end",
+                                        px: 2,
+                                        pb: 2,
+                                        pt: 0.5,
+                                        borderTop: `1px solid ${alpha(theme.palette.divider, 0.1)}`
+                                    }}>
                                         <Tooltip title="View Details">
                                             <IconButton
                                                 size="small"
                                                 onClick={() => navigate(`/app/standards/${standard._id}`)}
                                                 sx={{
                                                     color: "primary.main",
-                                                    bgcolor: (theme) => alpha(theme.palette.primary.main, 0.1),
+                                                    bgcolor: alpha(theme.palette.primary.main, 0.1),
                                                     "&:hover": {
-                                                        bgcolor: (theme) => alpha(theme.palette.primary.main, 0.2),
+                                                        bgcolor: alpha(theme.palette.primary.main, 0.2),
                                                     },
                                                     mr: 1,
                                                 }}
@@ -357,10 +421,10 @@ const StandardList = () => {
                                                 size="small"
                                                 onClick={() => navigate(`/app/standards/${standard._id}/edit`)}
                                                 sx={{
-                                                    color: "primary.main",
-                                                    bgcolor: (theme) => alpha(theme.palette.primary.main, 0.1),
+                                                    color: theme.palette.info.main,
+                                                    bgcolor: alpha(theme.palette.info.main, 0.1),
                                                     "&:hover": {
-                                                        bgcolor: (theme) => alpha(theme.palette.primary.main, 0.2),
+                                                        bgcolor: alpha(theme.palette.info.main, 0.2),
                                                     },
                                                     mr: 1,
                                                 }}
@@ -374,9 +438,9 @@ const StandardList = () => {
                                                 onClick={() => handleDeleteClick(standard)}
                                                 sx={{
                                                     color: "error.main",
-                                                    bgcolor: (theme) => alpha(theme.palette.error.main, 0.1),
+                                                    bgcolor: alpha(theme.palette.error.main, 0.1),
                                                     "&:hover": {
-                                                        bgcolor: (theme) => alpha(theme.palette.error.main, 0.2),
+                                                        bgcolor: alpha(theme.palette.error.main, 0.2),
                                                     },
                                                 }}
                                             >
@@ -386,6 +450,29 @@ const StandardList = () => {
                                     </CardActions>
                                 </Card>
                             ))}
+                            {isMobile && filteredStandards.length > 0 && (
+                                <TablePagination
+                                    component={Paper}
+                                    count={filteredStandards.length}
+                                    page={page}
+                                    onPageChange={handleChangePage}
+                                    rowsPerPage={rowsPerPage}
+                                    onRowsPerPageChange={handleChangeRowsPerPage}
+                                    rowsPerPageOptions={[5, 10, 25]}
+                                    sx={{
+                                        borderTop: 'none',
+                                        boxShadow: 2,
+                                        borderRadius: 2,
+                                        mt: 2,
+                                        '.MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows': {
+                                            fontWeight: 500,
+                                        },
+                                        '.MuiTablePagination-toolbar': {
+                                            px: 2,
+                                        },
+                                    }}
+                                />
+                            )}
                         </Stack>
                     )}
                 </Box>
@@ -393,21 +480,54 @@ const StandardList = () => {
                 // Desktop table view
                 <TableContainer
                     component={Paper}
-                    sx={{ borderRadius: 2, overflow: "hidden" }}
+                    sx={{
+                        borderRadius: 2,
+                        overflow: "hidden",
+                        boxShadow: 2,
+                        "& .MuiTableRow-root:last-child .MuiTableCell-body": {
+                            borderBottom: "none"
+                        }
+                    }}
                 >
                     <Table>
                         <TableHead>
-                            <TableRow sx={{ bgcolor: "primary.main" }}>
-                                <TableCell sx={{ color: "common.white", py: 2 }}>
+                            <TableRow sx={{ bgcolor: (theme) => alpha(theme.palette.primary.main, 0.9) }}>
+                                <TableCell
+                                    sx={{
+                                        color: "common.white",
+                                        py: 2.5,
+                                        fontWeight: 600,
+                                        fontSize: "0.95rem"
+                                    }}
+                                >
                                     Name
                                 </TableCell>
-                                <TableCell sx={{ color: "common.white" }}>
+                                <TableCell
+                                    sx={{
+                                        color: "common.white",
+                                        fontWeight: 600,
+                                        fontSize: "0.95rem"
+                                    }}
+                                >
                                     Level
                                 </TableCell>
-                                <TableCell sx={{ color: "common.white" }}>
+                                <TableCell
+                                    sx={{
+                                        color: "common.white",
+                                        fontWeight: 600,
+                                        fontSize: "0.95rem"
+                                    }}
+                                >
                                     Subjects
                                 </TableCell>
-                                <TableCell sx={{ color: "common.white" }}>
+                                <TableCell
+                                    align="center"
+                                    sx={{
+                                        color: "common.white",
+                                        fontWeight: 600,
+                                        fontSize: "0.95rem"
+                                    }}
+                                >
                                     Actions
                                 </TableCell>
                             </TableRow>
@@ -415,20 +535,32 @@ const StandardList = () => {
                         <TableBody>
                             {loading ? (
                                 <TableRow>
-                                    <TableCell colSpan={5} align="center">
-                                        Loading...
+                                    <TableCell colSpan={5} align="center" sx={{ py: 4 }}>
+                                        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 2 }}>
+                                            <CircularProgress size={24} sx={{ mr: 1 }} />
+                                            <Typography variant="body1">Loading standards...</Typography>
+                                        </Box>
                                     </TableCell>
                                 </TableRow>
                             ) : filteredStandards.length === 0 ? (
                                 <TableRow>
                                     <TableCell colSpan={5} align="center" sx={{ py: 4 }}>
-                                        <Typography color="text.secondary">
-                                            No standards found.
+                                        <Typography color="text.secondary" sx={{ py: 2, fontWeight: 500 }}>
+                                            No standards found matching your filters
                                         </Typography>
+                                        <Button
+                                            variant="outlined"
+                                            startIcon={<ClearIcon />}
+                                            onClick={clearFilters}
+                                            sx={{ mt: 1 }}
+                                            size="small"
+                                        >
+                                            Clear Filters
+                                        </Button>
                                     </TableCell>
                                 </TableRow>
                             ) : (
-                                filteredStandards.map((standard) => (
+                                getPaginatedData().map((standard, index) => (
                                     <TableRow
                                         key={standard._id}
                                         sx={{
@@ -436,6 +568,9 @@ const StandardList = () => {
                                                 backgroundColor: (theme) =>
                                                     alpha(theme.palette.primary.main, 0.04),
                                             },
+                                            backgroundColor: index % 2 === 0 ? 'inherit' : (theme) =>
+                                                alpha(theme.palette.background.default, 0.5),
+                                            transition: 'background-color 0.2s ease',
                                         }}
                                     >
                                         <TableCell
@@ -444,12 +579,28 @@ const StandardList = () => {
                                             sx={{
                                                 color: "primary.main",
                                                 fontWeight: 500,
+                                                fontSize: "0.95rem",
+                                                py: 2.5,
+                                                borderLeft: (theme) => `4px solid ${alpha(theme.palette.primary.main, 0.6)}`,
+                                                pl: 2
                                             }}
                                         >
                                             {standard.name}
                                         </TableCell>
-                                        <TableCell>{standard.level || "Not specified"}</TableCell>
-                                        <TableCell>
+                                        <TableCell sx={{ fontSize: "0.95rem", py: 2.5 }}>
+                                            <Chip
+                                                label={`Level ${standard.level || "N/A"}`}
+                                                size="small"
+                                                color="primary"
+                                                variant="outlined"
+                                                sx={{
+                                                    fontWeight: 500,
+                                                    backgroundColor: theme => alpha(theme.palette.primary.main, 0.08),
+                                                    borderColor: theme => alpha(theme.palette.primary.main, 0.3)
+                                                }}
+                                            />
+                                        </TableCell>
+                                        <TableCell sx={{ py: 2.5 }}>
                                             {standard.subjects && Array.isArray(standard.subjects) && standard.subjects.length > 0 ? (
                                                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                                                     {standard.subjects.slice(0, 3).map((subject, index) => (
@@ -457,17 +608,24 @@ const StandardList = () => {
                                                             key={subject?._id || index}
                                                             label={subject?.name || "Unnamed Subject"}
                                                             size="small"
-                                                            color="primary"
+                                                            color="secondary"
                                                             variant="outlined"
+                                                            sx={{
+                                                                fontWeight: 400,
+                                                                backgroundColor: theme => alpha(theme.palette.secondary.main, 0.05)
+                                                            }}
                                                         />
                                                     ))}
                                                     {standard.subjects.length > 3 && (
-                                                        <Chip
-                                                            label={`+${standard.subjects.length - 3} more`}
-                                                            size="small"
-                                                            color="default"
-                                                            variant="outlined"
-                                                        />
+                                                        <Tooltip title={standard.subjects.slice(3).map(s => s.name || "Unnamed").join(", ")}>
+                                                            <Chip
+                                                                label={`+${standard.subjects.length - 3} more`}
+                                                                size="small"
+                                                                color="default"
+                                                                variant="outlined"
+                                                                sx={{ cursor: 'pointer' }}
+                                                            />
+                                                        </Tooltip>
                                                     )}
                                                 </Box>
                                             ) : (
@@ -476,9 +634,13 @@ const StandardList = () => {
                                                 </Typography>
                                             )}
                                         </TableCell>
-                                        <TableCell>
+                                        <TableCell align="center" sx={{ py: 2.5 }}>
                                             <Box
-                                                sx={{ display: "flex", gap: 1, justifyContent: "flex-end" }}
+                                                sx={{
+                                                    display: "flex",
+                                                    gap: 1,
+                                                    justifyContent: "center",
+                                                }}
                                             >
                                                 <Tooltip title="View Details">
                                                     <IconButton
@@ -486,9 +648,9 @@ const StandardList = () => {
                                                         onClick={() => navigate(`/app/standards/${standard._id}`)}
                                                         sx={{
                                                             color: "primary.main",
+                                                            backgroundColor: theme => alpha(theme.palette.primary.main, 0.1),
                                                             "&:hover": {
-                                                                backgroundColor: (theme) =>
-                                                                    alpha(theme.palette.primary.main, 0.1),
+                                                                backgroundColor: theme => alpha(theme.palette.primary.main, 0.2),
                                                             },
                                                         }}
                                                     >
@@ -500,10 +662,10 @@ const StandardList = () => {
                                                         size="small"
                                                         onClick={() => navigate(`/app/standards/${standard._id}/edit`)}
                                                         sx={{
-                                                            color: "primary.main",
+                                                            color: theme => theme.palette.info.main,
+                                                            backgroundColor: theme => alpha(theme.palette.info.main, 0.1),
                                                             "&:hover": {
-                                                                backgroundColor: (theme) =>
-                                                                    alpha(theme.palette.primary.main, 0.1),
+                                                                backgroundColor: theme => alpha(theme.palette.info.main, 0.2),
                                                             },
                                                         }}
                                                     >
@@ -516,9 +678,9 @@ const StandardList = () => {
                                                         onClick={() => handleDeleteClick(standard)}
                                                         sx={{
                                                             color: "error.main",
+                                                            backgroundColor: theme => alpha(theme.palette.error.main, 0.1),
                                                             "&:hover": {
-                                                                backgroundColor: (theme) =>
-                                                                    alpha(theme.palette.error.main, 0.1),
+                                                                backgroundColor: theme => alpha(theme.palette.error.main, 0.2),
                                                             },
                                                         }}
                                                     >
@@ -532,6 +694,25 @@ const StandardList = () => {
                             )}
                         </TableBody>
                     </Table>
+
+                    {/* Add this after the TableContainer for desktop view: */}
+                    {!isMobile && filteredStandards.length > 0 && (
+                        <TablePagination
+                            component="div"
+                            count={filteredStandards.length}
+                            page={page}
+                            onPageChange={handleChangePage}
+                            rowsPerPage={rowsPerPage}
+                            onRowsPerPageChange={handleChangeRowsPerPage}
+                            rowsPerPageOptions={[5, 10, 25]}
+                            sx={{
+                                borderTop: 'none',
+                                '.MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows': {
+                                    fontWeight: 500,
+                                },
+                            }}
+                        />
+                    )}
                 </TableContainer>
             )}
         </Box>

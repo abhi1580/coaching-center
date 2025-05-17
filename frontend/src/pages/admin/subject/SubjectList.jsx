@@ -27,6 +27,9 @@ import {
   Tooltip,
   Breadcrumbs,
   Link,
+  InputAdornment,
+  CircularProgress,
+  TablePagination
 } from "@mui/material";
 import {
   Add as AddIcon,
@@ -38,6 +41,7 @@ import {
   AccessTime as AccessTimeIcon,
   Clear as ClearIcon,
   Home as HomeIcon,
+  Description as DescriptionIcon
 } from "@mui/icons-material";
 import { fetchSubjects, deleteSubject } from "../../../store/slices/subjectSlice";
 import RefreshButton from "../../../components/common/RefreshButton";
@@ -55,6 +59,10 @@ const SubjectList = () => {
   const [filteredSubjects, setFilteredSubjects] = useState([]);
   const [nameFilter, setNameFilter] = useState("");
   const [deleteLoading, setDeleteLoading] = useState(false);
+
+  // Add pagination state
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(isMobile ? 5 : 10);
 
   useEffect(() => {
     dispatch(fetchSubjects());
@@ -74,6 +82,21 @@ const SubjectList = () => {
 
     setFilteredSubjects(results);
   }, [subjects, nameFilter]);
+
+  // Handle pagination
+  const handleChangePage = (event, newPage) => {
+    setPage(newPage);
+  };
+
+  const handleChangeRowsPerPage = (event) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
+
+  // Get paginated data
+  const getPaginatedData = () => {
+    return filteredSubjects.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
+  };
 
   const openDeleteDialog = (subject) => {
     Swal.fire({
@@ -135,7 +158,8 @@ const SubjectList = () => {
           minHeight: "60vh",
         }}
       >
-        <Typography>Loading...</Typography>
+        <CircularProgress size={40} sx={{ mr: 2 }} />
+        <Typography variant="h6">Loading subjects...</Typography>
       </Box>
     );
   }
@@ -217,7 +241,7 @@ const SubjectList = () => {
         </Box>
 
         {/* Filter Section */}
-        <Grid container spacing={2} sx={{ mb: 3 }}>
+        <Grid container spacing={2} sx={{ mb: 2 }}>
           <Grid item xs={12} sm={6} md={4}>
             <TextField
               fullWidth
@@ -238,7 +262,7 @@ const SubjectList = () => {
                   </IconButton>
                 ) : null,
               }}
-              sx={{ borderRadius: 1 }}
+              sx={{ backgroundColor: "background.paper" }}
             />
           </Grid>
           <Grid item xs={12} sm={6} md={4} sx={{ display: "flex", alignItems: "center" }}>
@@ -254,138 +278,307 @@ const SubjectList = () => {
             </Button>
           </Grid>
         </Grid>
+
+        {/* Subject count */}
+        <Box sx={{ mt: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>
+            {filteredSubjects.length === 0
+              ? "No subjects found"
+              : `Showing ${filteredSubjects.length} subject${filteredSubjects.length !== 1 ? 's' : ''}`}
+            {nameFilter && ` matching "${nameFilter}"`}
+          </Typography>
+        </Box>
       </Paper>
 
       {/* Render subjects based on screen size */}
       {isMobile ? (
         // Mobile card view
-        <Stack spacing={2}>
-          {filteredSubjects && filteredSubjects.length > 0 ? (
-            filteredSubjects.map((subject) => (
-              <Card
-                key={subject._id}
-                sx={{
-                  width: "100%",
-                  borderRadius: 2,
-                  transition: "all 0.3s ease",
-                  "&:hover": {
-                    transform: "translateY(-2px)",
-                    boxShadow: 3,
-                  },
-                  overflow: "hidden",
-                }}
-                elevation={2}
-              >
-                <Box
-                  sx={{
-                    backgroundColor: theme.palette.primary.main,
-                    py: 1,
-                    px: 2,
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                  }}
-                >
-                  <Box sx={{ display: "flex", alignItems: "center" }}>
-                    <BookIcon sx={{ color: "white", mr: 1, fontSize: 18 }} />
-                    <Typography
-                      variant="subtitle1"
-                      fontWeight={600}
-                      color="white"
-                    >
-                      {subject.name || "Unnamed Subject"}
-                    </Typography>
-                  </Box>
-                </Box>
-                <CardContent sx={{ p: 2 }}>
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                    <AccessTimeIcon fontSize="small" sx={{ verticalAlign: "middle", mr: 0.5 }} />
-                    Duration: {subject.duration || "Not specified"}
-                  </Typography>
-                  <Typography
-                    variant="body2"
-                    color="text.secondary"
-                    sx={{
-                      display: "-webkit-box",
-                      WebkitLineClamp: 2,
-                      WebkitBoxOrient: "vertical",
-                      overflow: "hidden",
-                      mb: 1
-                    }}
-                  >
-                    {subject.description || "No description available"}
-                  </Typography>
-                </CardContent>
-                <CardActions sx={{ p: 2, pt: 0 }}>
-                  <Button
-                    size="small"
-                    startIcon={<VisibilityIcon />}
-                    onClick={() => navigate(`/app/subjects/${subject._id}`)}
-                    sx={{ borderRadius: 1.5 }}
-                  >
-                    View
-                  </Button>
-                  <Button
-                    size="small"
-                    startIcon={<EditIcon />}
-                    onClick={() => navigate(`/app/subjects/${subject._id}/edit`)}
-                    sx={{ borderRadius: 1.5 }}
-                  >
-                    Edit
-                  </Button>
-                  <Button
-                    size="small"
-                    variant="outlined"
-                    color="error"
-                    startIcon={<DeleteIcon />}
-                    onClick={() => openDeleteDialog(subject)}
-                    sx={{ borderRadius: 1.5 }}
-                  >
-                    Delete
-                  </Button>
-                </CardActions>
-              </Card>
-            ))
-          ) : (
-            <Box
-              sx={{
-                p: 3,
-                textAlign: "center",
-                backgroundColor: alpha(theme.palette.primary.light, 0.05),
-                borderRadius: 2,
-                border: `1px dashed ${alpha(theme.palette.primary.main, 0.2)}`,
-              }}
-            >
-              <Typography variant="body1" color="text.secondary" fontWeight={500}>
-                No subjects found
+        <Box>
+          {loading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 4 }}>
+              <CircularProgress size={28} sx={{ mr: 2 }} />
+              <Typography variant="body1">Loading subjects...</Typography>
+            </Box>
+          ) : filteredSubjects.length === 0 ? (
+            <Paper sx={{ textAlign: "center", py: 4, px: 2, borderRadius: 2, boxShadow: 2 }}>
+              <Typography color="text.secondary" sx={{ mb: 2, fontWeight: 500 }}>
+                No subjects found matching your filters
               </Typography>
               <Button
-                variant="contained"
-                color="primary"
-                startIcon={<AddIcon />}
-                sx={{ mt: 2, borderRadius: 1.5 }}
-                onClick={() => navigate("/app/subjects/create")}
+                variant="outlined"
+                startIcon={<ClearIcon />}
+                onClick={clearFilters}
+                size="small"
               >
-                Add Subject
+                Clear Filters
               </Button>
-            </Box>
+            </Paper>
+          ) : (
+            <Stack spacing={2}>
+              {getPaginatedData().map((subject) => (
+                <Card
+                  key={subject._id}
+                  sx={{
+                    width: "100%",
+                    borderRadius: 2,
+                    transition: "transform 0.2s ease, box-shadow 0.2s ease",
+                    "&:hover": {
+                      transform: "translateY(-2px)",
+                      boxShadow: 3,
+                    },
+                    overflow: "hidden",
+                    borderLeft: `4px solid ${theme.palette.primary.main}`
+                  }}
+                  elevation={2}
+                >
+                  <CardContent sx={{ pb: 1 }}>
+                    <Box sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      mb: 1
+                    }}>
+                      <Typography
+                        variant="h6"
+                        sx={{
+                          fontSize: "1.1rem",
+                          fontWeight: 600,
+                          color: "primary.main",
+                        }}
+                      >
+                        {subject.name || "Unnamed Subject"}
+                      </Typography>
+
+                      <Chip
+                        icon={<AccessTimeIcon fontSize="small" />}
+                        label={subject.duration || "N/A"}
+                        size="small"
+                        color="secondary"
+                        variant="outlined"
+                        sx={{
+                          fontWeight: 500,
+                          backgroundColor: theme => alpha(theme.palette.secondary.main, 0.05),
+                          borderColor: theme => alpha(theme.palette.secondary.main, 0.3)
+                        }}
+                      />
+                    </Box>
+
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                      sx={{
+                        display: "-webkit-box",
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: "vertical",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        mb: 1.5,
+                        fontStyle: 'italic'
+                      }}
+                    >
+                      {subject.description || "No description available"}
+                    </Typography>
+
+                    {/* Topic details section */}
+                    <Box sx={{ mt: 1.5 }}>
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        sx={{
+                          fontWeight: 500,
+                          mb: 0.5,
+                          display: 'flex',
+                          alignItems: 'center'
+                        }}
+                      >
+                        <DescriptionIcon fontSize="small" sx={{ mr: 0.5, opacity: 0.7 }} />
+                        Details:
+                      </Typography>
+
+                      <Chip
+                        label={`Duration: ${subject.duration || "Not specified"}`}
+                        size="small"
+                        color="primary"
+                        variant="outlined"
+                        sx={{
+                          mb: 0.5,
+                          mr: 0.5,
+                          fontWeight: 400,
+                          backgroundColor: alpha(theme.palette.primary.main, 0.05)
+                        }}
+                      />
+                    </Box>
+                  </CardContent>
+                  <CardActions sx={{
+                    justifyContent: "flex-end",
+                    px: 2,
+                    pb: 2,
+                    pt: 0.5,
+                    borderTop: `1px solid ${alpha(theme.palette.divider, 0.1)}`
+                  }}>
+                    <Tooltip title="View Details">
+                      <IconButton
+                        size="small"
+                        onClick={() => navigate(`/app/subjects/${subject._id}`)}
+                        sx={{
+                          color: "primary.main",
+                          bgcolor: alpha(theme.palette.primary.main, 0.1),
+                          "&:hover": {
+                            bgcolor: alpha(theme.palette.primary.main, 0.2),
+                          },
+                          mr: 1,
+                        }}
+                      >
+                        <VisibilityIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Edit">
+                      <IconButton
+                        size="small"
+                        onClick={() => navigate(`/app/subjects/${subject._id}/edit`)}
+                        sx={{
+                          color: theme.palette.info.main,
+                          bgcolor: alpha(theme.palette.info.main, 0.1),
+                          "&:hover": {
+                            bgcolor: alpha(theme.palette.info.main, 0.2),
+                          },
+                          mr: 1,
+                        }}
+                      >
+                        <EditIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Delete">
+                      <IconButton
+                        size="small"
+                        onClick={() => openDeleteDialog(subject)}
+                        sx={{
+                          color: "error.main",
+                          bgcolor: alpha(theme.palette.error.main, 0.1),
+                          "&:hover": {
+                            bgcolor: alpha(theme.palette.error.main, 0.2),
+                          },
+                        }}
+                      >
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                  </CardActions>
+                </Card>
+              ))}
+
+              {/* Mobile pagination */}
+              {filteredSubjects.length > 0 && (
+                <TablePagination
+                  component={Paper}
+                  count={filteredSubjects.length}
+                  page={page}
+                  onPageChange={handleChangePage}
+                  rowsPerPage={rowsPerPage}
+                  onRowsPerPageChange={handleChangeRowsPerPage}
+                  rowsPerPageOptions={[5, 10, 25]}
+                  sx={{
+                    borderTop: 'none',
+                    boxShadow: 2,
+                    borderRadius: 2,
+                    mt: 2,
+                    '.MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows': {
+                      fontWeight: 500,
+                    },
+                    '.MuiTablePagination-toolbar': {
+                      px: 2,
+                    },
+                  }}
+                />
+              )}
+            </Stack>
           )}
-        </Stack>
+        </Box>
       ) : (
         // Desktop table view
-        <TableContainer component={Paper} sx={{ borderRadius: 2, overflow: "hidden" }}>
+        <TableContainer
+          component={Paper}
+          sx={{
+            borderRadius: 2,
+            overflow: "hidden",
+            boxShadow: 2,
+            "& .MuiTableRow-root:last-child .MuiTableCell-body": {
+              borderBottom: "none"
+            }
+          }}
+        >
           <Table>
             <TableHead>
-              <TableRow sx={{ bgcolor: "primary.main" }}>
-                <TableCell sx={{ color: "common.white", py: 2 }}>Subject Name</TableCell>
-                <TableCell sx={{ color: "common.white" }}>Duration</TableCell>
-                <TableCell sx={{ color: "common.white" }}>Description</TableCell>
-                <TableCell sx={{ color: "common.white" }}>Actions</TableCell>
+              <TableRow sx={{ bgcolor: (theme) => alpha(theme.palette.primary.main, 0.9) }}>
+                <TableCell
+                  sx={{
+                    color: "common.white",
+                    py: 2.5,
+                    fontWeight: 600,
+                    fontSize: "0.95rem"
+                  }}
+                >
+                  Subject Name
+                </TableCell>
+                <TableCell
+                  sx={{
+                    color: "common.white",
+                    fontWeight: 600,
+                    fontSize: "0.95rem"
+                  }}
+                >
+                  Duration
+                </TableCell>
+                <TableCell
+                  sx={{
+                    color: "common.white",
+                    fontWeight: 600,
+                    fontSize: "0.95rem"
+                  }}
+                >
+                  Description
+                </TableCell>
+                <TableCell
+                  align="center"
+                  sx={{
+                    color: "common.white",
+                    fontWeight: 600,
+                    fontSize: "0.95rem"
+                  }}
+                >
+                  Actions
+                </TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {filteredSubjects && filteredSubjects.length > 0 ? (
-                filteredSubjects.map((subject) => (
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={4} align="center" sx={{ py: 4 }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 2 }}>
+                      <CircularProgress size={24} sx={{ mr: 1 }} />
+                      <Typography variant="body1">Loading subjects...</Typography>
+                    </Box>
+                  </TableCell>
+                </TableRow>
+              ) : filteredSubjects.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={4} align="center" sx={{ py: 4 }}>
+                    <Typography color="text.secondary" sx={{ py: 2, fontWeight: 500 }}>
+                      No subjects found matching your filters
+                    </Typography>
+                    <Button
+                      variant="outlined"
+                      startIcon={<ClearIcon />}
+                      onClick={clearFilters}
+                      sx={{ mt: 1 }}
+                      size="small"
+                    >
+                      Clear Filters
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                getPaginatedData().map((subject, index) => (
                   <TableRow
                     key={subject._id}
                     sx={{
@@ -393,42 +586,72 @@ const SubjectList = () => {
                         backgroundColor: (theme) =>
                           alpha(theme.palette.primary.main, 0.04),
                       },
+                      backgroundColor: index % 2 === 0 ? 'inherit' : (theme) =>
+                        alpha(theme.palette.background.default, 0.5),
+                      transition: 'background-color 0.2s ease',
                     }}
                   >
-                    <TableCell>
+                    <TableCell
+                      sx={{
+                        py: 2.5,
+                        borderLeft: (theme) => `4px solid ${alpha(theme.palette.primary.main, 0.6)}`,
+                        pl: 2
+                      }}
+                    >
                       <Box sx={{ display: "flex", alignItems: "center" }}>
                         <BookIcon
                           fontSize="small"
                           color="primary"
                           sx={{ mr: 1 }}
                         />
-                        <Typography fontWeight={500}>
+                        <Typography fontWeight={500} fontSize="0.95rem">
                           {subject.name || "Unnamed Subject"}
                         </Typography>
                       </Box>
                     </TableCell>
-                    <TableCell>{subject.duration || "Not specified"}</TableCell>
+                    <TableCell sx={{ fontSize: "0.95rem", py: 2.5 }}>
+                      <Chip
+                        icon={<AccessTimeIcon fontSize="small" />}
+                        label={subject.duration || "Not specified"}
+                        size="small"
+                        color="secondary"
+                        variant="outlined"
+                        sx={{
+                          fontWeight: 500,
+                          backgroundColor: theme => alpha(theme.palette.secondary.main, 0.05),
+                          borderColor: theme => alpha(theme.palette.secondary.main, 0.3)
+                        }}
+                      />
+                    </TableCell>
                     <TableCell
                       sx={{
-                        maxWidth: "300px",
+                        maxWidth: "250px",
                         whiteSpace: "nowrap",
                         overflow: "hidden",
                         textOverflow: "ellipsis",
+                        color: "text.secondary",
+                        py: 2.5
                       }}
                     >
                       {subject.description || "No description available"}
                     </TableCell>
-                    <TableCell>
-                      <Box sx={{ display: "flex", gap: 1, justifyContent: "flex-end" }}>
+                    <TableCell align="center" sx={{ py: 2.5 }}>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          gap: 1,
+                          justifyContent: "center",
+                        }}
+                      >
                         <Tooltip title="View Details">
                           <IconButton
                             size="small"
                             onClick={() => navigate(`/app/subjects/${subject._id}`)}
                             sx={{
                               color: "primary.main",
-                              bgcolor: (theme) => alpha(theme.palette.primary.main, 0.1),
+                              backgroundColor: theme => alpha(theme.palette.primary.main, 0.1),
                               "&:hover": {
-                                bgcolor: (theme) => alpha(theme.palette.primary.main, 0.2),
+                                backgroundColor: theme => alpha(theme.palette.primary.main, 0.2),
                               },
                             }}
                           >
@@ -440,10 +663,10 @@ const SubjectList = () => {
                             size="small"
                             onClick={() => navigate(`/app/subjects/${subject._id}/edit`)}
                             sx={{
-                              color: "primary.main",
-                              bgcolor: (theme) => alpha(theme.palette.primary.main, 0.1),
+                              color: theme => theme.palette.info.main,
+                              backgroundColor: theme => alpha(theme.palette.info.main, 0.1),
                               "&:hover": {
-                                bgcolor: (theme) => alpha(theme.palette.primary.main, 0.2),
+                                backgroundColor: theme => alpha(theme.palette.info.main, 0.2),
                               },
                             }}
                           >
@@ -456,9 +679,9 @@ const SubjectList = () => {
                             onClick={() => openDeleteDialog(subject)}
                             sx={{
                               color: "error.main",
-                              bgcolor: (theme) => alpha(theme.palette.error.main, 0.1),
+                              backgroundColor: theme => alpha(theme.palette.error.main, 0.1),
                               "&:hover": {
-                                bgcolor: (theme) => alpha(theme.palette.error.main, 0.2),
+                                backgroundColor: theme => alpha(theme.palette.error.main, 0.2),
                               },
                             }}
                           >
@@ -469,25 +692,28 @@ const SubjectList = () => {
                     </TableCell>
                   </TableRow>
                 ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={4} align="center" sx={{ py: 4 }}>
-                    <Typography variant="body1" color="text.secondary">
-                      No subjects found
-                    </Typography>
-                    <Button
-                      variant="contained"
-                      startIcon={<AddIcon />}
-                      onClick={() => navigate("/app/subjects/create")}
-                      sx={{ mt: 2, borderRadius: 2 }}
-                    >
-                      Add Subject
-                    </Button>
-                  </TableCell>
-                </TableRow>
               )}
             </TableBody>
           </Table>
+
+          {/* Desktop pagination */}
+          {!isMobile && filteredSubjects.length > 0 && (
+            <TablePagination
+              component="div"
+              count={filteredSubjects.length}
+              page={page}
+              onPageChange={handleChangePage}
+              rowsPerPage={rowsPerPage}
+              onRowsPerPageChange={handleChangeRowsPerPage}
+              rowsPerPageOptions={[5, 10, 25]}
+              sx={{
+                borderTop: 'none',
+                '.MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows': {
+                  fontWeight: 500,
+                },
+              }}
+            />
+          )}
         </TableContainer>
       )}
     </Box>

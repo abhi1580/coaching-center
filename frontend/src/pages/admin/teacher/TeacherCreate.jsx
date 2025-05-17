@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link as RouterLink } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { Formik, Form, Field } from "formik";
 import * as Yup from "yup";
+import { useTheme } from "@mui/material/styles";
 import {
     Box,
     Button,
@@ -19,7 +20,6 @@ import {
     Divider,
     Paper,
     Breadcrumbs,
-    Link,
     CircularProgress,
     InputAdornment,
     Alert,
@@ -48,10 +48,12 @@ import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { createTeacher } from "../../../store/slices/teacherSlice";
 import { fetchSubjects } from "../../../store/slices/subjectSlice";
+import Swal from 'sweetalert2';
 
 const TeacherCreate = () => {
     const navigate = useNavigate();
     const dispatch = useDispatch();
+    const theme = useTheme();
 
     const { loading, error } = useSelector((state) => state.teachers);
     const { subjects } = useSelector((state) => state.subjects);
@@ -137,54 +139,41 @@ const TeacherCreate = () => {
             setSubmitError(null);
             setSubmitSuccess(false);
 
-            // Format data for API with proper formatting for each field
-            const teacherData = {
-                name: values.name.trim(),
-                email: values.email.trim(),
-                phone: values.phone.trim(),
-                gender: values.gender,
-                qualification: values.qualification.trim(),
-                experience: Number(values.experience),
-                joiningDate: values.joiningDate instanceof Date
-                    ? values.joiningDate.toISOString()
-                    : values.joiningDate,
-                status: values.status,
-                address: values.address.trim(),
-                salary: Number(values.salary),
-                password: values.password,
-                // Convert subject objects to IDs if needed
-                subjects: values.subjects?.map(subject =>
-                    typeof subject === 'object' ? subject._id : subject
-                ),
-            };
+            // Create new teacher
+            await dispatch(createTeacher(values)).unwrap();
 
-            // Log the data being sent (remove in production)
-            console.log('Creating teacher with data:', {
-                ...teacherData,
-                password: '[REDACTED]'
+            // Show success alert with SweetAlert
+            Swal.fire({
+                icon: 'success',
+                title: 'Teacher Created!',
+                text: `${values.name} has been successfully added as a teacher.`,
+                showConfirmButton: true,
+                confirmButtonColor: theme.palette.primary.main,
+                timer: 3000
             });
 
-            const resultAction = await dispatch(createTeacher(teacherData));
+            // Reset form after successful submission
+            resetForm();
 
-            if (createTeacher.fulfilled.match(resultAction)) {
-                setSubmitSuccess(true);
-                // Navigate after a short delay to show success message
-                setTimeout(() => {
-                    const newTeacherId = resultAction.payload._id || resultAction.payload.id;
-                    if (newTeacherId) {
-                        navigate(`/app/teachers/${newTeacherId}`);
-                    } else {
-                        navigate("/app/teachers");
-                    }
-                }, 1500);
-            } else {
-                const errorMessage = resultAction.error?.message || "Failed to create teacher";
-                console.error("Creation error:", errorMessage);
-                setSubmitError(errorMessage);
-            }
+            // Set success state for in-page notification
+            setSubmitSuccess(true);
+
+            // Navigate to teachers list after delay
+            setTimeout(() => {
+                navigate("/app/teachers");
+            }, 1500);
         } catch (error) {
-            console.error("Unexpected error during creation:", error);
-            setSubmitError(error.message || "An unexpected error occurred");
+            console.error("Error creating teacher:", error);
+
+            // Show error alert with SweetAlert
+            Swal.fire({
+                icon: 'error',
+                title: 'Error Creating Teacher',
+                text: error.message || 'An unknown error occurred while creating the teacher.',
+                confirmButtonColor: theme.palette.primary.main
+            });
+
+            setSubmitError(error.message || "Failed to create teacher. Please try again.");
         } finally {
             setSubmitting(false);
         }
@@ -198,24 +187,20 @@ const TeacherCreate = () => {
                 sx={{ mb: 2, mt: 1 }}
                 separator="›"
             >
-                <Link
-                    underline="hover"
-                    color="inherit"
-                    href="/app/dashboard"
-                    sx={{ display: 'flex', alignItems: 'center' }}
+                <RouterLink
+                    to="/app/dashboard"
+                    style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', color: 'inherit' }}
                 >
                     <HomeIcon sx={{ mr: 0.5 }} fontSize="small" />
                     Dashboard
-                </Link>
-                <Link
-                    underline="hover"
-                    color="inherit"
-                    href="/app/teachers"
-                    sx={{ display: 'flex', alignItems: 'center' }}
+                </RouterLink>
+                <RouterLink
+                    to="/app/teachers"
+                    style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', color: 'inherit' }}
                 >
                     <PersonIcon sx={{ mr: 0.5 }} fontSize="small" />
                     Teachers
-                </Link>
+                </RouterLink>
                 <Typography color="text.primary">
                     Add New Teacher
                 </Typography>
