@@ -56,7 +56,6 @@ const AnnouncementList = () => {
     const navigate = useNavigate();
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-    const isTablet = useMediaQuery(theme.breakpoints.down("md"));
     const { user } = useSelector((state) => state.auth);
     const isAdmin = user && user.role === "admin";
 

@@ -25,7 +25,7 @@ import { fetchStandards } from "../../../store/slices/standardSlice";
 import { fetchSubjects } from "../../../store/slices/subjectSlice";
 import { fetchTeachers } from "../../../store/slices/teacherSlice";
 import { Home as HomeIcon, Class as ClassIcon } from "@mui/icons-material";
-import Swal from 'sweetalert2';
+import Swal from "sweetalert2";
 
 const DAYS_OF_WEEK = [
   "Monday",
@@ -139,8 +139,8 @@ const BatchEdit = () => {
       const standard = standards.find((s) => s._id === value);
       const standardSubjects = standard
         ? subjects.filter((subject) =>
-          standard.subjects?.some((s) => (s._id || s) === subject._id)
-        )
+            standard.subjects?.some((s) => (s._id || s) === subject._id)
+          )
         : [];
       setFilteredSubjects(standardSubjects);
       setFilteredTeachers([]);
@@ -238,10 +238,10 @@ const BatchEdit = () => {
 
     if (!formData.name || !formData.standard || !formData.subject) {
       Swal.fire({
-        icon: 'error',
-        title: 'Required Fields Missing',
-        text: 'Please fill all required fields: Name, Standard, and Subject',
-        confirmButtonColor: theme.palette.primary.main
+        icon: "error",
+        title: "Required Fields Missing",
+        text: "Please fill all required fields: Name, Standard, and Subject",
+        confirmButtonColor: theme.palette.primary.main,
       });
       return;
     }
@@ -251,20 +251,20 @@ const BatchEdit = () => {
       await dispatch(updateBatch({ id, data: formData })).unwrap();
 
       Swal.fire({
-        icon: 'success',
-        title: 'Batch Updated!',
+        icon: "success",
+        title: "Batch Updated!",
         text: `"${formData.name}" batch has been updated successfully.`,
         confirmButtonColor: theme.palette.primary.main,
-        timer: 2000
+        timer: 2000,
       });
 
       navigate(`/app/batches/${id}`);
     } catch (error) {
       Swal.fire({
-        icon: 'error',
-        title: 'Error',
+        icon: "error",
+        title: "Error",
         text: `Failed to update batch: ${error.message || "Unknown error"}`,
-        confirmButtonColor: theme.palette.primary.main
+        confirmButtonColor: theme.palette.primary.main,
       });
     } finally {
       setSubmitting(false);
@@ -572,7 +572,7 @@ const BatchEdit = () => {
                 required
                 InputProps={{
                   startAdornment: (
-                    <InputAdornment position="start">$</InputAdornment>
+                    <InputAdornment position="start">₹</InputAdornment>
                   ),
                 }}
                 sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}

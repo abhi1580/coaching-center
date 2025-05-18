@@ -339,13 +339,9 @@ const StudentAnnouncementList = () => {
             <Hidden smDown>
                 <Paper sx={{ borderRadius: 2, overflow: 'hidden', mb: 3 }}>
                     {loading ? (
-                        <TableRow>
-                            <TableCell colSpan={5} align="center" sx={{ py: 4 }}>
-                                <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 2 }}>
-                                    <CircularProgress size={30} />
-                                </Box>
-                            </TableCell>
-                        </TableRow>
+                        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 4 }}>
+                            <CircularProgress size={30} />
+                        </Box>
                     ) : filteredAnnouncements.length === 0 ? (
                         <Box sx={{ textAlign: "center", py: 4, px: 2 }}>
                             <Typography color="text.secondary" sx={{ mb: 2, fontWeight: 500 }}>

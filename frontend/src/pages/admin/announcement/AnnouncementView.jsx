@@ -48,13 +48,6 @@ const AnnouncementView = () => {
         }
     }, [user, isAdmin, navigate, id]);
 
-    // Debug the current announcement data
-    useEffect(() => {
-        if (currentAnnouncement) {
-            console.log("Current announcement data:", currentAnnouncement);
-        }
-    }, [currentAnnouncement]);
-
     useEffect(() => {
         dispatch(fetchAnnouncement(id));
     }, [dispatch, id]);

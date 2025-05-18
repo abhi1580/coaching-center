@@ -11,7 +11,6 @@ export const login = createAsyncThunk(
       const { token, user } = response.data;
 
       if (!isValidUserData(user)) {
-        console.error("Invalid user data received:", safeStringify(user));
         return rejectWithValue({ message: "Invalid user data received" });
       }
 
@@ -36,7 +35,6 @@ export const logoutUser = createAsyncThunk(
       const result = await authService.logout();
       return { success: true };
     } catch (error) {
-      console.error("Logout error:", error);
       return rejectWithValue({ message: "Logout failed" });
     }
   }
@@ -69,16 +67,13 @@ const authSlice = createSlice({
         if (token && isValidUserData(user)) {
           state.user = user;
           state.isAuthenticated = true;
-          console.log("Auth initialized with valid user:", safeStringify(user));
         } else {
-          console.warn("Invalid user data found in localStorage:", safeStringify(user));
           state.user = null;
           state.isAuthenticated = false;
           localStorage.removeItem("token");
           localStorage.removeItem("user");
         }
       } catch (error) {
-        console.error("Error parsing user from localStorage:", error);
         state.user = null;
         state.isAuthenticated = false;
         localStorage.removeItem("token");

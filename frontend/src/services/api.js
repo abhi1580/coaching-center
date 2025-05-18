@@ -23,13 +23,6 @@ api.interceptors.request.use(
     if (token) {
       config.headers["Authorization"] = `Bearer ${token}`;
     }
-
-    // Log outgoing requests for debugging
-    console.log(
-      `API Request [${config.method?.toUpperCase()}] ${config.url}:`,
-      config.data
-    );
-
     return config;
   },
   (error) => {
@@ -40,18 +33,10 @@ api.interceptors.request.use(
 // Add a response interceptor to handle errors and log responses
 api.interceptors.response.use(
   (response) => {
-    // Log successful responses for debugging
-    console.log(
-      `API Response [${response.config.method.toUpperCase()} ${
-        response.config.url
-      }]:`,
-      response.status,
-      response.data
-    );
     return response;
   },
   async (error) => {
-    // Log error responses with more detail
+    // Log error responses for debugging in production
     console.error(
       `API Error [${error.config?.method?.toUpperCase()} ${
         error.config?.url
@@ -59,19 +44,6 @@ api.interceptors.response.use(
       error.response?.status,
       error.response?.data
     );
-
-    console.error("Full error object:", {
-      status: error.response?.status,
-      statusText: error.response?.statusText,
-      data: error.response?.data,
-      message: error.message,
-      config: {
-        url: error.config?.url,
-        method: error.config?.method,
-        params: error.config?.params,
-        baseURL: error.config?.baseURL,
-      },
-    });
 
     // Create a list of endpoints that should not trigger automatic logout on 401
     const ignoreLogoutEndpoints = [

@@ -578,7 +578,7 @@ const BatchView = () => {
                   Fees:
                 </Typography>
                 <Typography variant="body1" sx={{ mt: 0.5 }}>
-                  ${selectedBatch.fees}
+                  ₹{selectedBatch.fees}
                 </Typography>
               </Grid>
               {selectedBatch.description && (

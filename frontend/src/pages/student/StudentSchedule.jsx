@@ -180,7 +180,11 @@ const StudentSchedule = () => {
 
                         const startTime = batch.schedule.startTime;
                         const endTime = batch.schedule.endTime;
-                        const timeSlot = `${startTime} - ${endTime}`;
+
+                        // Format times in AM/PM format
+                        const formattedStartTime = formatTimeForComparison(startTime);
+                        const formattedEndTime = formatTimeForComparison(endTime);
+                        const timeSlot = `${formattedStartTime} - ${formattedEndTime}`;
 
                         // Find the closest standard time slot
                         const matchedSlot = findClosestTimeSlot(startTime, endTime);
@@ -212,7 +216,11 @@ const StudentSchedule = () => {
 
                         const startTime = session.startTime;
                         const endTime = session.endTime;
-                        const timeSlot = `${startTime} - ${endTime}`;
+
+                        // Format times in AM/PM format
+                        const formattedStartTime = formatTimeForComparison(startTime);
+                        const formattedEndTime = formatTimeForComparison(endTime);
+                        const timeSlot = `${formattedStartTime} - ${formattedEndTime}`;
 
                         // Find the closest standard time slot
                         const matchedSlot = findClosestTimeSlot(startTime, endTime);
@@ -299,9 +307,18 @@ const StudentSchedule = () => {
     const formatTimeForComparison = (timeStr) => {
         if (!timeStr) return '';
 
-        // If already in 12-hour format with AM/PM
-        if (timeStr.includes('AM') || timeStr.includes('PM')) {
-            return timeStr;
+        // If already in 12-hour format with AM/PM, standardize formatting
+        if (timeStr.toLowerCase().includes('am') || timeStr.toLowerCase().includes('pm')) {
+            // Extract time parts
+            const [timePart, period] = timeStr.split(/\s+/);
+            const [hours, minutes] = timePart.split(':').map(Number);
+
+            // Format properly with padding for single-digit hours
+            const formattedHours = hours.toString();
+            const formattedMinutes = minutes.toString().padStart(2, '0');
+            const formattedPeriod = period.toUpperCase();
+
+            return `${formattedHours}:${formattedMinutes} ${formattedPeriod}`;
         }
 
         // If in 24-hour format (HH:MM)

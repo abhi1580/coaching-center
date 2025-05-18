@@ -507,7 +507,7 @@ const BatchCreate = () => {
                 required
                 InputProps={{
                   startAdornment: (
-                    <InputAdornment position="start">$</InputAdornment>
+                    <InputAdornment position="start">₹</InputAdornment>
                   ),
                 }}
                 sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
