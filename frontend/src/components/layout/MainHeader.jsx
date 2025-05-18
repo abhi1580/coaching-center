@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Link as RouterLink, useNavigate, useLocation } from "react-router-dom";
+import { useSelector } from "react-redux";
 import {
   AppBar,
   Box,
@@ -14,6 +15,7 @@ import {
   useMediaQuery,
 } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
+import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 
 const pages = [
   { name: "Home", path: "/" },
@@ -31,6 +33,9 @@ const MainHeader = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  // Get authentication state from Redux
+  const { isAuthenticated, user } = useSelector((state) => state.auth);
+
   const handleOpenNavMenu = (event) => {
     setAnchorElNav(event.currentTarget);
   };
@@ -41,6 +46,17 @@ const MainHeader = () => {
   // Check if current path matches navigation item
   const isActive = (path) => {
     return location.pathname === path;
+  };
+
+  // Get dashboard URL based on user role
+  const getDashboardUrl = () => {
+    if (!user) return "/login";
+    switch (user.role) {
+      case "admin": return "/app/dashboard";
+      case "teacher": return "/app/teacher/dashboard";
+      case "student": return "/app/student/dashboard";
+      default: return "/app";
+    }
   };
 
   return (
@@ -143,18 +159,33 @@ const MainHeader = () => {
                     {page.name}
                   </MenuItem>
                 ))}
-                <MenuItem
-                  onClick={() => {
-                    navigate("/login");
-                    handleCloseNavMenu();
-                  }}
-                  sx={{
-                    borderLeft: isActive("/login") ? "3px solid var(--accent-yellow)" : "none",
-                    fontWeight: isActive("/login") ? "600" : "400",
-                  }}
-                >
-                  Login
-                </MenuItem>
+                {isAuthenticated ? (
+                  <MenuItem
+                    onClick={() => {
+                      navigate(getDashboardUrl());
+                      handleCloseNavMenu();
+                    }}
+                    sx={{
+                      borderLeft: "3px solid var(--accent-yellow)",
+                      fontWeight: "600",
+                    }}
+                  >
+                    Dashboard
+                  </MenuItem>
+                ) : (
+                  <MenuItem
+                    onClick={() => {
+                      navigate("/login");
+                      handleCloseNavMenu();
+                    }}
+                    sx={{
+                      borderLeft: isActive("/login") ? "3px solid var(--accent-yellow)" : "none",
+                      fontWeight: isActive("/login") ? "600" : "400",
+                    }}
+                  >
+                    Login
+                  </MenuItem>
+                )}
               </Menu>
             </>
           )}
@@ -191,26 +222,51 @@ const MainHeader = () => {
                   {page.name}
                 </Button>
               ))}
-              <Button
-                className="login-btn"
-                onClick={() => navigate("/login")}
-                sx={{
-                  color: "#fff",
-                  backgroundColor: "var(--accent-yellow)",
-                  padding: "8px 20px",
-                  borderRadius: "50px",
-                  fontWeight: "500",
-                  textTransform: "none",
-                  boxShadow: "0 4px 10px rgba(0,0,0,0.1)",
-                  transition: "all 0.3s ease",
-                  "&:hover": {
-                    backgroundColor: "var(--dark-yellow)",
-                    transform: "scale(1.05)",
-                  }
-                }}
-              >
-                Login
-              </Button>
+
+              {isAuthenticated ? (
+                <Button
+                  className="dashboard-btn"
+                  onClick={() => navigate(getDashboardUrl())}
+                  startIcon={<AccountCircleIcon />}
+                  sx={{
+                    color: "#fff",
+                    backgroundColor: "var(--accent-yellow)",
+                    padding: "8px 20px",
+                    borderRadius: "50px",
+                    fontWeight: "500",
+                    textTransform: "none",
+                    boxShadow: "0 4px 10px rgba(0,0,0,0.1)",
+                    transition: "all 0.3s ease",
+                    "&:hover": {
+                      backgroundColor: "var(--dark-yellow)",
+                      transform: "scale(1.05)",
+                    }
+                  }}
+                >
+                  {user?.name || "Dashboard"}
+                </Button>
+              ) : (
+                <Button
+                  className="login-btn"
+                  onClick={() => navigate("/login")}
+                  sx={{
+                    color: "#fff",
+                    backgroundColor: "var(--accent-yellow)",
+                    padding: "8px 20px",
+                    borderRadius: "50px",
+                    fontWeight: "500",
+                    textTransform: "none",
+                    boxShadow: "0 4px 10px rgba(0,0,0,0.1)",
+                    transition: "all 0.3s ease",
+                    "&:hover": {
+                      backgroundColor: "var(--dark-yellow)",
+                      transform: "scale(1.05)",
+                    }
+                  }}
+                >
+                  Login
+                </Button>
+              )}
             </Box>
           )}
         </Toolbar>
