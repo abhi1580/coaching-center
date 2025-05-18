@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 import connectDB from "./config/db.js";
 import cron from "node-cron";
 import { checkAndExpireAnnouncements } from "./utils/announcementExpiry.js";
+import { updateBatchStatuses } from "./utils/batchStatusUpdates.js";
 import { notFound, errorHandler } from "./middleware/errorMiddleware.js";
 
 // Import all routes from consolidated index
@@ -46,6 +47,14 @@ cron.schedule("* * * * *", () => {
   checkAndExpireAnnouncements();
 });
 
+// Schedule batch status updates to run every hour
+cron.schedule("0 * * * *", () => {
+  console.log("Running scheduled batch status update");
+  updateBatchStatuses().catch(err => {
+    console.error("Error in scheduled batch status update:", err);
+  });
+});
+
 // Mount all routes from the consolidated index
 app.use("/api", routes);
 
@@ -58,7 +67,12 @@ app.use(errorHandler);
 // Start server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+  console.log(`Server running on port ${PORT}`);
+  
+  // Update batch statuses immediately on server start
+  updateBatchStatuses().catch(err => {
+    console.error("Error updating batch statuses on startup:", err);
+  });
 });
 
 // Handle unhandled promise rejections

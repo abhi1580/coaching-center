@@ -270,7 +270,7 @@ const StudentDashboard = () => {
                         <Typography variant="h4" fontWeight="bold">
                             Welcome, {studentData?.name || "Student"}!
                         </Typography>
-                        <Typography variant="body1">
+                        <Typography variant="body1" component="div">
                             Here's an overview of your academic progress and schedule
                         </Typography>
                     </Grid>

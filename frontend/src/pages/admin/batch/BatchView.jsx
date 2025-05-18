@@ -156,10 +156,9 @@ const BatchView = () => {
       case "active":
         return "success";
       case "upcoming":
-        return "info";
-      case "completed":
         return "warning";
-
+      case "completed":
+        return "error";
       default:
         return "default";
     }
@@ -288,14 +287,14 @@ const BatchView = () => {
 
   const filteredStudents = searchQuery
     ? availableStudentsForBatch.filter((student) => {
-        const searchLower = searchQuery.toLowerCase();
-        return (
-          (student?.name?.toLowerCase() || "").includes(searchLower) ||
-          (student?.studentId?.toLowerCase() || "").includes(searchLower) ||
-          (student?.email?.toLowerCase() || "").includes(searchLower) ||
-          (student?.phone?.toLowerCase() || "").includes(searchLower)
-        );
-      })
+      const searchLower = searchQuery.toLowerCase();
+      return (
+        (student?.name?.toLowerCase() || "").includes(searchLower) ||
+        (student?.studentId?.toLowerCase() || "").includes(searchLower) ||
+        (student?.email?.toLowerCase() || "").includes(searchLower) ||
+        (student?.phone?.toLowerCase() || "").includes(searchLower)
+      );
+    })
     : [];
 
   const generateStudentId = async () => {
@@ -630,7 +629,7 @@ const BatchView = () => {
                   disabled={
                     selectedBatch.capacity &&
                     selectedBatch.enrolledStudents?.length >=
-                      selectedBatch.capacity
+                    selectedBatch.capacity
                   }
                   sx={{ borderRadius: 2 }}
                 >
@@ -643,7 +642,7 @@ const BatchView = () => {
                   disabled={
                     selectedBatch.capacity &&
                     selectedBatch.enrolledStudents?.length >=
-                      selectedBatch.capacity
+                    selectedBatch.capacity
                   }
                   sx={{ borderRadius: 2 }}
                 >

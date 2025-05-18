@@ -187,10 +187,9 @@ const StudentBatches = () => {
       case "active":
         return "success";
       case "upcoming":
-        return "info";
-      case "completed":
         return "warning";
-
+      case "completed":
+        return "error";
       default:
         return "default";
     }
@@ -383,13 +382,12 @@ const StudentBatches = () => {
           <Typography variant="body2" color="text.secondary">
             {tabValue === 0
               ? "You are not enrolled in any batches yet."
-              : `You don't have any ${
-                  tabValue === 1
-                    ? "active"
-                    : tabValue === 2
-                    ? "upcoming"
-                    : "completed"
-                } batches.`}
+              : `You don't have any ${tabValue === 1
+                ? "active"
+                : tabValue === 2
+                  ? "upcoming"
+                  : "completed"
+              } batches.`}
           </Typography>
         </Paper>
       ) : (
@@ -507,10 +505,10 @@ const StudentBatches = () => {
                           </Typography>
                           <Typography variant="body1">
                             {batch.schedule?.startTime &&
-                            batch.schedule?.endTime
+                              batch.schedule?.endTime
                               ? `${formatTime(
-                                  batch.schedule.startTime
-                                )} - ${formatTime(batch.schedule.endTime)}`
+                                batch.schedule.startTime
+                              )} - ${formatTime(batch.schedule.endTime)}`
                               : "Not specified"}
                           </Typography>
                         </Box>

@@ -37,8 +37,6 @@ const DAYS_OF_WEEK = [
   "Sunday",
 ];
 
-const STATUS_OPTIONS = ["upcoming", "active", "completed"];
-
 const BatchEdit = () => {
   const { id } = useParams();
   const dispatch = useDispatch();
@@ -63,7 +61,6 @@ const BatchEdit = () => {
     },
     capacity: "",
     fees: "",
-    status: "",
     description: "",
     teacher: "",
   });
@@ -103,7 +100,6 @@ const BatchEdit = () => {
           },
           capacity: batch.capacity || "",
           fees: batch.fees || "",
-          status: batch.status || "upcoming",
           description: batch.description || "",
           teacher: batch.teacher?._id || batch.teacher || "",
         });
@@ -139,8 +135,8 @@ const BatchEdit = () => {
       const standard = standards.find((s) => s._id === value);
       const standardSubjects = standard
         ? subjects.filter((subject) =>
-            standard.subjects?.some((s) => (s._id || s) === subject._id)
-          )
+          standard.subjects?.some((s) => (s._id || s) === subject._id)
+        )
         : [];
       setFilteredSubjects(standardSubjects);
       setFilteredTeachers([]);
@@ -577,25 +573,6 @@ const BatchEdit = () => {
                 }}
                 sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
               />
-            </Grid>
-
-            <Grid item xs={12} sm={6}>
-              <FormControl fullWidth required>
-                <InputLabel>Status</InputLabel>
-                <Select
-                  name="status"
-                  value={formData.status}
-                  onChange={handleChange}
-                  label="Status"
-                  sx={{ borderRadius: 2 }}
-                >
-                  {STATUS_OPTIONS.map((status) => (
-                    <MenuItem key={status} value={status}>
-                      {status.charAt(0).toUpperCase() + status.slice(1)}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
             </Grid>
 
             <Grid item xs={12}>

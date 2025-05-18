@@ -7,6 +7,9 @@ import Subject from "../models/Subject.js";
 // Get all batches
 export const getAllBatches = async (req, res) => {
   try {
+    // Update batch statuses first
+    await Batch.updateBatchStatuses();
+    
     // Import Student model
     const Student = (await import("../models/Student.js")).default;
 
@@ -132,6 +135,9 @@ export const getAllBatches = async (req, res) => {
 // Get a single batch
 export const getBatchById = async (req, res) => {
   try {
+    // Update batch statuses first
+    await Batch.updateBatchStatuses();
+    
     // Import Student model
     const Student = (await import("../models/Student.js")).default;
 
@@ -349,6 +355,9 @@ export const deleteBatch = async (req, res) => {
 // Get batches by subject
 export const getBatchesBySubject = async (req, res) => {
   try {
+    // Update batch statuses first
+    await Batch.updateBatchStatuses();
+
     // Import Student model
     const Student = (await import("../models/Student.js")).default;
 

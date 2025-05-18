@@ -193,10 +193,10 @@ const BatchList = () => {
     switch (status) {
       case "active":
         return "success";
-      case "inactive":
-        return "default";
+      case "upcoming":
+        return "warning";
       case "completed":
-        return "info";
+        return "error";
       default:
         return "default";
     }
@@ -443,8 +443,14 @@ const BatchList = () => {
                         variant="outlined"
                         sx={{
                           fontWeight: 500,
-                          backgroundColor: theme => alpha(theme.palette[getStatusColor(batch.status)].main, 0.08),
-                          borderColor: theme => alpha(theme.palette[getStatusColor(batch.status)].main, 0.3)
+                          backgroundColor: (theme) => {
+                            const color = getStatusColor(batch.status);
+                            return alpha(theme.palette[color]?.main || '#e0e0e0', 0.08);
+                          },
+                          borderColor: (theme) => {
+                            const color = getStatusColor(batch.status);
+                            return alpha(theme.palette[color]?.main || '#e0e0e0', 0.3);
+                          }
                         }}
                       />
                     </Box>
@@ -574,11 +580,10 @@ const BatchList = () => {
                         onClick={() => navigate(`/app/batches/${batch._id}`)}
                         sx={{
                           color: "primary.main",
-                          bgcolor: alpha(theme.palette.primary.main, 0.1),
+                          backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.1),
                           "&:hover": {
-                            bgcolor: alpha(theme.palette.primary.main, 0.2),
+                            backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.2),
                           },
-                          mr: 1,
                         }}
                       >
                         <VisibilityIcon fontSize="small" />
@@ -589,12 +594,11 @@ const BatchList = () => {
                         size="small"
                         onClick={() => navigate(`/app/batches/${batch._id}/edit`)}
                         sx={{
-                          color: theme.palette.info.main,
-                          bgcolor: alpha(theme.palette.info.main, 0.1),
+                          color: (theme) => theme.palette.info.main,
+                          backgroundColor: (theme) => alpha(theme.palette.info.main, 0.1),
                           "&:hover": {
-                            bgcolor: alpha(theme.palette.info.main, 0.2),
+                            backgroundColor: (theme) => alpha(theme.palette.info.main, 0.2),
                           },
-                          mr: 1,
                         }}
                       >
                         <EditIcon fontSize="small" />
@@ -606,9 +610,9 @@ const BatchList = () => {
                         onClick={() => openDeleteDialog(batch)}
                         sx={{
                           color: "error.main",
-                          bgcolor: alpha(theme.palette.error.main, 0.1),
+                          backgroundColor: (theme) => alpha(theme.palette.error.main, 0.1),
                           "&:hover": {
-                            bgcolor: alpha(theme.palette.error.main, 0.2),
+                            backgroundColor: (theme) => alpha(theme.palette.error.main, 0.2),
                           },
                         }}
                       >
@@ -792,8 +796,14 @@ const BatchList = () => {
                         variant="outlined"
                         sx={{
                           fontWeight: 500,
-                          backgroundColor: theme => alpha(theme.palette[getStatusColor(batch.status)].main, 0.08),
-                          borderColor: theme => alpha(theme.palette[getStatusColor(batch.status)].main, 0.3)
+                          backgroundColor: (theme) => {
+                            const color = getStatusColor(batch.status);
+                            return alpha(theme.palette[color]?.main || '#e0e0e0', 0.08);
+                          },
+                          borderColor: (theme) => {
+                            const color = getStatusColor(batch.status);
+                            return alpha(theme.palette[color]?.main || '#e0e0e0', 0.3);
+                          }
                         }}
                       />
                     </TableCell>
@@ -811,9 +821,9 @@ const BatchList = () => {
                             onClick={() => navigate(`/app/batches/${batch._id}`)}
                             sx={{
                               color: "primary.main",
-                              backgroundColor: theme => alpha(theme.palette.primary.main, 0.1),
+                              backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.1),
                               "&:hover": {
-                                backgroundColor: theme => alpha(theme.palette.primary.main, 0.2),
+                                backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.2),
                               },
                             }}
                           >
@@ -825,10 +835,10 @@ const BatchList = () => {
                             size="small"
                             onClick={() => navigate(`/app/batches/${batch._id}/edit`)}
                             sx={{
-                              color: theme => theme.palette.info.main,
-                              backgroundColor: theme => alpha(theme.palette.info.main, 0.1),
+                              color: (theme) => theme.palette.info.main,
+                              backgroundColor: (theme) => alpha(theme.palette.info.main, 0.1),
                               "&:hover": {
-                                backgroundColor: theme => alpha(theme.palette.info.main, 0.2),
+                                backgroundColor: (theme) => alpha(theme.palette.info.main, 0.2),
                               },
                             }}
                           >
@@ -841,9 +851,9 @@ const BatchList = () => {
                             onClick={() => openDeleteDialog(batch)}
                             sx={{
                               color: "error.main",
-                              backgroundColor: theme => alpha(theme.palette.error.main, 0.1),
+                              backgroundColor: (theme) => alpha(theme.palette.error.main, 0.1),
                               "&:hover": {
-                                backgroundColor: theme => alpha(theme.palette.error.main, 0.2),
+                                backgroundColor: (theme) => alpha(theme.palette.error.main, 0.2),
                               },
                             }}
                           >

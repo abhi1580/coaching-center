@@ -161,9 +161,9 @@ function TeacherBatches() {
       case "active":
         return "success";
       case "upcoming":
-        return "info";
-      case "completed":
         return "warning";
+      case "completed":
+        return "error";
       default:
         return "default";
     }

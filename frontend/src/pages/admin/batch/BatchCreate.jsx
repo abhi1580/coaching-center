@@ -38,8 +38,6 @@ const DAYS_OF_WEEK = [
   "Sunday",
 ];
 
-const STATUS_OPTIONS = ["upcoming", "active", "completed"];
-
 const BatchCreate = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -62,7 +60,6 @@ const BatchCreate = () => {
     },
     capacity: "",
     fees: "",
-    status: "upcoming",
     description: "",
     teacher: "",
   });
@@ -512,25 +509,6 @@ const BatchCreate = () => {
                 }}
                 sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
               />
-            </Grid>
-
-            <Grid item xs={12} sm={6}>
-              <FormControl fullWidth required>
-                <InputLabel>Status</InputLabel>
-                <Select
-                  name="status"
-                  value={formData.status}
-                  onChange={handleChange}
-                  label="Status"
-                  sx={{ borderRadius: 2 }}
-                >
-                  {STATUS_OPTIONS.map((status) => (
-                    <MenuItem key={status} value={status}>
-                      {status.charAt(0).toUpperCase() + status.slice(1)}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
             </Grid>
 
             <Grid item xs={12}>
