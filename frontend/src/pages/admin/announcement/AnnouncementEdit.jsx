@@ -26,7 +26,8 @@ import {
     fetchAnnouncement,
     updateAnnouncement,
     formatDateForInput,
-    formatDate
+    formatDate,
+    getStatusColor
 } from "../../../store/slices/announcementSlice";
 import * as Yup from "yup";
 import { Formik, Form } from "formik";
@@ -136,8 +137,19 @@ const AnnouncementEdit = () => {
         const endDate = announcementData.endDate || announcementData.endTime;
 
         // Format dates for the input fields (just the date part)
-        const startDateStr = formatDateForInput(new Date(startDate));
-        const endDateStr = formatDateForInput(new Date(endDate));
+        // Use direct date component extraction for consistent behavior across devices
+        const formatDateConsistently = (dateStr) => {
+            const date = new Date(dateStr);
+            if (isNaN(date.getTime())) return "";
+
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, "0");
+            const day = String(date.getDate()).padStart(2, "0");
+            return `${year}-${month}-${day}`;
+        };
+
+        const startDateStr = formatDateConsistently(startDate);
+        const endDateStr = formatDateConsistently(endDate);
 
         // Make sure we set all available values from the announcement data
         return {
@@ -160,7 +172,8 @@ const AnnouncementEdit = () => {
         setFormLoading(true);
 
         try {
-            await dispatch(updateAnnouncement({ id, data: values })).unwrap();
+            // Update the announcement
+            const result = await dispatch(updateAnnouncement({ id, data: values })).unwrap();
 
             // Success notification
             Swal.fire({
@@ -168,7 +181,12 @@ const AnnouncementEdit = () => {
                 title: 'Announcement Updated!',
                 text: 'The announcement has been successfully updated.',
                 confirmButtonColor: theme.palette.primary.main,
+                timer: 3000,
+                timerProgressBar: true,
             });
+
+            // Refresh the announcement data to show updated status
+            dispatch(fetchAnnouncement(id));
 
             navigate(`/app/announcements/${id}`);
         } catch (error) {
@@ -274,252 +292,287 @@ const AnnouncementEdit = () => {
                             onSubmit={handleSubmit}
                             enableReinitialize
                         >
-                            {({ values, errors, touched, handleChange, handleBlur, isSubmitting }) => (
-                                <Form>
-                                    <Grid container spacing={3}>
-                                        <Grid item xs={12}>
-                                            <TextField
-                                                fullWidth
-                                                id="title"
-                                                name="title"
-                                                label="Title"
-                                                variant="outlined"
-                                                value={values.title}
-                                                onChange={handleChange}
-                                                onBlur={handleBlur}
-                                                error={touched.title && Boolean(errors.title)}
-                                                helperText={touched.title && errors.title}
-                                                disabled={isSubmitting}
-                                                placeholder="Enter announcement title"
-                                            />
-                                        </Grid>
+                            {({ values, errors, touched, handleChange, handleBlur, isSubmitting, setFieldValue }) => {
+                                // Calculate status based on dates
+                                const calculateStatus = (startDateStr, endDateStr) => {
+                                    const now = new Date();
+                                    const startDate = new Date(startDateStr + "T00:00:00");
+                                    const endDate = new Date(endDateStr + "T23:59:59");
 
-                                        <Grid item xs={12} md={3}>
-                                            <TextField
-                                                fullWidth
-                                                select
-                                                id="type"
-                                                name="type"
-                                                label="Type"
-                                                variant="outlined"
-                                                value={values.type}
-                                                onChange={handleChange}
-                                                onBlur={handleBlur}
-                                                error={touched.type && Boolean(errors.type)}
-                                                helperText={touched.type && errors.type}
-                                                disabled={isSubmitting}
-                                            >
-                                                <MenuItem value="General">General</MenuItem>
-                                                <MenuItem value="Event">Event</MenuItem>
-                                                <MenuItem value="Holiday">Holiday</MenuItem>
-                                                <MenuItem value="Exam">Exam</MenuItem>
-                                                <MenuItem value="Emergency">Emergency</MenuItem>
-                                                <MenuItem value="Other">Other</MenuItem>
-                                            </TextField>
-                                        </Grid>
+                                    if (endDate < now) {
+                                        return "expired";
+                                    } else if (startDate <= now && endDate >= now) {
+                                        return "active";
+                                    } else {
+                                        return "scheduled";
+                                    }
+                                };
 
-                                        <Grid item xs={12} md={3}>
-                                            <TextField
-                                                fullWidth
-                                                select
-                                                id="priority"
-                                                name="priority"
-                                                label="Priority"
-                                                variant="outlined"
-                                                value={values.priority}
-                                                onChange={handleChange}
-                                                onBlur={handleBlur}
-                                                error={touched.priority && Boolean(errors.priority)}
-                                                helperText={touched.priority && errors.priority}
-                                                disabled={isSubmitting}
-                                            >
-                                                <MenuItem value="High">High</MenuItem>
-                                                <MenuItem value="Medium">Medium</MenuItem>
-                                                <MenuItem value="Low">Low</MenuItem>
-                                            </TextField>
-                                        </Grid>
+                                // Get status color
+                                const getStatusColorFromTheme = (status) => {
+                                    const statusColorMap = {
+                                        active: theme.palette.success.main,
+                                        scheduled: theme.palette.warning.main,
+                                        expired: theme.palette.error.main
+                                    };
 
-                                        <Grid item xs={12} md={3}>
-                                            <TextField
-                                                fullWidth
-                                                select
-                                                id="targetAudience"
-                                                name="targetAudience"
-                                                label="Target Audience"
-                                                variant="outlined"
-                                                value={values.targetAudience}
-                                                onChange={handleChange}
-                                                onBlur={handleBlur}
-                                                error={touched.targetAudience && Boolean(errors.targetAudience)}
-                                                helperText={touched.targetAudience && errors.targetAudience}
-                                                disabled={isSubmitting}
-                                            >
-                                                <MenuItem value="All">All</MenuItem>
-                                                <MenuItem value="Students">Students</MenuItem>
-                                                <MenuItem value="Teachers">Teachers</MenuItem>
-                                                <MenuItem value="Parents">Parents</MenuItem>
-                                            </TextField>
-                                        </Grid>
+                                    return statusColorMap[status] || theme.palette.text.secondary;
+                                };
 
-                                        <Grid item xs={12} md={3}>
-                                            <TextField
-                                                fullWidth
-                                                id="status"
-                                                name="status"
-                                                label="Status"
-                                                variant="outlined"
-                                                value={values.status || "unknown"}
-                                                disabled={true}
-                                                InputProps={{
-                                                    readOnly: true,
-                                                }}
-                                                helperText="Status is determined automatically based on dates"
-                                            />
-                                        </Grid>
+                                // Current calculated status
+                                const currentCalculatedStatus = calculateStatus(values.startDate, values.endDate);
 
-                                        <Grid item xs={12} md={6}>
-                                            <Box>
-                                                <Typography variant="subtitle2" color="primary" gutterBottom>
-                                                    Start Date
-                                                </Typography>
-                                                <TextField
-                                                    fullWidth
-                                                    id="startDate"
-                                                    name="startDate"
-                                                    label="Start Date"
-                                                    type="date"
-                                                    variant="outlined"
-                                                    value={values.startDate}
-                                                    onChange={handleChange}
-                                                    onBlur={handleBlur}
-                                                    error={touched.startDate && Boolean(errors.startDate)}
-                                                    helperText={(touched.startDate && errors.startDate) || "Announcement will start at 00:00 on this date"}
-                                                    disabled={isSubmitting}
-                                                    InputLabelProps={{
-                                                        shrink: true,
-                                                    }}
-                                                />
-                                            </Box>
-                                        </Grid>
-
-                                        <Grid item xs={12} md={6}>
-                                            <Box>
-                                                <Typography variant="subtitle2" color="primary" gutterBottom>
-                                                    End Date
-                                                </Typography>
-                                                <TextField
-                                                    fullWidth
-                                                    id="endDate"
-                                                    name="endDate"
-                                                    label="End Date"
-                                                    type="date"
-                                                    variant="outlined"
-                                                    value={values.endDate}
-                                                    onChange={handleChange}
-                                                    onBlur={handleBlur}
-                                                    error={touched.endDate && Boolean(errors.endDate)}
-                                                    helperText={(touched.endDate && errors.endDate) || "Announcement will end at 23:59 on this date"}
-                                                    disabled={isSubmitting}
-                                                    InputLabelProps={{
-                                                        shrink: true,
-                                                    }}
-                                                />
-                                            </Box>
-                                        </Grid>
-
-                                        <Grid item xs={12}>
-                                            <TextField
-                                                fullWidth
-                                                id="content"
-                                                name="content"
-                                                label="Content"
-                                                variant="outlined"
-                                                multiline
-                                                rows={6}
-                                                value={values.content}
-                                                onChange={handleChange}
-                                                onBlur={handleBlur}
-                                                error={touched.content && Boolean(errors.content)}
-                                                helperText={touched.content && errors.content}
-                                                disabled={isSubmitting}
-                                                placeholder="Enter announcement content"
-                                            />
-                                        </Grid>
-
-                                        {/* Metadata section */}
-                                        {currentAnnouncement && (
+                                return (
+                                    <Form>
+                                        <Grid container spacing={3}>
                                             <Grid item xs={12}>
-                                                <Paper
-                                                    elevation={0}
-                                                    sx={{
-                                                        p: 2,
-                                                        backgroundColor: alpha(theme.palette.background.default, 0.5),
-                                                        borderRadius: 1,
-                                                        mt: 2,
-                                                        border: `1px solid ${alpha(theme.palette.divider, 0.1)}`
-                                                    }}
-                                                >
-                                                    <Typography variant="subtitle2" color="primary" gutterBottom>
-                                                        Announcement Metadata
-                                                    </Typography>
-                                                    <Grid container spacing={2}>
-                                                        <Grid item xs={12} md={6}>
-                                                            <Typography variant="caption" color="text.secondary" display="block">
-                                                                Created By
-                                                            </Typography>
-                                                            <Typography variant="body2">
-                                                                {(() => {
-                                                                    // Access data safely
-                                                                    const data = currentAnnouncement.data || currentAnnouncement;
-                                                                    return data.createdBy?.name || "Unknown";
-                                                                })()}
-                                                            </Typography>
-                                                        </Grid>
-                                                        <Grid item xs={12} md={6}>
-                                                            <Typography variant="caption" color="text.secondary" display="block">
-                                                                Created At
-                                                            </Typography>
-                                                            <Typography variant="body2">
-                                                                {(() => {
-                                                                    // Access data safely
-                                                                    const data = currentAnnouncement.data || currentAnnouncement;
-                                                                    return formatDate(data.createdAt);
-                                                                })()}
-                                                            </Typography>
-                                                        </Grid>
-                                                    </Grid>
-                                                </Paper>
+                                                <TextField
+                                                    fullWidth
+                                                    id="title"
+                                                    name="title"
+                                                    label="Title"
+                                                    variant="outlined"
+                                                    value={values.title}
+                                                    onChange={handleChange}
+                                                    onBlur={handleBlur}
+                                                    error={touched.title && Boolean(errors.title)}
+                                                    helperText={touched.title && errors.title}
+                                                    disabled={isSubmitting}
+                                                    placeholder="Enter announcement title"
+                                                />
                                             </Grid>
-                                        )}
 
-                                        <Grid item xs={12} sx={{ display: "flex", justifyContent: "flex-end", gap: 2, mt: 2 }}>
-                                            <Button
-                                                variant="outlined"
-                                                onClick={() => navigate(`/app/announcements/${id}`)}
-                                                disabled={isSubmitting}
-                                                sx={{ borderRadius: 2 }}
-                                            >
-                                                Cancel
-                                            </Button>
-                                            <Button
-                                                type="submit"
-                                                variant="contained"
-                                                startIcon={
-                                                    formLoading ? (
-                                                        <CircularProgress size={20} color="inherit" />
-                                                    ) : (
-                                                        <SaveIcon />
-                                                    )
-                                                }
-                                                disabled={isSubmitting}
-                                                sx={{ borderRadius: 2 }}
-                                            >
-                                                {formLoading ? "Saving..." : "Save Changes"}
-                                            </Button>
+                                            <Grid item xs={12} md={3}>
+                                                <TextField
+                                                    fullWidth
+                                                    select
+                                                    id="type"
+                                                    name="type"
+                                                    label="Type"
+                                                    variant="outlined"
+                                                    value={values.type}
+                                                    onChange={handleChange}
+                                                    onBlur={handleBlur}
+                                                    error={touched.type && Boolean(errors.type)}
+                                                    helperText={touched.type && errors.type}
+                                                    disabled={isSubmitting}
+                                                >
+                                                    <MenuItem value="General">General</MenuItem>
+                                                    <MenuItem value="Event">Event</MenuItem>
+                                                    <MenuItem value="Holiday">Holiday</MenuItem>
+                                                    <MenuItem value="Exam">Exam</MenuItem>
+                                                    <MenuItem value="Emergency">Emergency</MenuItem>
+                                                    <MenuItem value="Other">Other</MenuItem>
+                                                </TextField>
+                                            </Grid>
+
+                                            <Grid item xs={12} md={3}>
+                                                <TextField
+                                                    fullWidth
+                                                    select
+                                                    id="priority"
+                                                    name="priority"
+                                                    label="Priority"
+                                                    variant="outlined"
+                                                    value={values.priority}
+                                                    onChange={handleChange}
+                                                    onBlur={handleBlur}
+                                                    error={touched.priority && Boolean(errors.priority)}
+                                                    helperText={touched.priority && errors.priority}
+                                                    disabled={isSubmitting}
+                                                >
+                                                    <MenuItem value="High">High</MenuItem>
+                                                    <MenuItem value="Medium">Medium</MenuItem>
+                                                    <MenuItem value="Low">Low</MenuItem>
+                                                </TextField>
+                                            </Grid>
+
+                                            <Grid item xs={12} md={3}>
+                                                <TextField
+                                                    fullWidth
+                                                    select
+                                                    id="targetAudience"
+                                                    name="targetAudience"
+                                                    label="Target Audience"
+                                                    variant="outlined"
+                                                    value={values.targetAudience}
+                                                    onChange={handleChange}
+                                                    onBlur={handleBlur}
+                                                    error={touched.targetAudience && Boolean(errors.targetAudience)}
+                                                    helperText={touched.targetAudience && errors.targetAudience}
+                                                    disabled={isSubmitting}
+                                                >
+                                                    <MenuItem value="All">All</MenuItem>
+                                                    <MenuItem value="Students">Students</MenuItem>
+                                                    <MenuItem value="Teachers">Teachers</MenuItem>
+                                                    <MenuItem value="Parents">Parents</MenuItem>
+                                                </TextField>
+                                            </Grid>
+
+                                            <Grid item xs={12} md={3}>
+                                                <TextField
+                                                    fullWidth
+                                                    id="status"
+                                                    name="status"
+                                                    label="Status"
+                                                    variant="outlined"
+                                                    value={currentCalculatedStatus}
+                                                    disabled={true}
+                                                    InputProps={{
+                                                        readOnly: true,
+                                                        style: {
+                                                            color: getStatusColorFromTheme(currentCalculatedStatus),
+                                                            fontWeight: 'bold'
+                                                        }
+                                                    }}
+                                                    helperText="Status is determined automatically based on dates"
+                                                />
+                                            </Grid>
+
+                                            <Grid item xs={12} md={6}>
+                                                <Box>
+                                                    <Typography variant="subtitle2" color="primary" gutterBottom>
+                                                        Start Date
+                                                    </Typography>
+                                                    <TextField
+                                                        fullWidth
+                                                        id="startDate"
+                                                        name="startDate"
+                                                        label="Start Date"
+                                                        type="date"
+                                                        variant="outlined"
+                                                        value={values.startDate}
+                                                        onChange={handleChange}
+                                                        onBlur={handleBlur}
+                                                        error={touched.startDate && Boolean(errors.startDate)}
+                                                        helperText={(touched.startDate && errors.startDate) || "Announcement will start at 00:00 on this date"}
+                                                        disabled={isSubmitting}
+                                                        InputLabelProps={{
+                                                            shrink: true,
+                                                        }}
+                                                    />
+                                                </Box>
+                                            </Grid>
+
+                                            <Grid item xs={12} md={6}>
+                                                <Box>
+                                                    <Typography variant="subtitle2" color="primary" gutterBottom>
+                                                        End Date
+                                                    </Typography>
+                                                    <TextField
+                                                        fullWidth
+                                                        id="endDate"
+                                                        name="endDate"
+                                                        label="End Date"
+                                                        type="date"
+                                                        variant="outlined"
+                                                        value={values.endDate}
+                                                        onChange={handleChange}
+                                                        onBlur={handleBlur}
+                                                        error={touched.endDate && Boolean(errors.endDate)}
+                                                        helperText={(touched.endDate && errors.endDate) || "Announcement will end at 23:59 on this date"}
+                                                        disabled={isSubmitting}
+                                                        InputLabelProps={{
+                                                            shrink: true,
+                                                        }}
+                                                    />
+                                                </Box>
+                                            </Grid>
+
+                                            <Grid item xs={12}>
+                                                <TextField
+                                                    fullWidth
+                                                    id="content"
+                                                    name="content"
+                                                    label="Content"
+                                                    variant="outlined"
+                                                    multiline
+                                                    rows={6}
+                                                    value={values.content}
+                                                    onChange={handleChange}
+                                                    onBlur={handleBlur}
+                                                    error={touched.content && Boolean(errors.content)}
+                                                    helperText={touched.content && errors.content}
+                                                    disabled={isSubmitting}
+                                                    placeholder="Enter announcement content"
+                                                />
+                                            </Grid>
+
+                                            {/* Metadata section */}
+                                            {currentAnnouncement && (
+                                                <Grid item xs={12}>
+                                                    <Paper
+                                                        elevation={0}
+                                                        sx={{
+                                                            p: 2,
+                                                            backgroundColor: alpha(theme.palette.background.default, 0.5),
+                                                            borderRadius: 1,
+                                                            mt: 2,
+                                                            border: `1px solid ${alpha(theme.palette.divider, 0.1)}`
+                                                        }}
+                                                    >
+                                                        <Typography variant="subtitle2" color="primary" gutterBottom>
+                                                            Announcement Metadata
+                                                        </Typography>
+                                                        <Grid container spacing={2}>
+                                                            <Grid item xs={12} md={6}>
+                                                                <Typography variant="caption" color="text.secondary" display="block">
+                                                                    Created By
+                                                                </Typography>
+                                                                <Typography variant="body2">
+                                                                    {(() => {
+                                                                        // Access data safely
+                                                                        const data = currentAnnouncement.data || currentAnnouncement;
+                                                                        return data.createdBy?.name || "Unknown";
+                                                                    })()}
+                                                                </Typography>
+                                                            </Grid>
+                                                            <Grid item xs={12} md={6}>
+                                                                <Typography variant="caption" color="text.secondary" display="block">
+                                                                    Created At
+                                                                </Typography>
+                                                                <Typography variant="body2">
+                                                                    {(() => {
+                                                                        // Access data safely
+                                                                        const data = currentAnnouncement.data || currentAnnouncement;
+                                                                        return formatDate(data.createdAt);
+                                                                    })()}
+                                                                </Typography>
+                                                            </Grid>
+                                                        </Grid>
+                                                    </Paper>
+                                                </Grid>
+                                            )}
+
+                                            <Grid item xs={12} sx={{ display: "flex", justifyContent: "flex-end", gap: 2, mt: 2 }}>
+                                                <Button
+                                                    variant="outlined"
+                                                    onClick={() => navigate(`/app/announcements/${id}`)}
+                                                    disabled={isSubmitting}
+                                                    sx={{ borderRadius: 2 }}
+                                                >
+                                                    Cancel
+                                                </Button>
+                                                <Button
+                                                    type="submit"
+                                                    variant="contained"
+                                                    startIcon={
+                                                        formLoading ? (
+                                                            <CircularProgress size={20} color="inherit" />
+                                                        ) : (
+                                                            <SaveIcon />
+                                                        )
+                                                    }
+                                                    disabled={isSubmitting}
+                                                    sx={{ borderRadius: 2 }}
+                                                >
+                                                    {formLoading ? "Saving..." : "Save Changes"}
+                                                </Button>
+                                            </Grid>
                                         </Grid>
-                                    </Grid>
-                                </Form>
-                            )}
+                                    </Form>
+                                );
+                            }}
                         </Formik>
                     </Paper>
                 </>

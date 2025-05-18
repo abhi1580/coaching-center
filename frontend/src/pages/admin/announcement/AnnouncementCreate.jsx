@@ -74,7 +74,7 @@ const AnnouncementCreate = () => {
     const navigate = useNavigate();
     const theme = useTheme();
     const [loading, setLoading] = useState(false);
-    
+
     // Get user state to check admin access
     const { user } = useSelector((state) => state.auth);
     const isAdmin = user && user.role === "admin";
@@ -93,7 +93,11 @@ const AnnouncementCreate = () => {
     // Get today's date in YYYY-MM-DD format for the date inputs
     const getTodayDateString = () => {
         const today = new Date();
-        return formatDateForInput(today);
+        // Use direct date component extraction for consistent behavior across devices
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, "0");
+        const day = String(today.getDate()).padStart(2, "0");
+        return `${year}-${month}-${day}`;
     };
 
     const initialValues = {

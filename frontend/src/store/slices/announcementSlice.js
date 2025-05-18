@@ -338,15 +338,21 @@ export const formatDateForInput = (dateString) => {
   }
   
   // Handle Date objects or other date strings
-  const date = new Date(dateString);
-  if (isNaN(date.getTime())) return "";
-  
-  // Format as YYYY-MM-DD in local timezone (Indian timezone)
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  
-  return `${year}-${month}-${day}`;
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return "";
+    
+    // Use the date directly without timezone conversion
+    // This is more reliable across different devices
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    
+    return `${year}-${month}-${day}`;
+  } catch (error) {
+    console.error("Error formatting date for input:", error);
+    return "";
+  }
 };
 
 export const getStatusColor = (status) => {

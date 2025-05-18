@@ -50,6 +50,14 @@ const AnnouncementView = () => {
 
     useEffect(() => {
         dispatch(fetchAnnouncement(id));
+
+        // Set up a refresh interval to keep status updated
+        const refreshInterval = setInterval(() => {
+            dispatch(fetchAnnouncement(id));
+        }, 5000); // Refresh every 5 seconds
+
+        // Clean up interval on component unmount
+        return () => clearInterval(refreshInterval);
     }, [dispatch, id]);
 
     // Helper to safely access announcement data, regardless of nesting
@@ -119,6 +127,29 @@ const AnnouncementView = () => {
         const basePath = getBasePath();
         navigate(`${basePath}/dashboard`);
     };
+
+    // Calculate real-time status based on current time and announcement dates
+    const calculateCurrentStatus = (announcement) => {
+        if (!announcement) return "";
+
+        const now = new Date();
+        const startDate = new Date(announcement.startDate);
+        const endDate = new Date(announcement.endDate);
+
+        if (endDate < now) {
+            return "expired";
+        } else if (startDate <= now && endDate >= now) {
+            return "active";
+        } else {
+            return "scheduled";
+        }
+    };
+
+    // Get the current real-time status
+    const currentStatus = announcementData ? calculateCurrentStatus(announcementData) : "";
+
+    // Check if status has changed from what's stored
+    const statusChanged = announcementData && currentStatus !== announcementData.status;
 
     return (
         <Box sx={{ p: { xs: 1, sm: 2, md: 3 } }}>
@@ -224,10 +255,19 @@ const AnnouncementView = () => {
                                     sx={{ fontWeight: 500, px: 1 }}
                                 />
                                 <Chip
-                                    label={announcementData.status}
-                                    color={getStatusColor(announcementData.status)}
+                                    label={currentStatus || announcementData.status}
+                                    color={getStatusColor(currentStatus || announcementData.status)}
                                     size="medium"
-                                    sx={{ fontWeight: 500, px: 1 }}
+                                    sx={{
+                                        fontWeight: 500,
+                                        px: 1,
+                                        animation: statusChanged ? 'pulse 1.5s infinite' : 'none',
+                                        '@keyframes pulse': {
+                                            '0%': { boxShadow: '0 0 0 0 rgba(66, 153, 225, 0.7)' },
+                                            '70%': { boxShadow: '0 0 0 6px rgba(66, 153, 225, 0)' },
+                                            '100%': { boxShadow: '0 0 0 0 rgba(66, 153, 225, 0)' }
+                                        }
+                                    }}
                                 />
                                 <Chip
                                     label={`For: ${announcementData.targetAudience}`}

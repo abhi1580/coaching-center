@@ -34,16 +34,18 @@ const createDateTime = (date, time) => {
       const [year, month, day] = date.split('-').map(Number);
       const [hours, minutes] = time.split(':').map(Number);
       
-      // For end dates with time 23:59, ensure they stay on the same day
-      // by creating the date directly in local timezone
-      const dateTime = new Date(year, month - 1, day, hours, minutes);
+      // Create date using explicit components to avoid timezone issues
+      // This works consistently across browsers and devices
+      const dateObj = new Date();
+      dateObj.setFullYear(year);
+      dateObj.setMonth(month - 1); // Month is 0-based
+      dateObj.setDate(day);
+      dateObj.setHours(hours, minutes, 0, 0);
       
-      // For Indian timezone (UTC+5:30), no additional adjustment needed
-      // as we're creating the date directly in local timezone
-      return dateTime;
+      return dateObj;
     }
     
-    // Fallback to standard date parsing
+    // Fallback to standard date parsing with timezone handling
     const dateTime = new Date(`${date}T${time}`);
     if (isNaN(dateTime.getTime())) {
       throw new Error("Invalid date or time format");
@@ -56,12 +58,20 @@ const createDateTime = (date, time) => {
 };
 
 const validateDateTime = (startDateTime, endDateTime) => {
-  // Convert to date strings for comparison to ignore time
-  const startDateStr = startDateTime.toISOString().split('T')[0];
-  const endDateStr = endDateTime.toISOString().split('T')[0];
+  // Extract date components for comparison (ignoring time for same-day validation)
+  const startYear = startDateTime.getFullYear();
+  const startMonth = startDateTime.getMonth();
+  const startDay = startDateTime.getDate();
   
-  // If dates are the same, that's valid (will use 00:00 to 23:59)
-  if (startDateStr === endDateStr) {
+  const endYear = endDateTime.getFullYear();
+  const endMonth = endDateTime.getMonth();
+  const endDay = endDateTime.getDate();
+  
+  // Check if dates are the same day (ignoring time)
+  const isSameDay = startYear === endYear && startMonth === endMonth && startDay === endDay;
+  
+  // If same day, that's valid (will use 00:00 to 23:59)
+  if (isSameDay) {
     return;
   }
   
