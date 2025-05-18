@@ -42,8 +42,8 @@ const createDateTime = (date, time) => {
 };
 
 const validateDateTime = (startDateTime, endDateTime) => {
-  if (endDateTime <= startDateTime) {
-    throw new Error("End date/time must be after start date/time");
+  if (endDateTime < startDateTime) {
+    throw new Error("End date/time must be on or after start date/time");
   }
 };
 
@@ -63,17 +63,32 @@ export const getAnnouncements = async (req, res) => {
     // Update the status of all announcements first
     await Announcement.updateAnnouncementStatuses();
 
-    // Then retrieve the announcements
-    const announcements = await Announcement.find()
+    // Create a filter object based on user role
+    let filter = {};
+    
+    // If not admin, filter by targetAudience
+    if (req.user && req.user.role !== "admin") {
+      // For students, show only announcements targeted at students or all
+      if (req.user.role === "student") {
+        filter.targetAudience = { $in: ["All", "Students"] };
+      }
+      // For teachers, show only announcements targeted at teachers or all
+      else if (req.user.role === "teacher") {
+        filter.targetAudience = { $in: ["All", "Teachers"] };
+      }
+    }
+
+    // Then retrieve the announcements with the filter
+    const announcements = await Announcement.find(filter)
       .populate("createdBy", "name")
       .sort({ createdAt: -1 });
 
     // Calculate counts
     const counts = {
       total: announcements.length,
-      active: announcements.filter((a) => a.status === "Active").length,
-      scheduled: announcements.filter((a) => a.status === "Scheduled").length,
-      expired: announcements.filter((a) => a.status === "Expired").length,
+      active: announcements.filter((a) => a.status === "active").length,
+      scheduled: announcements.filter((a) => a.status === "scheduled").length,
+      expired: announcements.filter((a) => a.status === "expired").length,
     };
 
     res.status(200).json({
@@ -104,6 +119,21 @@ export const getAnnouncement = async (req, res) => {
         success: false,
         message: "Announcement not found",
       });
+    }
+
+    // Check if the user has permission to view this announcement based on targetAudience
+    if (req.user && req.user.role !== "admin") {
+      if (
+        (req.user.role === "student" && 
+         !["All", "Students"].includes(announcement.targetAudience)) ||
+        (req.user.role === "teacher" && 
+         !["All", "Teachers"].includes(announcement.targetAudience))
+      ) {
+        return res.status(403).json({
+          success: false,
+          message: "You do not have permission to view this announcement",
+        });
+      }
     }
 
     res.json({

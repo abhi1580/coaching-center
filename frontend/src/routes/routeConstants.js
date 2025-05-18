@@ -25,6 +25,9 @@ export const ADMIN_ROUTES = {
   SUBJECT_EDIT: "/app/subjects/:id/edit",
   // Announcement routes
   ANNOUNCEMENTS: "/app/announcements",
+  ANNOUNCEMENT_CREATE: "/app/announcements/create",
+  ANNOUNCEMENT_VIEW: "/app/announcements/:id",
+  ANNOUNCEMENT_EDIT: "/app/announcements/:id/edit",
   // Teacher routes
   TEACHERS: "/app/teachers",
   TEACHER_CREATE: "/app/teachers/create",
@@ -54,7 +57,8 @@ export const TEACHER_ROUTES = {
   ATTENDANCE: "/app/teacher/attendance",
   NOTES: "/app/teacher/notes",
   PROFILE: "/app/teacher/profile",
-  ANNOUNCEMENTS: "/app/teacher/announcements"
+  ANNOUNCEMENTS: "/app/teacher/announcements",
+  ANNOUNCEMENT_VIEW: "/app/teacher/announcements/:id"
 };
 
 // Student routes
@@ -65,6 +69,7 @@ export const STUDENT_ROUTES = {
   NOTES: "/app/student/notes",
   ATTENDANCE: "/app/student/attendance",
   ANNOUNCEMENTS: "/app/student/announcements",
+  ANNOUNCEMENT_VIEW: "/app/student/announcements/:id",
   PROFILE: "/app/student/profile",
   SCHEDULE: "/app/student/schedule"
 };

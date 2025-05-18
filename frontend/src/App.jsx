@@ -43,7 +43,12 @@ const componentMap = {
 
   // Admin pages
   Dashboard: lazy(() => import('./pages/admin/Dashboard')),
-  Announcements: lazy(() => import('./pages/admin/Announcements')),
+
+  // Announcements
+  AnnouncementList: lazy(() => import('./pages/admin/announcement/AnnouncementList')),
+  AnnouncementCreate: lazy(() => import('./pages/admin/announcement/AnnouncementCreate')),
+  AnnouncementView: lazy(() => import('./pages/admin/announcement/AnnouncementView')),
+  AnnouncementEdit: lazy(() => import('./pages/admin/announcement/AnnouncementEdit')),
 
   // Admin - Students
   StudentList: lazy(() => import('./pages/admin/student/StudentList')),
@@ -82,6 +87,8 @@ const componentMap = {
   TeacherStudents: lazy(() => import('./pages/teacher/TeacherStudents')),
   TeacherAttendance: lazy(() => import('./pages/teacher/TeacherAttendance')),
   TeacherProfile: lazy(() => import('./pages/teacher/TeacherProfile')),
+  TeacherAnnouncementView: lazy(() => import('./pages/teacher/TeacherAnnouncementView')),
+  TeacherAnnouncementList: lazy(() => import('./pages/teacher/TeacherAnnouncementList')),
   NotesPage: lazy(() => import('./pages/teacher/NotesPage')),
   TeacherRedirect: lazy(() => import('./components/teacher/TeacherRedirect')),
 
@@ -92,6 +99,8 @@ const componentMap = {
   StudentProfile: lazy(() => import('./pages/student/StudentProfile')),
   StudentSchedule: lazy(() => import('./pages/student/StudentSchedule')),
   StudentNotes: lazy(() => import('./pages/student/StudentNotes')),
+  StudentAnnouncementView: lazy(() => import('./pages/student/StudentAnnouncementView')),
+  StudentAnnouncementList: lazy(() => import('./pages/student/StudentAnnouncementList')),
 };
 
 // Memoized ProtectedRoute to prevent unnecessary re-renders
@@ -185,9 +194,9 @@ function App() {
                       key={route.path}
                       path={route.path}
                       element={
-                        <ErrorBoundary>
+                        <MemoizedProtectedRoute allowedRoles={["teacher"]}>
                           <Component />
-                        </ErrorBoundary>
+                        </MemoizedProtectedRoute>
                       }
                     />
                   );
@@ -210,9 +219,9 @@ function App() {
                       key={route.path}
                       path={route.path}
                       element={
-                        <ErrorBoundary>
+                        <MemoizedProtectedRoute allowedRoles={["student"]}>
                           <Component />
-                        </ErrorBoundary>
+                        </MemoizedProtectedRoute>
                       }
                     />
                   );

@@ -357,10 +357,7 @@ const StudentEdit = () => {
                             sx={{ ml: 1 }}
                         >
                             {submitLoading ? (
-                                <>
-                                    <CircularProgress size={20} sx={{ mr: 1 }} />
-                                    Saving...
-                                </>
+                                <CircularProgress size={22} />
                             ) : (
                                 "Save Changes"
                             )}

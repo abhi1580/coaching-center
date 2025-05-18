@@ -20,6 +20,7 @@ import {
   useTheme,
   Chip,
   alpha,
+  CircularProgress,
 } from "@mui/material";
 import {
   Person as PersonIcon,
@@ -383,7 +384,9 @@ function Dashboard() {
       )}
 
       {loading ? (
-        <LinearProgress sx={{ my: 4 }} />
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh' }}>
+          <CircularProgress size={50} thickness={4} />
+        </Box>
       ) : (
         <>
           <Grid
@@ -391,7 +394,7 @@ function Dashboard() {
             spacing={{ xs: 1, sm: 2, md: 3 }}
             sx={{ mb: { xs: 2, sm: 4 } }}
           >
-            <Grid item xs={6} sm={4} md={3}>
+            <Grid item xs={6} sm={6} md={4}>
               <StatCard
                 icon={PersonIcon}
                 title="Students"
@@ -400,7 +403,7 @@ function Dashboard() {
                 onClick={() => navigate("/app/students")}
               />
             </Grid>
-            <Grid item xs={6} sm={4} md={3}>
+            <Grid item xs={6} sm={6} md={4}>
               <StatCard
                 icon={SchoolIcon}
                 title="Teachers"
@@ -409,7 +412,7 @@ function Dashboard() {
                 onClick={() => navigate("/app/teachers")}
               />
             </Grid>
-            <Grid item xs={6} sm={4} md={3}>
+            <Grid item xs={6} sm={6} md={4}>
               <StatCard
                 icon={ClassIcon}
                 title="Batches"
@@ -418,7 +421,8 @@ function Dashboard() {
                 onClick={() => navigate("/app/batches")}
               />
             </Grid>
-            <Grid item xs={6} sm={4} md={3}>
+
+            <Grid item xs={6} sm={6} md={4}>
               <StatCard
                 icon={GradeIcon}
                 title="Standards"
@@ -427,7 +431,7 @@ function Dashboard() {
                 onClick={() => navigate("/app/standards")}
               />
             </Grid>
-            <Grid item xs={6} sm={4} md={3}>
+            <Grid item xs={6} sm={6} md={4}>
               <StatCard
                 icon={BookIcon}
                 title="Subjects"
@@ -436,13 +440,12 @@ function Dashboard() {
                 onClick={() => navigate("/app/subjects")}
               />
             </Grid>
-
-            <Grid item xs={6} sm={4} md={3}>
+            <Grid item xs={6} sm={6} md={4}>
               <StatCard
                 icon={AnnouncementIcon}
                 title="Announcements"
                 value={stats.totalAnnouncements}
-                color="secondary"
+                color="error"
                 onClick={() => navigate("/app/announcements")}
               />
             </Grid>

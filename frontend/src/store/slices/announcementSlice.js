@@ -35,9 +35,21 @@ export const createAnnouncement = createAsyncThunk(
       // Format date as YYYY-MM-DD string for backend
       const formatDateForBackend = (dateString) => {
         if (!dateString) return null;
+        
+        // Parse the date string and extract date parts directly to avoid timezone issues
         const date = new Date(dateString);
         if (isNaN(date.getTime())) return null;
-        return dateString; // Return original ISO date string (YYYY-MM-DD)
+        
+        // Already in correct format YYYY-MM-DD, so return directly
+        if (dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
+          return dateString;
+        }
+        
+        // Otherwise format it
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
       };
 
       const formattedData = {
@@ -51,6 +63,14 @@ export const createAnnouncement = createAsyncThunk(
 
       if (!formattedData.startDate || !formattedData.endDate) {
         throw new Error("Start date and end date are required");
+      }
+
+      // Validate that start date is today or in future
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const startDate = new Date(formattedData.startDate);
+      if (startDate < today) {
+        throw new Error("Start date must be today or in the future");
       }
 
       const response = await api.post("/announcements", formattedData);
@@ -69,9 +89,21 @@ export const updateAnnouncement = createAsyncThunk(
       // Format date as YYYY-MM-DD string for backend
       const formatDateForBackend = (dateString) => {
         if (!dateString) return null;
+        
+        // Parse the date string and extract date parts directly to avoid timezone issues
         const date = new Date(dateString);
         if (isNaN(date.getTime())) return null;
-        return dateString; // Return original ISO date string (YYYY-MM-DD)
+        
+        // Already in correct format YYYY-MM-DD, so return directly
+        if (dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
+          return dateString;
+        }
+        
+        // Otherwise format it
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
       };
 
       const formattedData = {
@@ -84,6 +116,14 @@ export const updateAnnouncement = createAsyncThunk(
 
       if (!formattedData.startDate || !formattedData.endDate) {
         throw new Error("Start date and end date are required");
+      }
+
+      // Validate that start date is today or in future for new announcements
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const startDate = new Date(formattedData.startDate);
+      if (startDate < today) {
+        throw new Error("Start date must be today or in the future");
       }
 
       const response = await api.put(`/announcements/${id}`, formattedData);
@@ -170,7 +210,12 @@ const announcementSlice = createSlice({
       })
       .addCase(fetchAnnouncement.fulfilled, (state, action) => {
         state.loading = false;
-        state.currentAnnouncement = action.payload;
+        // Handle both direct and nested data structures
+        if (action.payload && action.payload.data) {
+          state.currentAnnouncement = action.payload.data;
+        } else {
+          state.currentAnnouncement = action.payload;
+        }
       })
       .addCase(fetchAnnouncement.rejected, (state, action) => {
         state.loading = false;
@@ -272,20 +317,34 @@ export default announcementSlice.reducer;
 
 // Helper functions
 export const formatDate = (dateString) => {
-  if (!dateString) return "";
-  const date = new Date(dateString);
-  if (isNaN(date.getTime())) return "";
-  const day = String(date.getDate()).padStart(2, "0");
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const year = date.getFullYear();
-  return `${day}/${month}/${year}`;
+  if (!dateString) return "N/A";
+  
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return "Invalid Date";
+    
+    // Format as DD-MM-YYYY without timezone issues
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const year = date.getFullYear();
+    
+    return `${day}-${month}-${year}`;
+  } catch (e) {
+    console.error("Error formatting date:", e);
+    return "Date Error";
+  }
 };
 
 export const formatDateForInput = (dateString) => {
   if (!dateString) return "";
   const date = new Date(dateString);
   if (isNaN(date.getTime())) return "";
-  return date.toISOString().split("T")[0];
+  
+  // Format as YYYY-MM-DD without timezone issues
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 };
 
 export const getStatusColor = (status) => {

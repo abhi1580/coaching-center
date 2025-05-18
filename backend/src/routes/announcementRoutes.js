@@ -11,11 +11,9 @@ import { validateAnnouncement } from "../validators/announcementValidators.js";
 
 const router = express.Router();
 
-// Public routes
-router.get("/", getAnnouncements);
-router.get("/:id", getAnnouncement);
-
 // Protected routes
+router.get("/", protect, getAnnouncements);
+router.get("/:id", protect, getAnnouncement);
 router.post("/", protect, validateAnnouncement, createAnnouncement);
 router.put("/:id", protect, validateAnnouncement, updateAnnouncement);
 router.delete("/:id", protect, deleteAnnouncement);

@@ -34,7 +34,10 @@ export const adminRoutes = [
   { path: 'subjects/:id', component: 'SubjectView' },
   { path: 'subjects/:id/edit', component: 'SubjectEdit' },
   // Announcement routes
-  { path: 'announcements', component: 'Announcements' },
+  { path: 'announcements', component: 'AnnouncementList' },
+  { path: 'announcements/create', component: 'AnnouncementCreate' },
+  { path: 'announcements/:id', component: 'AnnouncementView' },
+  { path: 'announcements/:id/edit', component: 'AnnouncementEdit' },
   // Teacher routes
   { path: 'teachers', component: 'TeacherList' },
   { path: 'teachers/create', component: 'TeacherCreate' },
@@ -64,7 +67,8 @@ export const teacherRoutes = [
   { path: 'attendance', component: 'TeacherAttendance' },
   { path: 'notes', component: 'NotesPage' },
   { path: 'profile', component: 'TeacherProfile' },
-  { path: 'announcements', component: 'Announcements' }
+  { path: 'announcements', component: 'TeacherAnnouncementList' },
+  { path: 'announcements/:id', component: 'TeacherAnnouncementView' }
 ];
 
 // Define student routes
@@ -74,7 +78,8 @@ export const studentRoutes = [
   { path: 'batches', component: 'StudentBatches' },
   { path: 'notes', component: 'StudentNotes' },
   { path: 'attendance', component: 'StudentAttendance' },
-  { path: 'announcements', component: 'Announcements' },
+  { path: 'announcements', component: 'StudentAnnouncementList' },
+  { path: 'announcements/:id', component: 'StudentAnnouncementView' },
   { path: 'profile', component: 'StudentProfile' },
   { path: 'schedule', component: 'StudentSchedule' }
 ]; 

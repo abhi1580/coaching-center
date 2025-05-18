@@ -63,7 +63,7 @@ const announcementSchema = new mongoose.Schema(
 // Pre-save middleware to validate dates
 announcementSchema.pre("save", function (next) {
   if (this.endDate < this.startDate) {
-    next(new Error("End date must be after start date"));
+    next(new Error("End date must be on or after start date"));
   }
   next();
 });

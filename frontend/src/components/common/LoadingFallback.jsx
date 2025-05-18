@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, CircularProgress, Typography } from '@mui/material';
+import { Box, CircularProgress } from '@mui/material';
 
 const LoadingFallback = () => {
     return (
@@ -13,10 +13,7 @@ const LoadingFallback = () => {
                 width: '100%',
             }}
         >
-            <CircularProgress size={60} thickness={4} sx={{ mb: 2 }} />
-            <Typography variant="subtitle1" color="text.secondary">
-                Loading...
-            </Typography>
+            <CircularProgress size={60} thickness={4} />
         </Box>
     );
 };
