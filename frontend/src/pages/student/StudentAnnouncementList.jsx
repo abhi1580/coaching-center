@@ -192,7 +192,7 @@ const StudentAnnouncementList = () => {
     };
 
     return (
-        <Box sx={{ p: { xs: 1, sm: 2, md: 3 } }}>
+        <Box sx={{ p: { xs: 2, sm: 3 } }}>
             {/* Breadcrumbs */}
             <Breadcrumbs
                 aria-label="breadcrumb"

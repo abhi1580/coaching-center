@@ -158,7 +158,7 @@ function TeacherBatches() {
 
   const getStatusColor = (status) => {
     switch (status?.toLowerCase()) {
-      case "active":
+      case "ongoing":
         return "success";
       case "upcoming":
         return "warning";
@@ -290,7 +290,7 @@ function TeacherBatches() {
                     onChange={(e) => setStatusFilter(e.target.value)}
                   >
                     <MenuItem value="">All Status</MenuItem>
-                    <MenuItem value="active">Active</MenuItem>
+                    <MenuItem value="ongoing">Ongoing</MenuItem>
                     <MenuItem value="upcoming">Upcoming</MenuItem>
                     <MenuItem value="completed">Completed</MenuItem>
                   </Select>

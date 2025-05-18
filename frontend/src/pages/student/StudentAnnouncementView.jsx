@@ -109,7 +109,7 @@ const StudentAnnouncementView = () => {
     };
 
     return (
-        <Box sx={{ p: { xs: 1, sm: 2, md: 3 } }}>
+        <Box sx={{ p: { xs: 2, sm: 3 } }}>
             {/* Breadcrumbs */}
             <Breadcrumbs
                 aria-label="breadcrumb"
@@ -153,35 +153,15 @@ const StudentAnnouncementView = () => {
                 </Box>
             ) : error || apiError ? (
                 <Paper sx={{ p: 3, textAlign: 'center' }}>
-                    <Alert
-                        severity="error"
-                        icon={<ErrorIcon />}
-                        sx={{ mb: 2, justifyContent: 'center' }}
-                    >
+                    <Alert severity="error" sx={{ mb: 2 }}>
                         {error || apiError?.message || "This announcement is not available or you don't have permission to view it."}
                     </Alert>
-                    <Button
-                        variant="outlined"
-                        startIcon={<ArrowBackIcon />}
-                        onClick={() => navigate("/app/student/announcements")}
-                        sx={{ borderRadius: 2, mt: 2 }}
-                    >
-                        Back to Announcements
-                    </Button>
                 </Paper>
             ) : !announcementData ? (
                 <Paper sx={{ p: 3, textAlign: 'center' }}>
                     <Typography variant="h6" color="error">
                         Announcement not found
                     </Typography>
-                    <Button
-                        variant="outlined"
-                        startIcon={<ArrowBackIcon />}
-                        onClick={() => navigate("/app/student/announcements")}
-                        sx={{ borderRadius: 2, mt: 2 }}
-                    >
-                        Back to Announcements
-                    </Button>
                 </Paper>
             ) : (
                 <>
@@ -189,7 +169,7 @@ const StudentAnnouncementView = () => {
                     <Paper
                         elevation={1}
                         sx={{
-                            p: { xs: 3, sm: 4 },
+                            p: { xs: 2, sm: 3 },
                             mb: 4,
                             backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.03),
                             backgroundImage: (theme) => `linear-gradient(to right, ${alpha(theme.palette.primary.main, 0.05)}, ${alpha(theme.palette.primary.main, 0.01)})`,
@@ -271,7 +251,7 @@ const StudentAnnouncementView = () => {
                     <Paper
                         elevation={1}
                         sx={{
-                            p: { xs: 2.5, md: 4 },
+                            p: { xs: 2, sm: 3 },
                             borderRadius: 3,
                             mb: 4,
                             boxShadow: theme => `0 3px 10px ${alpha(theme.palette.primary.main, 0.08)}`
@@ -499,15 +479,8 @@ const StudentAnnouncementView = () => {
                     </Paper>
 
                     {/* Action buttons */}
-                    <Box sx={{ display: 'flex', justifyContent: 'flex-start', mt: 3 }}>
-                        <Button
-                            variant="outlined"
-                            startIcon={<ArrowBackIcon />}
-                            onClick={() => navigate("/app/student/announcements")}
-                            sx={{ borderRadius: 2 }}
-                        >
-                            Back to Announcements
-                        </Button>
+                    <Box sx={{ mt: 4, display: 'flex', justifyContent: 'flex-end' }}>
+                        {/* Removed Back button since we have breadcrumbs */}
                     </Box>
                 </>
             )}

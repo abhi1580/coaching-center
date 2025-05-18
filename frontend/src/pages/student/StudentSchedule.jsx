@@ -430,7 +430,7 @@ const StudentSchedule = () => {
     // If there was an error, show an error message
     if (error) {
         return (
-            <Box sx={{ p: 3 }}>
+            <Box sx={{ p: { xs: 2, sm: 3 } }}>
                 <Alert severity="error">{error}</Alert>
             </Box>
         );
@@ -442,9 +442,13 @@ const StudentSchedule = () => {
     const today = format(new Date(), 'EEEE, MMMM d, yyyy');
 
     return (
-        <Box sx={{ p: { xs: 1, sm: 2, md: 3 } }}>
+        <Box sx={{ p: { xs: 2, sm: 3 } }}>
             {/* Breadcrumbs */}
-            <Breadcrumbs aria-label="breadcrumb" sx={{ mb: 3 }} separator="›">
+            <Breadcrumbs
+                sx={{ mb: 2 }}
+                separator="›"
+                aria-label="breadcrumb"
+            >
                 <Link
                     underline="hover"
                     color="inherit"

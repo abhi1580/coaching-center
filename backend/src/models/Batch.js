@@ -67,7 +67,7 @@ const batchSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["upcoming", "active", "completed"],
+      enum: ["upcoming", "Ongoing", "completed"],
       default: "upcoming",
     },
     description: {
@@ -118,9 +118,9 @@ batchSchema.statics.updateBatchStatuses = async function () {
       {
         startDate: { $lte: now },
         endDate: { $gte: now },
-        status: { $ne: "active" }
+        status: { $ne: "Ongoing" }
       },
-      { status: "active" }
+      { status: "Ongoing" }
     );
 
     // Update upcoming batches

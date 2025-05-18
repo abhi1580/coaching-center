@@ -125,7 +125,7 @@ function TeacherBatchDetail() {
   // Get status color
   const getStatusColor = (status) => {
     switch (status?.toLowerCase()) {
-      case "active":
+      case "ongoing":
         return "success";
       case "upcoming":
         return "warning";

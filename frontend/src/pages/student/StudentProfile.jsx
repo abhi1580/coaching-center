@@ -292,9 +292,9 @@ const StudentProfile = () => {
     );
   }
 
-  if (error && !studentData) {
+  if (error) {
     return (
-      <Box sx={{ p: 3 }}>
+      <Box sx={{ p: { xs: 2, sm: 3 } }}>
         <Alert severity="error">{error}</Alert>
       </Box>
     );
@@ -695,13 +695,13 @@ const StudentProfile = () => {
                     >
                       {studentData?.joiningDate
                         ? new Date(studentData.joiningDate).toLocaleDateString(
-                            "en-US",
-                            {
-                              year: "numeric",
-                              month: "long",
-                              day: "numeric",
-                            }
-                          )
+                          "en-US",
+                          {
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric",
+                          }
+                        )
                         : "Not provided"}
                     </Typography>
                   </Box>
@@ -721,13 +721,13 @@ const StudentProfile = () => {
                     >
                       {studentData?.dateOfBirth
                         ? new Date(studentData.dateOfBirth).toLocaleDateString(
-                            "en-US",
-                            {
-                              year: "numeric",
-                              month: "long",
-                              day: "numeric",
-                            }
-                          )
+                          "en-US",
+                          {
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric",
+                          }
+                        )
                         : "Not provided"}
                     </Typography>
                   </Box>

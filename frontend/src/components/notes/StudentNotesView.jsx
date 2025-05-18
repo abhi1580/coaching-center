@@ -300,7 +300,7 @@ const StudentNotesView = () => {
     );
 
     return (
-        <Box>
+        <Box sx={{ p: { xs: 2, sm: 3 } }}>
             {isMobile ? renderMobileView() : renderDesktopView()}
 
             <Snackbar

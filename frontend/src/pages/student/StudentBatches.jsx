@@ -7,7 +7,6 @@ import {
   Grid,
   Card,
   CardContent,
-  CardActions,
   Button,
   Avatar,
   Chip,
@@ -16,40 +15,31 @@ import {
   Alert,
   useTheme,
   alpha,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemAvatar,
-  ListItemSecondaryAction,
-  IconButton,
-  Collapse,
-  TableContainer,
-  Table,
-  TableHead,
-  TableBody,
-  TableRow,
-  TableCell,
   Tabs,
   Tab,
   Breadcrumbs,
   Link,
+  Stack,
+  IconButton,
+  Tooltip,
+  useMediaQuery,
+  CardHeader,
+  CardMedia,
 } from "@mui/material";
 import {
   ClassOutlined,
   CalendarToday,
   AccessTime,
-  Today,
   Person,
-  ArrowForward,
   Book,
   School,
   LocationOn,
   SubjectOutlined,
-  ExpandMore,
-  ExpandLess,
   Home,
   ArrowBack,
   Schedule,
+  Info as InfoIcon,
+  Event as EventIcon,
 } from "@mui/icons-material";
 import { fetchBatches } from "../../store/slices/batchSlice";
 import { fetchSubjects } from "../../store/slices/subjectSlice";
@@ -62,14 +52,14 @@ const StudentBatches = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { user } = useSelector((state) => state.auth);
-  const { batches } = useSelector((state) => state.batches);
-  const { subjects } = useSelector((state) => state.subjects);
-  const { teachers } = useSelector((state) => state.teachers);
+
+  // Responsive breakpoints
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const isTablet = useMediaQuery(theme.breakpoints.down("md"));
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [studentData, setStudentData] = useState(null);
-  const [expandedBatch, setExpandedBatch] = useState(null);
   const [tabValue, setTabValue] = useState(0);
   const [localSubjects, setLocalSubjects] = useState([]);
   const [localTeachers, setLocalTeachers] = useState([]);
@@ -85,7 +75,6 @@ const StudentBatches = () => {
         );
         console.log("Student Data Response:", studentResponse);
 
-        // The API returns data in a nested structure with { data: { data: actualData } }
         // Extract the actual student data from the nested structure
         const actualStudentData = studentResponse.data.data;
         console.log("Actual Student Data:", actualStudentData);
@@ -184,7 +173,7 @@ const StudentBatches = () => {
 
   const getStatusColor = (status) => {
     switch (status?.toLowerCase()) {
-      case "active":
+      case "ongoing":
         return "success";
       case "upcoming":
         return "warning";
@@ -193,10 +182,6 @@ const StudentBatches = () => {
       default:
         return "default";
     }
-  };
-
-  const handleExpandBatch = (batchId) => {
-    setExpandedBatch(expandedBatch === batchId ? null : batchId);
   };
 
   const handleTabChange = (event, newValue) => {
@@ -220,8 +205,8 @@ const StudentBatches = () => {
     switch (tabValue) {
       case 0: // All
         return studentData.batches;
-      case 1: // Active
-        return studentData.batches.filter((batch) => batch.status === "active");
+      case 1: // Ongoing
+        return studentData.batches.filter((batch) => batch.status === "Ongoing");
       case 2: // Upcoming
         return studentData.batches.filter(
           (batch) => batch.status === "upcoming"
@@ -233,6 +218,22 @@ const StudentBatches = () => {
       default:
         return studentData.batches;
     }
+  };
+
+  // Get batch schedule days formatted as string
+  const getScheduleDays = (batch) => {
+    if (!batch.schedule?.days || !Array.isArray(batch.schedule.days) || batch.schedule.days.length === 0) {
+      return "No schedule";
+    }
+    return batch.schedule.days.join(", ");
+  };
+
+  // Get batch schedule time formatted
+  const getScheduleTime = (batch) => {
+    if (!batch.schedule?.startTime || !batch.schedule?.endTime) {
+      return "No time set";
+    }
+    return `${formatTime(batch.schedule.startTime)} - ${formatTime(batch.schedule.endTime)}`;
   };
 
   if (loading) {
@@ -252,7 +253,7 @@ const StudentBatches = () => {
 
   if (error) {
     return (
-      <Box sx={{ p: 3 }}>
+      <Box sx={{ p: { xs: 2, sm: 3 } }}>
         <Alert severity="error">{error}</Alert>
       </Box>
     );
@@ -272,8 +273,8 @@ const StudentBatches = () => {
           href="/app/student/dashboard"
           sx={{ display: "flex", alignItems: "center" }}
         >
-          <Book sx={{ mr: 0.5 }} fontSize="small" />
-          Student Dashboard
+          <Home sx={{ mr: 0.5 }} fontSize="small" />
+          Dashboard
         </Link>
         <Typography
           color="text.primary"
@@ -285,42 +286,94 @@ const StudentBatches = () => {
       </Breadcrumbs>
 
       {/* Page Header */}
-      <Box
+      <Paper
+        elevation={0}
         sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
+          p: { xs: 2, sm: 3 },
           mb: 3,
+          backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.05),
+          borderRadius: 2,
+          position: 'relative',
+          overflow: 'hidden',
         }}
       >
-        <Typography variant="h5" fontWeight="bold">
-          My Enrolled Batches
-        </Typography>
-        <Button
-          variant="outlined"
-          startIcon={<ArrowBack />}
-          onClick={() => navigate("/app/student/dashboard")}
-        >
-          Back to Dashboard
-        </Button>
-      </Box>
+        <Box
+          sx={{
+            position: 'absolute',
+            top: -20,
+            right: -20,
+            width: 120,
+            height: 120,
+            borderRadius: '50%',
+            backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.08),
+            zIndex: 0,
+          }}
+        />
+
+        <Box sx={{ position: 'relative', zIndex: 1 }}>
+          <Typography
+            variant="h4"
+            component="h1"
+            sx={{
+              fontSize: { xs: "1.5rem", sm: "1.75rem", md: "2rem" },
+              fontWeight: 700,
+              color: "primary.dark",
+              mb: 1,
+            }}
+          >
+            My Enrolled Batches
+          </Typography>
+          <Typography variant="body1" color="text.secondary">
+            View and manage all your enrolled classes and batches
+          </Typography>
+        </Box>
+      </Paper>
 
       {/* Tabs */}
-      <Box sx={{ borderBottom: 1, borderColor: "divider", mb: 3 }}>
+      <Paper
+        sx={{
+          borderRadius: 2,
+          mb: 3,
+          overflow: 'hidden',
+          boxShadow: 1
+        }}
+      >
         <Tabs
           value={tabValue}
           onChange={handleTabChange}
           variant="scrollable"
           scrollButtons="auto"
+          sx={{
+            backgroundColor: (theme) => alpha(theme.palette.background.paper, 0.8),
+            borderBottom: 1,
+            borderColor: 'divider',
+            '& .MuiTab-root': {
+              py: 1.5,
+              px: { xs: 1.5, sm: 3 },
+              minWidth: { xs: 'auto', sm: 120 },
+            },
+          }}
         >
-          <Tab label="All Batches" />
           <Tab
             label={
               <Box sx={{ display: "flex", alignItems: "center" }}>
-                Active
+                All
+                <Chip
+                  label={studentData?.batches?.length || 0}
+                  size="small"
+                  color="default"
+                  sx={{ ml: 1, height: 20, minWidth: 20 }}
+                />
+              </Box>
+            }
+          />
+          <Tab
+            label={
+              <Box sx={{ display: "flex", alignItems: "center" }}>
+                Ongoing
                 <Chip
                   label={
-                    studentData?.batches?.filter((b) => b.status === "active")
+                    studentData?.batches?.filter((b) => b.status === "Ongoing")
                       .length || 0
                   }
                   size="small"
@@ -340,7 +393,7 @@ const StudentBatches = () => {
                       .length || 0
                   }
                   size="small"
-                  color="info"
+                  color="warning"
                   sx={{ ml: 1, height: 20, minWidth: 20 }}
                 />
               </Box>
@@ -357,14 +410,14 @@ const StudentBatches = () => {
                     ).length || 0
                   }
                   size="small"
-                  color="warning"
+                  color="error"
                   sx={{ ml: 1, height: 20, minWidth: 20 }}
                 />
               </Box>
             }
           />
         </Tabs>
-      </Box>
+      </Paper>
 
       {/* Batches */}
       {filteredBatches.length === 0 ? (
@@ -376,6 +429,7 @@ const StudentBatches = () => {
             bgcolor: alpha(theme.palette.info.light, 0.05),
           }}
         >
+          <ClassOutlined sx={{ fontSize: 60, color: alpha(theme.palette.info.main, 0.3), mb: 2 }} />
           <Typography variant="h6" color="text.secondary" gutterBottom>
             No batches found
           </Typography>
@@ -383,7 +437,7 @@ const StudentBatches = () => {
             {tabValue === 0
               ? "You are not enrolled in any batches yet."
               : `You don't have any ${tabValue === 1
-                ? "active"
+                ? "ongoing"
                 : tabValue === 2
                   ? "upcoming"
                   : "completed"
@@ -393,280 +447,98 @@ const StudentBatches = () => {
       ) : (
         <Grid container spacing={3}>
           {filteredBatches.map((batch) => (
-            <Grid item xs={12} key={batch._id}>
-              <Card sx={{ borderRadius: 2, overflow: "visible" }}>
-                <CardContent sx={{ pb: 1 }}>
-                  <Box
-                    sx={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      mb: 2,
-                    }}
-                  >
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                      <Avatar
-                        sx={{
-                          bgcolor: alpha(theme.palette.primary.main, 0.1),
-                          color: "primary.main",
-                          width: 56,
-                          height: 56,
-                        }}
-                      >
-                        <ClassOutlined fontSize="large" />
-                      </Avatar>
-                      <Box>
-                        <Typography variant="h6" fontWeight="bold">
-                          {batch.name}
+            <Grid item xs={12} sm={6} md={4} key={batch._id}>
+              <Card
+                sx={{
+                  height: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  borderRadius: 2,
+                  overflow: 'visible',
+                  transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+                  '&:hover': {
+                    transform: 'translateY(-8px)',
+                    boxShadow: 6,
+                  },
+                }}
+                elevation={2}
+              >
+                <CardHeader
+                  title={
+                    <Typography variant="h6" fontWeight="bold">
+                      {batch.name}
+                    </Typography>
+                  }
+                  subheader={
+                    <Box sx={{ display: "flex", alignItems: "center", mt: 0.5 }}>
+                      <SubjectOutlined fontSize="small" sx={{ mr: 0.5, color: "text.secondary" }} />
+                      <Typography variant="body2" color="text.secondary">
+                        {getSubjectName(batch.subject)}
+                      </Typography>
+                    </Box>
+                  }
+                  action={
+                    <Chip
+                      label={batch.status || "Unknown"}
+                      size="small"
+                      color={getStatusColor(batch.status)}
+                      sx={{
+                        textTransform: "capitalize",
+                        fontWeight: 500,
+                        letterSpacing: '0.5px',
+                      }}
+                    />
+                  }
+                  sx={{
+                    pb: 0.5,
+                    pt: 2,
+                    px: 2,
+                    '& .MuiCardHeader-content': { overflow: 'hidden' },
+                  }}
+                />
+
+                <CardContent sx={{ pt: 1, pb: 2, px: 3, flexGrow: 1 }}>
+                  <Stack spacing={2} sx={{ mt: 1.5 }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      <Person fontSize="small" color="primary" />
+                      <Typography variant="body2">
+                        <strong>Teacher:</strong> {getTeacherName(batch.teacher)}
+                      </Typography>
+                    </Box>
+
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      <Schedule fontSize="small" color="primary" />
+                      <Typography variant="body2">
+                        <strong>Days:</strong> {getScheduleDays(batch)}
+                      </Typography>
+                    </Box>
+
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      <AccessTime fontSize="small" color="primary" />
+                      <Typography variant="body2">
+                        <strong>Time:</strong> {getScheduleTime(batch)}
+                      </Typography>
+                    </Box>
+
+                    <Divider />
+
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      <CalendarToday fontSize="small" color="primary" />
+                      <Typography variant="body2">
+                        <strong>Duration:</strong> {formatDate(batch.startDate)} - {formatDate(batch.endDate)}
+                      </Typography>
+                    </Box>
+
+                    {batch.description && batch.description.length > 0 && (
+                      <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1, mt: 0.5 }}>
+                        <InfoIcon fontSize="small" color="primary" sx={{ mt: 0.3 }} />
+                        <Typography variant="body2" sx={{ lineHeight: 1.4 }}>
+                          {batch.description}
                         </Typography>
-                        <Box
-                          sx={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 1,
-                            flexWrap: "wrap",
-                          }}
-                        >
-                          <Chip
-                            label={getSubjectName(batch.subject)}
-                            size="small"
-                            sx={{
-                              bgcolor: alpha(theme.palette.secondary.main, 0.1),
-                              color: "secondary.main",
-                            }}
-                            icon={
-                              <SubjectOutlined
-                                style={{ fontSize: "0.875rem" }}
-                              />
-                            }
-                          />
-                          <Chip
-                            label={batch.status || "Unknown"}
-                            size="small"
-                            color={getStatusColor(batch.status)}
-                            sx={{ textTransform: "capitalize" }}
-                          />
-                        </Box>
                       </Box>
-                    </Box>
-
-                    <IconButton onClick={() => handleExpandBatch(batch._id)}>
-                      {expandedBatch === batch._id ? (
-                        <ExpandLess />
-                      ) : (
-                        <ExpandMore />
-                      )}
-                    </IconButton>
-                  </Box>
-
-                  <Divider sx={{ mb: 2 }} />
-
-                  <Grid container spacing={2}>
-                    <Grid item xs={12} sm={4}>
-                      <Box
-                        sx={{ display: "flex", alignItems: "center", gap: 1 }}
-                      >
-                        <Person fontSize="small" color="primary" />
-                        <Box>
-                          <Typography variant="body2" color="text.secondary">
-                            Teacher
-                          </Typography>
-                          <Typography variant="body1">
-                            {getTeacherName(batch.teacher)}
-                          </Typography>
-                        </Box>
-                      </Box>
-                    </Grid>
-
-                    <Grid item xs={12} sm={4}>
-                      <Box
-                        sx={{ display: "flex", alignItems: "center", gap: 1 }}
-                      >
-                        <Schedule fontSize="small" color="primary" />
-                        <Box>
-                          <Typography variant="body2" color="text.secondary">
-                            Schedule
-                          </Typography>
-                          <Typography variant="body1">
-                            {batch.schedule?.days?.join(", ") || "No schedule"}
-                          </Typography>
-                        </Box>
-                      </Box>
-                    </Grid>
-
-                    <Grid item xs={12} sm={4}>
-                      <Box
-                        sx={{ display: "flex", alignItems: "center", gap: 1 }}
-                      >
-                        <AccessTime fontSize="small" color="primary" />
-                        <Box>
-                          <Typography variant="body2" color="text.secondary">
-                            Time
-                          </Typography>
-                          <Typography variant="body1">
-                            {batch.schedule?.startTime &&
-                              batch.schedule?.endTime
-                              ? `${formatTime(
-                                batch.schedule.startTime
-                              )} - ${formatTime(batch.schedule.endTime)}`
-                              : "Not specified"}
-                          </Typography>
-                        </Box>
-                      </Box>
-                    </Grid>
-                  </Grid>
-
-                  <Collapse in={expandedBatch === batch._id}>
-                    <Box sx={{ mt: 3 }}>
-                      <Divider sx={{ mb: 2 }} />
-
-                      <Grid container spacing={2}>
-                        <Grid item xs={12} sm={4}>
-                          <Box
-                            sx={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 1,
-                            }}
-                          >
-                            <CalendarToday fontSize="small" color="primary" />
-                            <Box>
-                              <Typography
-                                variant="body2"
-                                color="text.secondary"
-                              >
-                                Start Date
-                              </Typography>
-                              <Typography variant="body1">
-                                {formatDate(batch.startDate)}
-                              </Typography>
-                            </Box>
-                          </Box>
-                        </Grid>
-
-                        <Grid item xs={12} sm={4}>
-                          <Box
-                            sx={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 1,
-                            }}
-                          >
-                            <CalendarToday fontSize="small" color="primary" />
-                            <Box>
-                              <Typography
-                                variant="body2"
-                                color="text.secondary"
-                              >
-                                End Date
-                              </Typography>
-                              <Typography variant="body1">
-                                {formatDate(batch.endDate)}
-                              </Typography>
-                            </Box>
-                          </Box>
-                        </Grid>
-
-                        <Grid item xs={12} sm={4}>
-                          <Box
-                            sx={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 1,
-                            }}
-                          >
-                            <LocationOn fontSize="small" color="primary" />
-                            <Box>
-                              <Typography
-                                variant="body2"
-                                color="text.secondary"
-                              >
-                                Location
-                              </Typography>
-                              <Typography variant="body1">
-                                {batch.location || "Not specified"}
-                              </Typography>
-                            </Box>
-                          </Box>
-                        </Grid>
-
-                        <Grid item xs={12}>
-                          <Typography
-                            variant="body2"
-                            color="text.secondary"
-                            gutterBottom
-                          >
-                            Description
-                          </Typography>
-                          <Typography variant="body1">
-                            {batch.description || "No description available."}
-                          </Typography>
-                        </Grid>
-
-                        {batch.syllabus && batch.syllabus.length > 0 && (
-                          <Grid item xs={12}>
-                            <Typography
-                              variant="body2"
-                              color="text.secondary"
-                              gutterBottom
-                            >
-                              Syllabus
-                            </Typography>
-                            <TableContainer
-                              component={Paper}
-                              variant="outlined"
-                              sx={{ mt: 1 }}
-                            >
-                              <Table size="small">
-                                <TableHead
-                                  sx={{
-                                    bgcolor: alpha(
-                                      theme.palette.primary.main,
-                                      0.05
-                                    ),
-                                  }}
-                                >
-                                  <TableRow>
-                                    <TableCell width="15%">Week</TableCell>
-                                    <TableCell>Topic</TableCell>
-                                    <TableCell>Description</TableCell>
-                                  </TableRow>
-                                </TableHead>
-                                <TableBody>
-                                  {batch.syllabus.map((item, index) => (
-                                    <TableRow key={index}>
-                                      <TableCell>
-                                        {item.week || index + 1}
-                                      </TableCell>
-                                      <TableCell>
-                                        {item.topic || "Not specified"}
-                                      </TableCell>
-                                      <TableCell>
-                                        {item.description || "No description"}
-                                      </TableCell>
-                                    </TableRow>
-                                  ))}
-                                </TableBody>
-                              </Table>
-                            </TableContainer>
-                          </Grid>
-                        )}
-                      </Grid>
-                    </Box>
-                  </Collapse>
+                    )}
+                  </Stack>
                 </CardContent>
-
-                <CardActions sx={{ justifyContent: "flex-end", p: 2 }}>
-                  <Button
-                    size="small"
-                    endIcon={<ArrowForward />}
-                    onClick={() =>
-                      navigate(`/app/student/batches/${batch._id}`)
-                    }
-                  >
-                    View Details
-                  </Button>
-                </CardActions>
               </Card>
             </Grid>
           ))}

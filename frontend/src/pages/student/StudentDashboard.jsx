@@ -141,7 +141,7 @@ const StudentDashboard = () => {
         console.log("Generating upcoming classes from batches:", batches);
 
         batches.forEach((batch) => {
-            if (batch.status === 'active' && batch.schedule && batch.schedule.days) {
+            if (batch.status === 'Ongoing' && batch.schedule && batch.schedule.days) {
                 console.log(`Processing batch ${batch.name} with days:`, batch.schedule.days);
 
                 batch.schedule.days.forEach((day) => {
@@ -230,10 +230,8 @@ const StudentDashboard = () => {
 
     if (error) {
         return (
-            <Box sx={{ p: 3 }}>
-                <Alert severity="error">
-                    {error}
-                </Alert>
+            <Box sx={{ p: { xs: 2, sm: 3 } }}>
+                <Alert severity="error">{error}</Alert>
             </Box>
         );
     }
@@ -465,7 +463,7 @@ const StudentDashboard = () => {
                                                     label={batch.status || "N/A"}
                                                     size="small"
                                                     color={
-                                                        batch.status === "active" ? "success" :
+                                                        batch.status === "Ongoing" ? "success" :
                                                             batch.status === "upcoming" ? "info" :
                                                                 batch.status === "completed" ? "warning" : "default"
                                                     }

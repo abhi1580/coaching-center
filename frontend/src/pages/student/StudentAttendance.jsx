@@ -280,7 +280,7 @@ const StudentAttendance = () => {
 
   if (error) {
     return (
-      <Box sx={{ p: 3 }}>
+      <Box sx={{ p: { xs: 2, sm: 3 } }}>
         <Alert severity="error">{error}</Alert>
       </Box>
     );
@@ -320,13 +320,7 @@ const StudentAttendance = () => {
         <Typography variant="h5" fontWeight="bold">
           Attendance History
         </Typography>
-        <Button
-          variant="outlined"
-          startIcon={<ArrowBack />}
-          onClick={() => navigate("/app/student/dashboard")}
-        >
-          Back to Dashboard
-        </Button>
+                  {/* Removed Back to Dashboard button since we have breadcrumbs */}
       </Box>
 
       {/* Attendance Summary */}
@@ -400,10 +394,10 @@ const StudentAttendance = () => {
                   overallAttendance.percentage >= 90
                     ? "success.main"
                     : overallAttendance.percentage >= 75
-                    ? "info.main"
-                    : overallAttendance.percentage >= 60
-                    ? "warning.main"
-                    : "error.main"
+                      ? "info.main"
+                      : overallAttendance.percentage >= 60
+                        ? "warning.main"
+                        : "error.main"
                 }
               >
                 {overallAttendance.percentage}%

@@ -191,7 +191,7 @@ const BatchList = () => {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case "active":
+      case "Ongoing":
         return "success";
       case "upcoming":
         return "warning";
