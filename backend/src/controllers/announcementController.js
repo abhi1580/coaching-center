@@ -30,6 +30,20 @@ const createDateTime = (date, time) => {
     }
 
     // Handle string dates - expected format YYYY-MM-DD
+    if (typeof date === 'string' && date.match(/^\d{4}-\d{2}-\d{2}$/)) {
+      const [year, month, day] = date.split('-').map(Number);
+      const [hours, minutes] = time.split(':').map(Number);
+      
+      // For end dates with time 23:59, ensure they stay on the same day
+      // by creating the date directly in local timezone
+      const dateTime = new Date(year, month - 1, day, hours, minutes);
+      
+      // For Indian timezone (UTC+5:30), no additional adjustment needed
+      // as we're creating the date directly in local timezone
+      return dateTime;
+    }
+    
+    // Fallback to standard date parsing
     const dateTime = new Date(`${date}T${time}`);
     if (isNaN(dateTime.getTime())) {
       throw new Error("Invalid date or time format");
@@ -42,6 +56,16 @@ const createDateTime = (date, time) => {
 };
 
 const validateDateTime = (startDateTime, endDateTime) => {
+  // Convert to date strings for comparison to ignore time
+  const startDateStr = startDateTime.toISOString().split('T')[0];
+  const endDateStr = endDateTime.toISOString().split('T')[0];
+  
+  // If dates are the same, that's valid (will use 00:00 to 23:59)
+  if (startDateStr === endDateStr) {
+    return;
+  }
+  
+  // Otherwise check if end date is after start date
   if (endDateTime < startDateTime) {
     throw new Error("End date/time must be on or after start date/time");
   }

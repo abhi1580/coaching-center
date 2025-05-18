@@ -45,11 +45,8 @@ export const createAnnouncement = createAsyncThunk(
           return dateString;
         }
         
-        // Otherwise format it
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        return `${year}-${month}-${day}`;
+        // Otherwise format it without timezone issues
+        return dateString.split('T')[0]; // Extract just the YYYY-MM-DD part
       };
 
       const formattedData = {
@@ -99,11 +96,8 @@ export const updateAnnouncement = createAsyncThunk(
           return dateString;
         }
         
-        // Otherwise format it
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        return `${year}-${month}-${day}`;
+        // Otherwise format it without timezone issues
+        return dateString.split('T')[0]; // Extract just the YYYY-MM-DD part
       };
 
       const formattedData = {
@@ -337,13 +331,21 @@ export const formatDate = (dateString) => {
 
 export const formatDateForInput = (dateString) => {
   if (!dateString) return "";
+  
+  // If it's already in YYYY-MM-DD format, return as is
+  if (typeof dateString === 'string' && dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
+    return dateString;
+  }
+  
+  // Handle Date objects or other date strings
   const date = new Date(dateString);
   if (isNaN(date.getTime())) return "";
   
-  // Format as YYYY-MM-DD without timezone issues
+  // Format as YYYY-MM-DD in local timezone (Indian timezone)
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
+  
   return `${year}-${month}-${day}`;
 };
 
