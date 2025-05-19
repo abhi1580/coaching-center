@@ -1,4 +1,5 @@
 import { Container, Row, Col, Card, Button, Accordion } from "react-bootstrap";
+import { FaAtom, FaFlask, FaDna, FaBook, FaGraduationCap, FaMedal, FaTrophy } from "react-icons/fa";
 
 function Courses() {
   const courses = [
@@ -6,21 +7,25 @@ function Courses() {
       subject: "Physics",
       level: "Class 11-12",
       duration: "1 Hour",
+      icon: <FaAtom size={40} className="text-warning mb-3" />
     },
     {
       subject: "Chemistry",
       level: "Class 11-12",
       duration: "1 Hour",
+      icon: <FaFlask size={40} className="text-warning mb-3" />
     },
     {
       subject: "Biology",
       level: "Class 11-12",
       duration: "1 Hour",
+      icon: <FaDna size={40} className="text-warning mb-3" />
     },
     {
       subject: "Math/English/Sci",
       level: "Class 8 To 10",
       duration: "1 Hour",
+      icon: <FaBook size={40} className="text-warning mb-3" />
     },
   ];
 
@@ -31,8 +36,9 @@ function Courses() {
         <Row>
           {courses.map((course, i) => (
             <Col md={6} lg={3} key={i} className="mb-4">
-              <Card>
-                <Card.Body>
+              <Card className="h-100">
+                <Card.Body className="text-center">
+                  {course.icon}
                   <Card.Title>{course.subject}</Card.Title>
                   <Card.Text>
                     <strong>Level:</strong> {course.level}
@@ -52,8 +58,9 @@ function Courses() {
           <h3 className="text-center mb-4 section-title">Preparation</h3>
           <Row>
             <Col md={6}>
-              <Card className="mb-4">
-                <Card.Body>
+              <Card className="mb-4 h-100">
+                <Card.Body className="text-center">
+                  <FaGraduationCap size={40} className="text-warning mb-3" />
                   <Card.Title>NEET Preparation</Card.Title>
                   <Card.Text>
                     Our NEET preparation course is designed to help students
@@ -67,8 +74,9 @@ function Courses() {
               </Card>
             </Col>
             <Col md={6}>
-              <Card className="mb-4">
-                <Card.Body>
+              <Card className="mb-4 h-100">
+                <Card.Body className="text-center">
+                  <FaGraduationCap size={40} className="text-warning mb-3" />
                   <Card.Title>JEE Preparation</Card.Title>
                   <Card.Text>
                     Our JEE preparation course provides comprehensive training
@@ -89,7 +97,8 @@ function Courses() {
           <Row>
             <Col md={12}>
               <Card className="mb-4">
-                <Card.Body>
+                <Card.Body className="text-center">
+                  <FaMedal size={40} className="text-warning mb-3" />
                   <Card.Title>Homi Bhabha Exam</Card.Title>
                   <Card.Text>
                     Prepare for the Homi Bhabha Exam with our tailored course
@@ -104,7 +113,8 @@ function Courses() {
             </Col>
             <Col md={12}>
               <Card className="mb-4">
-                <Card.Body>
+                <Card.Body className="text-center">
+                  <FaMedal size={40} className="text-warning mb-3" />
                   <Card.Title>Scholarship Exams</Card.Title>
                   <Card.Text>
                     We provide guidance and training for various scholarship
@@ -118,7 +128,8 @@ function Courses() {
             </Col>
             <Col md={12}>
               <Card className="mb-4">
-                <Card.Body>
+                <Card.Body className="text-center">
+                  <FaTrophy size={40} className="text-warning mb-3" />
                   <Card.Title>Olympiads & Competitive Exams</Card.Title>
                   <Card.Text>
                     Olympiad preparation course sharpens analytical and
@@ -229,7 +240,7 @@ function Courses() {
             competitive. (We believe quality education should be accessible to
             everyone. That's why our <b>fees are negotiable</b> based on
             individual circumstances. Feel free to discuss your needs with
-            us—we’re here to help.)
+            us—we're here to help.)
           </p>
           <table className="table table-bordered text-center">
             <thead className="thead-light">
