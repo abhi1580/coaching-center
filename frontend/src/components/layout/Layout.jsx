@@ -28,6 +28,7 @@ import {
   Payment as PaymentIcon,
   Announcement as AnnouncementIcon,
   Logout as LogoutIcon,
+  VideoLibrary as VideoIcon,
 } from "@mui/icons-material";
 import { useSelector, useDispatch } from "react-redux";
 import { logoutUser } from "../../store/slices/authSlice";
@@ -46,6 +47,11 @@ const menuItems = [
     text: "Announcements",
     icon: <AnnouncementIcon />,
     path: "/app/announcements",
+  },
+  {
+    text: "Video Resources",
+    icon: <VideoIcon />,
+    path: "/app/free-resources/videos",
   },
 ];
 

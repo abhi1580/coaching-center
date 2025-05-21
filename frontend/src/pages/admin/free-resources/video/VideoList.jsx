@@ -1,0 +1,252 @@
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import {
+  Box,
+  Button,
+  Paper,
+  Typography,
+  Grid,
+  Card,
+  CardContent,
+  CardMedia,
+  Chip,
+  IconButton,
+  Stack,
+  Breadcrumbs,
+  Link,
+  CircularProgress,
+  useTheme,
+  useMediaQuery,
+  alpha
+} from '@mui/material';
+import {
+  Add as AddIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+  Home as HomeIcon,
+  VideoLibrary as VideoIcon,
+  Visibility as VisibilityIcon,
+  ThumbUp as ThumbUpIcon,
+  AccessTime as AccessTimeIcon
+} from '@mui/icons-material';
+import api from '../../../../services/common/apiClient';
+import Swal from 'sweetalert2';
+
+const VideoList = () => {
+  const navigate = useNavigate();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const [videos, setVideos] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchVideos();
+  }, []);
+
+  const fetchVideos = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get('/videos');
+      setVideos(response.data);
+    } catch (error) {
+      console.error('Error fetching videos:', error);
+      Swal.fire({
+        title: 'Error',
+        text: 'Failed to fetch videos. Please try again.',
+        icon: 'error',
+        confirmButtonColor: 'var(--accent-yellow)'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async (id) => {
+    try {
+      const result = await Swal.fire({
+        title: 'Are you sure?',
+        text: "You won't be able to revert this!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: 'var(--accent-yellow)',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Yes, delete it!'
+      });
+
+      if (result.isConfirmed) {
+        await api.delete(`/videos/${id}`);
+        setVideos(videos.filter(video => video._id !== id));
+        Swal.fire({
+          title: 'Deleted!',
+          text: 'Video has been deleted.',
+          icon: 'success',
+          confirmButtonColor: 'var(--accent-yellow)'
+        });
+      }
+    } catch (error) {
+      console.error('Error deleting video:', error);
+      Swal.fire({
+        title: 'Error',
+        text: 'Failed to delete video. Please try again.',
+        icon: 'error',
+        confirmButtonColor: 'var(--accent-yellow)'
+      });
+    }
+  };
+
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  return (
+    <Box sx={{ p: { xs: 1, sm: 2, md: 3 } }}>
+      {/* Breadcrumbs */}
+      <Breadcrumbs aria-label="breadcrumb" sx={{ mb: 2, mt: 1 }} separator="›">
+        <Link
+          underline="hover"
+          color="inherit"
+          href="/app/dashboard"
+          sx={{ display: 'flex', alignItems: 'center' }}
+        >
+          <HomeIcon sx={{ mr: 0.5 }} fontSize="small" />
+          Dashboard
+        </Link>
+        <Typography color="text.primary" sx={{ display: 'flex', alignItems: 'center' }}>
+          <VideoIcon sx={{ mr: 0.5 }} fontSize="small" />
+          Video Resources
+        </Typography>
+      </Breadcrumbs>
+
+      {/* Header section */}
+      <Paper
+        elevation={0}
+        sx={{
+          p: { xs: 2, sm: 3 },
+          mb: 3,
+          backgroundColor: (theme) => alpha(theme.palette.primary.light, 0.05),
+          borderRadius: 2,
+        }}
+      >
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
+          <Typography variant="h5" sx={{ fontWeight: 'bold', color: '#343a40' }}>
+            Video Resources
+          </Typography>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => navigate('/app/free-resources/videos/create')}
+            sx={{
+              bgcolor: 'var(--accent-yellow)',
+              color: '#fff',
+              '&:hover': {
+                bgcolor: 'var(--dark-yellow)',
+              },
+              borderRadius: 2,
+              textTransform: 'none',
+              px: 3,
+            }}
+          >
+            Add New Video
+          </Button>
+        </Box>
+      </Paper>
+
+      {/* Video grid */}
+      <Grid container spacing={3}>
+        {videos.map((video) => (
+          <Grid item xs={12} sm={6} md={4} key={video._id}>
+            <Card
+              sx={{
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                transition: 'transform 0.2s',
+                '&:hover': {
+                  transform: 'translateY(-4px)',
+                },
+              }}
+            >
+              <CardMedia
+                component="img"
+                height="200"
+                image={video.thumbnail}
+                alt={video.title}
+                sx={{ objectFit: 'cover' }}
+              />
+              <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+                <Typography gutterBottom variant="h6" component="div" sx={{ fontWeight: 'bold' }}>
+                  {video.title}
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                  {video.description?.substring(0, 100)}...
+                </Typography>
+                
+                <Stack direction="row" spacing={1} sx={{ mb: 2, flexWrap: 'wrap', gap: 1 }}>
+                  <Chip
+                    icon={<VisibilityIcon />}
+                    label={`${video.viewCount} views`}
+                    size="small"
+                    sx={{ bgcolor: alpha(theme.palette.primary.main, 0.1) }}
+                  />
+                  <Chip
+                    icon={<ThumbUpIcon />}
+                    label={`${video.likeCount} likes`}
+                    size="small"
+                    sx={{ bgcolor: alpha(theme.palette.success.main, 0.1) }}
+                  />
+                  <Chip
+                    icon={<AccessTimeIcon />}
+                    label={video.duration}
+                    size="small"
+                    sx={{ bgcolor: alpha(theme.palette.warning.main, 0.1) }}
+                  />
+                </Stack>
+
+                <Box sx={{ mt: 'auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Chip
+                    label={video.subject}
+                    size="small"
+                    sx={{
+                      bgcolor: alpha(theme.palette.primary.main, 0.1),
+                      color: theme.palette.primary.main,
+                    }}
+                  />
+                  <Box>
+                    <IconButton
+                      size="small"
+                      onClick={() => navigate(`/app/free-resources/videos/${video._id}/edit`)}
+                      sx={{ color: theme.palette.primary.main }}
+                    >
+                      <EditIcon />
+                    </IconButton>
+                    <IconButton
+                      size="small"
+                      onClick={() => handleDelete(video._id)}
+                      sx={{ color: theme.palette.error.main }}
+                    >
+                      <DeleteIcon />
+                    </IconButton>
+                  </Box>
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+        ))}
+      </Grid>
+
+      {videos.length === 0 && (
+        <Box sx={{ textAlign: 'center', py: 4 }}>
+          <Typography variant="h6" color="text.secondary">
+            No videos found. Add your first video!
+          </Typography>
+        </Box>
+      )}
+    </Box>
+  );
+};
+
+export default VideoList; 

@@ -11,6 +11,7 @@ import teacherRoutes from "./teacherRoutes.js";
 import studentRoutes from "./studentRoutes.js";
 import attendanceRoutes from "./attendanceRoutes.js";
 import noteRoutes from "./note.routes.js";
+import videoShareRoutes from "./videoShare.routes.js";
 
 // Import role-specific routes
 import adminDashboardRoutes from "./admin/dashboardRoutes.js";
@@ -30,6 +31,7 @@ router.use("/teachers", teacherRoutes);
 router.use("/students", studentRoutes);
 router.use("/attendance", attendanceRoutes);
 router.use("/notes", noteRoutes);
+router.use("/videos", videoShareRoutes);
 
 // Role-specific routes
 router.use("/admin/dashboard", adminDashboardRoutes);

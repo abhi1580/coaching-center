@@ -6,6 +6,7 @@ import { useDispatch } from "react-redux";
 import { Route, BrowserRouter, Routes } from "react-router-dom";
 import ErrorBoundary from "./components/common/ErrorBoundary";
 import LoadingFallback from "./components/common/LoadingFallback";
+import ScrollToTop from "./components/common/ScrollToTop";
 import "./index.css";
 
 // Layout components (not lazy loaded to avoid layout shifts)
@@ -80,6 +81,12 @@ const componentMap = {
   BatchView: lazy(() => import('./pages/admin/batch/BatchView')),
   BatchEdit: lazy(() => import('./pages/admin/batch/BatchEdit')),
 
+  // Admin - Videos
+  VideoList: lazy(() => import('./pages/admin/free-resources/video/VideoList')),
+  VideoCreate: lazy(() => import('./pages/admin/free-resources/video/VideoCreate')),
+  VideoEdit: lazy(() => import('./pages/admin/free-resources/video/VideoEdit')),
+  VideoShare: lazy(() => import('./pages/admin/free-resources/video/VideoShare')),
+
   // Teacher pages
   TeacherDashboard: lazy(() => import('./pages/teacher/TeacherDashboard')),
   TeacherBatches: lazy(() => import('./pages/teacher/TeacherBatches')),
@@ -137,6 +144,7 @@ function App() {
         <BrowserRouter
           future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
         >
+          <ScrollToTop />
           <Suspense fallback={<LoadingFallback />}>
             <Routes>
               {/* Public routes with shared layout */}
