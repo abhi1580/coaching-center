@@ -54,7 +54,7 @@ export const adminRoutes = [
   { path: 'batches/:id', component: 'BatchView' },
   { path: 'batches/:id/edit', component: 'BatchEdit' },
   // Video routes
-  { path: 'free-resources/videos', component: 'VideoShare' },
+  { path: 'free-resources/videos', component: 'VideoList' },
   { path: 'free-resources/videos/create', component: 'VideoCreate' },
   { path: 'free-resources/videos/:id/edit', component: 'VideoEdit' },
   // Legacy teacher routes

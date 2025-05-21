@@ -85,7 +85,6 @@ const componentMap = {
   VideoList: lazy(() => import('./pages/admin/free-resources/video/VideoList')),
   VideoCreate: lazy(() => import('./pages/admin/free-resources/video/VideoCreate')),
   VideoEdit: lazy(() => import('./pages/admin/free-resources/video/VideoEdit')),
-  VideoShare: lazy(() => import('./pages/admin/free-resources/video/VideoShare')),
 
   // Teacher pages
   TeacherDashboard: lazy(() => import('./pages/teacher/TeacherDashboard')),

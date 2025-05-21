@@ -17,7 +17,9 @@ import {
   CircularProgress,
   useTheme,
   useMediaQuery,
-  alpha
+  alpha,
+  Alert,
+  Snackbar
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -27,7 +29,8 @@ import {
   VideoLibrary as VideoIcon,
   Visibility as VisibilityIcon,
   ThumbUp as ThumbUpIcon,
-  AccessTime as AccessTimeIcon
+  AccessTime as AccessTimeIcon,
+  PlayArrow as PlayIcon
 } from '@mui/icons-material';
 import api from '../../../../services/common/apiClient';
 import Swal from 'sweetalert2';
@@ -38,6 +41,7 @@ const VideoList = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [videos, setVideos] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     fetchVideos();
@@ -46,16 +50,12 @@ const VideoList = () => {
   const fetchVideos = async () => {
     try {
       setLoading(true);
+      setError(null);
       const response = await api.get('/videos');
       setVideos(response.data);
     } catch (error) {
       console.error('Error fetching videos:', error);
-      Swal.fire({
-        title: 'Error',
-        text: 'Failed to fetch videos. Please try again.',
-        icon: 'error',
-        confirmButtonColor: 'var(--accent-yellow)'
-      });
+      setError('Failed to fetch videos. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -68,8 +68,8 @@ const VideoList = () => {
         text: "You won't be able to revert this!",
         icon: 'warning',
         showCancelButton: true,
-        confirmButtonColor: 'var(--accent-yellow)',
-        cancelButtonColor: '#d33',
+        confirmButtonColor: theme.palette.primary.main,
+        cancelButtonColor: theme.palette.error.main,
         confirmButtonText: 'Yes, delete it!'
       });
 
@@ -80,18 +80,17 @@ const VideoList = () => {
           title: 'Deleted!',
           text: 'Video has been deleted.',
           icon: 'success',
-          confirmButtonColor: 'var(--accent-yellow)'
+          confirmButtonColor: theme.palette.primary.main
         });
       }
     } catch (error) {
       console.error('Error deleting video:', error);
-      Swal.fire({
-        title: 'Error',
-        text: 'Failed to delete video. Please try again.',
-        icon: 'error',
-        confirmButtonColor: 'var(--accent-yellow)'
-      });
+      setError('Failed to delete video. Please try again.');
     }
+  };
+
+  const handleWatch = (youtubeLink) => {
+    window.open(youtubeLink, '_blank');
   };
 
   if (loading) {
@@ -132,7 +131,7 @@ const VideoList = () => {
         }}
       >
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
-          <Typography variant="h5" sx={{ fontWeight: 'bold', color: '#343a40' }}>
+          <Typography variant="h5" sx={{ fontWeight: 'bold', color: theme.palette.text.primary }}>
             Video Resources
           </Typography>
           <Button
@@ -140,10 +139,10 @@ const VideoList = () => {
             startIcon={<AddIcon />}
             onClick={() => navigate('/app/free-resources/videos/create')}
             sx={{
-              bgcolor: 'var(--accent-yellow)',
+              bgcolor: theme.palette.primary.main,
               color: '#fff',
               '&:hover': {
-                bgcolor: 'var(--dark-yellow)',
+                bgcolor: theme.palette.primary.dark,
               },
               borderRadius: 2,
               textTransform: 'none',
@@ -155,6 +154,17 @@ const VideoList = () => {
         </Box>
       </Paper>
 
+      {/* Error Alert */}
+      {error && (
+        <Alert
+          severity="error"
+          sx={{ mb: 3 }}
+          onClose={() => setError(null)}
+        >
+          {error}
+        </Alert>
+      )}
+
       {/* Video grid */}
       <Grid container spacing={3}>
         {videos.map((video) => (
@@ -164,9 +174,10 @@ const VideoList = () => {
                 height: '100%',
                 display: 'flex',
                 flexDirection: 'column',
-                transition: 'transform 0.2s',
+                transition: 'transform 0.2s, box-shadow 0.2s',
                 '&:hover': {
                   transform: 'translateY(-4px)',
+                  boxShadow: theme.shadows[4],
                 },
               }}
             >
@@ -178,44 +189,61 @@ const VideoList = () => {
                 sx={{ objectFit: 'cover' }}
               />
               <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
-                <Typography gutterBottom variant="h6" component="div" sx={{ fontWeight: 'bold' }}>
-                  {video.title}
-                </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                  {video.description?.substring(0, 100)}...
-                </Typography>
-                
-                <Stack direction="row" spacing={1} sx={{ mb: 2, flexWrap: 'wrap', gap: 1 }}>
-                  <Chip
-                    icon={<VisibilityIcon />}
-                    label={`${video.viewCount} views`}
-                    size="small"
-                    sx={{ bgcolor: alpha(theme.palette.primary.main, 0.1) }}
-                  />
-                  <Chip
-                    icon={<ThumbUpIcon />}
-                    label={`${video.likeCount} likes`}
-                    size="small"
-                    sx={{ bgcolor: alpha(theme.palette.success.main, 0.1) }}
-                  />
-                  <Chip
-                    icon={<AccessTimeIcon />}
-                    label={video.duration}
-                    size="small"
-                    sx={{ bgcolor: alpha(theme.palette.warning.main, 0.1) }}
-                  />
-                </Stack>
-
-                <Box sx={{ mt: 'auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Chip
-                    label={video.subject}
-                    size="small"
-                    sx={{
-                      bgcolor: alpha(theme.palette.primary.main, 0.1),
-                      color: theme.palette.primary.main,
-                    }}
-                  />
+                <Stack spacing={2}>
                   <Box>
+                    <Chip
+                      label={video.subject}
+                      size="small"
+                      sx={{
+                        mb: 1,
+                        bgcolor: alpha(theme.palette.primary.main, 0.1),
+                        color: theme.palette.primary.main,
+                      }}
+                    />
+                    <Typography gutterBottom variant="h6" component="div" sx={{ fontWeight: 'bold' }}>
+                      {video.title}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {video.description?.substring(0, 100)}...
+                    </Typography>
+                  </Box>
+
+                  <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', gap: 1 }}>
+                    <Chip
+                      icon={<VisibilityIcon />}
+                      label={`${video.viewCount} views`}
+                      size="small"
+                      sx={{ bgcolor: alpha(theme.palette.primary.main, 0.1) }}
+                    />
+                    <Chip
+                      icon={<ThumbUpIcon />}
+                      label={`${video.likeCount} likes`}
+                      size="small"
+                      sx={{ bgcolor: alpha(theme.palette.success.main, 0.1) }}
+                    />
+                    <Chip
+                      icon={<AccessTimeIcon />}
+                      label={video.duration}
+                      size="small"
+                      sx={{ bgcolor: alpha(theme.palette.warning.main, 0.1) }}
+                    />
+                  </Stack>
+
+                  <Stack direction="row" spacing={1} sx={{ mt: 'auto' }}>
+                    <Button
+                      variant="contained"
+                      startIcon={<PlayIcon />}
+                      fullWidth
+                      onClick={() => handleWatch(video.youtubeLink)}
+                      sx={{
+                        bgcolor: theme.palette.primary.main,
+                        '&:hover': {
+                          bgcolor: theme.palette.primary.dark,
+                        },
+                      }}
+                    >
+                      Watch
+                    </Button>
                     <IconButton
                       size="small"
                       onClick={() => navigate(`/app/free-resources/videos/${video._id}/edit`)}
@@ -230,15 +258,15 @@ const VideoList = () => {
                     >
                       <DeleteIcon />
                     </IconButton>
-                  </Box>
-                </Box>
+                  </Stack>
+                </Stack>
               </CardContent>
             </Card>
           </Grid>
         ))}
       </Grid>
 
-      {videos.length === 0 && (
+      {videos.length === 0 && !error && (
         <Box sx={{ textAlign: 'center', py: 4 }}>
           <Typography variant="h6" color="text.secondary">
             No videos found. Add your first video!
