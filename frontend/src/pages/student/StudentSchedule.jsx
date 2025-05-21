@@ -186,22 +186,21 @@ const StudentSchedule = () => {
                         const formattedEndTime = formatTimeForComparison(endTime);
                         const timeSlot = `${formattedStartTime} - ${formattedEndTime}`;
 
-                        // Find the closest standard time slot
-                        const matchedSlot = findClosestTimeSlot(startTime, endTime);
-
-                        if (matchedSlot) {
-                            scheduleMatrix[day][matchedSlot].push({
-                                id: batch._id,
-                                name: batch.name,
-                                subject: batch.subject?.name || 'Unknown Subject',
-                                teacher: batch.teacher?.name || 'Unknown Teacher',
-                                time: timeSlot,
-                                actualSlot: matchedSlot,
-                                room: batch.schedule.room || "TBD",
-                                description: batch.description || "",
-                                standard: batch.standard?.name || "",
-                            });
+                        // Add to schedule matrix using actual time slot
+                        if (!scheduleMatrix[day][timeSlot]) {
+                            scheduleMatrix[day][timeSlot] = [];
                         }
+
+                        scheduleMatrix[day][timeSlot].push({
+                            id: batch._id,
+                            name: batch.name,
+                            subject: batch.subject?.name || 'Unknown Subject',
+                            teacher: batch.teacher?.name || 'Unknown Teacher',
+                            time: timeSlot,
+                            room: batch.schedule.room || "TBD",
+                            description: batch.description || "",
+                            standard: batch.standard?.name || "",
+                        });
                     });
                 }
                 // Case 2: Old structure - schedule is an array of session objects
@@ -222,22 +221,21 @@ const StudentSchedule = () => {
                         const formattedEndTime = formatTimeForComparison(endTime);
                         const timeSlot = `${formattedStartTime} - ${formattedEndTime}`;
 
-                        // Find the closest standard time slot
-                        const matchedSlot = findClosestTimeSlot(startTime, endTime);
-
-                        if (matchedSlot) {
-                            scheduleMatrix[day][matchedSlot].push({
-                                id: batch._id,
-                                name: batch.name,
-                                subject: batch.subject?.name || 'Unknown Subject',
-                                teacher: batch.teacher?.name || 'Unknown Teacher',
-                                time: timeSlot,
-                                actualSlot: matchedSlot,
-                                room: session.room || "TBD",
-                                description: batch.description || "",
-                                standard: batch.standard?.name || "",
-                            });
+                        // Add to schedule matrix using actual time slot
+                        if (!scheduleMatrix[day][timeSlot]) {
+                            scheduleMatrix[day][timeSlot] = [];
                         }
+
+                        scheduleMatrix[day][timeSlot].push({
+                            id: batch._id,
+                            name: batch.name,
+                            subject: batch.subject?.name || 'Unknown Subject',
+                            teacher: batch.teacher?.name || 'Unknown Teacher',
+                            time: timeSlot,
+                            room: session.room || "TBD",
+                            description: batch.description || "",
+                            standard: batch.standard?.name || "",
+                        });
                     });
                 }
                 // Neither structure found - log for debugging
@@ -253,54 +251,6 @@ const StudentSchedule = () => {
         console.log("Days with classes:", classesByDay);
 
         return { scheduleData: scheduleMatrix, classesByDay };
-    };
-
-    // Improved helper function to find the closest standard time slot
-    const findClosestTimeSlot = (startTime, endTime) => {
-        if (!startTime) return timeSlots[0].display;
-
-        console.log(`Finding time slot match for: ${startTime} - ${endTime}`);
-
-        // Format the time to ensure consistency
-        const formattedStartTime = formatTimeForComparison(startTime);
-        const formattedEndTime = formatTimeForComparison(endTime);
-
-        console.log(`Formatted time: ${formattedStartTime} - ${formattedEndTime}`);
-
-        // Try to match exactly first
-        for (const slot of timeSlots) {
-            const slotStartFormatted = formatTimeForComparison(slot.start);
-            if (formattedStartTime === slotStartFormatted) {
-                console.log(`  Exact match found: ${slot.display}`);
-                return slot.display;
-            }
-        }
-
-        // If no exact match, find the closest slot by converting to minutes
-        const startMinutes = timeToMinutes(formattedStartTime);
-        let closestSlot = timeSlots[0];
-        let minDifference = Math.abs(startMinutes - timeToMinutes(formatTimeForComparison(closestSlot.start)));
-
-        for (const slot of timeSlots) {
-            const slotMinutes = timeToMinutes(formatTimeForComparison(slot.start));
-            const difference = Math.abs(startMinutes - slotMinutes);
-
-            if (difference < minDifference) {
-                minDifference = difference;
-                closestSlot = slot;
-            }
-        }
-
-        console.log(`  Closest match: ${closestSlot.display}`);
-
-        // If still no good match, just return the custom formatted time
-        if (minDifference > 30) { // If difference is more than 30 minutes
-            const customSlot = `${formattedStartTime} - ${formattedEndTime}`;
-            console.log(`  Using custom slot: ${customSlot}`);
-            return customSlot;
-        }
-
-        return closestSlot.display;
     };
 
     // Helper function to format time strings consistently
@@ -746,52 +696,39 @@ const StudentSchedule = () => {
                                                             } : {})
                                                         }}
                                                     >
-                                                        <Box sx={{ display: "flex", alignItems: "center" }}>
-                                                            {day}
-                                                            {day === getCurrentDay() && (
-                                                                <Chip
-                                                                    label="Today"
-                                                                    size="small"
-                                                                    sx={{
-                                                                        ml: 1,
-                                                                        height: "20px",
-                                                                        fontSize: "0.7rem",
-                                                                        fontWeight: 500,
-                                                                        backgroundColor: alpha(PRIMARY_BLUE, 0.15),
-                                                                        color: PRIMARY_BLUE,
-                                                                        border: `1px solid ${PRIMARY_BLUE}`,
-                                                                    }}
-                                                                />
-                                                            )}
-                                                        </Box>
+                                                        {day}
                                                     </TableCell>
                                                 ))}
                                             </TableRow>
                                         </TableHead>
                                         <TableBody>
-                                            {timeSlots.map((slot) => {
+                                            {Object.keys(schedule[weekdays[0]] || {}).sort((a, b) => {
+                                                const timeA = timeToMinutes(a.split(' - ')[0]);
+                                                const timeB = timeToMinutes(b.split(' - ')[0]);
+                                                return timeA - timeB;
+                                            }).map((timeSlot) => {
                                                 const hasAnyClass = weekdays.some(
-                                                    (day) => schedule[day][slot.display]?.length > 0
+                                                    (day) => schedule[day][timeSlot]?.length > 0
                                                 );
 
                                                 if (!hasAnyClass) return null;
 
                                                 return (
-                                                    <TableRow key={slot.display} hover>
+                                                    <TableRow key={timeSlot} hover>
                                                         <TableCell sx={{ whiteSpace: "nowrap", fontWeight: "medium", color: "text.secondary" }}>
                                                             <Box sx={{ display: "flex", alignItems: "center" }}>
                                                                 <TimeIcon sx={{ mr: 1, fontSize: "1rem", color: PRIMARY_BLUE }} />
-                                                                {slot.display}
+                                                                {timeSlot}
                                                             </Box>
                                                         </TableCell>
 
                                                         {weekdays.map((day) => {
-                                                            const classes = schedule[day][slot.display] || [];
+                                                            const classes = schedule[day][timeSlot] || [];
                                                             const isToday = day === getCurrentDay();
 
                                                             return (
                                                                 <TableCell
-                                                                    key={`${day}-${slot.display}`}
+                                                                    key={`${day}-${timeSlot}`}
                                                                     sx={{
                                                                         ...(isToday ? {
                                                                             backgroundColor: alpha(PRIMARY_BLUE, 0.05),
@@ -802,25 +739,17 @@ const StudentSchedule = () => {
                                                                         <Box
                                                                             key={classItem.id}
                                                                             sx={{
-                                                                                p: 1.5,
-                                                                                borderRadius: 1,
-                                                                                backgroundColor: BG_LIGHT_GRAY,
+                                                                                p: 1,
                                                                                 mb: 1,
-                                                                                borderLeft: `3px solid ${PRIMARY_BLUE}`,
-                                                                                transition: "transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out",
-                                                                                "&:hover": {
-                                                                                    transform: "translateY(-3px)",
-                                                                                    boxShadow: "0 4px 8px rgba(0,0,0,0.1)",
-                                                                                }
+                                                                                borderRadius: 1,
+                                                                                backgroundColor: alpha(PRIMARY_BLUE, 0.05),
+                                                                                border: `1px solid ${alpha(PRIMARY_BLUE, 0.1)}`,
                                                                             }}
                                                                         >
-                                                                            <Typography
-                                                                                variant="body2"
-                                                                                sx={{ fontWeight: "bold", color: PRIMARY_BLUE }}
-                                                                            >
+                                                                            <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
                                                                                 {classItem.subject}
                                                                             </Typography>
-                                                                            <Typography variant="caption" display="block">
+                                                                            <Typography variant="caption" color="text.secondary">
                                                                                 {classItem.name}
                                                                             </Typography>
                                                                             <Box sx={{ display: "flex", alignItems: "center", mt: 0.5 }}>
