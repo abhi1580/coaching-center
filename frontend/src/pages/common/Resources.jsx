@@ -259,4 +259,3 @@ return (
 }
 
 export default Resources;
-
