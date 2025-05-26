@@ -29,7 +29,7 @@ import {
   Link,
   InputAdornment,
   CircularProgress,
-  TablePagination
+  TablePagination,
 } from "@mui/material";
 import {
   Add as AddIcon,
@@ -41,11 +41,14 @@ import {
   AccessTime as AccessTimeIcon,
   Clear as ClearIcon,
   Home as HomeIcon,
-  Description as DescriptionIcon
+  Description as DescriptionIcon,
 } from "@mui/icons-material";
-import { fetchSubjects, deleteSubject } from "../../../store/slices/subjectSlice";
+import {
+  fetchSubjects,
+  deleteSubject,
+} from "../../../store/slices/subjectSlice";
 import RefreshButton from "../../../components/common/RefreshButton";
-import Swal from 'sweetalert2';
+import Swal from "sweetalert2";
 
 const SubjectList = () => {
   const dispatch = useDispatch();
@@ -72,6 +75,7 @@ const SubjectList = () => {
     if (!subjects) return;
 
     let results = [...subjects];
+    // console.log("Total subjects:", results.length);
 
     if (nameFilter) {
       const searchTerm = nameFilter.toLowerCase();
@@ -80,6 +84,10 @@ const SubjectList = () => {
       );
     }
 
+    // Reset page to 0 when filter changes
+    setPage(0);
+
+    // console.log("Filtered subjects:", results.length);
     setFilteredSubjects(results);
   }, [subjects, nameFilter]);
 
@@ -95,19 +103,22 @@ const SubjectList = () => {
 
   // Get paginated data
   const getPaginatedData = () => {
-    return filteredSubjects.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
+    return filteredSubjects.slice(
+      page * rowsPerPage,
+      page * rowsPerPage + rowsPerPage
+    );
   };
 
   const openDeleteDialog = (subject) => {
     Swal.fire({
-      title: 'Delete Subject',
+      title: "Delete Subject",
       text: `Are you sure you want to delete "${subject.name}"? This action cannot be undone.`,
-      icon: 'warning',
+      icon: "warning",
       showCancelButton: true,
       confirmButtonColor: theme.palette.error.main,
       cancelButtonColor: theme.palette.grey[500],
-      confirmButtonText: 'Yes, delete it!',
-      cancelButtonText: 'Cancel'
+      confirmButtonText: "Yes, delete it!",
+      cancelButtonText: "Cancel",
     }).then((result) => {
       if (result.isConfirmed) {
         confirmDelete(subject._id);
@@ -121,18 +132,18 @@ const SubjectList = () => {
       await dispatch(deleteSubject(subjectId)).unwrap();
 
       Swal.fire({
-        icon: 'success',
-        title: 'Deleted!',
-        text: 'Subject has been deleted successfully.',
+        icon: "success",
+        title: "Deleted!",
+        text: "Subject has been deleted successfully.",
         showConfirmButton: false,
-        timer: 1500
+        timer: 1500,
       });
     } catch (error) {
       console.error("Failed to delete subject:", error);
 
       Swal.fire({
-        icon: 'error',
-        title: 'Error',
+        icon: "error",
+        title: "Error",
         text: `Failed to delete subject: ${error.message || "Unknown error"}`,
       });
     } finally {
@@ -167,21 +178,20 @@ const SubjectList = () => {
   return (
     <Box sx={{ p: { xs: 1, sm: 2, md: 3 } }}>
       {/* Breadcrumbs */}
-      <Breadcrumbs
-        aria-label="breadcrumb"
-        sx={{ mb: 2, mt: 1 }}
-        separator="›"
-      >
+      <Breadcrumbs aria-label="breadcrumb" sx={{ mb: 2, mt: 1 }} separator="›">
         <Link
           underline="hover"
           color="inherit"
           href="/app/dashboard"
-          sx={{ display: 'flex', alignItems: 'center' }}
+          sx={{ display: "flex", alignItems: "center" }}
         >
           <HomeIcon sx={{ mr: 0.5 }} fontSize="small" />
           Dashboard
         </Link>
-        <Typography color="text.primary" sx={{ display: 'flex', alignItems: 'center' }}>
+        <Typography
+          color="text.primary"
+          sx={{ display: "flex", alignItems: "center" }}
+        >
           <BookIcon sx={{ mr: 0.5 }} fontSize="small" />
           Subjects
         </Typography>
@@ -233,10 +243,7 @@ const SubjectList = () => {
             >
               Add Subject
             </Button>
-            <RefreshButton
-              onRefresh={loadAllData}
-              tooltip="Refresh subjects"
-            />
+            <RefreshButton onRefresh={loadAllData} tooltip="Refresh subjects" />
           </Box>
         </Box>
 
@@ -251,7 +258,12 @@ const SubjectList = () => {
               onChange={(e) => setNameFilter(e.target.value)}
               size="small"
               InputProps={{
-                startAdornment: <SearchIcon fontSize="small" sx={{ mr: 1, color: "action.active" }} />,
+                startAdornment: (
+                  <SearchIcon
+                    fontSize="small"
+                    sx={{ mr: 1, color: "action.active" }}
+                  />
+                ),
                 endAdornment: nameFilter ? (
                   <IconButton
                     size="small"
@@ -265,7 +277,13 @@ const SubjectList = () => {
               sx={{ backgroundColor: "background.paper" }}
             />
           </Grid>
-          <Grid item xs={12} sm={6} md={4} sx={{ display: "flex", alignItems: "center" }}>
+          <Grid
+            item
+            xs={12}
+            sm={6}
+            md={4}
+            sx={{ display: "flex", alignItems: "center" }}
+          >
             <Button
               variant="outlined"
               startIcon={<ClearIcon />}
@@ -280,11 +298,24 @@ const SubjectList = () => {
         </Grid>
 
         {/* Subject count */}
-        <Box sx={{ mt: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>
+        <Box
+          sx={{
+            mt: 2,
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            sx={{ fontWeight: 500 }}
+          >
             {filteredSubjects.length === 0
               ? "No subjects found"
-              : `Showing ${filteredSubjects.length} subject${filteredSubjects.length !== 1 ? 's' : ''}`}
+              : `Showing ${filteredSubjects.length} subject${
+                  filteredSubjects.length !== 1 ? "s" : ""
+                }`}
             {nameFilter && ` matching "${nameFilter}"`}
           </Typography>
         </Box>
@@ -295,13 +326,31 @@ const SubjectList = () => {
         // Mobile card view
         <Box>
           {loading ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 4 }}>
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                py: 4,
+              }}
+            >
               <CircularProgress size={28} sx={{ mr: 2 }} />
               <Typography variant="body1">Loading subjects...</Typography>
             </Box>
           ) : filteredSubjects.length === 0 ? (
-            <Paper sx={{ textAlign: "center", py: 4, px: 2, borderRadius: 2, boxShadow: 2 }}>
-              <Typography color="text.secondary" sx={{ mb: 2, fontWeight: 500 }}>
+            <Paper
+              sx={{
+                textAlign: "center",
+                py: 4,
+                px: 2,
+                borderRadius: 2,
+                boxShadow: 2,
+              }}
+            >
+              <Typography
+                color="text.secondary"
+                sx={{ mb: 2, fontWeight: 500 }}
+              >
                 No subjects found matching your filters
               </Typography>
               <Button
@@ -327,17 +376,19 @@ const SubjectList = () => {
                       boxShadow: 3,
                     },
                     overflow: "hidden",
-                    borderLeft: `4px solid ${theme.palette.primary.main}`
+                    borderLeft: `4px solid ${theme.palette.primary.main}`,
                   }}
                   elevation={2}
                 >
                   <CardContent sx={{ pb: 1 }}>
-                    <Box sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      mb: 1
-                    }}>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        mb: 1,
+                      }}
+                    >
                       <Typography
                         variant="h6"
                         sx={{
@@ -357,8 +408,10 @@ const SubjectList = () => {
                         variant="outlined"
                         sx={{
                           fontWeight: 500,
-                          backgroundColor: theme => alpha(theme.palette.secondary.main, 0.05),
-                          borderColor: theme => alpha(theme.palette.secondary.main, 0.3)
+                          backgroundColor: (theme) =>
+                            alpha(theme.palette.secondary.main, 0.05),
+                          borderColor: (theme) =>
+                            alpha(theme.palette.secondary.main, 0.3),
                         }}
                       />
                     </Box>
@@ -373,7 +426,7 @@ const SubjectList = () => {
                         overflow: "hidden",
                         textOverflow: "ellipsis",
                         mb: 1.5,
-                        fontStyle: 'italic'
+                        fontStyle: "italic",
                       }}
                     >
                       {subject.description || "No description available"}
@@ -387,16 +440,21 @@ const SubjectList = () => {
                         sx={{
                           fontWeight: 500,
                           mb: 0.5,
-                          display: 'flex',
-                          alignItems: 'center'
+                          display: "flex",
+                          alignItems: "center",
                         }}
                       >
-                        <DescriptionIcon fontSize="small" sx={{ mr: 0.5, opacity: 0.7 }} />
+                        <DescriptionIcon
+                          fontSize="small"
+                          sx={{ mr: 0.5, opacity: 0.7 }}
+                        />
                         Details:
                       </Typography>
 
                       <Chip
-                        label={`Duration: ${subject.duration || "Not specified"}`}
+                        label={`Duration: ${
+                          subject.duration || "Not specified"
+                        }`}
                         size="small"
                         color="primary"
                         variant="outlined"
@@ -404,18 +462,26 @@ const SubjectList = () => {
                           mb: 0.5,
                           mr: 0.5,
                           fontWeight: 400,
-                          backgroundColor: alpha(theme.palette.primary.main, 0.05)
+                          backgroundColor: alpha(
+                            theme.palette.primary.main,
+                            0.05
+                          ),
                         }}
                       />
                     </Box>
                   </CardContent>
-                  <CardActions sx={{
-                    justifyContent: "flex-end",
-                    px: 2,
-                    pb: 2,
-                    pt: 0.5,
-                    borderTop: `1px solid ${alpha(theme.palette.divider, 0.1)}`
-                  }}>
+                  <CardActions
+                    sx={{
+                      justifyContent: "flex-end",
+                      px: 2,
+                      pb: 2,
+                      pt: 0.5,
+                      borderTop: `1px solid ${alpha(
+                        theme.palette.divider,
+                        0.1
+                      )}`,
+                    }}
+                  >
                     <Tooltip title="View Details">
                       <IconButton
                         size="small"
@@ -435,7 +501,9 @@ const SubjectList = () => {
                     <Tooltip title="Edit">
                       <IconButton
                         size="small"
-                        onClick={() => navigate(`/app/subjects/${subject._id}/edit`)}
+                        onClick={() =>
+                          navigate(`/app/subjects/${subject._id}/edit`)
+                        }
                         sx={{
                           color: theme.palette.info.main,
                           bgcolor: alpha(theme.palette.info.main, 0.1),
@@ -478,15 +546,37 @@ const SubjectList = () => {
                   onRowsPerPageChange={handleChangeRowsPerPage}
                   rowsPerPageOptions={[5, 10, 25]}
                   sx={{
-                    borderTop: 'none',
+                    borderTop: "none",
                     boxShadow: 2,
                     borderRadius: 2,
                     mt: 2,
-                    '.MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows': {
-                      fontWeight: 500,
-                    },
-                    '.MuiTablePagination-toolbar': {
+                    ".MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows":
+                      {
+                        fontWeight: 500,
+                        color: "text.secondary",
+                      },
+                    ".MuiTablePagination-toolbar": {
                       px: 2,
+                      py: 1.5,
+                    },
+                    ".MuiTablePagination-select": {
+                      borderRadius: 1,
+                      "&:focus": {
+                        borderRadius: 1,
+                      },
+                    },
+                    ".MuiTablePagination-actions": {
+                      marginLeft: 2,
+                    },
+                    ".MuiIconButton-root": {
+                      color: "primary.main",
+                      "&:hover": {
+                        backgroundColor: (theme) =>
+                          alpha(theme.palette.primary.main, 0.1),
+                      },
+                      "&.Mui-disabled": {
+                        color: "text.disabled",
+                      },
                     },
                   }}
                 />
@@ -503,19 +593,23 @@ const SubjectList = () => {
             overflow: "hidden",
             boxShadow: 2,
             "& .MuiTableRow-root:last-child .MuiTableCell-body": {
-              borderBottom: "none"
-            }
+              borderBottom: "none",
+            },
           }}
         >
           <Table>
             <TableHead>
-              <TableRow sx={{ bgcolor: (theme) => alpha(theme.palette.primary.main, 0.9) }}>
+              <TableRow
+                sx={{
+                  bgcolor: (theme) => alpha(theme.palette.primary.main, 0.9),
+                }}
+              >
                 <TableCell
                   sx={{
                     color: "common.white",
                     py: 2.5,
                     fontWeight: 600,
-                    fontSize: "0.95rem"
+                    fontSize: "0.95rem",
                   }}
                 >
                   Subject Name
@@ -524,7 +618,7 @@ const SubjectList = () => {
                   sx={{
                     color: "common.white",
                     fontWeight: 600,
-                    fontSize: "0.95rem"
+                    fontSize: "0.95rem",
                   }}
                 >
                   Duration
@@ -533,7 +627,7 @@ const SubjectList = () => {
                   sx={{
                     color: "common.white",
                     fontWeight: 600,
-                    fontSize: "0.95rem"
+                    fontSize: "0.95rem",
                   }}
                 >
                   Description
@@ -543,7 +637,7 @@ const SubjectList = () => {
                   sx={{
                     color: "common.white",
                     fontWeight: 600,
-                    fontSize: "0.95rem"
+                    fontSize: "0.95rem",
                   }}
                 >
                   Actions
@@ -554,16 +648,28 @@ const SubjectList = () => {
               {loading ? (
                 <TableRow>
                   <TableCell colSpan={4} align="center" sx={{ py: 4 }}>
-                    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 2 }}>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        py: 2,
+                      }}
+                    >
                       <CircularProgress size={24} sx={{ mr: 1 }} />
-                      <Typography variant="body1">Loading subjects...</Typography>
+                      <Typography variant="body1">
+                        Loading subjects...
+                      </Typography>
                     </Box>
                   </TableCell>
                 </TableRow>
               ) : filteredSubjects.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={4} align="center" sx={{ py: 4 }}>
-                    <Typography color="text.secondary" sx={{ py: 2, fontWeight: 500 }}>
+                    <Typography
+                      color="text.secondary"
+                      sx={{ py: 2, fontWeight: 500 }}
+                    >
                       No subjects found matching your filters
                     </Typography>
                     <Button
@@ -586,16 +692,20 @@ const SubjectList = () => {
                         backgroundColor: (theme) =>
                           alpha(theme.palette.primary.main, 0.04),
                       },
-                      backgroundColor: index % 2 === 0 ? 'inherit' : (theme) =>
-                        alpha(theme.palette.background.default, 0.5),
-                      transition: 'background-color 0.2s ease',
+                      backgroundColor:
+                        index % 2 === 0
+                          ? "inherit"
+                          : (theme) =>
+                              alpha(theme.palette.background.default, 0.5),
+                      transition: "background-color 0.2s ease",
                     }}
                   >
                     <TableCell
                       sx={{
                         py: 2.5,
-                        borderLeft: (theme) => `4px solid ${alpha(theme.palette.primary.main, 0.6)}`,
-                        pl: 2
+                        borderLeft: (theme) =>
+                          `4px solid ${alpha(theme.palette.primary.main, 0.6)}`,
+                        pl: 2,
                       }}
                     >
                       <Box sx={{ display: "flex", alignItems: "center" }}>
@@ -618,8 +728,10 @@ const SubjectList = () => {
                         variant="outlined"
                         sx={{
                           fontWeight: 500,
-                          backgroundColor: theme => alpha(theme.palette.secondary.main, 0.05),
-                          borderColor: theme => alpha(theme.palette.secondary.main, 0.3)
+                          backgroundColor: (theme) =>
+                            alpha(theme.palette.secondary.main, 0.05),
+                          borderColor: (theme) =>
+                            alpha(theme.palette.secondary.main, 0.3),
                         }}
                       />
                     </TableCell>
@@ -630,7 +742,7 @@ const SubjectList = () => {
                         overflow: "hidden",
                         textOverflow: "ellipsis",
                         color: "text.secondary",
-                        py: 2.5
+                        py: 2.5,
                       }}
                     >
                       {subject.description || "No description available"}
@@ -646,12 +758,16 @@ const SubjectList = () => {
                         <Tooltip title="View Details">
                           <IconButton
                             size="small"
-                            onClick={() => navigate(`/app/subjects/${subject._id}`)}
+                            onClick={() =>
+                              navigate(`/app/subjects/${subject._id}`)
+                            }
                             sx={{
                               color: "primary.main",
-                              backgroundColor: theme => alpha(theme.palette.primary.main, 0.1),
+                              backgroundColor: (theme) =>
+                                alpha(theme.palette.primary.main, 0.1),
                               "&:hover": {
-                                backgroundColor: theme => alpha(theme.palette.primary.main, 0.2),
+                                backgroundColor: (theme) =>
+                                  alpha(theme.palette.primary.main, 0.2),
                               },
                             }}
                           >
@@ -661,12 +777,16 @@ const SubjectList = () => {
                         <Tooltip title="Edit">
                           <IconButton
                             size="small"
-                            onClick={() => navigate(`/app/subjects/${subject._id}/edit`)}
+                            onClick={() =>
+                              navigate(`/app/subjects/${subject._id}/edit`)
+                            }
                             sx={{
-                              color: theme => theme.palette.info.main,
-                              backgroundColor: theme => alpha(theme.palette.info.main, 0.1),
+                              color: (theme) => theme.palette.info.main,
+                              backgroundColor: (theme) =>
+                                alpha(theme.palette.info.main, 0.1),
                               "&:hover": {
-                                backgroundColor: theme => alpha(theme.palette.info.main, 0.2),
+                                backgroundColor: (theme) =>
+                                  alpha(theme.palette.info.main, 0.2),
                               },
                             }}
                           >
@@ -679,9 +799,11 @@ const SubjectList = () => {
                             onClick={() => openDeleteDialog(subject)}
                             sx={{
                               color: "error.main",
-                              backgroundColor: theme => alpha(theme.palette.error.main, 0.1),
+                              backgroundColor: (theme) =>
+                                alpha(theme.palette.error.main, 0.1),
                               "&:hover": {
-                                backgroundColor: theme => alpha(theme.palette.error.main, 0.2),
+                                backgroundColor: (theme) =>
+                                  alpha(theme.palette.error.main, 0.2),
                               },
                             }}
                           >
@@ -707,9 +829,34 @@ const SubjectList = () => {
               onRowsPerPageChange={handleChangeRowsPerPage}
               rowsPerPageOptions={[5, 10, 25]}
               sx={{
-                borderTop: 'none',
-                '.MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows': {
-                  fontWeight: 500,
+                borderTop: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+                ".MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows":
+                  {
+                    fontWeight: 500,
+                    color: "text.secondary",
+                  },
+                ".MuiTablePagination-toolbar": {
+                  px: 3,
+                  py: 2,
+                },
+                ".MuiTablePagination-select": {
+                  borderRadius: 1,
+                  "&:focus": {
+                    borderRadius: 1,
+                  },
+                },
+                ".MuiTablePagination-actions": {
+                  marginLeft: 2,
+                },
+                ".MuiIconButton-root": {
+                  color: "primary.main",
+                  "&:hover": {
+                    backgroundColor: (theme) =>
+                      alpha(theme.palette.primary.main, 0.1),
+                  },
+                  "&.Mui-disabled": {
+                    color: "text.disabled",
+                  },
                 },
               }}
             />
@@ -720,4 +867,4 @@ const SubjectList = () => {
   );
 };
 
-export default SubjectList; 
+export default SubjectList;

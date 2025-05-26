@@ -54,7 +54,7 @@ import {
 } from "../../../store/slices/teacherSlice";
 import { fetchSubjects } from "../../../store/slices/subjectSlice";
 import RefreshButton from "../../../components/common/RefreshButton";
-import Swal from 'sweetalert2';
+import Swal from "sweetalert2";
 
 const TeacherList = () => {
   const dispatch = useDispatch();
@@ -108,7 +108,10 @@ const TeacherList = () => {
 
   // Get paginated data
   const getPaginatedData = () => {
-    return filteredTeachers.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
+    return filteredTeachers.slice(
+      page * rowsPerPage,
+      page * rowsPerPage + rowsPerPage
+    );
   };
 
   // Filter teachers
@@ -148,20 +151,22 @@ const TeacherList = () => {
       results = results.filter((teacher) => teacher.status === statusFilter);
     }
 
+    // Reset page to 0 when filters change
+    setPage(0);
     setFilteredTeachers(results);
   }, [teachers, nameFilter, subjectFilter, statusFilter]);
 
   // Delete handler
   const handleDeleteClick = (teacher) => {
     Swal.fire({
-      title: 'Delete Teacher',
+      title: "Delete Teacher",
       text: `Are you sure you want to delete ${teacher.name}? This action cannot be undone.`,
-      icon: 'warning',
+      icon: "warning",
       showCancelButton: true,
       confirmButtonColor: theme.palette.error.main,
       cancelButtonColor: theme.palette.grey[500],
-      confirmButtonText: 'Yes, delete it!',
-      cancelButtonText: 'Cancel'
+      confirmButtonText: "Yes, delete it!",
+      cancelButtonText: "Cancel",
     }).then((result) => {
       if (result.isConfirmed) {
         handleDeleteConfirm(teacher);
@@ -177,23 +182,23 @@ const TeacherList = () => {
       await dispatch(deleteTeacher(teacherToDelete._id)).unwrap();
 
       Swal.fire({
-        icon: 'success',
-        title: 'Deleted!',
+        icon: "success",
+        title: "Deleted!",
         text: `${teacherToDelete.name} has been removed successfully.`,
         confirmButtonColor: theme.palette.primary.main,
-        timer: 2000
+        timer: 2000,
       });
-
     } catch (error) {
       console.error("Error deleting teacher:", error);
 
       Swal.fire({
-        icon: 'error',
-        title: 'Delete Failed',
-        text: error.message || 'An unknown error occurred while deleting the teacher.',
-        confirmButtonColor: theme.palette.primary.main
+        icon: "error",
+        title: "Delete Failed",
+        text:
+          error.message ||
+          "An unknown error occurred while deleting the teacher.",
+        confirmButtonColor: theme.palette.primary.main,
       });
-
     } finally {
       setDeleteLoading(false);
     }
@@ -205,7 +210,12 @@ const TeacherList = () => {
       <Breadcrumbs aria-label="breadcrumb" sx={{ mb: 2, mt: 1 }} separator="›">
         <RouterLink
           to="/app/dashboard"
-          style={{ display: "flex", alignItems: "center", textDecoration: 'none', color: 'inherit' }}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            textDecoration: "none",
+            color: "inherit",
+          }}
         >
           <HomeIcon sx={{ mr: 0.5 }} fontSize="small" />
           Dashboard
@@ -398,13 +408,31 @@ const TeacherList = () => {
         // Mobile card view
         <Box>
           {loading ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 4 }}>
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                py: 4,
+              }}
+            >
               <CircularProgress size={28} sx={{ mr: 2 }} />
               <Typography variant="body1">Loading teachers...</Typography>
             </Box>
           ) : filteredTeachers.length === 0 ? (
-            <Paper sx={{ textAlign: "center", py: 4, px: 2, borderRadius: 2, boxShadow: 2 }}>
-              <Typography color="text.secondary" sx={{ mb: 2, fontWeight: 500 }}>
+            <Paper
+              sx={{
+                textAlign: "center",
+                py: 4,
+                px: 2,
+                borderRadius: 2,
+                boxShadow: 2,
+              }}
+            >
+              <Typography
+                color="text.secondary"
+                sx={{ mb: 2, fontWeight: 500 }}
+              >
                 No teachers found matching your filters
               </Typography>
               <Button
@@ -430,7 +458,7 @@ const TeacherList = () => {
                       boxShadow: 3,
                     },
                     overflow: "hidden",
-                    borderLeft: `4px solid ${theme.palette.primary.main}`
+                    borderLeft: `4px solid ${theme.palette.primary.main}`,
                   }}
                   elevation={2}
                 >
@@ -454,18 +482,24 @@ const TeacherList = () => {
                         {teacher.name}
                       </Typography>
                       <Chip
-                        label={teacher.status === "inactive" ? "Inactive" : "Active"}
-                        color={teacher.status === "inactive" ? "default" : "success"}
+                        label={
+                          teacher.status === "inactive" ? "Inactive" : "Active"
+                        }
+                        color={
+                          teacher.status === "inactive" ? "default" : "success"
+                        }
                         size="small"
                         variant="outlined"
                         sx={{
                           fontWeight: 500,
-                          backgroundColor: theme => teacher.status === "inactive"
-                            ? alpha(theme.palette.grey[500], 0.08)
-                            : alpha(theme.palette.success.main, 0.08),
-                          borderColor: theme => teacher.status === "inactive"
-                            ? alpha(theme.palette.grey[500], 0.3)
-                            : alpha(theme.palette.success.main, 0.3)
+                          backgroundColor: (theme) =>
+                            teacher.status === "inactive"
+                              ? alpha(theme.palette.grey[500], 0.08)
+                              : alpha(theme.palette.success.main, 0.08),
+                          borderColor: (theme) =>
+                            teacher.status === "inactive"
+                              ? alpha(theme.palette.grey[500], 0.3)
+                              : alpha(theme.palette.success.main, 0.3),
                         }}
                       />
                     </Box>
@@ -479,7 +513,10 @@ const TeacherList = () => {
                         mb: 0.5,
                       }}
                     >
-                      <EmailIcon fontSize="small" sx={{ mr: 0.5, opacity: 0.7 }} />
+                      <EmailIcon
+                        fontSize="small"
+                        sx={{ mr: 0.5, opacity: 0.7 }}
+                      />
                       {teacher.email}
                     </Typography>
 
@@ -492,7 +529,10 @@ const TeacherList = () => {
                         mb: 1.5,
                       }}
                     >
-                      <PhoneIcon fontSize="small" sx={{ mr: 0.5, opacity: 0.7 }} />
+                      <PhoneIcon
+                        fontSize="small"
+                        sx={{ mr: 0.5, opacity: 0.7 }}
+                      />
                       {teacher.phone || "No phone number"}
                     </Typography>
 
@@ -504,45 +544,68 @@ const TeacherList = () => {
                         sx={{
                           fontWeight: 500,
                           mb: 0.5,
-                          display: 'flex',
-                          alignItems: 'center'
+                          display: "flex",
+                          alignItems: "center",
                         }}
                       >
-                        <BookIcon fontSize="small" sx={{ mr: 0.5, opacity: 0.7 }} />
+                        <BookIcon
+                          fontSize="small"
+                          sx={{ mr: 0.5, opacity: 0.7 }}
+                        />
                         Subjects:
                       </Typography>
 
-                      {teacher.subjects && Array.isArray(teacher.subjects) && teacher.subjects.length > 0 ? (
-                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                      {teacher.subjects &&
+                      Array.isArray(teacher.subjects) &&
+                      teacher.subjects.length > 0 ? (
+                        <Box
+                          sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}
+                        >
                           {teacher.subjects.map((subject, index) => (
                             <Chip
                               key={index}
-                              label={typeof subject === "object" ? subject.name : subject}
+                              label={
+                                typeof subject === "object"
+                                  ? subject.name
+                                  : subject
+                              }
                               size="small"
                               color="secondary"
                               variant="outlined"
                               sx={{
                                 mb: 0.5,
                                 fontWeight: 400,
-                                backgroundColor: alpha(theme.palette.secondary.main, 0.05)
+                                backgroundColor: alpha(
+                                  theme.palette.secondary.main,
+                                  0.05
+                                ),
                               }}
                             />
                           ))}
                         </Box>
                       ) : (
-                        <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          sx={{ fontStyle: "italic" }}
+                        >
                           No subjects assigned
                         </Typography>
                       )}
                     </Box>
                   </CardContent>
-                  <CardActions sx={{
-                    justifyContent: "flex-end",
-                    px: 2,
-                    pb: 2,
-                    pt: 0.5,
-                    borderTop: `1px solid ${alpha(theme.palette.divider, 0.1)}`
-                  }}>
+                  <CardActions
+                    sx={{
+                      justifyContent: "flex-end",
+                      px: 2,
+                      pb: 2,
+                      pt: 0.5,
+                      borderTop: `1px solid ${alpha(
+                        theme.palette.divider,
+                        0.1
+                      )}`,
+                    }}
+                  >
                     <Tooltip title="View Details">
                       <IconButton
                         size="small"
@@ -562,7 +625,9 @@ const TeacherList = () => {
                     <Tooltip title="Edit">
                       <IconButton
                         size="small"
-                        onClick={() => navigate(`/app/teachers/${teacher._id}/edit`)}
+                        onClick={() =>
+                          navigate(`/app/teachers/${teacher._id}/edit`)
+                        }
                         sx={{
                           color: theme.palette.info.main,
                           bgcolor: alpha(theme.palette.info.main, 0.1),
@@ -605,14 +670,15 @@ const TeacherList = () => {
                   onRowsPerPageChange={handleChangeRowsPerPage}
                   rowsPerPageOptions={[5, 10, 25]}
                   sx={{
-                    borderTop: 'none',
+                    borderTop: "none",
                     boxShadow: 2,
                     borderRadius: 2,
                     mt: 2,
-                    '.MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows': {
-                      fontWeight: 500,
-                    },
-                    '.MuiTablePagination-toolbar': {
+                    ".MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows":
+                      {
+                        fontWeight: 500,
+                      },
+                    ".MuiTablePagination-toolbar": {
                       px: 2,
                     },
                   }}
@@ -630,19 +696,23 @@ const TeacherList = () => {
             overflow: "hidden",
             boxShadow: 2,
             "& .MuiTableRow-root:last-child .MuiTableCell-body": {
-              borderBottom: "none"
-            }
+              borderBottom: "none",
+            },
           }}
         >
           <Table>
             <TableHead>
-              <TableRow sx={{ bgcolor: (theme) => alpha(theme.palette.primary.main, 0.9) }}>
+              <TableRow
+                sx={{
+                  bgcolor: (theme) => alpha(theme.palette.primary.main, 0.9),
+                }}
+              >
                 <TableCell
                   sx={{
                     color: "common.white",
                     py: 2.5,
                     fontWeight: 600,
-                    fontSize: "0.95rem"
+                    fontSize: "0.95rem",
                   }}
                 >
                   Name
@@ -651,7 +721,7 @@ const TeacherList = () => {
                   sx={{
                     color: "common.white",
                     fontWeight: 600,
-                    fontSize: "0.95rem"
+                    fontSize: "0.95rem",
                   }}
                 >
                   Contact Info
@@ -660,7 +730,7 @@ const TeacherList = () => {
                   sx={{
                     color: "common.white",
                     fontWeight: 600,
-                    fontSize: "0.95rem"
+                    fontSize: "0.95rem",
                   }}
                 >
                   Qualification
@@ -669,7 +739,7 @@ const TeacherList = () => {
                   sx={{
                     color: "common.white",
                     fontWeight: 600,
-                    fontSize: "0.95rem"
+                    fontSize: "0.95rem",
                   }}
                 >
                   Subjects
@@ -678,7 +748,7 @@ const TeacherList = () => {
                   sx={{
                     color: "common.white",
                     fontWeight: 600,
-                    fontSize: "0.95rem"
+                    fontSize: "0.95rem",
                   }}
                 >
                   Status
@@ -688,7 +758,7 @@ const TeacherList = () => {
                   sx={{
                     color: "common.white",
                     fontWeight: 600,
-                    fontSize: "0.95rem"
+                    fontSize: "0.95rem",
                   }}
                 >
                   Actions
@@ -699,16 +769,28 @@ const TeacherList = () => {
               {loading ? (
                 <TableRow>
                   <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
-                    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 2 }}>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        py: 2,
+                      }}
+                    >
                       <CircularProgress size={24} sx={{ mr: 1 }} />
-                      <Typography variant="body1">Loading teachers...</Typography>
+                      <Typography variant="body1">
+                        Loading teachers...
+                      </Typography>
                     </Box>
                   </TableCell>
                 </TableRow>
               ) : filteredTeachers.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
-                    <Typography color="text.secondary" sx={{ py: 2, fontWeight: 500 }}>
+                    <Typography
+                      color="text.secondary"
+                      sx={{ py: 2, fontWeight: 500 }}
+                    >
                       No teachers found matching your filters
                     </Typography>
                     <Button
@@ -731,9 +813,12 @@ const TeacherList = () => {
                         backgroundColor: (theme) =>
                           alpha(theme.palette.primary.main, 0.04),
                       },
-                      backgroundColor: index % 2 === 0 ? 'inherit' : (theme) =>
-                        alpha(theme.palette.background.default, 0.5),
-                      transition: 'background-color 0.2s ease',
+                      backgroundColor:
+                        index % 2 === 0
+                          ? "inherit"
+                          : (theme) =>
+                              alpha(theme.palette.background.default, 0.5),
+                      transition: "background-color 0.2s ease",
                     }}
                   >
                     <TableCell
@@ -744,8 +829,9 @@ const TeacherList = () => {
                         fontWeight: 500,
                         fontSize: "0.95rem",
                         py: 2.5,
-                        borderLeft: (theme) => `4px solid ${alpha(theme.palette.primary.main, 0.6)}`,
-                        pl: 2
+                        borderLeft: (theme) =>
+                          `4px solid ${alpha(theme.palette.primary.main, 0.6)}`,
+                        pl: 2,
                       }}
                     >
                       {teacher.name}
@@ -868,12 +954,16 @@ const TeacherList = () => {
                         <Tooltip title="View Details">
                           <IconButton
                             size="small"
-                            onClick={() => navigate(`/app/teachers/${teacher._id}`)}
+                            onClick={() =>
+                              navigate(`/app/teachers/${teacher._id}`)
+                            }
                             sx={{
                               color: "primary.main",
-                              backgroundColor: theme => alpha(theme.palette.primary.main, 0.1),
+                              backgroundColor: (theme) =>
+                                alpha(theme.palette.primary.main, 0.1),
                               "&:hover": {
-                                backgroundColor: theme => alpha(theme.palette.primary.main, 0.2),
+                                backgroundColor: (theme) =>
+                                  alpha(theme.palette.primary.main, 0.2),
                               },
                             }}
                           >
@@ -883,12 +973,16 @@ const TeacherList = () => {
                         <Tooltip title="Edit">
                           <IconButton
                             size="small"
-                            onClick={() => navigate(`/app/teachers/${teacher._id}/edit`)}
+                            onClick={() =>
+                              navigate(`/app/teachers/${teacher._id}/edit`)
+                            }
                             sx={{
-                              color: theme => theme.palette.info.main,
-                              backgroundColor: theme => alpha(theme.palette.info.main, 0.1),
+                              color: (theme) => theme.palette.info.main,
+                              backgroundColor: (theme) =>
+                                alpha(theme.palette.info.main, 0.1),
                               "&:hover": {
-                                backgroundColor: theme => alpha(theme.palette.info.main, 0.2),
+                                backgroundColor: (theme) =>
+                                  alpha(theme.palette.info.main, 0.2),
                               },
                             }}
                           >
@@ -901,9 +995,11 @@ const TeacherList = () => {
                             onClick={() => handleDeleteClick(teacher)}
                             sx={{
                               color: "error.main",
-                              backgroundColor: theme => alpha(theme.palette.error.main, 0.1),
+                              backgroundColor: (theme) =>
+                                alpha(theme.palette.error.main, 0.1),
                               "&:hover": {
-                                backgroundColor: theme => alpha(theme.palette.error.main, 0.2),
+                                backgroundColor: (theme) =>
+                                  alpha(theme.palette.error.main, 0.2),
                               },
                             }}
                           >
@@ -929,10 +1025,11 @@ const TeacherList = () => {
               onRowsPerPageChange={handleChangeRowsPerPage}
               rowsPerPageOptions={[5, 10, 25]}
               sx={{
-                borderTop: 'none',
-                '.MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows': {
-                  fontWeight: 500,
-                },
+                borderTop: "none",
+                ".MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows":
+                  {
+                    fontWeight: 500,
+                  },
               }}
             />
           )}

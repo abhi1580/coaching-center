@@ -28,7 +28,7 @@ import {
   Breadcrumbs,
   Link,
   CircularProgress,
-  TablePagination
+  TablePagination,
 } from "@mui/material";
 import {
   Add as AddIcon,
@@ -42,14 +42,14 @@ import {
   Book as BookIcon,
   Person as PersonIcon,
   Event as EventIcon,
-  Schedule as ScheduleIcon
+  Schedule as ScheduleIcon,
 } from "@mui/icons-material";
 import { fetchBatches, deleteBatch } from "../../../store/slices/batchSlice";
 import { fetchSubjects } from "../../../store/slices/subjectSlice";
 import { fetchStandards } from "../../../store/slices/standardSlice";
 import RefreshButton from "../../../components/common/RefreshButton";
 import DeleteConfirmationDialog from "../../../components/common/DeleteConfirmationDialog";
-import Swal from 'sweetalert2';
+import Swal from "sweetalert2";
 
 const BatchList = () => {
   const dispatch = useDispatch();
@@ -121,6 +121,8 @@ const BatchList = () => {
       );
     }
 
+    // Reset page to 0 when filters change
+    setPage(0);
     setFilteredBatches(results);
   }, [batches, nameFilter, subjectFilter, standardFilter]);
 
@@ -136,7 +138,10 @@ const BatchList = () => {
 
   // Get paginated data
   const getPaginatedData = () => {
-    return filteredBatches.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
+    return filteredBatches.slice(
+      page * rowsPerPage,
+      page * rowsPerPage + rowsPerPage
+    );
   };
 
   // Clear filters
@@ -148,14 +153,14 @@ const BatchList = () => {
 
   const openDeleteDialog = (batch) => {
     Swal.fire({
-      title: 'Delete Batch',
+      title: "Delete Batch",
       text: `Are you sure you want to delete "${batch.name}"? This action cannot be undone.`,
-      icon: 'warning',
+      icon: "warning",
       showCancelButton: true,
       confirmButtonColor: theme.palette.error.main,
       cancelButtonColor: theme.palette.grey[500],
-      confirmButtonText: 'Yes, delete it!',
-      cancelButtonText: 'Cancel'
+      confirmButtonText: "Yes, delete it!",
+      cancelButtonText: "Cancel",
     }).then((result) => {
       if (result.isConfirmed) {
         confirmDelete(batch._id);
@@ -169,20 +174,20 @@ const BatchList = () => {
       await dispatch(deleteBatch(batchId)).unwrap();
 
       Swal.fire({
-        icon: 'success',
-        title: 'Deleted!',
-        text: 'Batch has been deleted successfully.',
+        icon: "success",
+        title: "Deleted!",
+        text: "Batch has been deleted successfully.",
         confirmButtonColor: theme.palette.primary.main,
-        timer: 2000
+        timer: 2000,
       });
     } catch (error) {
       console.error("Failed to delete batch:", error);
 
       Swal.fire({
-        icon: 'error',
-        title: 'Error',
+        icon: "error",
+        title: "Error",
         text: `Failed to delete batch: ${error.message || "Unknown error"}`,
-        confirmButtonColor: theme.palette.primary.main
+        confirmButtonColor: theme.palette.primary.main,
       });
     } finally {
       setDeleteLoading(false);
@@ -205,21 +210,20 @@ const BatchList = () => {
   return (
     <Box sx={{ p: { xs: 1, sm: 2, md: 3 } }}>
       {/* Breadcrumbs */}
-      <Breadcrumbs
-        aria-label="breadcrumb"
-        sx={{ mb: 2, mt: 1 }}
-        separator="›"
-      >
+      <Breadcrumbs aria-label="breadcrumb" sx={{ mb: 2, mt: 1 }} separator="›">
         <Link
           underline="hover"
           color="inherit"
           href="/app/dashboard"
-          sx={{ display: 'flex', alignItems: 'center' }}
+          sx={{ display: "flex", alignItems: "center" }}
         >
           <HomeIcon sx={{ mr: 0.5 }} fontSize="small" />
           Dashboard
         </Link>
-        <Typography color="text.primary" sx={{ display: 'flex', alignItems: 'center' }}>
+        <Typography
+          color="text.primary"
+          sx={{ display: "flex", alignItems: "center" }}
+        >
           <SchoolIcon sx={{ mr: 0.5 }} fontSize="small" />
           Batches
         </Typography>
@@ -288,7 +292,9 @@ const BatchList = () => {
               value={nameFilter}
               onChange={(e) => setNameFilter(e.target.value)}
               InputProps={{
-                startAdornment: <SearchIcon sx={{ color: "text.secondary", mr: 1 }} />,
+                startAdornment: (
+                  <SearchIcon sx={{ color: "text.secondary", mr: 1 }} />
+                ),
                 endAdornment: nameFilter ? (
                   <IconButton
                     size="small"
@@ -351,7 +357,13 @@ const BatchList = () => {
               ))}
             </TextField>
           </Grid>
-          <Grid item xs={12} sm={6} md={2} sx={{ display: "flex", alignItems: "center" }}>
+          <Grid
+            item
+            xs={12}
+            sm={6}
+            md={2}
+            sx={{ display: "flex", alignItems: "center" }}
+          >
             <Button
               variant="outlined"
               startIcon={<ClearIcon />}
@@ -367,12 +379,26 @@ const BatchList = () => {
         </Grid>
 
         {/* Batch count */}
-        <Box sx={{ mt: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>
+        <Box
+          sx={{
+            mt: 2,
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            sx={{ fontWeight: 500 }}
+          >
             {filteredBatches.length === 0
               ? "No batches found"
-              : `Showing ${filteredBatches.length} batch${filteredBatches.length !== 1 ? 'es' : ''}`}
-            {(nameFilter || subjectFilter || standardFilter) && " matching filters"}
+              : `Showing ${filteredBatches.length} batch${
+                  filteredBatches.length !== 1 ? "es" : ""
+                }`}
+            {(nameFilter || subjectFilter || standardFilter) &&
+              " matching filters"}
           </Typography>
         </Box>
       </Paper>
@@ -381,13 +407,31 @@ const BatchList = () => {
       {isMobile ? (
         <Box>
           {loading ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 4 }}>
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                py: 4,
+              }}
+            >
               <CircularProgress size={28} sx={{ mr: 2 }} />
               <Typography variant="body1">Loading batches...</Typography>
             </Box>
           ) : filteredBatches.length === 0 ? (
-            <Paper sx={{ textAlign: "center", py: 4, px: 2, borderRadius: 2, boxShadow: 2 }}>
-              <Typography color="text.secondary" sx={{ mb: 2, fontWeight: 500 }}>
+            <Paper
+              sx={{
+                textAlign: "center",
+                py: 4,
+                px: 2,
+                borderRadius: 2,
+                boxShadow: 2,
+              }}
+            >
+              <Typography
+                color="text.secondary"
+                sx={{ mb: 2, fontWeight: 500 }}
+              >
                 No batches found matching your filters
               </Typography>
               <Button
@@ -413,7 +457,7 @@ const BatchList = () => {
                       boxShadow: 3,
                     },
                     overflow: "hidden",
-                    borderLeft: `4px solid ${theme.palette.primary.main}`
+                    borderLeft: `4px solid ${theme.palette.primary.main}`,
                   }}
                   elevation={2}
                 >
@@ -437,7 +481,10 @@ const BatchList = () => {
                         {batch.name}
                       </Typography>
                       <Chip
-                        label={batch.status.charAt(0).toUpperCase() + batch.status.slice(1)}
+                        label={
+                          batch.status.charAt(0).toUpperCase() +
+                          batch.status.slice(1)
+                        }
                         color={getStatusColor(batch.status)}
                         size="small"
                         variant="outlined"
@@ -445,12 +492,18 @@ const BatchList = () => {
                           fontWeight: 500,
                           backgroundColor: (theme) => {
                             const color = getStatusColor(batch.status);
-                            return alpha(theme.palette[color]?.main || '#e0e0e0', 0.08);
+                            return alpha(
+                              theme.palette[color]?.main || "#e0e0e0",
+                              0.08
+                            );
                           },
                           borderColor: (theme) => {
                             const color = getStatusColor(batch.status);
-                            return alpha(theme.palette[color]?.main || '#e0e0e0', 0.3);
-                          }
+                            return alpha(
+                              theme.palette[color]?.main || "#e0e0e0",
+                              0.3
+                            );
+                          },
                         }}
                       />
                     </Box>
@@ -465,7 +518,10 @@ const BatchList = () => {
                           mb: 0.5,
                         }}
                       >
-                        <SchoolIcon fontSize="small" sx={{ mr: 0.5, opacity: 0.7 }} />
+                        <SchoolIcon
+                          fontSize="small"
+                          sx={{ mr: 0.5, opacity: 0.7 }}
+                        />
                         Standard: {batch.standard?.name || "N/A"}
                       </Typography>
 
@@ -478,7 +534,10 @@ const BatchList = () => {
                           mb: 0.5,
                         }}
                       >
-                        <BookIcon fontSize="small" sx={{ mr: 0.5, opacity: 0.7 }} />
+                        <BookIcon
+                          fontSize="small"
+                          sx={{ mr: 0.5, opacity: 0.7 }}
+                        />
                         Subject: {batch.subject?.name || "N/A"}
                       </Typography>
 
@@ -490,7 +549,10 @@ const BatchList = () => {
                           alignItems: "center",
                         }}
                       >
-                        <PersonIcon fontSize="small" sx={{ mr: 0.5, opacity: 0.7 }} />
+                        <PersonIcon
+                          fontSize="small"
+                          sx={{ mr: 0.5, opacity: 0.7 }}
+                        />
                         Teacher: {batch.teacher?.name || "Not assigned"}
                       </Typography>
                     </Box>
@@ -503,30 +565,42 @@ const BatchList = () => {
                         sx={{
                           fontWeight: 500,
                           mb: 0.5,
-                          display: 'flex',
-                          alignItems: 'center'
+                          display: "flex",
+                          alignItems: "center",
                         }}
                       >
-                        <ScheduleIcon fontSize="small" sx={{ mr: 0.5, opacity: 0.7 }} />
+                        <ScheduleIcon
+                          fontSize="small"
+                          sx={{ mr: 0.5, opacity: 0.7 }}
+                        />
                         Schedule:
                       </Typography>
 
                       {batch.schedule && batch.schedule.length > 0 ? (
-                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                          {batch.schedule.slice(0, 2).map((scheduleItem, index) => (
-                            <Chip
-                              key={index}
-                              label={`${scheduleItem.day} ${formatTime(scheduleItem.startTime)}-${formatTime(scheduleItem.endTime)}`}
-                              size="small"
-                              color="secondary"
-                              variant="outlined"
-                              sx={{
-                                mb: 0.5,
-                                fontWeight: 400,
-                                backgroundColor: alpha(theme.palette.secondary.main, 0.05)
-                              }}
-                            />
-                          ))}
+                        <Box
+                          sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}
+                        >
+                          {batch.schedule
+                            .slice(0, 2)
+                            .map((scheduleItem, index) => (
+                              <Chip
+                                key={index}
+                                label={`${scheduleItem.day} ${formatTime(
+                                  scheduleItem.startTime
+                                )}-${formatTime(scheduleItem.endTime)}`}
+                                size="small"
+                                color="secondary"
+                                variant="outlined"
+                                sx={{
+                                  mb: 0.5,
+                                  fontWeight: 400,
+                                  backgroundColor: alpha(
+                                    theme.palette.secondary.main,
+                                    0.05
+                                  ),
+                                }}
+                              />
+                            ))}
                           {batch.schedule.length > 2 && (
                             <Chip
                               label={`+${batch.schedule.length - 2} more`}
@@ -538,51 +612,73 @@ const BatchList = () => {
                         </Box>
                       ) : batch.startTime && batch.endTime ? (
                         <Chip
-                          label={`${formatTime(batch.startTime)} - ${formatTime(batch.endTime)}`}
+                          label={`${formatTime(batch.startTime)} - ${formatTime(
+                            batch.endTime
+                          )}`}
                           size="small"
                           color="secondary"
                           variant="outlined"
                           sx={{
                             mb: 0.5,
                             fontWeight: 400,
-                            backgroundColor: alpha(theme.palette.secondary.main, 0.05)
+                            backgroundColor: alpha(
+                              theme.palette.secondary.main,
+                              0.05
+                            ),
                           }}
                         />
-                      ) : batch.schedule?.startTime && batch.schedule?.endTime ? (
+                      ) : batch.schedule?.startTime &&
+                        batch.schedule?.endTime ? (
                         <Chip
-                          label={`${formatTime(batch.schedule.startTime)} - ${formatTime(batch.schedule.endTime)}`}
+                          label={`${formatTime(
+                            batch.schedule.startTime
+                          )} - ${formatTime(batch.schedule.endTime)}`}
                           size="small"
                           color="secondary"
                           variant="outlined"
                           sx={{
                             mb: 0.5,
                             fontWeight: 400,
-                            backgroundColor: alpha(theme.palette.secondary.main, 0.05)
+                            backgroundColor: alpha(
+                              theme.palette.secondary.main,
+                              0.05
+                            ),
                           }}
                         />
                       ) : (
-                        <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          sx={{ fontStyle: "italic" }}
+                        >
                           No timing information available
                         </Typography>
                       )}
                     </Box>
                   </CardContent>
-                  <CardActions sx={{
-                    justifyContent: "flex-end",
-                    px: 2,
-                    pb: 2,
-                    pt: 0.5,
-                    borderTop: `1px solid ${alpha(theme.palette.divider, 0.1)}`
-                  }}>
+                  <CardActions
+                    sx={{
+                      justifyContent: "flex-end",
+                      px: 2,
+                      pb: 2,
+                      pt: 0.5,
+                      borderTop: `1px solid ${alpha(
+                        theme.palette.divider,
+                        0.1
+                      )}`,
+                    }}
+                  >
                     <Tooltip title="View Details">
                       <IconButton
                         size="small"
                         onClick={() => navigate(`/app/batches/${batch._id}`)}
                         sx={{
                           color: "primary.main",
-                          backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.1),
+                          backgroundColor: (theme) =>
+                            alpha(theme.palette.primary.main, 0.1),
                           "&:hover": {
-                            backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.2),
+                            backgroundColor: (theme) =>
+                              alpha(theme.palette.primary.main, 0.2),
                           },
                         }}
                       >
@@ -592,12 +688,16 @@ const BatchList = () => {
                     <Tooltip title="Edit">
                       <IconButton
                         size="small"
-                        onClick={() => navigate(`/app/batches/${batch._id}/edit`)}
+                        onClick={() =>
+                          navigate(`/app/batches/${batch._id}/edit`)
+                        }
                         sx={{
                           color: (theme) => theme.palette.info.main,
-                          backgroundColor: (theme) => alpha(theme.palette.info.main, 0.1),
+                          backgroundColor: (theme) =>
+                            alpha(theme.palette.info.main, 0.1),
                           "&:hover": {
-                            backgroundColor: (theme) => alpha(theme.palette.info.main, 0.2),
+                            backgroundColor: (theme) =>
+                              alpha(theme.palette.info.main, 0.2),
                           },
                         }}
                       >
@@ -610,9 +710,11 @@ const BatchList = () => {
                         onClick={() => openDeleteDialog(batch)}
                         sx={{
                           color: "error.main",
-                          backgroundColor: (theme) => alpha(theme.palette.error.main, 0.1),
+                          backgroundColor: (theme) =>
+                            alpha(theme.palette.error.main, 0.1),
                           "&:hover": {
-                            backgroundColor: (theme) => alpha(theme.palette.error.main, 0.2),
+                            backgroundColor: (theme) =>
+                              alpha(theme.palette.error.main, 0.2),
                           },
                         }}
                       >
@@ -634,14 +736,15 @@ const BatchList = () => {
                   onRowsPerPageChange={handleChangeRowsPerPage}
                   rowsPerPageOptions={[5, 10, 25]}
                   sx={{
-                    borderTop: 'none',
+                    borderTop: "none",
                     boxShadow: 2,
                     borderRadius: 2,
                     mt: 2,
-                    '.MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows': {
-                      fontWeight: 500,
-                    },
-                    '.MuiTablePagination-toolbar': {
+                    ".MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows":
+                      {
+                        fontWeight: 500,
+                      },
+                    ".MuiTablePagination-toolbar": {
                       px: 2,
                     },
                   }}
@@ -659,19 +762,23 @@ const BatchList = () => {
             overflow: "hidden",
             boxShadow: 2,
             "& .MuiTableRow-root:last-child .MuiTableCell-body": {
-              borderBottom: "none"
-            }
+              borderBottom: "none",
+            },
           }}
         >
           <Table>
             <TableHead>
-              <TableRow sx={{ bgcolor: (theme) => alpha(theme.palette.primary.main, 0.9) }}>
+              <TableRow
+                sx={{
+                  bgcolor: (theme) => alpha(theme.palette.primary.main, 0.9),
+                }}
+              >
                 <TableCell
                   sx={{
                     color: "common.white",
                     py: 2.5,
                     fontWeight: 600,
-                    fontSize: "0.95rem"
+                    fontSize: "0.95rem",
                   }}
                 >
                   Name
@@ -680,7 +787,7 @@ const BatchList = () => {
                   sx={{
                     color: "common.white",
                     fontWeight: 600,
-                    fontSize: "0.95rem"
+                    fontSize: "0.95rem",
                   }}
                 >
                   Standard
@@ -689,7 +796,7 @@ const BatchList = () => {
                   sx={{
                     color: "common.white",
                     fontWeight: 600,
-                    fontSize: "0.95rem"
+                    fontSize: "0.95rem",
                   }}
                 >
                   Subject
@@ -698,7 +805,7 @@ const BatchList = () => {
                   sx={{
                     color: "common.white",
                     fontWeight: 600,
-                    fontSize: "0.95rem"
+                    fontSize: "0.95rem",
                   }}
                 >
                   Teacher
@@ -707,7 +814,7 @@ const BatchList = () => {
                   sx={{
                     color: "common.white",
                     fontWeight: 600,
-                    fontSize: "0.95rem"
+                    fontSize: "0.95rem",
                   }}
                 >
                   Status
@@ -717,7 +824,7 @@ const BatchList = () => {
                   sx={{
                     color: "common.white",
                     fontWeight: 600,
-                    fontSize: "0.95rem"
+                    fontSize: "0.95rem",
                   }}
                 >
                   Actions
@@ -728,16 +835,28 @@ const BatchList = () => {
               {loading ? (
                 <TableRow>
                   <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
-                    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 2 }}>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        py: 2,
+                      }}
+                    >
                       <CircularProgress size={24} sx={{ mr: 1 }} />
-                      <Typography variant="body1">Loading batches...</Typography>
+                      <Typography variant="body1">
+                        Loading batches...
+                      </Typography>
                     </Box>
                   </TableCell>
                 </TableRow>
               ) : filteredBatches.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
-                    <Typography color="text.secondary" sx={{ py: 2, fontWeight: 500 }}>
+                    <Typography
+                      color="text.secondary"
+                      sx={{ py: 2, fontWeight: 500 }}
+                    >
                       No batches found matching your filters
                     </Typography>
                     <Button
@@ -760,9 +879,12 @@ const BatchList = () => {
                         backgroundColor: (theme) =>
                           alpha(theme.palette.primary.main, 0.04),
                       },
-                      backgroundColor: index % 2 === 0 ? 'inherit' : (theme) =>
-                        alpha(theme.palette.background.default, 0.5),
-                      transition: 'background-color 0.2s ease',
+                      backgroundColor:
+                        index % 2 === 0
+                          ? "inherit"
+                          : (theme) =>
+                              alpha(theme.palette.background.default, 0.5),
+                      transition: "background-color 0.2s ease",
                     }}
                   >
                     <TableCell
@@ -773,8 +895,9 @@ const BatchList = () => {
                         fontWeight: 500,
                         fontSize: "0.95rem",
                         py: 2.5,
-                        borderLeft: (theme) => `4px solid ${alpha(theme.palette.primary.main, 0.6)}`,
-                        pl: 2
+                        borderLeft: (theme) =>
+                          `4px solid ${alpha(theme.palette.primary.main, 0.6)}`,
+                        pl: 2,
                       }}
                     >
                       {batch.name}
@@ -790,7 +913,10 @@ const BatchList = () => {
                     </TableCell>
                     <TableCell sx={{ py: 2.5 }}>
                       <Chip
-                        label={batch.status.charAt(0).toUpperCase() + batch.status.slice(1)}
+                        label={
+                          batch.status.charAt(0).toUpperCase() +
+                          batch.status.slice(1)
+                        }
                         color={getStatusColor(batch.status)}
                         size="small"
                         variant="outlined"
@@ -798,12 +924,18 @@ const BatchList = () => {
                           fontWeight: 500,
                           backgroundColor: (theme) => {
                             const color = getStatusColor(batch.status);
-                            return alpha(theme.palette[color]?.main || '#e0e0e0', 0.08);
+                            return alpha(
+                              theme.palette[color]?.main || "#e0e0e0",
+                              0.08
+                            );
                           },
                           borderColor: (theme) => {
                             const color = getStatusColor(batch.status);
-                            return alpha(theme.palette[color]?.main || '#e0e0e0', 0.3);
-                          }
+                            return alpha(
+                              theme.palette[color]?.main || "#e0e0e0",
+                              0.3
+                            );
+                          },
                         }}
                       />
                     </TableCell>
@@ -818,12 +950,16 @@ const BatchList = () => {
                         <Tooltip title="View Details">
                           <IconButton
                             size="small"
-                            onClick={() => navigate(`/app/batches/${batch._id}`)}
+                            onClick={() =>
+                              navigate(`/app/batches/${batch._id}`)
+                            }
                             sx={{
                               color: "primary.main",
-                              backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.1),
+                              backgroundColor: (theme) =>
+                                alpha(theme.palette.primary.main, 0.1),
                               "&:hover": {
-                                backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.2),
+                                backgroundColor: (theme) =>
+                                  alpha(theme.palette.primary.main, 0.2),
                               },
                             }}
                           >
@@ -833,12 +969,16 @@ const BatchList = () => {
                         <Tooltip title="Edit">
                           <IconButton
                             size="small"
-                            onClick={() => navigate(`/app/batches/${batch._id}/edit`)}
+                            onClick={() =>
+                              navigate(`/app/batches/${batch._id}/edit`)
+                            }
                             sx={{
                               color: (theme) => theme.palette.info.main,
-                              backgroundColor: (theme) => alpha(theme.palette.info.main, 0.1),
+                              backgroundColor: (theme) =>
+                                alpha(theme.palette.info.main, 0.1),
                               "&:hover": {
-                                backgroundColor: (theme) => alpha(theme.palette.info.main, 0.2),
+                                backgroundColor: (theme) =>
+                                  alpha(theme.palette.info.main, 0.2),
                               },
                             }}
                           >
@@ -851,9 +991,11 @@ const BatchList = () => {
                             onClick={() => openDeleteDialog(batch)}
                             sx={{
                               color: "error.main",
-                              backgroundColor: (theme) => alpha(theme.palette.error.main, 0.1),
+                              backgroundColor: (theme) =>
+                                alpha(theme.palette.error.main, 0.1),
                               "&:hover": {
-                                backgroundColor: (theme) => alpha(theme.palette.error.main, 0.2),
+                                backgroundColor: (theme) =>
+                                  alpha(theme.palette.error.main, 0.2),
                               },
                             }}
                           >
@@ -879,10 +1021,11 @@ const BatchList = () => {
               onRowsPerPageChange={handleChangeRowsPerPage}
               rowsPerPageOptions={[5, 10, 25]}
               sx={{
-                borderTop: 'none',
-                '.MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows': {
-                  fontWeight: 500,
-                },
+                borderTop: "none",
+                ".MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows":
+                  {
+                    fontWeight: 500,
+                  },
               }}
             />
           )}
