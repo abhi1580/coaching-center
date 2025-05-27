@@ -1,11 +1,13 @@
-import { useState } from "react";
+import React, { useState } from "react";
+import { Form, Button } from "react-bootstrap";
+import { Link } from "react-router-dom";
+import "./Login.css";
 import { useNavigate } from "react-router-dom";
 import {
   Container,
   Box,
   Typography,
   TextField,
-  Button,
   Alert,
   Grid,
   Card,
@@ -34,11 +36,16 @@ const validationSchema = Yup.object({
     .required("Password is required"),
 });
 
-function Login() {
+const Login = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { loading, error } = useSelector((state) => state.auth);
   const [showPassword, setShowPassword] = useState(false);
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+    rememberMe: false,
+  });
 
   const features = [
     {
@@ -69,281 +76,115 @@ function Login() {
     },
   ];
 
-  const formik = useFormik({
-    initialValues: {
-      email: "",
-      password: "",
-    },
-    validationSchema: validationSchema,
-    onSubmit: async (values) => {
-      try {
-        const userData = await dispatch(login(values)).unwrap();
+  const handleChange = (e) => {
+    const value =
+      e.target.type === "checkbox" ? e.target.checked : e.target.value;
+    setFormData({
+      ...formData,
+      [e.target.name]: value,
+    });
+  };
 
-        // Show success message with SweetAlert2 that auto-closes after 3 seconds
-        Swal.fire({
-          title: "Login Successful!",
-          text: `Welcome back, ${userData.user.name || userData.user.email}!`,
-          icon: "success",
-          confirmButtonColor: "var(--accent-yellow)",
-          timer: 2000,
-          timerProgressBar: true,
-          showConfirmButton: false,
-        }).then(() => {
-          // Navigate based on user role
-          if (userData.user.role === "admin") {
-            navigate("/app/dashboard");
-          } else if (userData.user.role === "teacher") {
-            navigate("/app/teacher/dashboard");
-          } else if (userData.user.role === "student") {
-            navigate("/app/student/dashboard");
-          } else {
-            navigate("/app");
-          }
-        });
-      } catch (err) {
-        // Show error message with SweetAlert2 that auto-closes after 3 seconds
-        Swal.fire({
-          title: "Login Failed",
-          text: err.message || "Invalid credentials. Please try again.",
-          icon: "error",
-          confirmButtonColor: "var(--accent-yellow)",
-          timer: 2000,
-          timerProgressBar: true,
-          showConfirmButton: false,
-        });
-      }
-    },
-  });
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const userData = await dispatch(login(formData)).unwrap();
+
+      // Show success message with SweetAlert2 that auto-closes after 3 seconds
+      Swal.fire({
+        title: "Login Successful!",
+        text: `Welcome back, ${userData.user.name || userData.user.email}!`,
+        icon: "success",
+        confirmButtonColor: "var(--accent-yellow)",
+        timer: 2000,
+        timerProgressBar: true,
+        showConfirmButton: false,
+      }).then(() => {
+        // Navigate based on user role
+        if (userData.user.role === "admin") {
+          navigate("/app/dashboard");
+        } else if (userData.user.role === "teacher") {
+          navigate("/app/teacher/dashboard");
+        } else if (userData.user.role === "student") {
+          navigate("/app/student/dashboard");
+        } else {
+          navigate("/app");
+        }
+      });
+    } catch (err) {
+      // Show error message with SweetAlert2 that auto-closes after 3 seconds
+      Swal.fire({
+        title: "Login Failed",
+        text: err.message || "Invalid credentials. Please try again.",
+        icon: "error",
+        confirmButtonColor: "var(--accent-yellow)",
+        timer: 2000,
+        timerProgressBar: true,
+        showConfirmButton: false,
+      });
+    }
+  };
 
   return (
-    <Box sx={{ py: 5 }}>
-      <Box
-        sx={{
-          bgcolor: "white",
-          color: "#343a40",
-          p: 4,
-          mb: 4,
-          borderRadius: "16px",
-          boxShadow: "0 4px 20px rgba(0, 0, 0, 0.05)",
-          maxWidth: "1100px",
-          mx: "auto",
-        }}
-      >
-        <Container maxWidth="md">
-          <Typography
-            variant="h4"
-            component="h1"
-            gutterBottom
-            sx={{
-              fontSize: "2.5rem",
-              fontWeight: 700,
-              textAlign: "center",
-              color: "#343a40",
-              position: "relative",
-              textDecoration: "underline",
-              textDecorationColor: "var(--accent-yellow)",
-              textUnderlineOffset: "5px",
-            }}
-          >
-            Welcome to Imperial Academy
-          </Typography>
-          <Typography
-            variant="subtitle1"
-            sx={{
-              mb: 2,
-              textAlign: "center",
-              fontSize: "1.25rem",
-              color: "#6c757d",
-            }}
-          >
-            Empowering minds through quality education
-          </Typography>
-        </Container>
-      </Box>
+    <div className="login-page">
+      <div className="login-container">
+        <div className="login-card">
+          <div className="login-header">
+            <h1>Welcome Back</h1>
+            <p>Please login to your account</p>
+          </div>
 
-      <Container maxWidth="lg">
-        <Grid container spacing={4}>
-          <Grid item xs={12} md={6}>
-            <Card
-              sx={{
-                height: "100%",
-                display: "flex",
-                flexDirection: "column",
-                transition: "all 0.3s ease",
-                borderRadius: "16px",
-                boxShadow: "0 4px 20px rgba(0, 0, 0, 0.05)",
-                overflow: "hidden",
-                "&:hover": {
-                  transform: "translateY(-8px)",
-                  boxShadow: "0 10px 20px rgba(0, 0, 0, 0.1)",
-                },
-                p: 3,
-              }}
-            >
-              <CardContent sx={{ p: 0, flexGrow: 1 }}>
-                <Typography
-                  variant="h5"
-                  gutterBottom
-                  sx={{
-                    fontWeight: 600,
-                    fontSize: "1.5rem",
-                    color: "#343a40",
-                    mb: 3,
-                  }}
-                >
-                  Login to Your Account
-                </Typography>
-                <Box
-                  component="form"
-                  onSubmit={formik.handleSubmit}
-                  sx={{ mt: 1 }}
-                >
-                  <TextField
-                    margin="normal"
-                    required
-                    fullWidth
-                    id="email"
-                    label="Email Address"
-                    name="email"
-                    autoComplete="email"
-                    autoFocus
-                    value={formik.values.email}
-                    onChange={formik.handleChange}
-                    error={formik.touched.email && Boolean(formik.errors.email)}
-                    helperText={formik.touched.email && formik.errors.email}
-                    sx={{
-                      "& .MuiOutlinedInput-root": {
-                        borderRadius: "8px",
-                        "&:hover fieldset": {
-                          borderColor: "var(--accent-yellow)",
-                        },
-                      },
-                      "& .Mui-focused .MuiOutlinedInput-notchedOutline": {
-                        borderColor: "var(--accent-yellow) !important",
-                      },
-                    }}
-                  />
-                  <TextField
-                    margin="normal"
-                    required
-                    fullWidth
-                    name="password"
-                    label="Password"
-                    type={showPassword ? "text" : "password"}
-                    id="password"
-                    autoComplete="current-password"
-                    value={formik.values.password}
-                    onChange={formik.handleChange}
-                    error={
-                      formik.touched.password && Boolean(formik.errors.password)
-                    }
-                    helperText={
-                      formik.touched.password && formik.errors.password
-                    }
-                    sx={{
-                      "& .MuiOutlinedInput-root": {
-                        borderRadius: "8px",
-                        "&:hover fieldset": {
-                          borderColor: "var(--accent-yellow)",
-                        },
-                      },
-                      "& .Mui-focused .MuiOutlinedInput-notchedOutline": {
-                        borderColor: "var(--accent-yellow) !important",
-                      },
-                    }}
-                    InputProps={{
-                      endAdornment: (
-                        <Button
-                          onClick={() => setShowPassword((show) => !show)}
-                          onMouseDown={(e) => e.preventDefault()}
-                          tabIndex={-1}
-                          sx={{
-                            minWidth: 0,
-                            padding: 0,
-                            color: "var(--accent-yellow)",
-                          }}
-                          aria-label={
-                            showPassword ? "Hide password" : "Show password"
-                          }
-                        >
-                          {showPassword ? <VisibilityOff /> : <Visibility />}
-                        </Button>
-                      ),
-                    }}
-                  />
-                  <Button
-                    type="submit"
-                    fullWidth
-                    variant="contained"
-                    sx={{
-                      mt: 3,
-                      mb: 2,
-                      bgcolor: "var(--accent-yellow)",
-                      color: "#fff",
-                      padding: "10px 20px",
-                      fontWeight: 500,
-                      textTransform: "none",
-                      borderRadius: "10px",
-                      boxShadow: "0 4px 10px rgba(0,0,0,0.1)",
-                      transition: "all 0.3s ease",
-                      "&:hover": {
-                        bgcolor: "var(--dark-yellow)",
-                        transform: "scale(1.02)",
-                      },
-                    }}
-                    disabled={loading}
-                  >
-                    {loading ? "Signing in..." : "Sign In"}
-                  </Button>
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
+          <Form onSubmit={handleSubmit}>
+            <Form.Group className="mb-3">
+              <Form.Label>Email Address</Form.Label>
+              <Form.Control
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                placeholder="Enter your email"
+                required
+              />
+            </Form.Group>
 
-          <Grid item xs={12} md={6}>
-            <Typography
-              variant="h5"
-              sx={{
-                mb: 3,
-                fontWeight: 600,
-                fontSize: "1.5rem",
-                color: "#343a40",
-              }}
-            >
-              Why Choose Us
-            </Typography>
-            <Grid container spacing={3}>
-              {features.map((feature) => (
-                <Grid item xs={12} sm={6} key={feature.title}>
-                  <Card
-                    className="why-card"
-                    sx={{
-                      p: 2,
-                      height: "100%",
-                      display: "flex",
-                      flexDirection: "column",
-                    }}
-                  >
-                    <Box
-                      sx={{ display: "flex", alignItems: "center", mb: 1.5 }}
-                    >
-                      <Box sx={{ mr: 1.5 }}>{feature.icon}</Box>
-                      <Typography className="why-card-title">
-                        {feature.title}
-                      </Typography>
-                    </Box>
-                    <Typography className="why-card-text">
-                      {feature.description}
-                    </Typography>
-                  </Card>
-                </Grid>
-              ))}
-            </Grid>
-          </Grid>
-        </Grid>
-      </Container>
-    </Box>
+            <Form.Group className="mb-3">
+              <Form.Label>Password</Form.Label>
+              <Form.Control
+                type="password"
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                placeholder="Enter your password"
+                required
+              />
+            </Form.Group>
+
+            <div className="d-flex justify-content-between align-items-center mb-3">
+              <Form.Check
+                type="checkbox"
+                id="rememberMe"
+                name="rememberMe"
+                checked={formData.rememberMe}
+                onChange={handleChange}
+                label="Remember me"
+              />
+              <Link to="/forgot-password" className="forgot-password">
+                Forgot Password?
+              </Link>
+            </div>
+
+            <Button type="submit" className="btn-login">
+              Login
+            </Button>
+          </Form>
+
+          <div className="register-link">
+            Don't have an account? <Link to="/register">Register here</Link>
+          </div>
+        </div>
+      </div>
+    </div>
   );
-}
+};
 
 export default Login;
