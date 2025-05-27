@@ -52,10 +52,14 @@ const MainHeader = () => {
   const getDashboardUrl = () => {
     if (!user) return "/login";
     switch (user.role) {
-      case "admin": return "/app/dashboard";
-      case "teacher": return "/app/teacher/dashboard";
-      case "student": return "/app/student/dashboard";
-      default: return "/app";
+      case "admin":
+        return "/app/dashboard";
+      case "teacher":
+        return "/app/teacher/dashboard";
+      case "student":
+        return "/app/student/dashboard";
+      default:
+        return "/app";
     }
   };
 
@@ -65,7 +69,7 @@ const MainHeader = () => {
       sx={{
         bgcolor: "white",
         color: "black",
-        boxShadow: "0 4px 6px rgba(0,0,0,0.05)",
+        boxShadow: "0 2px 10px rgba(0,0,0,0.08)",
         py: 1,
       }}
     >
@@ -78,14 +82,15 @@ const MainHeader = () => {
             to="/"
             sx={{
               flexGrow: isMobile ? 1 : 0,
-              fontWeight: "bold",
-              color: "var(--accent-yellow)",
+              fontWeight: "700",
+              color: "#1a237e",
               textDecoration: "none",
               fontSize: { xs: "1.25rem", sm: "1.5rem" },
               fontFamily: "Poppins, sans-serif",
-              transition: "transform 0.3s ease",
+              transition: "all 0.3s ease",
               "&:hover": {
                 transform: "scale(1.05)",
+                color: "#0d47a1",
               },
             }}
           >
@@ -104,11 +109,12 @@ const MainHeader = () => {
                 color="inherit"
                 sx={{
                   ml: "auto",
-                  transition: "transform 0.3s ease",
+                  color: "#1a237e",
+                  transition: "all 0.3s ease",
                   "&:hover": {
                     transform: "scale(1.1)",
-                    bgcolor: "transparent"
-                  }
+                    bgcolor: "rgba(26, 35, 126, 0.05)",
+                  },
                 }}
               >
                 <MenuIcon />
@@ -130,17 +136,20 @@ const MainHeader = () => {
                 onClose={handleCloseNavMenu}
                 sx={{
                   "& .MuiMenu-paper": {
-                    borderRadius: "10px",
+                    borderRadius: "12px",
                     boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
+                    mt: 1,
                   },
                   "& .MuiMenu-list": { py: 0.5 },
                   "& .MuiMenuItem-root": {
                     py: 1.5,
                     fontFamily: "Poppins, sans-serif",
-                    transition: "background-color 0.3s ease",
+                    transition: "all 0.3s ease",
+                    color: "#1a237e",
                     "&:hover": {
-                      backgroundColor: "#f8f9fa"
-                    }
+                      backgroundColor: "rgba(26, 35, 126, 0.05)",
+                      transform: "translateX(4px)",
+                    },
                   },
                 }}
               >
@@ -152,8 +161,11 @@ const MainHeader = () => {
                       handleCloseNavMenu();
                     }}
                     sx={{
-                      borderLeft: isActive(page.path) ? "3px solid var(--accent-yellow)" : "none",
+                      borderLeft: isActive(page.path)
+                        ? "3px solid #1a237e"
+                        : "none",
                       fontWeight: isActive(page.path) ? "600" : "400",
+                      color: isActive(page.path) ? "#1a237e" : "#424242",
                     }}
                   >
                     {page.name}
@@ -166,8 +178,9 @@ const MainHeader = () => {
                       handleCloseNavMenu();
                     }}
                     sx={{
-                      borderLeft: "3px solid var(--accent-yellow)",
+                      borderLeft: "3px solid #1a237e",
                       fontWeight: "600",
+                      color: "#1a237e",
                     }}
                   >
                     Dashboard
@@ -179,8 +192,11 @@ const MainHeader = () => {
                       handleCloseNavMenu();
                     }}
                     sx={{
-                      borderLeft: isActive("/login") ? "3px solid var(--accent-yellow)" : "none",
+                      borderLeft: isActive("/login")
+                        ? "3px solid #1a237e"
+                        : "none",
                       fontWeight: isActive("/login") ? "600" : "400",
+                      color: isActive("/login") ? "#1a237e" : "#424242",
                     }}
                   >
                     Login
@@ -208,15 +224,21 @@ const MainHeader = () => {
                   key={page.name}
                   onClick={() => navigate(page.path)}
                   sx={{
-                    color: isActive(page.path) ? "var(--accent-yellow)" : "#161616",
+                    color: isActive(page.path) ? "#1a237e" : "#424242",
                     fontWeight: isActive(page.path) ? "600" : "500",
                     fontSize: "1rem",
                     textTransform: "none",
                     textDecoration: isActive(page.path) ? "underline" : "none",
-                    textDecorationColor: "var(--accent-yellow)",
+                    textDecorationColor: "#1a237e",
                     textUnderlineOffset: "5px",
                     padding: "8px 12px",
                     borderRadius: "8px",
+                    transition: "all 0.3s ease",
+                    "&:hover": {
+                      backgroundColor: "rgba(26, 35, 126, 0.05)",
+                      transform: "translateY(-2px)",
+                      color: "#1a237e",
+                    },
                   }}
                 >
                   {page.name}
@@ -229,18 +251,18 @@ const MainHeader = () => {
                   onClick={() => navigate(getDashboardUrl())}
                   startIcon={<AccountCircleIcon />}
                   sx={{
-                    color: "#fff",
-                    backgroundColor: "var(--accent-yellow)",
+                    color: "white",
+                    backgroundColor: "#1a237e",
                     padding: "8px 20px",
                     borderRadius: "50px",
                     fontWeight: "500",
                     textTransform: "none",
-                    boxShadow: "0 4px 10px rgba(0,0,0,0.1)",
+                    boxShadow: "0 4px 10px rgba(26, 35, 126, 0.2)",
                     transition: "all 0.3s ease",
                     "&:hover": {
-                      backgroundColor: "var(--dark-yellow)",
+                      backgroundColor: "#0d47a1",
                       transform: "scale(1.05)",
-                    }
+                    },
                   }}
                 >
                   {user?.name || "Dashboard"}
@@ -250,18 +272,18 @@ const MainHeader = () => {
                   className="login-btn"
                   onClick={() => navigate("/login")}
                   sx={{
-                    color: "#fff",
-                    backgroundColor: "var(--accent-yellow)",
+                    color: "white",
+                    backgroundColor: "#1a237e",
                     padding: "8px 20px",
                     borderRadius: "50px",
                     fontWeight: "500",
                     textTransform: "none",
-                    boxShadow: "0 4px 10px rgba(0,0,0,0.1)",
+                    boxShadow: "0 4px 10px rgba(26, 35, 126, 0.2)",
                     transition: "all 0.3s ease",
                     "&:hover": {
-                      backgroundColor: "var(--dark-yellow)",
+                      backgroundColor: "#0d47a1",
                       transform: "scale(1.05)",
-                    }
+                    },
                   }}
                 >
                   Login
