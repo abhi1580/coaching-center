@@ -147,24 +147,24 @@ const validationSchema = Yup.object().shape({
 
 const initialValues = {
   // Personal Information
-  name: "",
-  motherName: "",
-  fatherOccupation: "",
-  gender: "",
-  dob: "",
+    name: "",
+    motherName: "",
+    fatherOccupation: "",
+    gender: "",
+    dob: "",
 
   // Academic Details
-  class: "",
-  subject: "",
+    class: "",
+    subject: "",
   medium: "",
   percentage: "",
 
   // Contact Information
-  aadhar: "",
-  parentsPhone: "",
+    aadhar: "",
+    parentsPhone: "",
   studentPhone: "",
-  email: "",
-  address: "",
+    email: "",
+    address: "",
 };
 
 function Admission() {
@@ -356,7 +356,7 @@ function Admission() {
 
     switch (step) {
       case 0:
-        return (
+  return (
           <Box>
             <Typography variant="h6" gutterBottom>
               Personal Information
@@ -367,13 +367,13 @@ function Admission() {
               <TextField
                 fullWidth
                 label="Full Name"
-                name="name"
+                  name="name"
                 value={values.name}
-                onChange={handleChange}
+                  onChange={handleChange}
                 onBlur={handleBlur}
                 error={touched.name && Boolean(errors.name)}
                 helperText={touched.name && errors.name}
-                required
+                  required
                 InputProps={{
                   endAdornment: (
                     <InputAdornment position="end">
@@ -389,7 +389,7 @@ function Admission() {
               <TextField
                 fullWidth
                 label="Mother's Name"
-                name="motherName"
+                  name="motherName"
                 value={values.motherName}
                 onChange={handleChange}
                 onBlur={handleBlur}
@@ -436,8 +436,8 @@ function Admission() {
               />
               <FormControl
                 error={touched.gender && Boolean(errors.gender)}
-                required
-              >
+                  required
+                >
                 <FormLabel>Gender</FormLabel>
                 <RadioGroup
                   row
@@ -500,7 +500,7 @@ function Admission() {
                 label="Subject"
                 name="subject"
                 value={values.subject}
-                onChange={handleChange}
+                    onChange={handleChange}
                 onBlur={handleBlur}
                 error={touched.subject && Boolean(errors.subject)}
                 helperText={touched.subject && errors.subject}
@@ -517,7 +517,7 @@ function Admission() {
                 label="Medium"
                 name="medium"
                 value={values.medium}
-                onChange={handleChange}
+                    onChange={handleChange}
                 onBlur={handleBlur}
                 error={touched.medium && Boolean(errors.medium)}
                 helperText={touched.medium && errors.medium}
@@ -535,7 +535,7 @@ function Admission() {
                 name="percentage"
                 type="number"
                 value={values.percentage}
-                onChange={handleChange}
+                    onChange={handleChange}
                 onBlur={handleBlur}
                 error={touched.percentage && Boolean(errors.percentage)}
                 helperText={touched.percentage && errors.percentage}
@@ -559,7 +559,7 @@ function Admission() {
                 label="Aadhar Number"
                 name="aadhar"
                 value={values.aadhar}
-                onChange={handleChange}
+                    onChange={handleChange}
                 onBlur={handleBlur}
                 error={touched.aadhar && Boolean(errors.aadhar)}
                 helperText={touched.aadhar && errors.aadhar}
@@ -585,7 +585,7 @@ function Admission() {
                 label="Parent's Phone"
                 name="parentsPhone"
                 value={values.parentsPhone}
-                onChange={handleChange}
+                    onChange={handleChange}
                 onBlur={handleBlur}
                 error={touched.parentsPhone && Boolean(errors.parentsPhone)}
                 helperText={touched.parentsPhone && errors.parentsPhone}
@@ -611,7 +611,7 @@ function Admission() {
                 label="Student's Phone"
                 name="studentPhone"
                 value={values.studentPhone}
-                onChange={handleChange}
+                    onChange={handleChange}
                 onBlur={handleBlur}
                 error={touched.studentPhone && Boolean(errors.studentPhone)}
                 helperText={touched.studentPhone && errors.studentPhone}
@@ -623,24 +623,24 @@ function Admission() {
                 name="email"
                 type="email"
                 value={values.email}
-                onChange={handleChange}
+              onChange={handleChange}
                 onBlur={handleBlur}
                 error={touched.email && Boolean(errors.email)}
                 helperText={touched.email && errors.email}
-                required
-              />
+              required
+            />
               <TextField
                 fullWidth
                 label="Address"
-                name="address"
+              name="address"
                 multiline
                 rows={4}
                 value={values.address}
-                onChange={handleChange}
+              onChange={handleChange}
                 onBlur={handleBlur}
                 error={touched.address && Boolean(errors.address)}
                 helperText={touched.address && errors.address}
-                required
+              required
                 sx={{ gridColumn: "span 2" }}
               />
             </Box>
@@ -906,7 +906,7 @@ function Admission() {
                       type="button"
                     >
                       {isLoading ? "Submitting..." : "Submit"}
-                    </Button>
+          </Button>
                   )}
                 </Box>
               </Box>
@@ -914,7 +914,7 @@ function Admission() {
           )}
         </Formik>
       </StyledPaper>
-    </Container>
+      </Container>
   );
 }
 
