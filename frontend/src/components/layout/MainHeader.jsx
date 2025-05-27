@@ -76,26 +76,30 @@ const MainHeader = () => {
       <Container maxWidth="xl" sx={{ px: { xs: 1, sm: 2, md: 3 } }}>
         <Toolbar disableGutters sx={{ minHeight: { xs: 56, sm: 64 } }}>
           {/* Brand */}
-          <Typography
-            variant="h5"
+          <Box
             component={RouterLink}
             to="/"
             sx={{
               flexGrow: isMobile ? 1 : 0,
-              fontWeight: "700",
-              color: "#1a237e",
+              display: "flex",
+              alignItems: "center",
               textDecoration: "none",
-              fontSize: { xs: "1.25rem", sm: "1.5rem" },
-              fontFamily: "Poppins, sans-serif",
               transition: "all 0.3s ease",
               "&:hover": {
                 transform: "scale(1.05)",
-                color: "#0d47a1",
               },
             }}
           >
-            Physics Station
-          </Typography>
+            <img
+              src="/logo.jpg"
+              alt="Physics Station"
+              style={{
+                height: "40px",
+                width: "auto",
+                objectFit: "contain",
+              }}
+            />
+          </Box>
 
           {/* Mobile menu icon */}
           {isMobile && (
