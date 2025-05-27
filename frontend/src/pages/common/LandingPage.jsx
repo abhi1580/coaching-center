@@ -23,6 +23,13 @@ import img5 from "../../assets/images/img5.jpg";
 import img6 from "../../assets/images/img6.jpg";
 import einstein from "../../assets/images/header-bg.png";
 import "./LandingPage.css";
+import {
+  FaGraduationCap,
+  FaBook,
+  FaUsers,
+  FaChalkboardTeacher,
+  FaArrowUp,
+} from "react-icons/fa";
 
 function LandingPage() {
   const [isVisible, setIsVisible] = useState(false);
@@ -31,11 +38,23 @@ function LandingPage() {
   const scale = useTransform(scrollYProgress, [0, 0.2], [1, 0.8]);
 
   useEffect(() => {
-    setIsVisible(true);
+    const toggleVisibility = () => {
+      if (window.pageYOffset > 300) {
+        setIsVisible(true);
+      } else {
+        setIsVisible(false);
+      }
+    };
+
+    window.addEventListener("scroll", toggleVisibility);
+    return () => window.removeEventListener("scroll", toggleVisibility);
   }, []);
 
   const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
   };
 
   const features = [
@@ -74,147 +93,88 @@ function LandingPage() {
   return (
     <div className="landing-page">
       {/* Hero Section */}
-      <motion.section style={{ opacity, scale }} className="hero-section">
-        <div className="hero-content">
-          <Row className="align-items-center">
-            <Col lg={6} className="hero-text">
+      <section className="hero-section">
+        <Container>
+          <Row className="justify-content-center">
+            <Col xs={12} md={10} lg={8}>
               <motion.div
-                initial={{ x: -50, opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                transition={{ delay: 0.2 }}
-                className="hero-badge"
+                className="hero-content"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
               >
-                <span>Welcome to Physics Station</span>
-              </motion.div>
-              <motion.h1
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.4 }}
-                className="hero-title"
-              >
-                Discover the
-                <span className="gradient-text"> Magic of Physics</span>
-              </motion.h1>
-              <motion.p
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.6 }}
-                className="hero-subtitle"
-              >
-                Join our community of learners and explore the fascinating world
-                of physics with expert guidance and hands-on experience
-              </motion.p>
-              <motion.div
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.8 }}
-                className="hero-features"
-              >
-                <div className="feature-item">
-                  <School className="feature-icon" />
-                  <span>Expert Teachers</span>
-                </div>
-                <div className="feature-item">
-                  <Science className="feature-icon" />
-                  <span>Practical Learning</span>
-                </div>
-                <div className="feature-item">
-                  <EmojiEvents className="feature-icon" />
-                  <span>Success Stories</span>
-                </div>
-              </motion.div>
-              <motion.div
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 1 }}
-                className="hero-buttons"
-              >
-                <Button className="primary-button" size="lg" href="/admission">
-                  Start Learning <ArrowForward />
-                </Button>
-                <Button className="secondary-button" size="lg" href="/courses">
-                  Explore Courses
-                </Button>
-              </motion.div>
-            </Col>
-            <Col lg={6} className="hero-image">
-              <motion.div
-                initial={{ scale: 0.8, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ delay: 0.8 }}
-                className="image-container"
-              >
-                <motion.img
-                  src={einstein}
-                  alt="Physics Education"
-                  className="einstein-image"
-                  animate={{
-                    y: [0, -10, 0],
-                  }}
-                  transition={{
-                    duration: 4,
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                  }}
-                />
                 <motion.div
-                  className="floating-element element-1"
-                  animate={{
-                    y: [0, -15, 0],
-                    x: [0, 5, 0],
-                  }}
-                  transition={{
-                    duration: 3,
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                  }}
+                  className="hero-badge"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.2 }}
                 >
-                  <div className="element-content">
-                    <span className="element-number">1000+</span>
-                    <span className="element-text">Students</span>
+                  Welcome to Physics Station
+                </motion.div>
+                <motion.h1
+                  className="hero-title"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.4 }}
+                >
+                  Discover the{" "}
+                  <span className="gradient-text">Magic of Physics</span>
+                </motion.h1>
+                <motion.p
+                  className="hero-subtitle"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.6 }}
+                >
+                  Join our community of learners and explore the fascinating
+                  world of physics with expert guidance and hands-on experience
+                </motion.p>
+                <motion.div
+                  className="hero-features"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.8 }}
+                >
+                  <div className="feature-item">
+                    <FaGraduationCap className="feature-icon" />
+                    <div>
+                      <h3>Expert Guidance</h3>
+                      <p>Learn from IIT & NIT graduates</p>
+                    </div>
+                  </div>
+                  <div className="feature-item">
+                    <FaBook className="feature-icon" />
+                    <div>
+                      <h3>Smart Learning</h3>
+                      <p>AI-powered personalized study plans</p>
+                    </div>
+                  </div>
+                  <div className="feature-item">
+                    <FaUsers className="feature-icon" />
+                    <div>
+                      <h3>Live Classes</h3>
+                      <p>Interactive online & offline sessions</p>
+                    </div>
                   </div>
                 </motion.div>
                 <motion.div
-                  className="floating-element element-2"
-                  animate={{
-                    y: [0, -15, 0],
-                    x: [0, -5, 0],
-                  }}
-                  transition={{
-                    duration: 3,
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                    delay: 1,
-                  }}
+                  className="hero-buttons"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 1 }}
                 >
-                  <div className="element-content">
-                    <span className="element-number">95%</span>
-                    <span className="element-text">Success Rate</span>
-                  </div>
-                </motion.div>
-                <motion.div
-                  className="floating-element element-3"
-                  animate={{
-                    y: [0, -15, 0],
-                    x: [0, 5, 0],
-                  }}
-                  transition={{
-                    duration: 3,
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                    delay: 2,
-                  }}
-                >
-                  <div className="element-content">
-                    <span className="element-number">50+</span>
-                    <span className="element-text">Expert Teachers</span>
-                  </div>
+                  <a href="/admission" className="primary-button">
+                    Start Learning
+                  </a>
+                  <a href="/courses" className="secondary-button">
+                    Explore Courses
+                  </a>
                 </motion.div>
               </motion.div>
             </Col>
           </Row>
-        </div>
-      </motion.section>
+        </Container>
+      </section>
 
       {/* Features Section */}
       <section className="features-section">
@@ -230,7 +190,7 @@ function LandingPage() {
           </motion.div>
           <Row>
             {features.map((feature, index) => (
-              <Col md={4} key={index}>
+              <Col xs={12} sm={6} md={4} key={index}>
                 <motion.div
                   className="m-3"
                   initial={{ opacity: 0, y: 20 }}
@@ -319,9 +279,9 @@ function LandingPage() {
             <h2>Our Learning Environment</h2>
             <p>Take a look at our state-of-the-art facilities</p>
           </motion.div>
-          <Row>
+          <Row className="g-2">
             {[img1, img2, img3, img4, img5, img6].map((image, i) => (
-              <Col md={4} key={i}>
+              <Col xs={12} sm={6} md={4} key={i}>
                 <motion.div
                   initial={{ opacity: 0, scale: 0.8 }}
                   whileInView={{ opacity: 1, scale: 1 }}
@@ -329,7 +289,16 @@ function LandingPage() {
                   transition={{ delay: i * 0.1 }}
                   className="gallery-item"
                 >
-                  <img src={image} alt={`Gallery ${i + 1}`} loading="lazy" />
+                  <img
+                    src={image}
+                    alt={`Gallery ${i + 1}`}
+                    loading="lazy"
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.src =
+                        "https://via.placeholder.com/400x300?text=Image+Not+Found";
+                    }}
+                  />
                   <div className="gallery-overlay">
                     <span>View Details</span>
                   </div>
@@ -359,17 +328,18 @@ function LandingPage() {
       </section>
 
       {/* Scroll to Top Button */}
-      <motion.button
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        whileHover={{ scale: 1.1 }}
-        whileTap={{ scale: 0.9 }}
-        onClick={scrollToTop}
-        className="scroll-to-top"
-        aria-label="Scroll to top"
-      >
-        <KeyboardArrowUp />
-      </motion.button>
+      {isVisible && (
+        <motion.button
+          className="scroll-to-top"
+          onClick={scrollToTop}
+          initial={{ opacity: 0, scale: 0.5 }}
+          animate={{ opacity: 1, scale: 1 }}
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
+        >
+          <FaArrowUp />
+        </motion.button>
+      )}
     </div>
   );
 }
