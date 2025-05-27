@@ -531,7 +531,7 @@ function Admission() {
               </TextField>
               <TextField
                 fullWidth
-                label="Percentage in Last Exam"
+                label="Percentage in Last Year"
                 name="percentage"
                 type="number"
                 value={values.percentage}
@@ -741,7 +741,7 @@ function Admission() {
                   </Box>
                   <Box>
                     <Typography variant="subtitle2" color="text.secondary">
-                      Percentage in Last Exam
+                      Percentage in Last Year
                     </Typography>
                     <Typography>{values.percentage}%</Typography>
                   </Box>
