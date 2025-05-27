@@ -73,7 +73,6 @@ function Resources() {
     setError("");
     try {
       const response = await api.get("/videos");
-      console.log("API Response:", response.data);
 
       if (!response.data) {
         console.error("No data received from API");
@@ -84,14 +83,12 @@ function Resources() {
 
       // Ensure we have an array of videos
       const videoArray = Array.isArray(response.data) ? response.data : [];
-      console.log("Processed videos:", videoArray.length);
 
       // Sort videos by createdAt (newest first)
       const sortedVideos = videoArray.sort(
         (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
       );
 
-      console.log("Setting videos state with:", sortedVideos.length, "videos");
       setVideos(sortedVideos);
     } catch (err) {
       console.error("Error fetching videos:", err);

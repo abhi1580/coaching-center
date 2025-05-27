@@ -143,6 +143,7 @@ const Login = () => {
                 value={formData.email}
                 onChange={handleChange}
                 placeholder="Enter your email"
+                autoComplete="username"
                 required
               />
             </Form.Group>
@@ -155,6 +156,7 @@ const Login = () => {
                 value={formData.password}
                 onChange={handleChange}
                 placeholder="Enter your password"
+                autoComplete="current-password"
                 required
               />
             </Form.Group>
