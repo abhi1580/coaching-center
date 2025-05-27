@@ -11,11 +11,7 @@
   text-align: center;
   position: relative;
   overflow: hidden;
-  background: linear-gradient(
-    135deg,
-    rgba(26, 35, 126, 0.95) 0%,
-    rgba(13, 71, 161, 0.95) 100%
-  );
+  background: linear-gradient(135deg, rgba(26, 35, 126, 0.95) 0%, rgba(13, 71, 161, 0.95) 100%);
 }
 
 .hero-section::before {
@@ -25,11 +21,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(
-    45deg,
-    rgba(33, 150, 243, 0.1),
-    rgba(0, 188, 212, 0.1)
-  );
+  background: linear-gradient(45deg, rgba(33, 150, 243, 0.1), rgba(0, 188, 212, 0.1));
   z-index: 1;
 }
 
@@ -50,6 +42,7 @@
   margin-bottom: 1.5rem;
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #64b5f6;
 }
 
 .hero-title {
@@ -60,7 +53,7 @@
 }
 
 .gradient-text {
-  background: linear-gradient(45deg, #2196f3, #00bcd4);
+  background: linear-gradient(45deg, #64b5f6, #4fc3f7);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   display: inline-block;
@@ -96,12 +89,13 @@
   transform: translateY(-5px);
   background: rgba(255, 255, 255, 0.15);
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+  border-color: #64b5f6;
 }
 
 .feature-icon {
   font-size: 2rem;
-  color: #2196f3;
-  background: linear-gradient(45deg, #2196f3, #00bcd4);
+  color: #64b5f6;
+  background: linear-gradient(45deg, #64b5f6, #4fc3f7);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
@@ -132,7 +126,7 @@
   font-size: 1.1rem;
   font-weight: 600;
   color: #1a237e;
-  background: linear-gradient(45deg, #fff, #e3f2fd);
+  background: linear-gradient(45deg, #64b5f6, #4fc3f7);
   border: none;
   border-radius: 0.5rem;
   text-decoration: none;
@@ -144,6 +138,7 @@
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
   color: #1a237e;
+  background: linear-gradient(45deg, #4fc3f7, #64b5f6);
 }
 
 .secondary-button {
@@ -151,9 +146,9 @@
   padding: 1rem 2rem;
   font-size: 1.1rem;
   font-weight: 600;
-  color: #fff;
+  color: #64b5f6;
   background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid #64b5f6;
   border-radius: 0.5rem;
   text-decoration: none;
   transition: all 0.3s ease;
@@ -162,14 +157,15 @@
 
 .secondary-button:hover {
   transform: translateY(-2px);
-  background: rgba(255, 255, 255, 0.15);
-  color: #fff;
+  background: rgba(100, 181, 246, 0.1);
+  color: #4fc3f7;
+  border-color: #4fc3f7;
 }
 
 /* Features Section */
 .features-section {
   padding: 3rem 1rem;
-  background: rgba(255, 255, 255, 0.05);
+  background: linear-gradient(135deg, rgba(13, 71, 161, 0.95) 0%, rgba(26, 35, 126, 0.95) 100%);
 }
 
 .section-header {
@@ -194,7 +190,7 @@
   transform: translateX(-50%);
   width: 60px;
   height: 3px;
-  background: linear-gradient(45deg, #2196f3, #00bcd4);
+  background: linear-gradient(45deg, #64b5f6, #4fc3f7);
   border-radius: 3px;
 }
 
@@ -222,13 +218,14 @@
   transform: translateY(-5px);
   background: rgba(255, 255, 255, 0.15);
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+  border-color: #64b5f6;
 }
 
 .feature-icon {
   font-size: 2.5rem;
   margin-bottom: 1.5rem;
-  color: #2196f3;
-  background: linear-gradient(45deg, #2196f3, #00bcd4);
+  color: #64b5f6;
+  background: linear-gradient(45deg, #64b5f6, #4fc3f7);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   display: flex;
@@ -262,7 +259,7 @@
 /* Gallery Section */
 .gallery-section {
   padding: 3rem 1rem;
-  background: rgba(0, 0, 0, 0.2);
+  background: linear-gradient(135deg, rgba(26, 35, 126, 0.95) 0%, rgba(13, 71, 161, 0.95) 100%);
 }
 
 .gallery-item {
@@ -293,7 +290,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.7), transparent);
+  background: linear-gradient(to top, rgba(26, 35, 126, 0.9), transparent);
   display: flex;
   align-items: flex-end;
   padding: 1.5rem;
@@ -326,11 +323,7 @@
 .cta-section {
   padding: 3rem 1rem;
   text-align: center;
-  background: linear-gradient(
-    45deg,
-    rgba(33, 150, 243, 0.1),
-    rgba(0, 188, 212, 0.1)
-  );
+  background: linear-gradient(135deg, rgba(13, 71, 161, 0.95) 0%, rgba(26, 35, 126, 0.95) 100%);
 }
 
 .cta-title {
@@ -349,26 +342,6 @@
   margin-right: auto;
 }
 
-.cta-button {
-  display: inline-block;
-  padding: 1rem 2rem;
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: #1a237e;
-  background: linear-gradient(45deg, #fff, #e3f2fd);
-  border: none;
-  border-radius: 0.5rem;
-  text-decoration: none;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-}
-
-.cta-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
-  color: #1a237e;
-}
-
 /* Scroll to Top Button */
 .scroll-to-top {
   position: fixed;
@@ -376,7 +349,7 @@
   right: 2rem;
   width: 3rem;
   height: 3rem;
-  background: linear-gradient(45deg, #2196f3, #00bcd4);
+  background: linear-gradient(45deg, #64b5f6, #4fc3f7);
   color: white;
   border: none;
   border-radius: 50%;
@@ -399,6 +372,7 @@
 .scroll-to-top:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+  background: linear-gradient(45deg, #4fc3f7, #64b5f6);
 }
 
 /* Media Queries */
@@ -417,30 +391,6 @@
 
   .hero-badge {
     font-size: 1rem;
-  }
-
-  .hero-features {
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  }
-
-  .feature-item {
-    padding: 2rem;
-  }
-
-  .feature-icon {
-    font-size: 2.5rem;
-  }
-
-  .feature-item h3 {
-    font-size: 1.25rem;
-  }
-
-  .feature-item p {
-    font-size: 1rem;
-  }
-
-  .gallery-item {
-    margin-bottom: 1.5rem;
   }
 
   .section-header h2 {
@@ -479,26 +429,6 @@
     font-size: 3.5rem;
   }
 
-  .hero-subtitle {
-    font-size: 1.5rem;
-  }
-
-  .feature-item {
-    padding: 2rem;
-  }
-
-  .feature-icon {
-    font-size: 2.5rem;
-  }
-
-  .feature-item h3 {
-    font-size: 1.25rem;
-  }
-
-  .feature-item p {
-    font-size: 1rem;
-  }
-
   .section-header h2 {
     font-size: 2.5rem;
   }
@@ -516,27 +446,6 @@
   .feature-card h3 {
     font-size: 1.5rem;
   }
-
-  .gallery-item {
-    margin-bottom: 2rem;
-  }
-
-  .gallery-title {
-    font-size: 1.25rem;
-  }
-
-  .cta-title {
-    font-size: 2rem;
-  }
-
-  .cta-description {
-    font-size: 1.25rem;
-  }
-
-  .cta-button {
-    padding: 1.25rem 2.5rem;
-    font-size: 1.25rem;
-  }
 }
 
 @media (min-width: 992px) {
@@ -546,9 +455,5 @@
 
   .hero-title {
     font-size: 4rem;
-  }
-
-  .hero-features {
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   }
 }
