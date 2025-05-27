@@ -1,12 +1,6 @@
-import {
-  Container,
-  Row,
-  Col,
-  Button,
-  Card,
-  Form,
-} from "react-bootstrap";
-import { motion } from "framer-motion";
+import React, { useState, useEffect } from "react";
+import { Container, Row, Col, Button, Card, Form } from "react-bootstrap";
+import { motion, useScroll, useTransform } from "framer-motion";
 import {
   School,
   Assignment,
@@ -28,10 +22,18 @@ import img4 from "../../assets/images/img4.jpg";
 import img5 from "../../assets/images/img5.jpg";
 import img6 from "../../assets/images/img6.jpg";
 import einstein from "../../assets/images/header-bg.png";
-import headerBg from "../../assets/images/header-bg.png";
 import "./LandingPage.css";
 
 function LandingPage() {
+  const [isVisible, setIsVisible] = useState(false);
+  const { scrollYProgress } = useScroll();
+  const opacity = useTransform(scrollYProgress, [0, 0.2], [1, 0]);
+  const scale = useTransform(scrollYProgress, [0, 0.2], [1, 0.8]);
+
+  useEffect(() => {
+    setIsVisible(true);
+  }, []);
+
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -72,12 +74,7 @@ function LandingPage() {
   return (
     <div className="landing-page">
       {/* Hero Section */}
-      <motion.section
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 1 }}
-        className="hero-section"
-      >
+      <motion.section style={{ opacity, scale }} className="hero-section">
         <div className="hero-content">
           <Row className="align-items-center">
             <Col lg={6} className="hero-text">
@@ -104,7 +101,8 @@ function LandingPage() {
                 transition={{ delay: 0.6 }}
                 className="hero-subtitle"
               >
-                Join our community of learners and explore the fascinating world of physics with expert guidance and hands-on experience
+                Join our community of learners and explore the fascinating world
+                of physics with expert guidance and hands-on experience
               </motion.p>
               <motion.div
                 initial={{ y: 20, opacity: 0 }}
@@ -131,18 +129,10 @@ function LandingPage() {
                 transition={{ delay: 1 }}
                 className="hero-buttons"
               >
-                <Button
-                  className="primary-button"
-                  size="lg"
-                  href="/admission"
-                >
+                <Button className="primary-button" size="lg" href="/admission">
                   Start Learning <ArrowForward />
                 </Button>
-                <Button
-                  className="secondary-button"
-                  size="lg"
-                  href="/courses"
-                >
+                <Button className="secondary-button" size="lg" href="/courses">
                   Explore Courses
                 </Button>
               </motion.div>
@@ -224,7 +214,6 @@ function LandingPage() {
             </Col>
           </Row>
         </div>
-        <div className="hero-shape"></div>
       </motion.section>
 
       {/* Features Section */}
@@ -243,6 +232,7 @@ function LandingPage() {
             {features.map((feature, index) => (
               <Col md={4} key={index}>
                 <motion.div
+                  className="m-3"
                   initial={{ opacity: 0, y: 20 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
@@ -339,7 +329,7 @@ function LandingPage() {
                   transition={{ delay: i * 0.1 }}
                   className="gallery-item"
                 >
-                  <img src={image} alt={`Gallery ${i + 1}`} />
+                  <img src={image} alt={`Gallery ${i + 1}`} loading="lazy" />
                   <div className="gallery-overlay">
                     <span>View Details</span>
                   </div>
