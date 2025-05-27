@@ -69,6 +69,42 @@ export const getSubject = asyncHandler(async (req, res) => {
   });
 });
 
+// Validation helper function
+const validateSubjectData = (name, description, duration) => {
+  const errors = [];
+
+  // Name validation
+  if (!name || name.trim().length === 0) {
+    errors.push("Name is required");
+  } else if (name.trim().length < 2) {
+    errors.push("Name must be at least 2 characters long");
+  } else if (name.trim().length > 50) {
+    errors.push("Name must not exceed 50 characters");
+  } else if (!/^[a-zA-Z0-9\s\-_]+$/.test(name)) {
+    errors.push(
+      "Name can only contain letters, numbers, spaces, hyphens, and underscores"
+    );
+  }
+
+  // Description validation
+  if (!description || description.trim().length === 0) {
+    errors.push("Description is required");
+  } else if (description.trim().length < 10) {
+    errors.push("Description must be at least 10 characters long");
+  } else if (description.trim().length > 500) {
+    errors.push("Description must not exceed 500 characters");
+  }
+
+  // Duration validation
+  if (!duration || duration.trim().length === 0) {
+    errors.push("Duration is required");
+  } else if (!/^\d+\s*(?:hour|hr|h|minute|min|m)s?$/i.test(duration.trim())) {
+    errors.push("Duration must be in format: 'X hours' or 'X minutes'");
+  }
+
+  return errors;
+};
+
 // @desc    Create new subject
 // @route   POST /api/subjects
 // @access  Private
@@ -76,11 +112,13 @@ export const createSubject = async (req, res) => {
   try {
     const { name, description, duration } = req.body;
 
-    // Validate required fields
-    if (!name || !description || !duration) {
+    // Validate all fields
+    const validationErrors = validateSubjectData(name, description, duration);
+    if (validationErrors.length > 0) {
       return res.status(400).json({
         success: false,
-        message: "Name, description, and duration are required",
+        message: "Validation failed",
+        errors: validationErrors,
         error: "VALIDATION_ERROR",
       });
     }
@@ -104,8 +142,8 @@ export const createSubject = async (req, res) => {
     // Create new subject with normalized name
     const subject = new Subject({
       name: normalizedName,
-      description,
-      duration,
+      description: description.trim(),
+      duration: duration.trim(),
     });
 
     await subject.save();
@@ -128,59 +166,59 @@ export const createSubject = async (req, res) => {
 // @desc    Update subject
 // @route   PUT /api/subjects/:id
 // @access  Private
-export const updateSubject = asyncHandler(async (req, res) => {
-  // Check if user is admin
-  if (req.user.role !== "admin") {
-    return res.status(403).json({
-      success: false,
-      message: "Only admin can update subjects",
-    });
-  }
-
-  let subject = await Subject.findById(req.params.id);
-  if (!subject) {
-    return res.status(404).json({
-      success: false,
-      error: "Subject not found",
-    });
-  }
-
-  const subjectName = req.body.name.toLowerCase().trim();
-
-  // Check if another subject with the same name exists (excluding current subject)
-  const existingSubject = await Subject.findOne({
-    name: { $regex: new RegExp(`^${subjectName}$`, "i") },
-    _id: { $ne: req.params.id }, // Exclude current subject
-  });
-
-  if (existingSubject) {
-    return res.status(400).json({
-      success: false,
-      message: "A subject with this name already exists",
-      error: "DUPLICATE_SUBJECT",
-    });
-  }
-
-  // Update only the fields we want
-  const updateData = {
-    name: subjectName,
-    description: req.body.description,
-    duration: req.body.duration,
-  };
-
+export const updateSubject = async (req, res) => {
   try {
-    subject = await Subject.findByIdAndUpdate(req.params.id, updateData, {
-      new: true,
-      runValidators: true,
+    // Check if user is admin
+    if (req.user.role !== "admin") {
+      return res.status(403).json({
+        success: false,
+        message: "Only admin can update subjects",
+      });
+    }
+
+    const { name, description, duration } = req.body;
+
+    // Validate all fields
+    const validationErrors = validateSubjectData(name, description, duration);
+    if (validationErrors.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Validation failed",
+        errors: validationErrors,
+        error: "VALIDATION_ERROR",
+      });
+    }
+
+    let subject = await Subject.findById(req.params.id);
+    if (!subject) {
+      return res.status(404).json({
+        success: false,
+        error: "Subject not found",
+      });
+    }
+
+    // Check if any fields have actually changed
+    const normalizedName = name.toLowerCase().trim();
+    const hasChanges =
+      normalizedName !== subject.name.toLowerCase() ||
+      description.trim() !== subject.description ||
+      duration.trim() !== subject.duration;
+
+    if (!hasChanges) {
+      return res.status(400).json({
+        success: false,
+        message: "No changes detected",
+        error: "NO_CHANGES",
+      });
+    }
+
+    // Check if another subject with the same name exists (excluding current subject)
+    const existingSubject = await Subject.findOne({
+      name: { $regex: new RegExp(`^${normalizedName}$`, "i") },
+      _id: { $ne: req.params.id },
     });
 
-    res.status(200).json({
-      success: true,
-      data: subject,
-    });
-  } catch (error) {
-    // Handle duplicate key error
-    if (error.code === 11000) {
+    if (existingSubject) {
       return res.status(400).json({
         success: false,
         message: "A subject with this name already exists",
@@ -188,14 +226,34 @@ export const updateSubject = asyncHandler(async (req, res) => {
       });
     }
 
-    // Handle other errors
+    // Update subject
+    subject = await Subject.findByIdAndUpdate(
+      req.params.id,
+      {
+        name: normalizedName,
+        description: description.trim(),
+        duration: duration.trim(),
+      },
+      {
+        new: true,
+        runValidators: true,
+      }
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Subject updated successfully",
+      data: subject,
+    });
+  } catch (error) {
+    console.error("Error updating subject:", error);
     res.status(500).json({
       success: false,
-      message: "Error updating subject",
+      message: "Failed to update subject",
       error: error.message,
     });
   }
-});
+};
 
 // @desc    Delete subject
 // @route   DELETE /api/subjects/:id

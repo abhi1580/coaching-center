@@ -52,59 +52,104 @@ export const getStandard = async (req, res) => {
   }
 };
 
-// @desc    Create standard
+// Helper function to validate standard data
+const validateStandardData = (data) => {
+  const errors = {};
+
+  // Name validation
+  if (!data.name || typeof data.name !== "string") {
+    errors.name = "Name is required";
+  } else {
+    const trimmedName = data.name.trim();
+    if (trimmedName.length < 2) {
+      errors.name = "Name must be at least 2 characters long";
+    } else if (trimmedName.length > 50) {
+      errors.name = "Name must not exceed 50 characters";
+    } else if (!/^[a-zA-Z0-9\s-]+$/.test(trimmedName)) {
+      errors.name =
+        "Name can only contain letters, numbers, spaces, and hyphens";
+    }
+  }
+
+  // Description validation
+  if (!data.description || typeof data.description !== "string") {
+    errors.description = "Description is required";
+  } else {
+    const trimmedDesc = data.description.trim();
+    if (trimmedDesc.length < 10) {
+      errors.description = "Description must be at least 10 characters long";
+    } else if (trimmedDesc.length > 500) {
+      errors.description = "Description must not exceed 500 characters";
+    }
+  }
+
+  // Level validation
+  if (!data.level || typeof data.level !== "number") {
+    errors.level = "Level is required and must be a number";
+  } else if (data.level <= 0) {
+    errors.level = "Level must be a positive number";
+  } else if (!Number.isInteger(data.level)) {
+    errors.level = "Level must be an integer";
+  }
+
+  return Object.keys(errors).length > 0 ? errors : null;
+};
+
+// @desc    Create new standard
 // @route   POST /api/standards
-// @access  Private (Admin only)
+// @access  Private
 export const createStandard = async (req, res) => {
   try {
-    // Check if user is admin
-    if (req.user.role !== "admin") {
-      return res.status(403).json({
+    const { name, description, level, subjects } = req.body;
+
+    // Validate required fields
+    const validationErrors = validateStandardData(req.body);
+    if (validationErrors) {
+      return res.status(400).json({
         success: false,
-        message: "Only admin can create standards",
+        message: "Validation failed",
+        errors: validationErrors,
       });
     }
 
-    // Validate subjects if provided
-    if (req.body.subjects && req.body.subjects.length > 0) {
-      try {
-        const subjects = await Subject.find({
-          _id: { $in: req.body.subjects },
-        });
+    // Normalize the name (trim and convert to lowercase)
+    const normalizedName = name.trim().toLowerCase();
 
-        if (subjects.length !== req.body.subjects.length) {
-          const foundIds = subjects.map((s) => s._id.toString());
-          const invalidIds = req.body.subjects.filter(
-            (id) => !foundIds.includes(id)
-          );
+    // Check for duplicate standard (case-insensitive)
+    const existingStandard = await Standard.findOne({
+      name: { $regex: new RegExp(`^${normalizedName}$`, "i") },
+    });
 
-          return res.status(400).json({
-            success: false,
-            message: "One or more subjects are invalid",
-            invalidSubjects: invalidIds,
-            foundSubjects: foundIds,
-          });
-        }
-      } catch (error) {
-        return res.status(400).json({
-          success: false,
-          message: "Error validating subjects",
-          error: error.message,
-        });
-      }
+    if (existingStandard) {
+      return res.status(400).json({
+        success: false,
+        message: "A standard with this name already exists",
+        errors: {
+          name: "A standard with this name already exists",
+        },
+      });
     }
 
-    const standard = await Standard.create(req.body);
-    await standard.populate("subjects", "name description duration");
+    // Create new standard with normalized name
+    const standard = new Standard({
+      name: normalizedName,
+      description: description.trim(),
+      level,
+      subjects,
+    });
+
+    await standard.save();
 
     res.status(201).json({
       success: true,
+      message: "Standard created successfully",
       data: standard,
     });
   } catch (error) {
+    console.error("Error in createStandard:", error);
     res.status(500).json({
       success: false,
-      message: "Error in creating standard",
+      message: "Error creating standard",
       error: error.message,
     });
   }
@@ -112,60 +157,51 @@ export const createStandard = async (req, res) => {
 
 // @desc    Update standard
 // @route   PUT /api/standards/:id
-// @access  Private (Admin only)
+// @access  Private
 export const updateStandard = async (req, res) => {
   try {
-    // Check if user is admin
-    if (req.user.role !== "admin") {
-      return res.status(403).json({
+    const { name, description, level, subjects } = req.body;
+
+    // Validate required fields
+    const validationErrors = validateStandardData(req.body);
+    if (validationErrors) {
+      return res.status(400).json({
         success: false,
-        message: "Only admin can update standards",
+        message: "Validation failed",
+        errors: validationErrors,
       });
     }
 
-    // Validate subjects if provided for update
-    if (req.body.subjects && req.body.subjects.length > 0) {
-      try {
-        // First, check if the standard exists
-        const existingStandard = await Standard.findById(req.params.id);
-        if (!existingStandard) {
-          return res.status(404).json({
-            success: false,
-            message: "Standard not found",
-          });
-        }
+    // Normalize the name (trim and convert to lowercase)
+    const normalizedName = name.trim().toLowerCase();
 
-        // Find all subjects
-        const subjects = await Subject.find({
-          _id: { $in: req.body.subjects },
-        });
+    // Check for duplicate standard (case-insensitive, excluding current standard)
+    const existingStandard = await Standard.findOne({
+      _id: { $ne: req.params.id },
+      name: { $regex: new RegExp(`^${normalizedName}$`, "i") },
+    });
 
-        if (subjects.length !== req.body.subjects.length) {
-          const foundIds = subjects.map((s) => s._id.toString());
-          const invalidIds = req.body.subjects.filter(
-            (id) => !foundIds.includes(id)
-          );
-
-          return res.status(400).json({
-            success: false,
-            message: "One or more subjects are invalid",
-            invalidSubjects: invalidIds,
-            foundSubjects: foundIds,
-          });
-        }
-      } catch (error) {
-        return res.status(400).json({
-          success: false,
-          message: "Error validating subjects",
-          error: error.message,
-        });
-      }
+    if (existingStandard) {
+      return res.status(400).json({
+        success: false,
+        message: "A standard with this name already exists",
+        errors: {
+          name: "A standard with this name already exists",
+        },
+      });
     }
 
-    const standard = await Standard.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-      runValidators: true,
-    }).populate("subjects", "name description duration");
+    // Update standard with normalized name
+    const standard = await Standard.findByIdAndUpdate(
+      req.params.id,
+      {
+        name: normalizedName,
+        description: description.trim(),
+        level,
+        subjects,
+      },
+      { new: true }
+    );
 
     if (!standard) {
       return res.status(404).json({
@@ -176,12 +212,14 @@ export const updateStandard = async (req, res) => {
 
     res.json({
       success: true,
+      message: "Standard updated successfully",
       data: standard,
     });
   } catch (error) {
+    console.error("Error in updateStandard:", error);
     res.status(500).json({
       success: false,
-      message: "Error in updating standard",
+      message: "Error updating standard",
       error: error.message,
     });
   }
