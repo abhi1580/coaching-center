@@ -30,6 +30,7 @@ import {
   FaChalkboardTeacher,
   FaArrowUp,
 } from "react-icons/fa";
+import { Typography } from "@mui/material";
 
 function LandingPage() {
   const [isVisible, setIsVisible] = useState(false);
@@ -109,7 +110,7 @@ function LandingPage() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: 0.2 }}
                 >
-                  Welcome to Physics Station
+                  Welcome to Imperial Academy
                 </motion.div>
                 <motion.h1
                   className="hero-title"
@@ -185,7 +186,7 @@ function LandingPage() {
             viewport={{ once: true }}
             className="section-header"
           >
-            <h2>Why Choose Physics Station?</h2>
+            <h2>Why Choose Imperial Academy?</h2>
             <p>Experience excellence in physics education</p>
           </motion.div>
           <Row>

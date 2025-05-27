@@ -1,7 +1,19 @@
 import { Container, Row, Col, Accordion } from "react-bootstrap";
-import { FaAtom, FaFlask, FaDna, FaBook, FaGraduationCap, FaMedal, FaTrophy, FaClock, FaUsers, FaChalkboardTeacher, FaArrowRight } from "react-icons/fa";
+import {
+  FaAtom,
+  FaFlask,
+  FaDna,
+  FaBook,
+  FaGraduationCap,
+  FaMedal,
+  FaTrophy,
+  FaClock,
+  FaUsers,
+  FaChalkboardTeacher,
+  FaArrowRight,
+} from "react-icons/fa";
 import { motion } from "framer-motion";
-import "./Courses.css";
+import "./Courses.css?v=1.0.1";
 
 function Courses() {
   const courses = [
@@ -10,28 +22,32 @@ function Courses() {
       level: "Class 11-12",
       duration: "1 Hour",
       icon: <FaAtom size={45} className="course-icon" />,
-      description: "Master physics concepts with our comprehensive course covering mechanics, thermodynamics, electromagnetism, and modern physics. Includes practical experiments and problem-solving sessions."
+      description:
+        "Master physics concepts with our comprehensive course covering mechanics, thermodynamics, electromagnetism, and modern physics. Includes practical experiments and problem-solving sessions.",
     },
     {
       subject: "Chemistry",
       level: "Class 11-12",
       duration: "1 Hour",
       icon: <FaFlask size={45} className="course-icon" />,
-      description: "Explore the fascinating world of chemistry through our detailed program covering organic, inorganic, and physical chemistry. Features laboratory experiments and interactive learning."
+      description:
+        "Explore the fascinating world of chemistry through our detailed program covering organic, inorganic, and physical chemistry. Features laboratory experiments and interactive learning.",
     },
     {
       subject: "Biology",
       level: "Class 11-12",
       duration: "1 Hour",
       icon: <FaDna size={45} className="course-icon" />,
-      description: "Dive deep into biological sciences with our comprehensive curriculum covering cell biology, genetics, human physiology, and ecology. Includes practical demonstrations and research projects."
+      description:
+        "Dive deep into biological sciences with our comprehensive curriculum covering cell biology, genetics, human physiology, and ecology. Includes practical demonstrations and research projects.",
     },
     {
       subject: "Math/English/Science",
       level: "Class 8-10",
       duration: "1 Hour",
       icon: <FaBook size={45} className="course-icon" />,
-      description: "Build strong foundations in core subjects with our integrated learning approach. Features interactive sessions, regular assessments, and personalized attention for optimal understanding."
+      description:
+        "Build strong foundations in core subjects with our integrated learning approach. Features interactive sessions, regular assessments, and personalized attention for optimal understanding.",
     },
   ];
 
@@ -40,9 +56,9 @@ function Courses() {
     visible: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.2
-      }
-    }
+        staggerChildren: 0.2,
+      },
+    },
   };
 
   const itemVariants = {
@@ -52,9 +68,9 @@ function Courses() {
       opacity: 1,
       transition: {
         duration: 0.8,
-        ease: [0.4, 0, 0.2, 1]
-      }
-    }
+        ease: [0.4, 0, 0.2, 1],
+      },
+    },
   };
 
   return (
@@ -69,7 +85,11 @@ function Courses() {
             transition={{ duration: 1, ease: [0.4, 0, 0.2, 1] }}
           >
             <h1>Unlock Your Academic Potential</h1>
-            <p>Discover our comprehensive range of courses designed to help you excel in academics and competitive exams. Join us on your journey to success with expert guidance and proven teaching methods.</p>
+            <p>
+              Discover our comprehensive range of courses designed to help you
+              excel in academics and competitive exams. Join us on your journey
+              to success with expert guidance and proven teaching methods.
+            </p>
           </motion.div>
         </Container>
       </section>
@@ -85,7 +105,10 @@ function Courses() {
             transition={{ duration: 0.8, ease: [0.4, 0, 0.2, 1] }}
           >
             <h2>Regular Courses</h2>
-            <p>Build a strong foundation with our comprehensive courses designed for academic excellence</p>
+            <p>
+              Build a strong foundation with our comprehensive courses designed
+              for academic excellence
+            </p>
           </motion.div>
 
           <motion.div
@@ -103,8 +126,12 @@ function Courses() {
                       <h3>{course.subject}</h3>
                       <p className="course-description">{course.description}</p>
                       <div className="course-details">
-                        <span><FaUsers /> {course.level}</span>
-                        <span><FaClock /> {course.duration}</span>
+                        <span>
+                          <FaUsers /> {course.level}
+                        </span>
+                        <span>
+                          <FaClock /> {course.duration}
+                        </span>
                       </div>
                       <button className="enroll-button">
                         Enroll Now <FaArrowRight />
@@ -129,7 +156,10 @@ function Courses() {
             transition={{ duration: 0.8, ease: [0.4, 0, 0.2, 1] }}
           >
             <h2>Competitive Exam Preparation</h2>
-            <p>Specialized courses designed to help you excel in competitive exams</p>
+            <p>
+              Specialized courses designed to help you excel in competitive
+              exams
+            </p>
           </motion.div>
 
           <motion.div
@@ -144,7 +174,14 @@ function Courses() {
                   <div className="competitive-card">
                     <FaGraduationCap size={45} className="course-icon" />
                     <h3>NEET Preparation</h3>
-                    <p>Our NEET preparation course is designed to help students excel in the medical entrance exam. We provide comprehensive study materials, regular mock tests, personalized guidance, and doubt-solving sessions. Our experienced faculty ensures thorough coverage of Physics, Chemistry, and Biology syllabus.</p>
+                    <p>
+                      Our NEET preparation course is designed to help students
+                      excel in the medical entrance exam. We provide
+                      comprehensive study materials, regular mock tests,
+                      personalized guidance, and doubt-solving sessions. Our
+                      experienced faculty ensures thorough coverage of Physics,
+                      Chemistry, and Biology syllabus.
+                    </p>
                     <button className="enroll-button">
                       Enroll Now <FaArrowRight />
                     </button>
@@ -156,7 +193,13 @@ function Courses() {
                   <div className="competitive-card">
                     <FaGraduationCap size={45} className="course-icon" />
                     <h3>JEE Preparation</h3>
-                    <p>Our JEE preparation course provides comprehensive training in Physics, Chemistry, and Mathematics. We offer extensive practice problems, doubt-solving sessions, and regular assessments. Our structured approach helps students build strong concepts and develop problem-solving skills.</p>
+                    <p>
+                      Our JEE preparation course provides comprehensive training
+                      in Physics, Chemistry, and Mathematics. We offer extensive
+                      practice problems, doubt-solving sessions, and regular
+                      assessments. Our structured approach helps students build
+                      strong concepts and develop problem-solving skills.
+                    </p>
                     <button className="enroll-button">
                       Enroll Now <FaArrowRight />
                     </button>
@@ -179,7 +222,9 @@ function Courses() {
             transition={{ duration: 0.8, ease: [0.4, 0, 0.2, 1] }}
           >
             <h2>Additional Programs</h2>
-            <p>Specialized courses and programs to enhance your academic journey</p>
+            <p>
+              Specialized courses and programs to enhance your academic journey
+            </p>
           </motion.div>
 
           <motion.div
@@ -194,7 +239,12 @@ function Courses() {
                   <div className="other-card">
                     <FaMedal size={45} className="course-icon" />
                     <h3>Homi Bhabha Exam</h3>
-                    <p>Prepare for the Homi Bhabha Exam with our tailored course focused on building scientific aptitude and conceptual understanding. Our program includes practice tests, study materials, and expert guidance.</p>
+                    <p>
+                      Prepare for the Homi Bhabha Exam with our tailored course
+                      focused on building scientific aptitude and conceptual
+                      understanding. Our program includes practice tests, study
+                      materials, and expert guidance.
+                    </p>
                     <button className="enroll-button">
                       Enroll Now <FaArrowRight />
                     </button>
@@ -206,7 +256,12 @@ function Courses() {
                   <div className="other-card">
                     <FaMedal size={45} className="course-icon" />
                     <h3>Scholarship Exams</h3>
-                    <p>We provide comprehensive guidance and training for various scholarship exams. Our program helps students secure financial aid and recognition through systematic preparation and regular practice.</p>
+                    <p>
+                      We provide comprehensive guidance and training for various
+                      scholarship exams. Our program helps students secure
+                      financial aid and recognition through systematic
+                      preparation and regular practice.
+                    </p>
                     <button className="enroll-button">
                       Enroll Now <FaArrowRight />
                     </button>
@@ -218,7 +273,12 @@ function Courses() {
                   <div className="other-card">
                     <FaTrophy size={45} className="course-icon" />
                     <h3>Olympiads & Competitive Exams</h3>
-                    <p>Our Olympiad preparation course sharpens analytical and problem-solving skills. We provide comprehensive training for Science and Math Olympiads with regular practice tests and expert guidance.</p>
+                    <p>
+                      Our Olympiad preparation course sharpens analytical and
+                      problem-solving skills. We provide comprehensive training
+                      for Science and Math Olympiads with regular practice tests
+                      and expert guidance.
+                    </p>
                     <button className="enroll-button">
                       Enroll Now <FaArrowRight />
                     </button>
@@ -241,7 +301,10 @@ function Courses() {
             transition={{ duration: 0.8, ease: [0.4, 0, 0.2, 1] }}
           >
             <h2>Course Syllabus</h2>
-            <p>Detailed curriculum for each course to help you understand what you'll learn</p>
+            <p>
+              Detailed curriculum for each course to help you understand what
+              you'll learn
+            </p>
           </motion.div>
 
           <motion.div
@@ -269,7 +332,10 @@ function Courses() {
                 <Accordion.Header>Physics (12th Standard)</Accordion.Header>
                 <Accordion.Body>
                   <ul>
-                    <li>Chapter 1: Rotational Motion & Mechanical Properties of Fluids</li>
+                    <li>
+                      Chapter 1: Rotational Motion & Mechanical Properties of
+                      Fluids
+                    </li>
                     <li>Chapter 2: Kinetic theory & Thermodynamics</li>
                     <li>Chapter 3: Oscillation & Waves</li>
                     <li>Chapter 4: Electrostatics & Electric Current</li>

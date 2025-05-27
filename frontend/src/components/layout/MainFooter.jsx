@@ -1,14 +1,15 @@
 import { Container, Row, Col, Form, Button } from "react-bootstrap";
 import { FaFacebook, FaTwitter, FaInstagram, FaLinkedin } from "react-icons/fa";
 import { Link } from "react-router-dom";
+import "./MainFooter.css";
 
 function MainFooter() {
   return (
-    <footer className="footer text-light mt-5 py-5">
-      <Container fluid>
+    <footer className="footer">
+      <Container>
         <Row>
           <Col md={3} className="mb-4">
-            <h3 className="footer-title">Physics Station</h3>
+            <h3 className="footer-title">Imperial Academy</h3>
             <p className="footer-text">
               Ambajogai Road, Infront of Hotel Pahunchar, Latur -413512,
               Maharashtra, India
@@ -21,25 +22,25 @@ function MainFooter() {
 
           <Col md={3} className="mb-4">
             <h5 className="footer-title">Quick Links</h5>
-            <ul className="list-unstyled footer-links">
+            <ul className="footer-links">
               <li>
-                <a href="/courses">Courses</a>
+                <Link to="/courses">Courses</Link>
               </li>
               <li>
-                <a href="/admission">Admission</a>
+                <Link to="/admission">Admission</Link>
               </li>
               <li>
-                <a href="/resources">Resources</a>
+                <Link to="/resources">Resources</Link>
               </li>
               <li>
-                <a href="/contact">Contact Us</a>
+                <Link to="/contact">Contact Us</Link>
               </li>
             </ul>
           </Col>
 
           <Col md={3} className="mb-4">
             <h5 className="footer-title">Opening Hours</h5>
-            <ul className="list-unstyled footer-text">
+            <ul className="footer-links">
               <li>Monday - Saturday: 9:00 AM - 9:00 PM</li>
               <li>Sunday: Closed</li>
             </ul>
@@ -60,7 +61,7 @@ function MainFooter() {
                 Subscribe
               </Button>
             </Form>
-            <div className="social-icons gap-3 d-flex justify-content-center mt-3">
+            <div className="social-icons">
               <a href="#" aria-label="Facebook">
                 <FaFacebook size={24} />
               </a>
@@ -79,25 +80,28 @@ function MainFooter() {
 
         <hr />
 
-        {/* Terms & Policies Row */}
-        <Row className="mt-3 text-center">
-          <Col md={6}>
-            <p className="mb-0">
-              &copy; 2025 <strong>Physics Station</strong>. All Rights Reserved.
-            </p>
-          </Col>
-          <Col md={6} className="mb-2 mb-md-0">
+        <Row className="mt-3">
+          <Col xs={12} className="text-center mb-3">
             <ul className="list-inline footer-links mb-0">
-              <li className="list-inline-item mx-2">
+              <li className="list-inline-item mx-3">
                 <Link to="/terms-of-service">Terms of Service</Link>
               </li>
-              <li className="list-inline-item mx-2">
+              <li className="list-inline-item mx-3">
                 <Link to="/privacy-policy">Privacy Policy</Link>
               </li>
-              <li className="list-inline-item mx-2">
+              <li className="list-inline-item mx-3">
                 <Link to="/cookies-policy">Cookies</Link>
               </li>
             </ul>
+          </Col>
+          <Col xs={12} className="text-center">
+            <p className="footer-text mb-2">
+              &copy; 2025 <strong>Imperial Academy</strong>. All Rights
+              Reserved.
+            </p>
+            <p className="footer-text mb-0">
+              Powered by: <strong>Triveni Systems Pvt. Ltd</strong>
+            </p>
           </Col>
         </Row>
       </Container>

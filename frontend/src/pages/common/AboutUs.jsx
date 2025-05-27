@@ -26,7 +26,7 @@ function AboutUs() {
         <section className="mb-5">
           <h2 className="text-center mb-4 section-title">Our Mission</h2>
           <p className="text-start lead">
-            At Physics Station, our mission is to ignite a passion for physics
+            At Imperial Academy, our mission is to ignite a passion for physics
             through clear, concept-based learning and personalized guidance. We
             aim to build strong foundational understanding, foster critical
             thinking, and equip students with the problem-solving skills needed
@@ -40,7 +40,7 @@ function AboutUs() {
         <section className="mb-5">
           <h2 className="text-center mb-4 section-title">Our Vision</h2>
           <p className="text-start lead">
-            Our vision at Physics Station is to become a leading center of
+            Our vision at Imperial Academy is to become a leading center of
             excellence in physics education, inspiring students to explore,
             innovate, and achieve their full potential. We envision a future
             where every learner, regardless of background, gains the confidence
@@ -59,9 +59,9 @@ function AboutUs() {
           <div className="custom-accordion">
             <ul className="list-unstyled">
               <li>
-                <strong>Punctuality:</strong> Students must arrive on time for all
-                classes. Late entry beyond 10 minutes may result in denied entry for
-                that session.
+                <strong>Punctuality:</strong> Students must arrive on time for
+                all classes. Late entry beyond 10 minutes may result in denied
+                entry for that session.
               </li>
               <li>
                 <strong>Attendance:</strong> Regular attendance is mandatory. In
@@ -70,8 +70,8 @@ function AboutUs() {
               </li>
               <li>
                 <strong>Respect:</strong> Students are expected to maintain a
-                respectful and positive environment. Disruptive behavior will not be
-                tolerated.
+                respectful and positive environment. Disruptive behavior will
+                not be tolerated.
               </li>
               <li>
                 <strong>Discipline:</strong> Maintain decorum and respect in the
@@ -79,22 +79,24 @@ function AboutUs() {
                 disciplinary action.
               </li>
               <li>
-                <strong>Mobile Phones:</strong> Mobile phones must be on silent or
-                switched off during class. Unauthorized use during lectures is
-                prohibited.
+                <strong>Mobile Phones:</strong> Mobile phones must be on silent
+                or switched off during class. Unauthorized use during lectures
+                is prohibited.
               </li>
               <li>
-                <strong>Assignments & Tests:</strong> Timely submission of homework
-                and active participation in tests is expected from all students.
+                <strong>Assignments & Tests:</strong> Timely submission of
+                homework and active participation in tests is expected from all
+                students.
               </li>
               <li>
-                <strong>Fees:</strong> All fees must be paid in advance as per the
-                schedule. No refunds will be entertained once the payment is made.
+                <strong>Fees:</strong> All fees must be paid in advance as per
+                the schedule. No refunds will be entertained once the payment is
+                made.
               </li>
               <li>
                 <strong>Materials:</strong> Students must bring their notebooks,
-                textbooks, and writing tools to every class. Borrowing during class
-                is discouraged.
+                textbooks, and writing tools to every class. Borrowing during
+                class is discouraged.
               </li>
               <li>
                 <strong>Classroom Cleanliness:</strong> Maintain cleanliness and
@@ -102,12 +104,12 @@ function AboutUs() {
               </li>
               <li>
                 <strong>Parental Involvement:</strong> Parents are encouraged to
-                track their child's progress. Regular parent-teacher interactions
-                will be held.
+                track their child's progress. Regular parent-teacher
+                interactions will be held.
               </li>
               <li>
-                <strong>Property Damage:</strong> Any damage to institute property
-                will be charged to the student responsible.
+                <strong>Property Damage:</strong> Any damage to institute
+                property will be charged to the student responsible.
               </li>
             </ul>
           </div>
@@ -129,8 +131,12 @@ function AboutUs() {
                     }}
                   />
                   <Card.Body>
-                    <Card.Title className="why-card-title">{teacher.name}</Card.Title>
-                    <Card.Text className="why-card-text">{teacher.title}</Card.Text>
+                    <Card.Title className="why-card-title">
+                      {teacher.name}
+                    </Card.Title>
+                    <Card.Text className="why-card-text">
+                      {teacher.title}
+                    </Card.Text>
                   </Card.Body>
                 </Card>
               </Col>

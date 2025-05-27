@@ -116,7 +116,7 @@ const StudentLayout = () => {
                         fontFamily: "Poppins, sans-serif",
                     }}
                 >
-                    Physics Station
+                    Imperial Academy
                 </Typography>
             </Toolbar>
             <Divider />

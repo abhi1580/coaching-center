@@ -92,7 +92,7 @@ const MainHeader = () => {
           >
             <img
               src="/logo.jpg"
-              alt="Physics Station"
+              alt="Imperial Academy"
               style={{
                 height: "40px",
                 width: "auto",

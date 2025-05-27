@@ -32,7 +32,7 @@ import {
 } from "@mui/icons-material";
 import { useSelector, useDispatch } from "react-redux";
 import { logoutUser } from "../../store/slices/authSlice";
-import Swal from 'sweetalert2';
+import Swal from "sweetalert2";
 
 const drawerWidth = 240;
 
@@ -81,13 +81,13 @@ const Layout = () => {
 
       // Show success message with SweetAlert2 that auto-closes after 3 seconds
       Swal.fire({
-        title: 'Logged Out',
-        text: 'You have been successfully logged out',
-        icon: 'success',
-        confirmButtonColor: 'var(--accent-yellow)',
+        title: "Logged Out",
+        text: "You have been successfully logged out",
+        icon: "success",
+        confirmButtonColor: "var(--accent-yellow)",
         timer: 2000,
         timerProgressBar: true,
-        showConfirmButton: false
+        showConfirmButton: false,
       }).then(() => {
         navigate("/login");
       });
@@ -96,13 +96,13 @@ const Layout = () => {
 
       // Show error message with SweetAlert2 that auto-closes after 3 seconds
       Swal.fire({
-        title: 'Logout Failed',
-        text: 'There was an issue logging you out. Please try again.',
-        icon: 'warning',
-        confirmButtonColor: 'var(--accent-yellow)',
+        title: "Logout Failed",
+        text: "There was an issue logging you out. Please try again.",
+        icon: "warning",
+        confirmButtonColor: "var(--accent-yellow)",
         timer: 2000,
         timerProgressBar: true,
-        showConfirmButton: false
+        showConfirmButton: false,
       }).then(() => {
         // Navigate anyway even if the API call fails
         navigate("/login");
@@ -123,7 +123,7 @@ const Layout = () => {
             fontFamily: "Poppins, sans-serif",
           }}
         >
-          Physics Station
+          Imperial Academy
         </Typography>
       </Toolbar>
       <Divider />
@@ -194,8 +194,8 @@ const Layout = () => {
                 transition: "transform 0.3s ease",
                 "&:hover": {
                   transform: "scale(1.1)",
-                  bgcolor: "transparent"
-                }
+                  bgcolor: "transparent",
+                },
               }}
             >
               <MenuIcon />
@@ -230,7 +230,7 @@ const Layout = () => {
                 "&:hover": {
                   bgcolor: "var(--dark-yellow)",
                   transform: "scale(1.05)",
-                }
+                },
               }}
             >
               {!isMobile && "Logout"}

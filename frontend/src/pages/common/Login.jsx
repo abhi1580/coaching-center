@@ -145,7 +145,7 @@ function Login() {
               textUnderlineOffset: "5px",
             }}
           >
-            Welcome to Physics Station
+            Welcome to Imperial Academy
           </Typography>
           <Typography
             variant="subtitle1"
