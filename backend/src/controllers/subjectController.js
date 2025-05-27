@@ -72,28 +72,58 @@ export const getSubject = asyncHandler(async (req, res) => {
 // @desc    Create new subject
 // @route   POST /api/subjects
 // @access  Private
-export const createSubject = asyncHandler(async (req, res) => {
-  // Check if user is admin
-  if (req.user.role !== "admin") {
-    return res.status(403).json({
+export const createSubject = async (req, res) => {
+  try {
+    const { name, description, duration } = req.body;
+
+    // Validate required fields
+    if (!name || !description || !duration) {
+      return res.status(400).json({
+        success: false,
+        message: "Name, description, and duration are required",
+        error: "VALIDATION_ERROR",
+      });
+    }
+
+    // Normalize the subject name
+    const normalizedName = name.toLowerCase().trim();
+
+    // Check for existing subject with case-insensitive comparison
+    const existingSubject = await Subject.findOne({
+      name: { $regex: new RegExp(`^${normalizedName}$`, "i") },
+    });
+
+    if (existingSubject) {
+      return res.status(400).json({
+        success: false,
+        message: "A subject with this name already exists",
+        error: "DUPLICATE_SUBJECT",
+      });
+    }
+
+    // Create new subject with normalized name
+    const subject = new Subject({
+      name: normalizedName,
+      description,
+      duration,
+    });
+
+    await subject.save();
+
+    res.status(201).json({
+      success: true,
+      message: "Subject created successfully",
+      data: subject,
+    });
+  } catch (error) {
+    console.error("Error creating subject:", error);
+    res.status(500).json({
       success: false,
-      message: "Only admin can create subjects",
+      message: "Failed to create subject",
+      error: error.message,
     });
   }
-
-  // Create subject with only the fields we want
-  const subjectData = {
-    name: req.body.name,
-    description: req.body.description,
-    duration: req.body.duration,
-  };
-
-  const subject = await Subject.create(subjectData);
-  res.status(201).json({
-    success: true,
-    data: subject,
-  });
-});
+};
 
 // @desc    Update subject
 // @route   PUT /api/subjects/:id
@@ -115,22 +145,56 @@ export const updateSubject = asyncHandler(async (req, res) => {
     });
   }
 
+  const subjectName = req.body.name.toLowerCase().trim();
+
+  // Check if another subject with the same name exists (excluding current subject)
+  const existingSubject = await Subject.findOne({
+    name: { $regex: new RegExp(`^${subjectName}$`, "i") },
+    _id: { $ne: req.params.id }, // Exclude current subject
+  });
+
+  if (existingSubject) {
+    return res.status(400).json({
+      success: false,
+      message: "A subject with this name already exists",
+      error: "DUPLICATE_SUBJECT",
+    });
+  }
+
   // Update only the fields we want
   const updateData = {
-    name: req.body.name,
+    name: subjectName,
     description: req.body.description,
     duration: req.body.duration,
   };
 
-  subject = await Subject.findByIdAndUpdate(req.params.id, updateData, {
-    new: true,
-    runValidators: true,
-  });
+  try {
+    subject = await Subject.findByIdAndUpdate(req.params.id, updateData, {
+      new: true,
+      runValidators: true,
+    });
 
-  res.status(200).json({
-    success: true,
-    data: subject,
-  });
+    res.status(200).json({
+      success: true,
+      data: subject,
+    });
+  } catch (error) {
+    // Handle duplicate key error
+    if (error.code === 11000) {
+      return res.status(400).json({
+        success: false,
+        message: "A subject with this name already exists",
+        error: "DUPLICATE_SUBJECT",
+      });
+    }
+
+    // Handle other errors
+    res.status(500).json({
+      success: false,
+      message: "Error updating subject",
+      error: error.message,
+    });
+  }
 });
 
 // @desc    Delete subject

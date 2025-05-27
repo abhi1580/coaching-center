@@ -22,7 +22,7 @@ import {
 import { createSubject } from "../../../store/slices/subjectSlice";
 import * as Yup from "yup";
 import { Formik, Form, Field } from "formik";
-import Swal from 'sweetalert2';
+import Swal from "sweetalert2";
 
 const validationSchema = Yup.object({
   name: Yup.string().required("Name is required"),
@@ -42,16 +42,23 @@ const SubjectCreate = () => {
       await dispatch(createSubject(values)).unwrap();
 
       Swal.fire({
-        icon: 'success',
-        title: 'Success!',
-        text: 'Subject created successfully!',
+        icon: "success",
+        title: "Success!",
+        text: "Subject created successfully!",
         showConfirmButton: false,
-        timer: 1500
+        timer: 1500,
       });
 
       navigate("/app/subjects");
     } catch (error) {
-      console.error("Failed to create subject:", error);
+      // Handle duplicate subject error
+      if (error.response?.data?.error === "DUPLICATE_SUBJECT" || 
+          error.response?.data?.message?.includes("already exists")) {
+        setErrors({
+          name: "Subject already exists"
+        });
+        return;
+      }
 
       // Handle API validation errors
       if (error.response?.data?.errors) {
@@ -61,10 +68,8 @@ const SubjectCreate = () => {
         });
         setErrors(apiErrors);
       } else {
-        Swal.fire({
-          icon: 'error',
-          title: 'Error',
-          text: `Failed to create subject: ${error.message || "Unknown error"}`,
+        setErrors({
+          name: "Subject already exists"
         });
       }
     } finally {
@@ -75,16 +80,12 @@ const SubjectCreate = () => {
   return (
     <Box sx={{ p: { xs: 1, sm: 2, md: 3 } }}>
       {/* Breadcrumbs */}
-      <Breadcrumbs
-        aria-label="breadcrumb"
-        sx={{ mb: 2, mt: 1 }}
-        separator="›"
-      >
+      <Breadcrumbs aria-label="breadcrumb" sx={{ mb: 2, mt: 1 }} separator="›">
         <Link
           underline="hover"
           color="inherit"
           href="/app/dashboard"
-          sx={{ display: 'flex', alignItems: 'center' }}
+          sx={{ display: "flex", alignItems: "center" }}
         >
           <HomeIcon sx={{ mr: 0.5 }} fontSize="small" />
           Dashboard
@@ -93,7 +94,7 @@ const SubjectCreate = () => {
           underline="hover"
           color="inherit"
           href="/app/subjects"
-          sx={{ display: 'flex', alignItems: 'center' }}
+          sx={{ display: "flex", alignItems: "center" }}
         >
           <BookIcon sx={{ mr: 0.5 }} fontSize="small" />
           Subjects
@@ -169,6 +170,11 @@ const SubjectCreate = () => {
                         helperText={touched.name && errors.name}
                         sx={{
                           "& .MuiOutlinedInput-root": { borderRadius: 2 },
+                          "& .MuiFormHelperText-root": {
+                            color: errors.name
+                              ? "error.main"
+                              : "text.secondary",
+                          },
                         }}
                       />
                     )}
@@ -205,7 +211,9 @@ const SubjectCreate = () => {
                         rows={4}
                         label="Description"
                         required
-                        error={touched.description && Boolean(errors.description)}
+                        error={
+                          touched.description && Boolean(errors.description)
+                        }
                         helperText={touched.description && errors.description}
                         sx={{
                           "& .MuiOutlinedInput-root": { borderRadius: 2 },
@@ -217,7 +225,9 @@ const SubjectCreate = () => {
 
                 {/* Action Buttons */}
                 <Grid item xs={12}>
-                  <Box sx={{ display: "flex", gap: 2, justifyContent: "flex-end" }}>
+                  <Box
+                    sx={{ display: "flex", gap: 2, justifyContent: "flex-end" }}
+                  >
                     <Button
                       variant="outlined"
                       onClick={() => navigate("/app/subjects")}
@@ -245,4 +255,4 @@ const SubjectCreate = () => {
   );
 };
 
-export default SubjectCreate; 
+export default SubjectCreate;

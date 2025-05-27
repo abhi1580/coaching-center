@@ -75,7 +75,14 @@ const SubjectEdit = () => {
             
             navigate(`/app/subjects/${id}`);
         } catch (error) {
-            console.error("Failed to update subject:", error);
+            // Handle duplicate subject error
+            if (error.response?.data?.error === "DUPLICATE_SUBJECT" || 
+                error.response?.data?.message?.includes("already exists")) {
+                setErrors({
+                    name: "Subject already exists"
+                });
+                return;
+            }
 
             // Handle API validation errors
             if (error.response?.data?.errors) {
@@ -85,10 +92,8 @@ const SubjectEdit = () => {
                 });
                 setErrors(apiErrors);
             } else {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: `Failed to update subject: ${error.message || "Unknown error"}`,
+                setErrors({
+                    name: "Subject already exists"
                 });
             }
         } finally {
@@ -224,6 +229,9 @@ const SubjectEdit = () => {
                                                 helperText={touched.name && errors.name}
                                                 sx={{
                                                     "& .MuiOutlinedInput-root": { borderRadius: 2 },
+                                                    "& .MuiFormHelperText-root": {
+                                                        color: errors.name ? "error.main" : "text.secondary"
+                                                    }
                                                 }}
                                             />
                                         )}
