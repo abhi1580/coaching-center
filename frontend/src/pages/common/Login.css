@@ -75,6 +75,16 @@
   color: rgba(255, 255, 255, 0.6);
 }
 
+/* Fix for autofill styling */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 30px rgba(45, 52, 70, 0.8) inset !important;
+  -webkit-text-fill-color: #fff !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
 .form-check-label {
   color: rgba(255, 255, 255, 0.9);
 }
@@ -125,6 +135,30 @@
 .register-link a:hover {
   color: #9c27b0;
   text-decoration: none;
+}
+
+/* Password field styling */
+.password-field-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-toggle-icon {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  z-index: 10;
+}
+
+.password-toggle-icon:hover {
+  opacity: 0.8;
 }
 
 /* Responsive Adjustments */

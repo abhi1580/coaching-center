@@ -185,15 +185,26 @@ const Login = () => {
 
             <Form.Group className="mb-3">
               <Form.Label>Password</Form.Label>
-              <Form.Control
-                type="password"
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                placeholder="Enter your password"
-                autoComplete="current-password"
-                required
-              />
+              <div className="password-field-container">
+                <Form.Control
+                  type={showPassword ? "text" : "password"}
+                  name="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  placeholder="Enter your password"
+                  autoComplete="current-password"
+                  required
+                />
+                <div 
+                  className="password-toggle-icon" 
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? 
+                    <VisibilityOff /> : 
+                    <Visibility />
+                  }
+                </div>
+              </div>
             </Form.Group>
 
             <div className="d-flex justify-content-between align-items-center mb-3">
