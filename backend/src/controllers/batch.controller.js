@@ -13,7 +13,7 @@ const createBatch = asyncHandler(async (req, res) => {
     capacity,
     teacher,
     schedule,
-    fee,
+    fees,
   } = req.body;
 
   const batch = await Batch.create({
@@ -21,10 +21,10 @@ const createBatch = asyncHandler(async (req, res) => {
     description,
     startDate,
     endDate,
-    capacity,
+    capacity: Number(capacity),
     teacher,
     schedule,
-    fee,
+    fees: Number(fees),
   });
 
   res.status(201).json({
@@ -81,7 +81,7 @@ const updateBatch = asyncHandler(async (req, res) => {
     capacity,
     teacher,
     schedule,
-    fee,
+    fees,
   } = req.body;
 
   const batch = await Batch.findById(req.params.id);
@@ -98,10 +98,10 @@ const updateBatch = asyncHandler(async (req, res) => {
   batch.description = description || batch.description;
   batch.startDate = startDate || batch.startDate;
   batch.endDate = endDate || batch.endDate;
-  batch.capacity = capacity || batch.capacity;
+  batch.capacity = capacity ? Number(capacity) : batch.capacity;
   batch.teacher = teacher || batch.teacher;
   batch.schedule = schedule || batch.schedule;
-  batch.fee = fee || batch.fee;
+  batch.fees = fees ? Number(fees) : batch.fees;
 
   const updatedBatch = await batch.save();
 

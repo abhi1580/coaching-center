@@ -27,6 +27,7 @@ import { fetchSubjects } from "../../../store/slices/subjectSlice";
 import { fetchTeachers } from "../../../store/slices/teacherSlice";
 import { Home as HomeIcon, Class as ClassIcon } from "@mui/icons-material";
 import Swal from 'sweetalert2';
+import { fetchBatches } from "../../../store/slices/batchSlice";
 
 const DAYS_OF_WEEK = [
   "Monday",
@@ -72,50 +73,85 @@ const BatchEdit = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    dispatch(fetchStandards());
-    dispatch(fetchSubjects());
-    dispatch(fetchTeachers());
-  }, [dispatch]);
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        // Fetch all required data
+        await Promise.all([
+          dispatch(fetchStandards()),
+          dispatch(fetchSubjects()),
+          dispatch(fetchTeachers()),
+          dispatch(fetchBatches({ populateEnrolledStudents: false }))
+        ]);
 
-  useEffect(() => {
-    const batch = batches.find((b) => b._id === id);
-    if (batch) {
-      setFormData({
-        name: batch.name || "",
-        standard: batch.standard?._id || "",
-        subject: batch.subject?._id || "",
-        startDate: batch.startDate || "",
-        endDate: batch.endDate || "",
-        schedule: {
-          days: batch.schedule?.days || [],
-          startTime: batch.schedule?.startTime || "",
-          endTime: batch.schedule?.endTime || "",
-        },
-        capacity: batch.capacity || "",
-        fees: batch.fees || "",
-        description: batch.description || "",
-        teacher: batch.teacher?._id || "",
-      });
-      setLoading(false);
-    }
-  }, [batches, id]);
+        // Find the batch
+        const batch = batches.find((b) => b._id === id);
+        if (batch) {
+          console.log('Found batch:', batch);
+          
+          // Set initial form data with all batch fields
+          const initialFormData = {
+            name: batch.name || "",
+            standard: batch.standard?._id || batch.standard || "",
+            subject: batch.subject?._id || batch.subject || "",
+            startDate: batch.startDate ? new Date(batch.startDate).toISOString().split('T')[0] : "",
+            endDate: batch.endDate ? new Date(batch.endDate).toISOString().split('T')[0] : "",
+            schedule: {
+              days: batch.schedule?.days || [],
+              startTime: batch.schedule?.startTime || "",
+              endTime: batch.schedule?.endTime || "",
+            },
+            capacity: batch.capacity || "",
+            fees: batch.fees || "",
+            description: batch.description || "",
+            teacher: batch.teacher?._id || batch.teacher || "",
+          };
+          
+          console.log('Setting initial form data:', initialFormData);
+          setFormData(initialFormData);
+        } else {
+          console.log('Batch not found with id:', id);
+        }
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
+    fetchData();
+  }, [dispatch, id]);
+
+  // Update filtered subjects when standard changes
   useEffect(() => {
     if (formData.standard) {
-      const standardSubjects = subjects.filter(
-        (subject) => subject.standard?._id === formData.standard || subject.standard === formData.standard
-      );
-      setFilteredSubjects(standardSubjects);
+      const selectedStandard = standards.find(s => s._id === formData.standard);
+      if (selectedStandard && selectedStandard.subjects) {
+        setFilteredSubjects(selectedStandard.subjects);
+      } else {
+        setFilteredSubjects([]);
+      }
     } else {
       setFilteredSubjects([]);
     }
-  }, [formData.standard, subjects]);
+  }, [formData.standard, standards]);
 
+  // Update filtered teachers when subject changes
   useEffect(() => {
     if (formData.subject) {
-      const subjectTeachers = teachers.filter((teacher) =>
-        teacher.subjects.includes(formData.subject)
-      );
+      const subjectTeachers = teachers.filter((teacher) => {
+        // Check if teacher has subjects array and it's not empty
+        if (!teacher.subjects || !Array.isArray(teacher.subjects)) {
+          return false;
+        }
+        // Check if any of the teacher's subjects match the selected subject
+        return teacher.subjects.some(subject => {
+          // Handle both populated and unpopulated subject references
+          const subjectId = subject._id || subject;
+          return subjectId === formData.subject;
+        });
+      });
+      console.log('Filtered teachers for subject:', formData.subject, subjectTeachers);
       setFilteredTeachers(subjectTeachers);
     } else {
       setFilteredTeachers([]);
@@ -124,55 +160,47 @@ const BatchEdit = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+    
     if (name === "standard") {
-      setFormData({
-        ...formData,
+      setFormData(prev => ({
+        ...prev,
         standard: value,
-        subject: "",
-        teacher: "",
-      });
+        subject: "", // Reset subject when standard changes
+        teacher: "" // Reset teacher when standard changes
+      }));
     } else if (name === "subject") {
-      const subjectTeachers = teachers.filter((teacher) =>
-        teacher.subjects.includes(value)
-      );
-      setFilteredTeachers(subjectTeachers);
-      setFormData({
-        ...formData,
+      setFormData(prev => ({
+        ...prev,
         subject: value,
-        teacher: "",
-      });
-    } else if (name.startsWith("schedule.")) {
-      const scheduleField = name.split(".")[1];
-      setFormData({
-        ...formData,
-        schedule: {
-          ...formData.schedule,
-          [scheduleField]: value,
-        },
-      });
+        teacher: "" // Reset teacher when subject changes
+      }));
+    } else if (name.includes(".")) {
+      const [parent, child] = name.split(".");
+      setFormData(prev => ({
+        ...prev,
+        [parent]: {
+          ...prev[parent],
+          [child]: value
+        }
+      }));
     } else {
-      setFormData({
-        ...formData,
-        [name]: value,
-      });
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }));
     }
   };
 
   const handleDayToggle = (day) => {
-    const days = [...formData.schedule.days];
-    const index = days.indexOf(day);
-    if (index === -1) {
-      days.push(day);
-    } else {
-      days.splice(index, 1);
-    }
-    setFormData({
-      ...formData,
+    setFormData((prev) => ({
+      ...prev,
       schedule: {
-        ...formData.schedule,
-        days,
+        ...prev.schedule,
+        days: prev.schedule.days.includes(day)
+          ? prev.schedule.days.filter((d) => d !== day)
+          : [...prev.schedule.days, day],
       },
-    });
+    }));
   };
 
   const handleSubmit = async (e) => {
@@ -213,6 +241,15 @@ const BatchEdit = () => {
       setSubmitting(false);
     }
   };
+
+  // Debug effect to monitor state changes
+  useEffect(() => {
+    console.log('Current form data:', formData);
+    console.log('Available subjects:', subjects);
+    console.log('Available teachers:', teachers);
+    console.log('Filtered subjects:', filteredSubjects);
+    console.log('Filtered teachers:', filteredTeachers);
+  }, [formData, subjects, teachers, filteredSubjects, filteredTeachers]);
 
   if (loading) {
     return (
@@ -315,7 +352,7 @@ const BatchEdit = () => {
                 <InputLabel>Standard</InputLabel>
                 <Select
                   name="standard"
-                  value={formData.standard}
+                  value={formData.standard || ""}
                   onChange={handleChange}
                   label="Standard"
                   sx={{ borderRadius: 2 }}
@@ -334,7 +371,7 @@ const BatchEdit = () => {
                 <InputLabel>Subject</InputLabel>
                 <Select
                   name="subject"
-                  value={formData.subject}
+                  value={formData.subject || ""}
                   onChange={handleChange}
                   label="Subject"
                   sx={{ borderRadius: 2 }}
@@ -353,7 +390,7 @@ const BatchEdit = () => {
                 <InputLabel>Teacher</InputLabel>
                 <Select
                   name="teacher"
-                  value={formData.teacher}
+                  value={formData.teacher || ""}
                   onChange={handleChange}
                   label="Teacher"
                   sx={{ borderRadius: 2 }}

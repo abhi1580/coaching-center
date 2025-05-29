@@ -38,6 +38,7 @@ import {
   Breadcrumbs,
   Link,
   Stack,
+  Avatar,
 } from "@mui/material";
 import {
   Edit as EditIcon,
@@ -441,15 +442,20 @@ const BatchView = () => {
                 <Typography variant="subtitle2" color="text.secondary">
                   Standard:
                 </Typography>
-                <Typography variant="body1" sx={{ mt: 0.5 }}>
-                  {selectedBatch.standard?.name}
-                </Typography>
+                <Box sx={{ mt: 1 }}>
+                  <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                    {selectedBatch.standard?.name}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Level {selectedBatch.standard?.level}
+                  </Typography>
+                </Box>
               </Grid>
               <Grid item xs={12}>
                 <Typography variant="subtitle2" color="text.secondary">
                   Subject:
                 </Typography>
-                <Typography variant="body1" sx={{ mt: 0.5 }}>
+                <Typography variant="body1" sx={{ mt: 0.5, fontWeight: 500 }}>
                   {selectedBatch.subject?.name}
                 </Typography>
               </Grid>
@@ -457,8 +463,41 @@ const BatchView = () => {
                 <Typography variant="subtitle2" color="text.secondary">
                   Teacher:
                 </Typography>
+                {selectedBatch.teacher ? (
+                  <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 2 }}>
+                    <Avatar
+                      sx={{
+                        width: 48,
+                        height: 48,
+                        bgcolor: (theme) => alpha(theme.palette.primary.main, 0.8),
+                      }}
+                    >
+                      {selectedBatch.teacher.name?.charAt(0)?.toUpperCase()}
+                    </Avatar>
+                    <Box>
+                      <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                        {selectedBatch.teacher.name}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {selectedBatch.teacher.email}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {selectedBatch.teacher.phone || 'No phone number'}
+                      </Typography>
+                    </Box>
+                  </Box>
+                ) : (
+                  <Typography variant="body1" sx={{ mt: 0.5, color: 'warning.main' }}>
+                    Not assigned
+                  </Typography>
+                )}
+              </Grid>
+              <Grid item xs={12}>
+                <Typography variant="subtitle2" color="text.secondary">
+                  Description:
+                </Typography>
                 <Typography variant="body1" sx={{ mt: 0.5 }}>
-                  {selectedBatch.teacher?.name || "Not assigned"}
+                  {selectedBatch.description || 'No description provided'}
                 </Typography>
               </Grid>
             </Grid>
@@ -513,14 +552,10 @@ const BatchView = () => {
                 </Typography>
               </Grid>
               <Grid item xs={12}>
-                <Typography
-                  variant="subtitle2"
-                  color="text.secondary"
-                  gutterBottom
-                >
+                <Typography variant="subtitle2" color="text.secondary">
                   Days:
                 </Typography>
-                <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+                <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", mt: 1 }}>
                   {selectedBatch.schedule?.days?.map((day) => (
                     <Chip
                       key={day}
@@ -528,8 +563,7 @@ const BatchView = () => {
                       size="small"
                       sx={{
                         borderRadius: 1,
-                        bgcolor: (theme) =>
-                          alpha(theme.palette.primary.main, 0.1),
+                        bgcolor: (theme) => alpha(theme.palette.primary.main, 0.1),
                         color: "primary.main",
                       }}
                     />
@@ -567,40 +601,26 @@ const BatchView = () => {
                 <Typography variant="subtitle2" color="text.secondary">
                   Capacity:
                 </Typography>
-                <Typography variant="body1" sx={{ mt: 0.5 }}>
-                  {selectedBatch.enrolledStudents?.length || 0} /{" "}
-                  {selectedBatch.capacity || "Unlimited"}
-                </Typography>
+                <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                    {selectedBatch.enrolledStudents?.length || 0} / {selectedBatch.capacity || "Unlimited"}
+                  </Typography>
+                  <Chip
+                    label={selectedBatch.enrolledStudents?.length >= selectedBatch.capacity ? "Full" : "Available"}
+                    color={selectedBatch.enrolledStudents?.length >= selectedBatch.capacity ? "error" : "success"}
+                    size="small"
+                    sx={{ borderRadius: 1 }}
+                  />
+                </Box>
               </Grid>
               <Grid item xs={12} sm={6}>
                 <Typography variant="subtitle2" color="text.secondary">
                   Fees:
                 </Typography>
-                <Typography variant="body1" sx={{ mt: 0.5 }}>
-                  ₹{selectedBatch.fees}
+                <Typography variant="body1" sx={{ mt: 0.5, fontWeight: 500 }}>
+                  ₹{selectedBatch.fees?.toLocaleString()}
                 </Typography>
               </Grid>
-              {selectedBatch.description && (
-                <Grid item xs={12}>
-                  <Typography variant="subtitle2" color="text.secondary">
-                    Description:
-                  </Typography>
-                  <Paper
-                    variant="outlined"
-                    sx={{
-                      p: 2,
-                      mt: 1,
-                      backgroundColor: (theme) =>
-                        alpha(theme.palette.primary.light, 0.05),
-                      borderRadius: 1,
-                    }}
-                  >
-                    <Typography variant="body2">
-                      {selectedBatch.description}
-                    </Typography>
-                  </Paper>
-                </Grid>
-              )}
             </Grid>
           </Paper>
         </Grid>

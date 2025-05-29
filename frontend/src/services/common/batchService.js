@@ -17,10 +17,10 @@ const batchService = {
       queryParams += "populate=enrolledStudents";
     }
 
-    // Always populate standard and subject
+    // Always populate standard, subject, and teacher
     queryParams += queryParams
-      ? "&populate=standard,subject"
-      : "populate=standard,subject";
+      ? "&populate=standard,subject,teacher"
+      : "populate=standard,subject,teacher";
 
     return api.get(`/batches/${id}?${queryParams}`);
   },

@@ -38,6 +38,7 @@ import {
   Breadcrumbs,
   Link,
   Stack,
+  Avatar,
 } from "@mui/material";
 import {
   Edit as EditIcon,
@@ -48,6 +49,7 @@ import {
   Home as HomeIcon,
   Class as ClassIcon,
   Add as AddIcon,
+  Visibility as VisibilityIcon,
 } from "@mui/icons-material";
 import { fetchBatches, deleteBatch } from "../../../store/slices/batchSlice";
 import {
@@ -104,6 +106,22 @@ const BatchList = () => {
   const [addExistingStudentDialogOpen, setAddExistingStudentDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredBatches, setFilteredBatches] = useState([]);
+
+  const formatTime = (timeString) => {
+    if (!timeString) return "";
+    try {
+      if (timeString.includes(":")) {
+        const [hours, minutes] = timeString.split(":");
+        const hour = parseInt(hours, 10);
+        const ampm = hour >= 12 ? "PM" : "AM";
+        const hour12 = hour % 12 || 12;
+        return `${hour12}:${minutes} ${ampm}`;
+      }
+      return timeString;
+    } catch (error) {
+      return timeString;
+    }
+  };
 
   useEffect(() => {
     dispatch(fetchBatches(true));
@@ -320,24 +338,61 @@ const BatchList = () => {
                     >
                       {batch.name}
                     </Typography>
-                    </TableCell>
-                  <TableCell>{batch.standard?.name}</TableCell>
-                  <TableCell>{batch.subject?.name}</TableCell>
-                  <TableCell>{batch.teacher?.name || "Not Assigned"}</TableCell>
+                    <Typography variant="caption" color="text.secondary">
+                      {batch.description}
+                    </Typography>
+                  </TableCell>
                   <TableCell>
+                    <Typography variant="body2">{batch.standard?.name}</Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      Level {batch.standard?.level}
+                    </Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Typography variant="body2">{batch.subject?.name}</Typography>
+                  </TableCell>
+                  <TableCell>
+                    {batch.teacher ? (
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Avatar
+                          sx={{
+                            width: 32,
+                            height: 32,
+                            bgcolor: (theme) => alpha(theme.palette.primary.main, 0.8),
+                          }}
+                        >
+                          {batch.teacher.name?.charAt(0)?.toUpperCase()}
+                        </Avatar>
+                        <Box>
+                          <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                            {batch.teacher.name}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            {batch.teacher.email}
+                          </Typography>
+                        </Box>
+                      </Box>
+                    ) : (
                       <Chip
-                      label={`${batch.enrolledStudents?.length || 0}/${
-                        batch.capacity || "∞"
-                      }`}
+                        label="Not Assigned"
+                        size="small"
+                        color="warning"
+                        sx={{ borderRadius: 1 }}
+                      />
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <Chip
+                      label={`${batch.enrolledStudents?.length || 0}/${batch.capacity || "∞"}`}
                       color={
                         batch.enrolledStudents?.length >= batch.capacity
                           ? "error"
                           : "default"
                       }
-                        size="small"
+                      size="small"
                       sx={{ borderRadius: 1 }}
-                      />
-                    </TableCell>
+                    />
+                  </TableCell>
                   <TableCell>
                     <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}>
                       {batch.schedule?.days?.map((day) => (
@@ -349,44 +404,62 @@ const BatchList = () => {
                         />
                       ))}
                     </Box>
+                    <Typography variant="caption" color="text.secondary">
+                      {formatTime(batch.schedule?.startTime)} - {formatTime(batch.schedule?.endTime)}
+                    </Typography>
                   </TableCell>
                   <TableCell>
                     <Box sx={{ display: "flex", gap: 1 }}>
+                      <Tooltip title="View Details">
+                        <IconButton
+                          size="small"
+                          onClick={() => navigate(`/app/batches/${batch._id}`)}
+                          sx={{
+                            color: "info.main",
+                            "&:hover": {
+                              backgroundColor: (theme) =>
+                                alpha(theme.palette.info.main, 0.1),
+                            },
+                          }}
+                        >
+                          <VisibilityIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
                       <Tooltip title="Edit Batch">
-                          <IconButton
-                            size="small"
+                        <IconButton
+                          size="small"
                           onClick={() => navigate(`/app/batches/${batch._id}/edit`)}
-                            sx={{
-                              color: "primary.main",
+                          sx={{
+                            color: "primary.main",
                             "&:hover": {
                               backgroundColor: (theme) =>
                                 alpha(theme.palette.primary.main, 0.1),
-                              },
-                            }}
-                          >
-                            <EditIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
+                            },
+                          }}
+                        >
+                          <EditIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
                       <Tooltip title="Delete Batch">
-                          <IconButton
-                            size="small"
+                        <IconButton
+                          size="small"
                           onClick={() => handleDeleteClick(batch)}
-                            sx={{
-                              color: "error.main",
+                          sx={{
+                            color: "error.main",
                             "&:hover": {
                               backgroundColor: (theme) =>
                                 alpha(theme.palette.error.main, 0.1),
-                              },
-                            }}
-                          >
-                            <DeleteIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                      </Box>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
+                            },
+                          }}
+                        >
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    </Box>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
             </TableBody>
           </Table>
       </TableContainer>

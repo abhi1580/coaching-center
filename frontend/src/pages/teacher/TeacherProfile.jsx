@@ -166,6 +166,7 @@ function TeacherProfile() {
                 return subject;
               });
             }
+          }
         }
 
         setProfile(profileData);

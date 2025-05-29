@@ -23,7 +23,10 @@ export const getAllBatches = async (req, res) => {
 
     // Conditionally populate enrolledStudents with student details
     if (shouldPopulateEnrolledStudents) {
-      query = query.populate("enrolledStudents", "name email phone studentId");
+      query = query.populate({
+        path: "enrolledStudents",
+        select: "name email phone studentId",
+      });
     }
 
     // Execute the query
@@ -87,9 +90,6 @@ export const getAllBatches = async (req, res) => {
 
           // If we found students to add, update the batch
           if (studentsToAdd.length > 0) {
-            // console.log(
-            //   `Adding ${studentsToAdd.length} missing students to batch ${batch._id}`
-            // );
             await Batch.updateOne(
               { _id: batch._id },
               { $addToSet: { enrolledStudents: { $each: studentsToAdd } } }
@@ -144,7 +144,7 @@ export const getBatchById = async (req, res) => {
     let query = Batch.findById(req.params.id)
       .populate("standard", "name level")
       .populate("subject", "name")
-      .populate("teacher", "name");
+      .populate("teacher", "name email phone");
 
     // Conditionally populate enrolledStudents with student details
     if (shouldPopulateEnrolledStudents) {
@@ -188,19 +188,12 @@ export const getBatchById = async (req, res) => {
       // Add any missing students to the enrolledStudents array
       studentsWithBatch.forEach((student) => {
         if (!existingStudentIds.has(student._id.toString())) {
-          // Found a student with this batch in their batches array that isn't in enrolledStudents
-          // console.log(
-          //   `Adding missing student ${student._id} to batch ${batch._id} enrolledStudents`
-          // );
-
-          // Add to the existing batch document
           if (!batch.enrolledStudents) {
             batch.enrolledStudents = [student._id];
           } else {
             batch.enrolledStudents.push(student._id);
           }
 
-          // Also add to our response data
           if (!batchData.enrolledStudents) {
             batchData.enrolledStudents = [student];
           } else {
@@ -216,12 +209,10 @@ export const getBatchById = async (req, res) => {
 
       // Clean up enrolledStudents by removing any that don't exist in the Student collection
       if (batchData.enrolledStudents && batchData.enrolledStudents.length > 0) {
-        // Filter to keep only students with valid _id property (existing students)
         batchData.enrolledStudents = batchData.enrolledStudents.filter(
           (student) => student && student._id
         );
 
-        // Also update the actual batch document
         if (batch.enrolledStudents && batch.enrolledStudents.length > 0) {
           const validStudentIds = batchData.enrolledStudents.map(
             (student) => student._id
@@ -231,14 +222,6 @@ export const getBatchById = async (req, res) => {
         }
       }
     }
-
-    // Log the batch data for debugging
-    // console.log(
-    //   `Batch ${batch._id} enrolledStudents:`,
-    //   shouldPopulateEnrolledStudents
-    //     ? batchData.enrolledStudents?.length || 0
-    //     : "not populated"
-    // );
 
     res.json({
       success: true,

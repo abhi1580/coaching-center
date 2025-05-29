@@ -26,18 +26,41 @@ const batchSchema = new mongoose.Schema(
       required: [true, "End date is required"],
     },
     schedule: {
-      type: String,
-      required: [true, "Schedule is required"],
+      days: {
+        type: [String],
+        required: [true, "Schedule days are required"],
+        validate: {
+          validator: function(days) {
+            const validDays = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+            return days.every(day => validDays.includes(day));
+          },
+          message: "Invalid day selection"
+        }
+      },
+      startTime: {
+        type: String,
+        required: [true, "Start time is required"],
+        match: [/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/, "Invalid start time format (HH:mm)"]
+      },
+      endTime: {
+        type: String,
+        required: [true, "End time is required"],
+        match: [/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/, "Invalid end time format (HH:mm)"]
+      }
     },
     capacity: {
       type: Number,
       required: [true, "Capacity is required"],
       min: [1, "Capacity must be at least 1"],
+      get: v => Math.round(v),
+      set: v => Math.round(v)
     },
     currentStudents: {
       type: Number,
       default: 0,
       min: [0, "Current students cannot be negative"],
+      get: v => Math.round(v),
+      set: v => Math.round(v)
     },
     teacher: {
       type: mongoose.Schema.Types.ObjectId,
@@ -50,10 +73,18 @@ const batchSchema = new mongoose.Schema(
         ref: "User",
       },
     ],
-    fee: {
+    enrolledStudents: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
+    fees: {
       type: Number,
-      required: [true, "Fee is required"],
-      min: [0, "Fee cannot be negative"],
+      required: [true, "Fees is required"],
+      min: [0, "Fees cannot be negative"],
+      get: v => Math.round(v),
+      set: v => Math.round(v)
     },
     description: {
       type: String,
