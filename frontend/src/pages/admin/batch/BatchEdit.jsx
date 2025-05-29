@@ -139,18 +139,9 @@ const BatchEdit = () => {
   // Update filtered teachers when subject changes
   useEffect(() => {
     if (formData.subject) {
-      const subjectTeachers = teachers.filter((teacher) => {
-        // Check if teacher has subjects array and it's not empty
-        if (!teacher.subjects || !Array.isArray(teacher.subjects)) {
-          return false;
-        }
-        // Check if any of the teacher's subjects match the selected subject
-        return teacher.subjects.some(subject => {
-          // Handle both populated and unpopulated subject references
-          const subjectId = subject._id || subject;
-          return subjectId === formData.subject;
-        });
-      });
+      const subjectTeachers = teachers.filter((teacher) =>
+        teacher.subjects.some(subject => subject._id === formData.subject)
+      );
       console.log('Filtered teachers for subject:', formData.subject, subjectTeachers);
       setFilteredTeachers(subjectTeachers);
     } else {
@@ -160,20 +151,19 @@ const BatchEdit = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    
     if (name === "standard") {
-      setFormData(prev => ({
-        ...prev,
+      setFormData({
+        ...formData,
         standard: value,
-        subject: "", // Reset subject when standard changes
-        teacher: "" // Reset teacher when standard changes
-      }));
+        subject: "",
+        teacher: "",
+      });
     } else if (name === "subject") {
-      setFormData(prev => ({
-        ...prev,
+      setFormData({
+        ...formData,
         subject: value,
-        teacher: "" // Reset teacher when subject changes
-      }));
+        teacher: "",
+      });
     } else if (name.includes(".")) {
       const [parent, child] = name.split(".");
       setFormData(prev => ({
@@ -245,11 +235,9 @@ const BatchEdit = () => {
   // Debug effect to monitor state changes
   useEffect(() => {
     console.log('Current form data:', formData);
-    console.log('Available subjects:', subjects);
     console.log('Available teachers:', teachers);
-    console.log('Filtered subjects:', filteredSubjects);
     console.log('Filtered teachers:', filteredTeachers);
-  }, [formData, subjects, teachers, filteredSubjects, filteredTeachers]);
+  }, [formData, teachers, filteredTeachers]);
 
   if (loading) {
     return (

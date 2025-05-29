@@ -217,11 +217,13 @@ const batchSlice = createSlice({
       );
 
       if (batchIndex !== -1) {
-        // Replace the batch with new data
-        state.batches[batchIndex] = {
+        // Ensure teacher field is properly handled
+        const updatedBatch = {
           ...state.batches[batchIndex],
           ...batchData,
+          teacher: batchData.teacher || state.batches[batchIndex].teacher
         };
+        state.batches[batchIndex] = updatedBatch;
       }
     },
   },

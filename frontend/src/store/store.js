@@ -1,31 +1,28 @@
 import { configureStore } from "@reduxjs/toolkit";
-import authReducer from "./slices/authSlice";
-import subjectReducer from "./slices/subjectSlice";
-import standardReducer from "./slices/standardSlice";
-import studentReducer from "./slices/studentSlice";
+import { setupListeners } from "@reduxjs/toolkit/query";
 import batchReducer from "./slices/batchSlice";
+import standardReducer from "./slices/standardSlice";
+import subjectReducer from "./slices/subjectSlice";
 import teacherReducer from "./slices/teacherSlice";
-import announcementReducer from "./slices/announcementSlice";
-import attendanceReducer from "./slices/attendanceSlice";
+import studentReducer from "./slices/studentSlice";
+import authReducer from "./slices/authSlice";
 
-// Create store configuration
-const storeConfig = {
+// Create the store with all reducers
+export const store = configureStore({
   reducer: {
-    auth: authReducer,
-    subjects: subjectReducer,
-    standards: standardReducer,
-    students: studentReducer,
     batches: batchReducer,
+    standards: standardReducer,
+    subjects: subjectReducer,
     teachers: teacherReducer,
-    announcements: announcementReducer,
-    attendance: attendanceReducer,
+    students: studentReducer,
+    auth: authReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       serializableCheck: false,
       immutableCheck: false,
     }),
-};
+});
 
-// Create and export store
-export const store = configureStore(storeConfig);
+// Enable the refetchOnFocus/refetchOnReconnect behaviors
+setupListeners(store.dispatch);

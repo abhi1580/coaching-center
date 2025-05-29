@@ -64,7 +64,7 @@ const batchSchema = new mongoose.Schema(
     },
     teacher: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
+      ref: "Teacher",
       required: true,
     },
     students: [

@@ -3,24 +3,20 @@ import api from './apiClient';
 // Common batch services used by multiple roles
 const batchService = {
   getAll: (populateEnrolledStudents = false) => {
-    const queryParams = populateEnrolledStudents
-      ? "?populate=enrolledStudents"
-      : "";
-    return api.get(`/batches${queryParams}`);
+    let queryParams = "populate=standard,subject,teacher";
+    if (populateEnrolledStudents) {
+      queryParams += ",enrolledStudents";
+    }
+    return api.get(`/batches?${queryParams}`);
   },
   
   getById: (id, options = {}) => {
     const { populateEnrolledStudents = false } = options;
-    let queryParams = "";
+    let queryParams = "populate=standard,subject,teacher";
 
     if (populateEnrolledStudents) {
-      queryParams += "populate=enrolledStudents";
+      queryParams += ",enrolledStudents";
     }
-
-    // Always populate standard, subject, and teacher
-    queryParams += queryParams
-      ? "&populate=standard,subject,teacher"
-      : "populate=standard,subject,teacher";
 
     return api.get(`/batches/${id}?${queryParams}`);
   },

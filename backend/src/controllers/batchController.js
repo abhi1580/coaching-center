@@ -19,7 +19,11 @@ export const getAllBatches = async (req, res) => {
     let query = Batch.find()
       .populate("standard", "name level")
       .populate("subject", "name")
-      .populate("teacher", "name");
+      .populate({
+        path: "teacher",
+        select: "name email phone",
+        model: "Teacher"
+      });
 
     // Conditionally populate enrolledStudents with student details
     if (shouldPopulateEnrolledStudents) {
@@ -144,7 +148,11 @@ export const getBatchById = async (req, res) => {
     let query = Batch.findById(req.params.id)
       .populate("standard", "name level")
       .populate("subject", "name")
-      .populate("teacher", "name email phone");
+      .populate({
+        path: "teacher",
+        select: "name email phone",
+        model: "Teacher"
+      });
 
     // Conditionally populate enrolledStudents with student details
     if (shouldPopulateEnrolledStudents) {
@@ -372,7 +380,11 @@ export const getBatchesBySubject = async (req, res) => {
     let batchQuery = Batch.find(query)
       .populate("standard", "name level")
       .populate("subject", "name")
-      .populate("teacher", "name");
+      .populate({
+        path: "teacher",
+        select: "name email phone",
+        model: "Teacher"
+      });
 
     // Conditionally populate enrolledStudents with student details
     if (shouldPopulateEnrolledStudents) {

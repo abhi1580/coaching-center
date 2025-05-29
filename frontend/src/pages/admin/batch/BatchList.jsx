@@ -124,7 +124,7 @@ const BatchList = () => {
   };
 
   useEffect(() => {
-    dispatch(fetchBatches(true));
+    dispatch(fetchBatches({ populateEnrolledStudents: true }));
     dispatch(fetchStudents());
   }, [dispatch]);
 
@@ -134,7 +134,8 @@ const BatchList = () => {
         (batch) =>
           batch.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
           batch.standard?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          batch.subject?.name.toLowerCase().includes(searchTerm.toLowerCase())
+          batch.subject?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          batch.teacher?.name.toLowerCase().includes(searchTerm.toLowerCase())
       );
       setFilteredBatches(filtered);
     } else {

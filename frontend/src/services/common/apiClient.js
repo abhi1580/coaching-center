@@ -15,37 +15,19 @@ export const api = axios.create({
   withCredentials: true, // Enable sending cookies with requests
 });
 
-// Add request interceptor for CSRF token
+// Add request interceptor
 api.interceptors.request.use(
-  async (config) => {
-    // Skip CSRF token for login and CSRF token requests
-    if (config.url === "/auth/login" || config.url === "/auth/csrf-token") {
-      return config;
+  (config) => {
+    // Get token from localStorage
+    const token = localStorage.getItem("token");
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
     }
-
-    try {
-      const csrfToken = document.cookie
-        .split("; ")
-        .find((row) => row.startsWith("csrfToken="))
-        ?.split("=")[1];
-
-      if (csrfToken) {
-        config.headers["X-CSRF-Token"] = csrfToken;
-      } else {
-        const response = await api.get("/auth/csrf-token");
-        const newToken = response.data.token;
-        if (newToken) {
-          config.headers["X-CSRF-Token"] = newToken;
-        }
-      }
-    } catch (error) {
-      // Silent fail for CSRF token errors
-      return config;
-    }
-
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => {
+    return Promise.reject(error);
+  }
 );
 
 // Add response interceptor
