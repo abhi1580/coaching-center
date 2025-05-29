@@ -37,7 +37,8 @@ app.use(
 // CORS configuration must be before other middleware
 app.use(cors(config.corsOptions));
 
-// app.use(limiter);
+// Rate limiting for API endpoints
+app.use(limiter);
 
 // CSRF validation middleware
 const csrfProtection = (req, res, next) => {
@@ -53,18 +54,15 @@ const csrfProtection = (req, res, next) => {
   const csrfToken = req.headers["x-csrf-token"];
   const cookieToken = req.cookies["X-CSRF-Token"];
 
-  console.log("CSRF validation:", {
-    method: req.method,
-    path: req.path,
-    headerToken: csrfToken,
-    cookieToken: cookieToken,
-  });
+  // Only log minimal info in development mode
+  if (config.env === "development") {
+    console.log(`CSRF check: ${req.method} ${req.path}`);
+  }
 
   if (!csrfToken || !cookieToken || csrfToken !== cookieToken) {
-    console.error("CSRF validation failed:", {
-      headerToken: csrfToken,
-      cookieToken: cookieToken,
-    });
+    // Log minimal info about the failure
+    console.error(`CSRF validation failed for ${req.method} ${req.path}`);
+    
     return res.status(403).json({
       success: false,
       message: "Invalid CSRF token",
@@ -76,7 +74,7 @@ const csrfProtection = (req, res, next) => {
 
 // Apply CSRF protection
 app.use(csrfProtection);
-console.log(`CSRF protection enabled in ${process.env.NODE_ENV} mode`);
+console.log(`CSRF protection enabled in ${config.env} mode`);
 
 // Serve static files from uploads directory
 app.use(

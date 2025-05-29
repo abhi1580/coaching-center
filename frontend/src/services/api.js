@@ -2,26 +2,25 @@ import axios from "axios";
 
 // Fallback to localhost if VITE_API_URL is not defined
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+const isDev = import.meta.env.DEV || false;
 
 // Function to get CSRF token from cookies
 const getCsrfToken = () => {
   const cookies = document.cookie.split(";");
-  console.log("All cookies:", cookies);
   for (let cookie of cookies) {
     const [name, value] = cookie.trim().split("=");
     if (name === "X-CSRF-Token") {
-      console.log("Found CSRF token in cookies:", value);
       return value;
     }
   }
-  console.log("No CSRF token found in cookies");
   return null;
 };
 
 // Function to refresh CSRF token
 const refreshCsrfToken = async () => {
   try {
-    console.log("Attempting to refresh CSRF token...");
+    if (isDev) console.log("Refreshing CSRF token");
+    
     // Make a GET request to get a new CSRF token
     const response = await axios.get(`${API_URL}/auth/csrf-token`, {
       withCredentials: true,
@@ -30,48 +29,32 @@ const refreshCsrfToken = async () => {
         "Content-Type": "application/json",
       },
     });
-    console.log("CSRF token refresh response:", response.data);
-
-    // Wait a bit for the cookie to be set
-    await new Promise((resolve) => setTimeout(resolve, 500));
 
     // First try to get token from response data
     if (response.data && response.data.token) {
-      console.log("Got CSRF token from response data:", response.data.token);
       return response.data.token;
     }
 
-    // Then check cookies
+    // Then check cookies - token should be immediately available
     const cookieToken = getCsrfToken();
     if (cookieToken) {
-      console.log("Got CSRF token from cookies:", cookieToken);
       return cookieToken;
     }
 
-    console.log("No CSRF token found in response or cookies");
+    if (isDev) console.warn("No CSRF token found after refresh attempt");
     return null;
   } catch (error) {
-    console.error("Failed to refresh CSRF token:", error);
+    console.error("Failed to refresh CSRF token");
     return null;
   }
 };
 
 // Function to ensure we have a valid CSRF token
 const ensureCsrfToken = async () => {
-  console.log("Ensuring CSRF token...");
   let csrfToken = getCsrfToken();
 
   if (!csrfToken) {
-    console.log("No existing CSRF token, attempting to refresh...");
     csrfToken = await refreshCsrfToken();
-
-    if (csrfToken) {
-      console.log("Successfully refreshed CSRF token:", csrfToken);
-    } else {
-      console.log("Failed to refresh CSRF token");
-    }
-  } else {
-    console.log("Using existing CSRF token:", csrfToken);
   }
 
   return csrfToken;
@@ -88,8 +71,6 @@ export const api = axios.create({
 // Add request interceptor to include CSRF token
 api.interceptors.request.use(
   async (config) => {
-    console.log("Making request to:", config.url);
-
     // Skip CSRF token for GET requests and CSRF token endpoint
     if (config.method === "get" || config.url === "/auth/csrf-token") {
       return config;
@@ -98,13 +79,11 @@ api.interceptors.request.use(
     // Get CSRF token before making the request
     const csrfToken = await ensureCsrfToken();
     if (csrfToken) {
-      console.log("Adding CSRF token to request headers:", csrfToken);
       config.headers["X-CSRF-Token"] = csrfToken;
-    } else {
-      console.warn("No CSRF token available for request");
+    } else if (isDev) {
+      console.warn("No CSRF token available for request to:", config.url);
     }
 
-    console.log("Request config:", config);
     return config;
   },
   (error) => {
@@ -118,36 +97,26 @@ api.interceptors.response.use(
     return response;
   },
   async (error) => {
-    // Log error responses for debugging
-    console.error(
-      `API Error [${error.config?.method?.toUpperCase()} ${
-        error.config?.url
-      }]:`,
-      error.response?.status,
-      error.response?.data
-    );
+    // Only log detailed errors in development
+    if (isDev) {
+      console.error(
+        `API Error [${error.config?.method?.toUpperCase()} ${error.config?.url}]:`,
+        error.response?.status
+      );
+    }
 
     // Handle CSRF token errors
     if (
       error.response?.status === 403 &&
       error.response?.data?.message?.includes("CSRF")
     ) {
-      console.log("CSRF token validation failed, attempting to refresh...");
-
       // Try to refresh the token
       const refreshed = await refreshCsrfToken();
       if (refreshed) {
-        // Retry the original request
-        const newToken = getCsrfToken();
-        if (newToken) {
-          error.config.headers["X-CSRF-Token"] = newToken;
-          return api(error.config);
-        }
+        // Retry the original request with new token
+        error.config.headers["X-CSRF-Token"] = refreshed;
+        return api(error.config);
       }
-
-      // If refresh failed, reload the page
-      window.location.reload();
-      return Promise.reject(error);
     }
 
     // Create a list of endpoints that should not trigger automatic logout on 401
@@ -166,18 +135,11 @@ api.interceptors.response.use(
     }
 
     if (error.response?.status === 401) {
-      // Check if we're in a teacher route
-      const currentPath = window.location.pathname;
-      const isTeacherRoute = currentPath.includes("/app/teacher");
       // Only redirect if not already on login page
       const isLoggingOut = error.config?.url?.includes("/auth/logout");
       if (!window.location.pathname.includes("/login") && !isLoggingOut) {
-        // Instead of hard reload, use client-side navigation if possible
-        if (window.reactNavigate) {
-          window.reactNavigate("/login");
-        } else {
-          window.location.replace("/login");
-        }
+        // Use a safer approach to navigation
+        window.location.href = "/login";
       }
     }
     return Promise.reject(error);
@@ -192,17 +154,7 @@ export const studentService = {
 
   // Student-specific methods used when logged in as a student
   getStudentProfile: () => {
-    console.log("Fetching student profile from endpoint: /student/profile");
-    return api
-      .get("/student/profile")
-      .then((response) => {
-        console.log("Student profile response:", response.data);
-        return response;
-      })
-      .catch((error) => {
-        console.error("Error fetching student profile:", error);
-        throw error;
-      });
+    return api.get("/student/profile");
   },
 
   updateStudentProfile: (data) => {
