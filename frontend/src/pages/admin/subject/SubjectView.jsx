@@ -22,6 +22,7 @@ import {
   Description as DescriptionIcon,
 } from "@mui/icons-material";
 import { subjectService } from "../../../services/api";
+import { capitalizeFirstLetter } from "../../../utils/helpers";
 
 const SubjectView = () => {
   const { id } = useParams();
@@ -101,7 +102,7 @@ const SubjectView = () => {
           Subjects
         </Link>
         <Typography color="text.primary" sx={{ display: 'flex', alignItems: 'center' }}>
-          {subject.name}
+          {capitalizeFirstLetter(subject.name)}
         </Typography>
       </Breadcrumbs>
 
@@ -129,7 +130,7 @@ const SubjectView = () => {
             flex: 1,
           }}
         >
-          {subject.name}
+          {capitalizeFirstLetter(subject.name)}
         </Typography>
       </Paper>
 

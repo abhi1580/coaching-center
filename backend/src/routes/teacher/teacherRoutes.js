@@ -5,9 +5,9 @@ import {
   updateTeacherProfile,
   getTeacherBatches,
   getTeacherBatchDetails,
-  getTeacherStudents
+  getTeacherStudents,
+  getTeacherDashboard
 } from "../../controllers/teacher/teacherController.js";
-import { getTeacherDashboard } from "../../controllers/teacherController.js";
 
 const router = express.Router();
 

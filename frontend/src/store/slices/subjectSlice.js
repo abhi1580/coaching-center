@@ -1,126 +1,148 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import { subjectService } from "../../services/api";
+import apiClient from "../../services/common/apiClient";
 
 // Async thunks
 export const fetchSubjects = createAsyncThunk(
-  "subjects/fetchAll",
+  "subjects/fetchSubjects",
   async (_, { rejectWithValue }) => {
     try {
-      const response = await subjectService.getAll();
-      return response.data;
+      const response = await apiClient.get("/subjects");
+      return response.data.data || [];
     } catch (error) {
-      return rejectWithValue(
-        error.response?.data?.message || "Failed to fetch subjects"
-      );
+      return rejectWithValue(error.response?.data?.message || "Failed to fetch subjects");
+    }
+  }
+);
+
+export const fetchStandards = createAsyncThunk(
+  "subjects/fetchStandards",
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await apiClient.get("/standards");
+      return response.data.data || [];
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || "Failed to fetch standards");
     }
   }
 );
 
 export const createSubject = createAsyncThunk(
-  "subjects/create",
-  async (data, { rejectWithValue }) => {
+  "subjects/createSubject",
+  async (subjectData, { rejectWithValue }) => {
     try {
-      const response = await subjectService.create(data);
-      return response.data;
+      const response = await apiClient.post("/subjects", subjectData);
+      return response.data.data;
     } catch (error) {
-      return rejectWithValue(
-        error.response?.data?.message || "Failed to create subject"
-      );
+      return rejectWithValue(error.response?.data?.message || "Failed to create subject");
     }
   }
 );
 
 export const updateSubject = createAsyncThunk(
-  "subjects/update",
-  async ({ id, data }, { rejectWithValue }) => {
+  "subjects/updateSubject",
+  async ({ id, subjectData }, { rejectWithValue }) => {
     try {
-      const response = await subjectService.update(id, data);
-      return response.data;
+      const response = await apiClient.put(`/subjects/${id}`, subjectData);
+      return response.data.data;
     } catch (error) {
-      return rejectWithValue(
-        error.response?.data?.message || "Failed to update subject"
-      );
+      return rejectWithValue(error.response?.data?.message || "Failed to update subject");
     }
   }
 );
 
 export const deleteSubject = createAsyncThunk(
-  "subjects/delete",
+  "subjects/deleteSubject",
   async (id, { rejectWithValue }) => {
     try {
-      await subjectService.delete(id);
+      await apiClient.delete(`/subjects/${id}`);
       return id;
     } catch (error) {
-      return rejectWithValue(
-        error.response?.data?.message || "Failed to delete subject"
-      );
+      return rejectWithValue(error.response?.data?.message || "Failed to delete subject");
     }
   }
 );
 
+const initialState = {
+  subjects: [],
+  standards: [],
+  loading: false,
+  error: null,
+};
+
 const subjectSlice = createSlice({
   name: "subjects",
-  initialState: {
-    subjects: [],
-    loading: false,
-    error: null,
-    success: null,
-  },
+  initialState,
   reducers: {
-    resetStatus: (state) => {
+    clearError: (state) => {
       state.error = null;
-      state.success = null;
     },
   },
   extraReducers: (builder) => {
     builder
-      // Fetch subjects
+      // Fetch Subjects
       .addCase(fetchSubjects.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
       .addCase(fetchSubjects.fulfilled, (state, action) => {
         state.loading = false;
-        state.subjects = action.payload.data || [];
+        state.subjects = action.payload || [];
       })
       .addCase(fetchSubjects.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
+        state.subjects = [];
       })
-      // Create subject
+      // Fetch Standards
+      .addCase(fetchStandards.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchStandards.fulfilled, (state, action) => {
+        state.loading = false;
+        state.standards = action.payload || [];
+      })
+      .addCase(fetchStandards.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+        state.standards = [];
+      })
+      // Create Subject
       .addCase(createSubject.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
       .addCase(createSubject.fulfilled, (state, action) => {
         state.loading = false;
-        state.subjects.push(action.payload.data);
-        state.success = "Subject created successfully";
+        if (action.payload) {
+          state.subjects.push(action.payload);
+        }
       })
       .addCase(createSubject.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       })
-      // Update subject
+      // Update Subject
       .addCase(updateSubject.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
       .addCase(updateSubject.fulfilled, (state, action) => {
         state.loading = false;
-        const index = state.subjects.findIndex(
-          (subject) => subject._id === action.payload.data._id
-        );
-        if (index !== -1) {
-          state.subjects[index] = action.payload.data;
+        if (action.payload) {
+          const index = state.subjects.findIndex(
+            (subject) => subject._id === action.payload._id
+          );
+          if (index !== -1) {
+            state.subjects[index] = action.payload;
+          }
         }
-        state.success = "Subject updated successfully";
       })
       .addCase(updateSubject.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       })
-      // Delete subject
+      // Delete Subject
       .addCase(deleteSubject.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -130,7 +152,6 @@ const subjectSlice = createSlice({
         state.subjects = state.subjects.filter(
           (subject) => subject._id !== action.payload
         );
-        state.success = "Subject deleted successfully";
       })
       .addCase(deleteSubject.rejected, (state, action) => {
         state.loading = false;
@@ -139,5 +160,5 @@ const subjectSlice = createSlice({
   },
 });
 
-export const { resetStatus } = subjectSlice.actions;
+export const { clearError } = subjectSlice.actions;
 export default subjectSlice.reducer;

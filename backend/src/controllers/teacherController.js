@@ -347,144 +347,6 @@ export const getTeachersBySubject = async (req, res) => {
 };
 
 /**
- * @desc    Get teacher dashboard data
- * @route   GET /api/teachers/dashboard
- * @access  Private/Teacher
- */
-export const getTeacherDashboard = asyncHandler(async (req, res) => {
-  try {
-  // Get authenticated user's ID
-  const userId = req.user.id;
-
-  // Find the teacher profile for this user
-  const teacher = await Teacher.findOne({ user: userId }).populate("user", "name email");
-
-  if (!teacher) {
-    return res.status(404).json({
-      success: false,
-      message: "Teacher profile not found",
-    });
-  }
-
-  // Get all batches assigned to this teacher with populated data
-  const batches = await Batch.find({ teacher: teacher._id })
-    .populate("subject", "name")
-    .populate("standard", "name")
-    .populate({
-      path: "enrolledStudents",
-        select: "name email phone"
-      });
-
-    // console.log(`Dashboard: Fetched ${batches.length} batches for teacher ${teacher.name}`);
-    
-    // Debug each batch's student count
-    let totalEnrolledStudents = 0;
-    batches.forEach((batch, index) => {
-      const studentCount = batch.enrolledStudents ? batch.enrolledStudents.length : 0;
-      totalEnrolledStudents += studentCount;
-      // console.log(`Dashboard - Batch ${index + 1} (${batch.name}): ${studentCount} students`);
-      if (batch.enrolledStudents && batch.enrolledStudents.length > 0) {
-        // console.log(`  First student: ${JSON.stringify(batch.enrolledStudents[0])}`);
-      }
-    });
-
-    // Import Student model
-    const Student = mongoose.models.Student || mongoose.model('Student');
-    
-    // Find students that have these batches in their 'batches' array
-    const batchIds = batches.map(batch => batch._id);
-    const studentsWithBatches = await Student.find({
-      batches: { $in: batchIds }
-    }).select('_id name email phone batches');
-    
-    // console.log(`Found ${studentsWithBatches.length} students with these batches in their record`);
-
-    // Calculate total number of unique students from both sources
-  const uniqueStudents = new Set();
-    
-    // Add students from enrolledStudents arrays
-  batches.forEach(batch => {
-      if (batch.enrolledStudents && batch.enrolledStudents.length > 0) {
-    batch.enrolledStudents.forEach(student => {
-          if (student && student._id) {
-            uniqueStudents.add(student._id.toString());
-          }
-        });
-      }
-    });
-    
-    // Add students from the dedicated query
-    studentsWithBatches.forEach(student => {
-      uniqueStudents.add(student._id.toString());
-    });
-    
-    // console.log(`Total unique students found: ${uniqueStudents.size}`);
-  
-  // Get active announcements for the teacher
-  const announcements = await Announcement.find({
-    targetAudience: { $in: ['all', 'teachers'] },
-    expiryDate: { $gte: new Date() }
-  }).sort({ createdAt: -1 });
-
-  // Get upcoming classes for the next week
-  const today = new Date();
-  const nextWeek = new Date(today);
-  nextWeek.setDate(today.getDate() + 7);
-  
-  const upcomingClasses = [];
-  
-  batches.forEach(batch => {
-    if (batch.status === 'active' || batch.status === 'upcoming') {
-      // Check if schedule and days exist and are valid
-      if (batch.schedule && batch.schedule.days && Array.isArray(batch.schedule.days)) {
-        batch.schedule.days.forEach(day => {
-          // Create a date object for the next occurrence of this schedule day
-          const nextClassDate = getNextDayOfWeek(today, day);
-          
-          if (nextClassDate && nextClassDate <= nextWeek) {
-            upcomingClasses.push({
-              batchName: batch.name,
-              subject: batch.subject ? batch.subject.name : 'Not assigned',
-              standard: batch.standard ? batch.standard.name : 'Not assigned',
-              day: day,
-              startTime: batch.schedule.startTime,
-              endTime: batch.schedule.endTime,
-              date: nextClassDate
-            });
-          }
-        });
-      }
-    }
-  });
-  
-  // Sort upcoming classes by date and time
-  upcomingClasses.sort((a, b) => {
-    if (a.date.getTime() !== b.date.getTime()) {
-      return a.date.getTime() - b.date.getTime();
-    }
-    return a.startTime.localeCompare(b.startTime);
-  });
-
-    return res.json({
-    success: true,
-    data: {
-      totalBatches: batches.length,
-      totalStudents: uniqueStudents.size,
-      activeAnnouncements: announcements,
-      upcomingClasses: upcomingClasses
-    }
-  });
-  } catch (error) {
-    console.error("Error in getTeacherDashboard:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Server error",
-      error: error.message
-    });
-  }
-});
-
-/**
  * @desc    Get batches for authenticated teacher
  * @route   GET /api/teachers/batches
  * @access  Private/Teacher
@@ -557,45 +419,20 @@ export const getTeacherBatches = asyncHandler(async (req, res) => {
       });
     });
     
-    // Combine both sources of students for each batch
+    // Add students from the map to each batch
     batches.forEach(batch => {
-      const batchId = batch._id.toString();
-      const studentsFromBatchesArray = studentsByBatch[batchId] || [];
-      
-      // Create a map of existing student IDs to avoid duplicates
-      const existingStudentMap = new Map();
-      
-      if (batch.enrolledStudents && batch.enrolledStudents.length > 0) {
-        batch.enrolledStudents.forEach(student => {
-          if (student && student._id) {
-            existingStudentMap.set(student._id.toString(), student);
-          }
-        });
+      const batchIdStr = batch._id.toString();
+      if (studentsByBatch[batchIdStr]) {
+        batch.students = studentsByBatch[batchIdStr];
+      } else {
+        batch.students = [];
       }
-      
-      // Add students from batches array if not already included
-      studentsFromBatchesArray.forEach(student => {
-        if (!existingStudentMap.has(student._id.toString())) {
-          if (!batch.enrolledStudents) {
-            batch.enrolledStudents = [];
-          }
-          batch.enrolledStudents.push(student);
-          existingStudentMap.set(student._id.toString(), student);
-        }
-      });
-    });
-    
-    // Log final counts after combining sources
-    // console.log("Final batch student counts after combining sources:");
-    batches.forEach((batch, index) => {
-      // console.log(`Batch ${index + 1} (${batch.name}): ${batch.enrolledStudents ? batch.enrolledStudents.length : 0} students`);
     });
 
     return res.json({
-    success: true,
-    count: batches.length,
-    data: batches
-  });
+      success: true,
+      data: batches
+    });
   } catch (error) {
     console.error("Error in getTeacherBatches:", error);
     return res.status(500).json({

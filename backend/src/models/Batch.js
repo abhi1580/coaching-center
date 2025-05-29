@@ -4,7 +4,7 @@ const batchSchema = new mongoose.Schema(
   {
     name: {
       type: String,
-      required: true,
+      required: [true, "Batch name is required"],
       trim: true,
     },
     standard: {
@@ -19,135 +19,110 @@ const batchSchema = new mongoose.Schema(
     },
     startDate: {
       type: Date,
-      required: true,
+      required: [true, "Start date is required"],
     },
     endDate: {
       type: Date,
-      required: true,
+      required: [true, "End date is required"],
     },
     schedule: {
-      days: [
-        {
-          type: String,
-          enum: [
-            "Monday",
-            "Tuesday",
-            "Wednesday",
-            "Thursday",
-            "Friday",
-            "Saturday",
-            "Sunday",
-          ],
-          required: true,
-        },
-      ],
-      startTime: {
-        type: String,
-        required: true,
-      },
-      endTime: {
-        type: String,
-        required: true,
-      },
+      type: String,
+      required: [true, "Schedule is required"],
     },
     capacity: {
       type: Number,
-      required: true,
-      min: 1,
+      required: [true, "Capacity is required"],
+      min: [1, "Capacity must be at least 1"],
     },
-    enrolledStudents: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Student",
-      },
-    ],
+    currentStudents: {
+      type: Number,
+      default: 0,
+      min: [0, "Current students cannot be negative"],
+    },
     teacher: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Teacher",
+      ref: "User",
+      required: true,
     },
-    status: {
-      type: String,
-      enum: ["upcoming", "Ongoing", "completed"],
-      default: "upcoming",
+    students: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
+    fee: {
+      type: Number,
+      required: [true, "Fee is required"],
+      min: [0, "Fee cannot be negative"],
     },
     description: {
       type: String,
       trim: true,
     },
-    fees: {
-      type: Number,
-      required: true,
-      min: 0,
-    },
   },
   {
     timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
   }
 );
 
-// Index for efficient queries
-batchSchema.index({ standard: 1, subject: 1 });
-batchSchema.index({ startDate: 1, endDate: 1 });
-batchSchema.index({ status: 1 });
+// Helper function to get current time in IST
+const getCurrentIST = () => {
+  return new Date(
+    new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" })
+  );
+};
+
+// Virtual getter for status
+batchSchema.virtual("status").get(function () {
+  const now = getCurrentIST();
+  if (this.endDate < now) {
+    return "completed";
+  } else if (this.startDate <= now && this.endDate >= now) {
+    return "active";
+  } else {
+    return "upcoming";
+  }
+});
+
+// Virtual getter for isFull
+batchSchema.virtual("isFull").get(function () {
+  return this.currentStudents >= this.capacity;
+});
 
 // Pre-save middleware to validate dates
 batchSchema.pre("save", function (next) {
-  if (this.endDate < this.startDate) {
-    next(new Error("End date must be on or after start date"));
+  if (this.startDate >= this.endDate) {
+    next(new Error("End date must be after start date"));
   }
   next();
 });
 
-// Static method to update batch statuses
-batchSchema.statics.updateBatchStatuses = async function () {
-  try {
-    const now = new Date();
-    const BatchModel = this;
-
-    // Update completed batches
-    await BatchModel.updateMany(
-      {
-        endDate: { $lt: now },
-        status: { $ne: "completed" }
-      },
-      { status: "completed" }
-    );
-
-    // Update active batches
-    await BatchModel.updateMany(
-      {
-        startDate: { $lte: now },
-        endDate: { $gte: now },
-        status: { $ne: "Ongoing" }
-      },
-      { status: "Ongoing" }
-    );
-
-    // Update upcoming batches
-    await BatchModel.updateMany(
-      {
-        startDate: { $gt: now },
-        status: { $ne: "upcoming" }
-      },
-      { status: "upcoming" }
-    );
-
-    return { success: true };
-  } catch (error) {
-    console.error("Error updating batch statuses:", error);
-    return { success: false, error: error.message };
-  }
+// Method to format date in DD/MM/YYYY format
+batchSchema.methods.formatDate = function (date) {
+  if (!date) return null;
+  const indianDate = new Date(
+    date.toLocaleString("en-US", { timeZone: "Asia/Kolkata" })
+  );
+  const day = indianDate.getDate().toString().padStart(2, "0");
+  const month = (indianDate.getMonth() + 1).toString().padStart(2, "0");
+  const year = indianDate.getFullYear();
+  return `${day}/${month}/${year}`;
 };
 
-// Update batch statuses on save
-batchSchema.post("save", function () {
-  // Get the model constructor
-  const Model = mongoose.model("Batch");
-  // Update statuses silently
-  Model.updateBatchStatuses().catch((err) => {
-    console.error("Error updating batch statuses after save:", err);
-  });
+// Virtual getters for formatted dates
+batchSchema.virtual("formattedStartDate").get(function () {
+  return this.formatDate(this.startDate);
 });
+
+batchSchema.virtual("formattedEndDate").get(function () {
+  return this.formatDate(this.endDate);
+});
+
+// Index for efficient queries
+batchSchema.index({ standard: 1, subject: 1 });
+batchSchema.index({ startDate: 1, endDate: 1 });
 
 const Batch = mongoose.model("Batch", batchSchema);
 

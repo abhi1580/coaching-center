@@ -48,6 +48,7 @@ import {
   deleteSubject,
 } from "../../../store/slices/subjectSlice";
 import RefreshButton from "../../../components/common/RefreshButton";
+import { capitalizeFirstLetter } from "../../../utils/helpers";
 import Swal from "sweetalert2";
 
 const SubjectList = () => {
@@ -397,7 +398,7 @@ const SubjectList = () => {
                           color: "primary.main",
                         }}
                       >
-                        {subject.name || "Unnamed Subject"}
+                        {capitalizeFirstLetter(subject.name) || "Unnamed Subject"}
                       </Typography>
 
                       <Chip
@@ -715,7 +716,7 @@ const SubjectList = () => {
                           sx={{ mr: 1 }}
                         />
                         <Typography fontWeight={500} fontSize="0.95rem">
-                          {subject.name || "Unnamed Subject"}
+                          {capitalizeFirstLetter(subject.name) || "Unnamed Subject"}
                         </Typography>
                       </Box>
                     </TableCell>

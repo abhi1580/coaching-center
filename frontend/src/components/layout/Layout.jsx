@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
 import {
   Box,
@@ -17,6 +17,18 @@ import {
   Button,
   ListItemButton,
   Container,
+  Paper,
+  TextField,
+  Grid,
+  Breadcrumbs,
+  Link,
+  alpha,
+  CircularProgress,
+  Menu,
+  MenuItem,
+  Badge,
+  Avatar,
+  Tooltip,
 } from "@mui/material";
 import {
   Menu as MenuIcon,
@@ -29,6 +41,9 @@ import {
   Announcement as AnnouncementIcon,
   Logout as LogoutIcon,
   VideoLibrary as VideoIcon,
+  Notifications as NotificationsIcon,
+  AccountCircle,
+  Timer as TimerIcon,
 } from "@mui/icons-material";
 import { useSelector, useDispatch } from "react-redux";
 import { logoutUser } from "../../store/slices/authSlice";
@@ -55,58 +70,126 @@ const menuItems = [
   },
 ];
 
-const Layout = () => {
+const SessionTimer = () => {
+  const [timeLeft, setTimeLeft] = useState('');
+  const theme = useTheme();
+
+  useEffect(() => {
+    const calculateTimeLeft = () => {
+      // Get token from cookie
+      const token = document.cookie
+        .split('; ')
+        .find(row => row.startsWith('token='))
+        ?.split('=')[1];
+
+      if (!token) {
+        setTimeLeft('No session');
+        return;
+      }
+
+      try {
+        // Decode JWT token
+        const base64Url = token.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const jsonPayload = decodeURIComponent(atob(base64).split('').map(c => {
+          return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+        }).join(''));
+
+        const { exp } = JSON.parse(jsonPayload);
+        
+        if (!exp) {
+          setTimeLeft('Invalid token');
+          return;
+        }
+
+        const expirationTime = exp * 1000; // Convert to milliseconds
+        const now = Date.now();
+        const difference = expirationTime - now;
+
+        if (difference <= 0) {
+          setTimeLeft('Session expired');
+          return;
+        }
+
+        // Calculate hours, minutes, seconds
+        const hours = Math.floor(difference / (1000 * 60 * 60));
+        const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((difference % (1000 * 60)) / 1000);
+
+        // Format with leading zeros
+        const formattedHours = hours.toString().padStart(2, '0');
+        const formattedMinutes = minutes.toString().padStart(2, '0');
+        const formattedSeconds = seconds.toString().padStart(2, '0');
+
+        setTimeLeft(`${formattedHours}:${formattedMinutes}:${formattedSeconds}`);
+      } catch (error) {
+        console.error('Error decoding token:', error);
+        setTimeLeft('Error');
+      }
+    };
+
+    // Update immediately
+    calculateTimeLeft();
+
+    // Update every second
+    const timer = setInterval(calculateTimeLeft, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
+
+  return (
+    <Tooltip title="Session Time Remaining">
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1,
+          color: theme.palette.warning.main,
+          bgcolor: alpha(theme.palette.warning.main, 0.1),
+          px: 2,
+          py: 0.5,
+          borderRadius: 1,
+          mr: 2,
+          fontFamily: 'monospace',
+        }}
+      >
+        <TimerIcon fontSize="small" />
+        <Typography variant="body2" sx={{ fontWeight: 500 }}>
+          {timeLeft}
+        </Typography>
+      </Box>
+    </Tooltip>
+  );
+};
+
+const Layout = ({ children }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const isTablet = useMediaQuery(theme.breakpoints.between("sm", "md"));
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const { user } = useSelector((state) => state.auth);
-  const [open, setOpen] = useState(!isMobile);
+  const { user, isAuthenticated } = useSelector((state) => state.auth);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   const handleDrawerToggle = () => {
-    setOpen(!open);
+    setMobileOpen(!mobileOpen);
   };
 
   const handleNavigation = (path) => {
     navigate(path);
     if (isMobile) {
-      setOpen(false);
+      setMobileOpen(false);
     }
   };
 
   const handleLogout = async () => {
     try {
-      await dispatch(logoutUser()).unwrap();
-
-      // Show success message with SweetAlert2 that auto-closes after 3 seconds
-      Swal.fire({
-        title: "Logged Out",
-        text: "You have been successfully logged out",
-        icon: "success",
-        confirmButtonColor: "var(--accent-yellow)",
-        timer: 2000,
-        timerProgressBar: true,
-        showConfirmButton: false,
-      }).then(() => {
-        navigate("/login");
-      });
+        await dispatch(logoutUser()).unwrap();
+        window.location.replace("/login");
     } catch (error) {
-      console.error("Logout failed:", error);
-
-      // Show error message with SweetAlert2 that auto-closes after 3 seconds
-      Swal.fire({
-        title: "Logout Failed",
-        text: "There was an issue logging you out. Please try again.",
-        icon: "warning",
-        confirmButtonColor: "var(--accent-yellow)",
-        timer: 2000,
-        timerProgressBar: true,
-        showConfirmButton: false,
-      }).then(() => {
-        // Navigate anyway even if the API call fails
-        navigate("/login");
-      });
+      // Even if there's an error, we should still redirect to login
+      window.location.replace("/login");
     }
   };
 
@@ -214,26 +297,24 @@ const Layout = () => {
             >
               {user?.name ? `Welcome, ${user.name}` : "Admin Dashboard"}
             </Typography>
+
+            {/* Session Timer */}
+            <SessionTimer />
+
             <Button
+              variant="outlined"
               startIcon={<LogoutIcon />}
               onClick={handleLogout}
               sx={{
-                bgcolor: "var(--accent-yellow)",
-                color: "#fff",
-                padding: "8px 15px",
-                borderRadius: "50px",
-                fontWeight: "500",
-                textTransform: "none",
-                fontFamily: "Poppins, sans-serif",
-                boxShadow: "0 4px 10px rgba(0,0,0,0.1)",
-                transition: "all 0.3s ease",
+                borderColor: "var(--accent-yellow)",
+                color: "var(--accent-yellow)",
                 "&:hover": {
-                  bgcolor: "var(--dark-yellow)",
-                  transform: "scale(1.05)",
+                  borderColor: "var(--accent-yellow)",
+                  bgcolor: "rgba(255, 193, 7, 0.1)",
                 },
               }}
             >
-              {!isMobile && "Logout"}
+              Logout
             </Button>
           </Toolbar>
         </Container>
@@ -242,44 +323,36 @@ const Layout = () => {
         component="nav"
         sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}
       >
-        {isMobile ? (
-          <Drawer
-            variant="temporary"
-            open={open}
-            onClose={handleDrawerToggle}
-            ModalProps={{
-              keepMounted: true,
-            }}
-            sx={{
-              display: { xs: "block", sm: "none" },
-              "& .MuiDrawer-paper": {
-                boxSizing: "border-box",
-                width: drawerWidth,
-                bgcolor: "#fff",
-                boxShadow: "0 0 15px rgba(0, 0, 0, 0.1)",
-              },
-            }}
-          >
-            {drawer}
-          </Drawer>
-        ) : (
-          <Drawer
-            variant="permanent"
-            sx={{
-              display: { xs: "none", sm: "block" },
-              "& .MuiDrawer-paper": {
-                boxSizing: "border-box",
-                width: drawerWidth,
-                bgcolor: "#fff",
-                boxShadow: "0 0 15px rgba(0, 0, 0, 0.1)",
-                border: "none",
-              },
-            }}
-            open
-          >
-            {drawer}
-          </Drawer>
-        )}
+        <Drawer
+          variant="temporary"
+          open={mobileOpen}
+          onClose={handleDrawerToggle}
+          ModalProps={{
+            keepMounted: true,
+          }}
+          sx={{
+            display: { xs: "block", sm: "none" },
+            "& .MuiDrawer-paper": {
+              boxSizing: "border-box",
+              width: drawerWidth,
+            },
+          }}
+        >
+          {drawer}
+        </Drawer>
+        <Drawer
+          variant="permanent"
+          sx={{
+            display: { xs: "none", sm: "block" },
+            "& .MuiDrawer-paper": {
+              boxSizing: "border-box",
+              width: drawerWidth,
+            },
+          }}
+          open
+        >
+          {drawer}
+        </Drawer>
       </Box>
       <Box
         component="main"

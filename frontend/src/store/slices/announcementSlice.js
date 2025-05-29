@@ -35,18 +35,18 @@ export const createAnnouncement = createAsyncThunk(
       // Format date as YYYY-MM-DD string for backend
       const formatDateForBackend = (dateString) => {
         if (!dateString) return null;
-        
+
         // Parse the date string and extract date parts directly to avoid timezone issues
         const date = new Date(dateString);
         if (isNaN(date.getTime())) return null;
-        
+
         // Already in correct format YYYY-MM-DD, so return directly
         if (dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
           return dateString;
         }
-        
+
         // Otherwise format it without timezone issues
-        return dateString.split('T')[0]; // Extract just the YYYY-MM-DD part
+        return dateString.split("T")[0]; // Extract just the YYYY-MM-DD part
       };
 
       const formattedData = {
@@ -86,18 +86,18 @@ export const updateAnnouncement = createAsyncThunk(
       // Format date as YYYY-MM-DD string for backend
       const formatDateForBackend = (dateString) => {
         if (!dateString) return null;
-        
+
         // Parse the date string and extract date parts directly to avoid timezone issues
         const date = new Date(dateString);
         if (isNaN(date.getTime())) return null;
-        
+
         // Already in correct format YYYY-MM-DD, so return directly
         if (dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
           return dateString;
         }
-        
+
         // Otherwise format it without timezone issues
-        return dateString.split('T')[0]; // Extract just the YYYY-MM-DD part
+        return dateString.split("T")[0]; // Extract just the YYYY-MM-DD part
       };
 
       const formattedData = {
@@ -141,6 +141,33 @@ export const deleteAnnouncement = createAsyncThunk(
   }
 );
 
+// Helper function to calculate announcement status
+const calculateStatus = (announcement) => {
+  const now = new Date();
+  const startDate = new Date(announcement.startDate);
+  const endDate = new Date(announcement.endDate);
+
+  if (endDate < now) {
+    return "expired";
+  } else if (startDate <= now && endDate >= now) {
+    return "active";
+  } else {
+    return "scheduled";
+  }
+};
+
+// Helper function to calculate counts
+const calculateCounts = (announcements) => {
+  return {
+    total: announcements.length,
+    active: announcements.filter((a) => calculateStatus(a) === "active").length,
+    scheduled: announcements.filter((a) => calculateStatus(a) === "scheduled")
+      .length,
+    expired: announcements.filter((a) => calculateStatus(a) === "expired")
+      .length,
+  };
+};
+
 const initialState = {
   data: [],
   counts: {
@@ -183,15 +210,7 @@ const announcementSlice = createSlice({
           : [];
 
         state.data = announcements;
-
-        // Calculate counts based on status
-        state.counts = {
-          total: announcements.length,
-          active: announcements.filter((a) => a.status === "active").length,
-          scheduled: announcements.filter((a) => a.status === "scheduled")
-            .length,
-          expired: announcements.filter((a) => a.status === "expired").length,
-        };
+        state.counts = calculateCounts(announcements);
       })
       .addCase(fetchAnnouncements.rejected, (state, action) => {
         state.loading = false;
@@ -226,14 +245,7 @@ const announcementSlice = createSlice({
         state.success = true;
         const newAnnouncement = action.payload.data || action.payload;
         state.data = [newAnnouncement, ...state.data];
-        state.counts.total += 1;
-
-        // Update status count
-        if (newAnnouncement.status === "active") state.counts.active += 1;
-        else if (newAnnouncement.status === "scheduled")
-          state.counts.scheduled += 1;
-        else if (newAnnouncement.status === "expired")
-          state.counts.expired += 1;
+        state.counts = calculateCounts(state.data);
       })
       .addCase(createAnnouncement.rejected, (state, action) => {
         state.loading = false;
@@ -254,21 +266,8 @@ const announcementSlice = createSlice({
         );
 
         if (index !== -1) {
-          const oldStatus = state.data[index].status;
-          const newStatus = updatedAnnouncement.status;
-
-          // Update counts based on status change
-          if (oldStatus !== newStatus) {
-            if (oldStatus === "active") state.counts.active -= 1;
-            else if (oldStatus === "scheduled") state.counts.scheduled -= 1;
-            else if (oldStatus === "expired") state.counts.expired -= 1;
-
-            if (newStatus === "active") state.counts.active += 1;
-            else if (newStatus === "scheduled") state.counts.scheduled += 1;
-            else if (newStatus === "expired") state.counts.expired += 1;
-          }
-
           state.data[index] = updatedAnnouncement;
+          state.counts = calculateCounts(state.data);
         }
       })
       .addCase(updateAnnouncement.rejected, (state, action) => {
@@ -287,16 +286,8 @@ const announcementSlice = createSlice({
         const index = state.data.findIndex((a) => a._id === action.payload);
 
         if (index !== -1) {
-          const announcement = state.data[index];
-          state.counts.total -= 1;
-
-          // Update status count
-          if (announcement.status === "active") state.counts.active -= 1;
-          else if (announcement.status === "scheduled")
-            state.counts.scheduled -= 1;
-          else if (announcement.status === "expired") state.counts.expired -= 1;
-
           state.data.splice(index, 1);
+          state.counts = calculateCounts(state.data);
         }
       })
       .addCase(deleteAnnouncement.rejected, (state, action) => {
@@ -312,16 +303,16 @@ export default announcementSlice.reducer;
 // Helper functions
 export const formatDate = (dateString) => {
   if (!dateString) return "N/A";
-  
+
   try {
     const date = new Date(dateString);
     if (isNaN(date.getTime())) return "Invalid Date";
-    
+
     // Format as DD-MM-YYYY without timezone issues
     const day = String(date.getDate()).padStart(2, "0");
     const month = String(date.getMonth() + 1).padStart(2, "0");
     const year = date.getFullYear();
-    
+
     return `${day}-${month}-${year}`;
   } catch (e) {
     console.error("Error formatting date:", e);
@@ -331,23 +322,26 @@ export const formatDate = (dateString) => {
 
 export const formatDateForInput = (dateString) => {
   if (!dateString) return "";
-  
+
   // If it's already in YYYY-MM-DD format, return as is
-  if (typeof dateString === 'string' && dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
+  if (
+    typeof dateString === "string" &&
+    dateString.match(/^\d{4}-\d{2}-\d{2}$/)
+  ) {
     return dateString;
   }
-  
+
   // Handle Date objects or other date strings
   try {
     const date = new Date(dateString);
     if (isNaN(date.getTime())) return "";
-    
+
     // Use the date directly without timezone conversion
     // This is more reliable across different devices
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, "0");
     const day = String(date.getDate()).padStart(2, "0");
-    
+
     return `${year}-${month}-${day}`;
   } catch (error) {
     console.error("Error formatting date for input:", error);

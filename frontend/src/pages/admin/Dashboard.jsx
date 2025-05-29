@@ -36,14 +36,16 @@ import {
 import {
   dashboardService,
   announcementService,
-  authService,
 } from "../../services/api";
+import { authService } from "../../services/common/authService";
+import { useSelector } from "react-redux";
 
 function Dashboard() {
   const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const isTablet = useMediaQuery(theme.breakpoints.down("md"));
+  const { user, isAuthenticated } = useSelector((state) => state.auth);
   const [stats, setStats] = useState({
     totalStudents: 0,
     totalTeachers: 0,
@@ -68,9 +70,7 @@ function Dashboard() {
   const fetchStats = async () => {
     try {
       setLoading(true);
-      // Check if token exists
-      const token = localStorage.getItem("token");
-      if (!token) {
+      if (!isAuthenticated || !user) {
         setError(
           "You are not logged in. Please log in to view dashboard data."
         );
@@ -384,7 +384,14 @@ function Dashboard() {
       )}
 
       {loading ? (
-        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh' }}>
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            height: "60vh",
+          }}
+        >
           <CircularProgress size={50} thickness={4} />
         </Box>
       ) : (
@@ -564,9 +571,9 @@ function Dashboard() {
                                     >
                                       {announcement.title.length > 30
                                         ? `${announcement.title.substring(
-                                          0,
-                                          30
-                                        )}...`
+                                            0,
+                                            30
+                                          )}...`
                                         : announcement.title}
                                     </Typography>
                                   }
@@ -623,8 +630,8 @@ function Dashboard() {
                                           announcement.priority === "High"
                                             ? "error"
                                             : announcement.priority === "Medium"
-                                              ? "warning"
-                                              : "success"
+                                            ? "warning"
+                                            : "success"
                                         }
                                         sx={{
                                           height: 20,
@@ -779,9 +786,9 @@ function Dashboard() {
                                     >
                                       {announcement.title.length > 30
                                         ? `${announcement.title.substring(
-                                          0,
-                                          30
-                                        )}...`
+                                            0,
+                                            30
+                                          )}...`
                                         : announcement.title}
                                     </Typography>
                                   }
@@ -838,8 +845,8 @@ function Dashboard() {
                                           announcement.type === "Emergency"
                                             ? "error"
                                             : announcement.type === "Event"
-                                              ? "success"
-                                              : "primary"
+                                            ? "success"
+                                            : "primary"
                                         }
                                         sx={{
                                           height: 20,
@@ -868,8 +875,8 @@ function Dashboard() {
                               </ListItem>
                               {index <
                                 stats.scheduledAnnouncements.length - 1 && (
-                                  <Divider sx={{ mx: { xs: 2, sm: 3 } }} />
-                                )}
+                                <Divider sx={{ mx: { xs: 2, sm: 3 } }} />
+                              )}
                             </React.Fragment>
                           )
                         )}

@@ -8,70 +8,74 @@ import {
   TextField,
   Grid,
   Typography,
-  MenuItem,
   Breadcrumbs,
   Link,
   useTheme,
   alpha,
+  CircularProgress,
 } from "@mui/material";
 import {
   Book as BookIcon,
   Home as HomeIcon,
-  Save as SaveIcon,
 } from "@mui/icons-material";
 import { createSubject } from "../../../store/slices/subjectSlice";
-import * as Yup from "yup";
-import { Formik, Form, Field } from "formik";
 import Swal from "sweetalert2";
-
-const validationSchema = Yup.object({
-  name: Yup.string().required("Name is required"),
-  description: Yup.string().required("Description is required"),
-  duration: Yup.string().required("Duration is required"),
-});
 
 const SubjectCreate = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const theme = useTheme();
+
+  const [formData, setFormData] = useState({
+    name: "",
+    description: "",
+    duration: "",
+  });
+
   const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = async (values, { setSubmitting, setErrors }) => {
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData({
+      ...formData,
+      [name]: value,
+    });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (submitting) return;
+
+    if (!formData.name || !formData.description || !formData.duration) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Required Fields Missing',
+        text: 'Please fill all required fields: Name, Description, and Duration',
+        confirmButtonColor: theme.palette.primary.main
+      });
+      return;
+    }
+
     try {
       setSubmitting(true);
-      await dispatch(createSubject(values)).unwrap();
+      await dispatch(createSubject(formData)).unwrap();
 
       Swal.fire({
-        icon: "success",
-        title: "Success!",
-        text: "Subject created successfully!",
-        showConfirmButton: false,
-        timer: 1500,
+        icon: 'success',
+        title: 'Subject Created!',
+        text: `"${formData.name}" has been created successfully.`,
+        confirmButtonColor: theme.palette.primary.main,
+        timer: 2000
       });
 
-      navigate("/app/subjects");
+      navigate('/app/subjects');
     } catch (error) {
-      // Handle duplicate subject error
-      if (error.response?.data?.error === "DUPLICATE_SUBJECT" || 
-          error.response?.data?.message?.includes("already exists")) {
-        setErrors({
-          name: "Subject already exists"
-        });
-        return;
-      }
-
-      // Handle API validation errors
-      if (error.response?.data?.errors) {
-        const apiErrors = {};
-        error.response.data.errors.forEach((err) => {
-          apiErrors[err.param] = err.msg;
-        });
-        setErrors(apiErrors);
-      } else {
-        setErrors({
-          name: "Subject already exists"
-        });
-      }
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: `Failed to create subject: ${error.message || "Unknown error"}`,
+        confirmButtonColor: theme.palette.primary.main
+      });
     } finally {
       setSubmitting(false);
     }
@@ -131,125 +135,111 @@ const SubjectCreate = () => {
 
       {/* Form */}
       <Paper sx={{ p: { xs: 2, sm: 3 }, borderRadius: 2 }}>
-        <Formik
-          initialValues={{
-            name: "",
-            description: "",
-            duration: "",
-          }}
-          validationSchema={validationSchema}
-          onSubmit={handleSubmit}
-        >
-          {({ errors, touched, isSubmitting }) => (
-            <Form>
-              <Grid container spacing={3}>
-                {/* Basic Information Section */}
-                <Grid item xs={12}>
-                  <Typography
-                    variant="h6"
-                    color="primary"
-                    fontWeight={600}
-                    gutterBottom
-                    sx={{ display: "flex", alignItems: "center", gap: 1 }}
-                  >
-                    <BookIcon fontSize="small" />
-                    Subject Information
-                  </Typography>
-                </Grid>
+        <form onSubmit={handleSubmit}>
+          <Grid container spacing={3}>
+            {/* Basic Information Section */}
+            <Grid item xs={12}>
+              <Typography
+                variant="h6"
+                color="primary"
+                fontWeight={600}
+                gutterBottom
+                sx={{ display: "flex", alignItems: "center", gap: 1 }}
+              >
+                <BookIcon fontSize="small" />
+                Subject Information
+              </Typography>
+            </Grid>
 
-                {/* Subject Name */}
-                <Grid item xs={12} sm={6}>
-                  <Field name="name">
-                    {({ field }) => (
-                      <TextField
-                        {...field}
-                        fullWidth
-                        label="Subject Name"
-                        required
-                        error={touched.name && Boolean(errors.name)}
-                        helperText={touched.name && errors.name}
-                        sx={{
-                          "& .MuiOutlinedInput-root": { borderRadius: 2 },
-                          "& .MuiFormHelperText-root": {
-                            color: errors.name
-                              ? "error.main"
-                              : "text.secondary",
-                          },
-                        }}
-                      />
-                    )}
-                  </Field>
-                </Grid>
+            {/* Subject Name */}
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                name="name"
+                label="Subject Name"
+                value={formData.name}
+                onChange={handleChange}
+                required
+                sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
+              />
+            </Grid>
 
-                {/* Duration */}
-                <Grid item xs={12} sm={6}>
-                  <Field name="duration">
-                    {({ field }) => (
-                      <TextField
-                        {...field}
-                        fullWidth
-                        label="Duration"
-                        required
-                        error={touched.duration && Boolean(errors.duration)}
-                        helperText={touched.duration && errors.duration}
-                        sx={{
-                          "& .MuiOutlinedInput-root": { borderRadius: 2 },
-                        }}
-                      />
-                    )}
-                  </Field>
-                </Grid>
+            {/* Duration */}
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                name="duration"
+                label="Duration"
+                value={formData.duration}
+                onChange={handleChange}
+                required
+                sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
+              />
+            </Grid>
 
-                {/* Description */}
-                <Grid item xs={12}>
-                  <Field name="description">
-                    {({ field }) => (
-                      <TextField
-                        {...field}
-                        fullWidth
-                        multiline
-                        rows={4}
-                        label="Description"
-                        required
-                        error={
-                          touched.description && Boolean(errors.description)
-                        }
-                        helperText={touched.description && errors.description}
-                        sx={{
-                          "& .MuiOutlinedInput-root": { borderRadius: 2 },
-                        }}
-                      />
-                    )}
-                  </Field>
-                </Grid>
+            {/* Description */}
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                name="description"
+                label="Description"
+                multiline
+                rows={3}
+                value={formData.description}
+                onChange={handleChange}
+                required
+                sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
+              />
+            </Grid>
 
-                {/* Action Buttons */}
-                <Grid item xs={12}>
-                  <Box
-                    sx={{ display: "flex", gap: 2, justifyContent: "flex-end" }}
-                  >
-                    <Button
-                      variant="outlined"
-                      onClick={() => navigate("/app/subjects")}
-                      sx={{ borderRadius: 2 }}
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      type="submit"
-                      variant="contained"
-                      disabled={isSubmitting}
-                      startIcon={<SaveIcon />}
-                      sx={{ borderRadius: 2 }}
-                    >
-                      {isSubmitting ? "Saving..." : "Save Subject"}
-                    </Button>
-                  </Box>
-                </Grid>
-              </Grid>
-            </Form>
-          )}
-        </Formik>
+            {/* Action Buttons */}
+            <Grid item xs={12}>
+              <Box
+                sx={{
+                  display: "flex",
+                  gap: 2,
+                  justifyContent: "flex-end",
+                  mt: 2,
+                }}
+              >
+                <Button
+                  variant="outlined"
+                  onClick={() => navigate("/app/subjects")}
+                  disabled={submitting}
+                  sx={{ borderRadius: 2 }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  variant="contained"
+                  disabled={submitting}
+                  sx={{
+                    borderRadius: 2,
+                    minWidth: 100,
+                    position: "relative",
+                  }}
+                >
+                  {submitting ? (
+                    <CircularProgress
+                      size={24}
+                      sx={{
+                        color: "inherit",
+                        position: "absolute",
+                        top: "50%",
+                        left: "50%",
+                        marginTop: "-12px",
+                        marginLeft: "-12px",
+                      }}
+                    />
+                  ) : (
+                    "Create Subject"
+                  )}
+                </Button>
+              </Box>
+            </Grid>
+          </Grid>
+        </form>
       </Paper>
     </Box>
   );

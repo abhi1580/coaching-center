@@ -32,7 +32,7 @@ const userSchema = new mongoose.Schema(
     role: {
       type: String,
       required: true,
-      enum: ["admin", "teacher", "student", "staff"],
+      enum: ["admin", "teacher", "student"],
     },
     gender: {
       type: String,
@@ -74,30 +74,33 @@ userSchema.pre("save", async function (next) {
 });
 
 // Simplified middleware for all update operations
-userSchema.pre(/^findOneAndUpdate|updateOne|findByIdAndUpdate/, async function (next) {
-  try {
-    const update = this.getUpdate();
-    
-    // Check if password field exists in the update
-    if (update && update.password) {
-      console.log("Hashing password in update operation");
-      const salt = await bcrypt.genSalt(10);
-      update.password = await bcrypt.hash(update.password, salt);
+userSchema.pre(
+  /^findOneAndUpdate|updateOne|findByIdAndUpdate/,
+  async function (next) {
+    try {
+      const update = this.getUpdate();
+
+      // Check if password field exists in the update
+      if (update && update.password) {
+        console.log("Hashing password in update operation");
+        const salt = await bcrypt.genSalt(10);
+        update.password = await bcrypt.hash(update.password, salt);
+      }
+
+      // Check if $ operators are being used (like $set)
+      if (update && update.$set && update.$set.password) {
+        console.log("Hashing password in $set operation");
+        const salt = await bcrypt.genSalt(10);
+        update.$set.password = await bcrypt.hash(update.$set.password, salt);
+      }
+
+      next();
+    } catch (error) {
+      console.error("Error in update middleware:", error);
+      next(error);
     }
-    
-    // Check if $ operators are being used (like $set)
-    if (update && update.$set && update.$set.password) {
-      console.log("Hashing password in $set operation");
-      const salt = await bcrypt.genSalt(10);
-      update.$set.password = await bcrypt.hash(update.$set.password, salt);
-    }
-    
-    next();
-  } catch (error) {
-    console.error("Error in update middleware:", error);
-    next(error);
   }
-});
+);
 
 // Method to compare user entered password with stored hash
 userSchema.methods.comparePassword = async function (enteredPassword) {
@@ -130,7 +133,7 @@ userSchema.methods.getResetPasswordToken = function () {
 };
 
 // Static method to hash password separately
-userSchema.statics.hashPassword = async function(password) {
+userSchema.statics.hashPassword = async function (password) {
   try {
     const salt = await bcrypt.genSalt(10);
     return await bcrypt.hash(password, salt);

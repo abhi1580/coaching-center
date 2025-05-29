@@ -69,23 +69,50 @@ const BatchCreate = () => {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    dispatch(fetchStandards());
-    dispatch(fetchSubjects());
-    dispatch(fetchTeachers());
+    const fetchData = async () => {
+      try {
+        await Promise.all([
+          dispatch(fetchStandards()),
+          dispatch(fetchSubjects()),
+          dispatch(fetchTeachers())
+        ]);
+        console.log('Initial Data Loaded:');
+        console.log('Standards:', standards);
+        console.log('Subjects:', subjects);
+      } catch (error) {
+        console.error('Error loading initial data:', error);
+      }
+    };
+    fetchData();
   }, [dispatch]);
+
+  useEffect(() => {
+    if (formData.standard) {
+      const selectedStandard = standards.find(s => s._id === formData.standard);
+      if (selectedStandard && selectedStandard.subjects) {
+        setFilteredSubjects(selectedStandard.subjects);
+      } else {
+        setFilteredSubjects([]);
+      }
+    } else {
+      setFilteredSubjects([]);
+    }
+  }, [formData.standard, standards]);
+
+  useEffect(() => {
+    if (formData.subject) {
+      const subjectTeachers = teachers.filter((teacher) =>
+        teacher.subjects.some(subject => subject._id === formData.subject)
+      );
+      setFilteredTeachers(subjectTeachers);
+    } else {
+      setFilteredTeachers([]);
+    }
+  }, [formData.subject, teachers]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-
     if (name === "standard") {
-      const standard = standards.find((s) => s._id === value);
-      const standardSubjects = standard
-        ? subjects.filter((subject) =>
-          standard.subjects?.some((s) => (s._id || s) === subject._id)
-        )
-        : [];
-      setFilteredSubjects(standardSubjects);
-      setFilteredTeachers([]);
       setFormData({
         ...formData,
         standard: value,
@@ -93,48 +120,6 @@ const BatchCreate = () => {
         teacher: "",
       });
     } else if (name === "subject") {
-      console.log(`Selected subject ID: ${value}`);
-      console.log(`Available teachers:`, teachers.length);
-
-      const subjectTeachers = teachers.filter((teacher) => {
-        if (!teacher.subjects || !Array.isArray(teacher.subjects)) {
-          console.log(`Teacher ${teacher.name} has no subjects array`);
-          return false;
-        }
-
-        // Log the teacher's subjects for debugging
-        console.log(
-          `Teacher ${teacher.name} subjects:`,
-          JSON.stringify(
-            teacher.subjects.map((s) => (typeof s === "object" ? s._id : s))
-          )
-        );
-
-        return teacher.subjects.some((s) => {
-          // Handle object format (populated subjects)
-          if (typeof s === "object" && s !== null && s._id) {
-            return s._id === value;
-          }
-          // Handle string format (just ID references)
-          if (typeof s === "string") {
-            return s === value;
-          }
-          return false;
-        });
-      });
-
-      console.log(
-        `Filtered ${subjectTeachers.length} teachers for subject ${value}`
-      );
-
-      if (subjectTeachers.length === 0) {
-        console.log(
-          `No teachers found for subject ID ${value}. All teachers:`,
-          teachers.map((t) => ({ name: t.name, subjects: t.subjects }))
-        );
-      }
-
-      setFilteredTeachers(subjectTeachers);
       setFormData({
         ...formData,
         subject: value,

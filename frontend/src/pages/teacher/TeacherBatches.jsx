@@ -29,8 +29,8 @@ import {
   CalendarMonth as CalendarIcon,
   FilterList as FilterIcon,
 } from "@mui/icons-material";
-import axios from "axios";
 import { useSelector } from "react-redux";
+import api from "../../services/common/apiClient";
 
 function TeacherBatches() {
   const navigate = useNavigate();
@@ -55,33 +55,14 @@ function TeacherBatches() {
     const fetchTeacherBatches = async () => {
       try {
         setLoading(true);
-        const token = localStorage.getItem("token");
-        if (!token) {
-          setError("Authentication required");
-          setLoading(false);
-          return;
-        }
+        setError(null);
 
-        // Make API request to fetch batches allocated to this teacher
-        const baseUrl =
-          import.meta.env.VITE_API_URL || "http://localhost:5000/api";
-        const response = await axios.get(
-          `${baseUrl}/teacher/batches?populate=enrolledStudents`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-
-        // Debug what we're getting from the API
-        console.log("API response:", response);
-        console.log("Batches data:", response.data.data || response.data || []);
-        console.log(
-          "Raw enrolled students data:",
-          (response.data.data || response.data || []).map((batch) => ({
-            name: batch.name,
-            students: batch.enrolledStudents
-              ? batch.enrolledStudents.length
-              : 0,
-          }))
-        );
+        // Use the configured API client
+        const response = await api.get("/teacher/batches", {
+          params: {
+            populate: "enrolledStudents"
+          }
+        });
 
         const batchesData = response.data.data || response.data || [];
         setBatches(batchesData);
@@ -98,7 +79,6 @@ function TeacherBatches() {
         setStandards(uniqueStandards);
         setSubjects(uniqueSubjects);
 
-        setError(null);
       } catch (err) {
         console.error("Error fetching teacher batches:", err);
         setError(err.response?.data?.message || "Failed to load batches");

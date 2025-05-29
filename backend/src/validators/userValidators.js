@@ -9,10 +9,10 @@ export const createUserValidator = [
   ).isLength({ min: 6 }),
   check("phone", "Phone number is required").not().isEmpty(),
   check("address", "Address is required").not().isEmpty(),
-  check("role", "Role must be admin, teacher, or staff").isIn([
+  check("role", "Role must be admin, teacher, or student").isIn([
     "admin",
     "teacher",
-    "staff",
+    "student",
   ]),
 ];
 
@@ -21,10 +21,10 @@ export const updateUserValidator = [
   check("email", "Please include a valid email").isEmail(),
   check("phone", "Phone number is required").not().isEmpty(),
   check("address", "Address is required").not().isEmpty(),
-  check("role", "Role must be admin, teacher, or staff").isIn([
+  check("role", "Role must be admin, teacher, or student").isIn([
     "admin",
     "teacher",
-    "staff",
+    "student",
   ]),
 ];
 
@@ -33,4 +33,4 @@ export const updatePasswordValidator = [
     "password",
     "Please enter a password with 6 or more characters"
   ).isLength({ min: 6 }),
-]; 
+];

@@ -444,6 +444,7 @@ const TeacherEdit = () => {
                                                 error={touched.password && Boolean(errors.password)}
                                                 helperText={touched.password && errors.password ? errors.password :
                                                     "If provided, password must contain at least 6 characters, one uppercase letter, one lowercase letter, and one number"}
+                                                autoComplete="new-password"
                                                 InputProps={{
                                                     endAdornment: (
                                                         <InputAdornment position="end">

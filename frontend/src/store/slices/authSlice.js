@@ -1,6 +1,14 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import { authService } from "../../services/api";
-import { isValidUserData, safeStringify } from "../../utils/helpers";
+import { authService } from "../../services/common/authService";
+import { isValidUserData } from "../../utils/helpers";
+
+// Initialize state
+const initialState = {
+  user: null,
+  isAuthenticated: false,
+  loading: false,
+  error: null,
+};
 
 // Async thunk for login
 export const login = createAsyncThunk(
@@ -8,17 +16,14 @@ export const login = createAsyncThunk(
   async (credentials, { rejectWithValue }) => {
     try {
       const response = await authService.login(credentials);
-      const { token, user } = response.data;
+      // Handle both possible response structures
+      const userData = response.data?.data?.user || response.data?.user;
 
-      if (!isValidUserData(user)) {
+      if (!userData || !isValidUserData(userData)) {
         return rejectWithValue({ message: "Invalid user data received" });
       }
 
-      // Store token and user data in localStorage
-      localStorage.setItem("token", token);
-      localStorage.setItem("user", JSON.stringify(user));
-
-      return { token, user };
+      return { user: userData };
     } catch (error) {
       return rejectWithValue(
         error.response?.data || { message: "Login failed" }
@@ -32,54 +37,55 @@ export const logoutUser = createAsyncThunk(
   "auth/logout",
   async (_, { rejectWithValue }) => {
     try {
-      const result = await authService.logout();
+      await authService.logout();
       return { success: true };
     } catch (error) {
-      return rejectWithValue({ message: "Logout failed" });
+      // Even if there's an error, we should still return success
+      // as the cookie will be cleared by the server
+      return { success: true };
     }
   }
 );
 
-// Initialize state from localStorage if available
-const initialState = {
-  user: (() => {
+// Add checkAuth thunk
+export const checkAuth = createAsyncThunk(
+  "auth/checkAuth",
+  async (_, { rejectWithValue }) => {
     try {
-      return JSON.parse(localStorage.getItem("user"));
-    } catch {
-      return null;
+      const response = await authService.getProfile();
+      // Handle both possible response structures
+      const userData = response.data?.data?.user || response.data?.user;
+      
+      if (!userData || !isValidUserData(userData)) {
+        return rejectWithValue({ message: "Invalid user data received" });
+      }
+
+      return { user: userData };
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data || { message: "Not authenticated" }
+      );
     }
-  })(),
-  isAuthenticated: !!localStorage.getItem("token"),
-  loading: false,
-  error: null,
-};
+  }
+);
 
 const authSlice = createSlice({
   name: "auth",
   initialState,
   reducers: {
     initializeAuth: (state) => {
-      const token = localStorage.getItem("token");
-      const userStr = localStorage.getItem("user");
-      try {
-        const user = JSON.parse(userStr);
-        // More thorough validation using our helper
-        if (token && isValidUserData(user)) {
-          state.user = user;
-          state.isAuthenticated = true;
-        } else {
-          state.user = null;
-          state.isAuthenticated = false;
-          localStorage.removeItem("token");
-          localStorage.removeItem("user");
-        }
-      } catch (error) {
-        state.user = null;
-        state.isAuthenticated = false;
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
-      }
+      state.loading = true;
     },
+    logout: (state) => {
+      // Clear all auth state
+      state.user = null;
+      state.isAuthenticated = false;
+      state.loading = false;
+      state.error = null;
+    },
+    clearError: (state) => {
+      state.error = null;
+    }
   },
   extraReducers: (builder) => {
     builder
@@ -89,27 +95,45 @@ const authSlice = createSlice({
       })
       .addCase(login.fulfilled, (state, action) => {
         state.loading = false;
-        state.isAuthenticated = true;
         state.user = action.payload.user;
+        state.isAuthenticated = true;
         state.error = null;
       })
       .addCase(login.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload?.message || "Login failed";
         state.user = null;
         state.isAuthenticated = false;
+        state.error = action.payload?.message || "Login failed";
       })
-      // Add logout cases
+      .addCase(checkAuth.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(checkAuth.fulfilled, (state, action) => {
+        state.loading = false;
+        state.user = action.payload.user;
+        state.isAuthenticated = true;
+        state.error = null;
+      })
+      .addCase(checkAuth.rejected, (state) => {
+        state.loading = false;
+        state.user = null;
+        state.isAuthenticated = false;
+        state.error = null;
+      })
       .addCase(logoutUser.pending, (state) => {
         state.loading = true;
+        state.error = null;
       })
       .addCase(logoutUser.fulfilled, (state) => {
+        // Clear all auth state
         state.loading = false;
         state.user = null;
         state.isAuthenticated = false;
         state.error = null;
       })
       .addCase(logoutUser.rejected, (state) => {
+        // Even if logout fails, we should clear the auth state
         state.loading = false;
         state.user = null;
         state.isAuthenticated = false;
@@ -118,5 +142,5 @@ const authSlice = createSlice({
   },
 });
 
-export const { initializeAuth } = authSlice.actions;
+export const { initializeAuth, logout, clearError } = authSlice.actions;
 export default authSlice.reducer;

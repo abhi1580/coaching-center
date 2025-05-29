@@ -23,244 +23,56 @@ import {
   AccessTime as AccessTimeIcon,
   Visibility as VisibilityIcon,
 } from "@mui/icons-material";
-import { useSelector } from "react-redux";
-import axios from "axios";
+import { useSelector, useDispatch } from "react-redux";
+import api from "../../services/common/apiClient";
 import { useNavigate } from "react-router-dom";
 
 function TeacherDashboard() {
   const theme = useTheme();
-  const { user } = useSelector((state) => state.auth);
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const { user, isAuthenticated } = useSelector((state) => state.auth);
   const [stats, setStats] = useState({
     totalBatches: 0,
     totalStudents: 0,
+    totalSubjects: 0,
     activeAnnouncements: [],
     upcomingClasses: [],
     futureBatches: [],
+    recentAnnouncements: [],
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const navigate = useNavigate();
+
+  const fetchStats = async () => {
+    try {
+      setLoading(true);
+      if (!isAuthenticated || !user) {
+        setError(
+          "You are not logged in. Please log in to view dashboard data."
+        );
+        setLoading(false);
+        return;
+      }
+
+      const response = await api.get("/teacher/dashboard");
+      setStats(response.data.data);
+    } catch (err) {
+      console.error("Dashboard fetch error:", err);
+      if (err.response?.status === 401) {
+        setError("Your session has expired. Please log in again.");
+      } else {
+        setError(
+          err.response?.data?.message || "Error fetching dashboard data"
+        );
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchTeacherStats = async () => {
-      try {
-        setLoading(true);
-        const token = localStorage.getItem("token");
-        if (!token) {
-          setError("Authentication required");
-          setLoading(false);
-          return;
-        }
-
-        // First, fetch teacher's batches
-        const teacherResponse = await axios.get(
-          `${
-            import.meta.env.VITE_API_URL
-              ? import.meta.env.VITE_API_URL + "/teacher/batches"
-              : "http://localhost:5000/api/teacher/batches"
-          }`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-
-        console.log("Teacher Batches Response:", teacherResponse.data);
-
-        // Then fetch dashboard data
-        const dashboardResponse = await axios.get(
-          `${
-            import.meta.env.VITE_API_URL
-              ? import.meta.env.VITE_API_URL + "/teacher/dashboard"
-              : "http://localhost:5000/api/teacher/dashboard"
-          }`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-
-        console.log("Dashboard Response:", dashboardResponse.data);
-
-        // Handle the response data safely
-        if (teacherResponse.data && teacherResponse.data.data) {
-          // Get all batches with their schedules
-          const batches = teacherResponse.data.data || [];
-          console.log("Teacher Batches:", batches);
-
-          // Generate upcoming classes for next 4 days based on batch schedules
-          const today = new Date();
-          today.setHours(0, 0, 0, 0); // Set to start of day
-          const fourDaysLater = new Date(today);
-          fourDaysLater.setDate(today.getDate() + 4);
-
-          console.log("Date Range:", {
-            today: today.toISOString(),
-            fourDaysLater: fourDaysLater.toISOString(),
-          });
-
-          const upcomingClasses = [];
-
-          // First, let's check if we have any batches
-          if (batches.length === 0) {
-            console.log("No batches found for this teacher");
-          } else {
-            console.log(`Found ${batches.length} batches for this teacher`);
-          }
-
-          // Process each batch
-          batches.forEach((batch) => {
-            if (!batch) {
-              console.log("Invalid batch data:", batch);
-              return;
-            }
-
-            console.log(`\nChecking batch: ${batch.name}`, {
-              status: batch.status,
-              startDate: batch.startDate,
-              endDate: batch.endDate,
-              schedule: batch.schedule,
-            });
-
-            // Only process ongoing batches
-            if (batch.status !== "Ongoing") {
-              console.log(
-                `Skipping batch ${batch.name} - Status is ${batch.status}`
-              );
-              return;
-            }
-
-            // Parse dates and ensure they're in the same timezone
-            const batchStartDate = new Date(batch.startDate);
-            const batchEndDate = new Date(batch.endDate);
-
-            // Set times to start and end of day for proper comparison
-            batchStartDate.setHours(0, 0, 0, 0);
-            batchEndDate.setHours(23, 59, 59, 999);
-
-            console.log(`Processing ongoing batch: ${batch.name}`, {
-              batchStartDate: batchStartDate.toISOString(),
-              batchEndDate: batchEndDate.toISOString(),
-              today: today.toISOString(),
-              isActive: today >= batchStartDate && today <= batchEndDate,
-              schedule: batch.schedule,
-            });
-
-            // Check if current date is between batch start and end dates
-            const isBatchActive =
-              today >= batchStartDate && today <= batchEndDate;
-
-            if (isBatchActive && batch.schedule && batch.schedule.days) {
-              console.log(
-                `Batch ${batch.name} is active. Processing schedule...`
-              );
-
-              // For each scheduled day in the batch
-              batch.schedule.days.forEach((day) => {
-                // Get the next occurrence of this day
-                const nextClassDate = getNextDayOfWeek(today, day);
-
-                if (nextClassDate) {
-                  console.log(`Next ${day} class:`, {
-                    nextClassDate: nextClassDate.toISOString(),
-                    isWithinRange: nextClassDate <= fourDaysLater,
-                  });
-
-                  // If the next class is within the next 4 days
-                  if (nextClassDate <= fourDaysLater) {
-                    console.log(
-                      `Adding class for batch ${batch.name} on ${day}`
-                    );
-
-                    upcomingClasses.push({
-                      batchId: batch._id,
-                      batchName: batch.name,
-                      subject: batch.subject?.name || "Not assigned",
-                      standard: batch.standard?.name || "Not assigned",
-                      day: day,
-                      startTime: batch.schedule.startTime,
-                      endTime: batch.schedule.endTime,
-                      date: nextClassDate,
-                      status: batch.status,
-                      enrolledStudents: batch.enrolledStudents || [],
-                    });
-                  }
-                }
-              });
-            } else {
-              console.log(`Batch ${batch.name} is not active because:`, {
-                isBeforeStart: today < batchStartDate,
-                isAfterEnd: today > batchEndDate,
-                hasSchedule: Boolean(batch.schedule),
-                hasDays: Boolean(batch.schedule?.days),
-              });
-            }
-          });
-
-          // Sort classes by date and time
-          upcomingClasses.sort((a, b) => {
-            if (a.date.getTime() !== b.date.getTime()) {
-              return a.date.getTime() - b.date.getTime();
-            }
-            return a.startTime.localeCompare(b.startTime);
-          });
-
-          console.log(
-            "\nFinal upcoming classes:",
-            upcomingClasses.map((c) => ({
-              batchName: c.batchName,
-              date: c.date.toISOString(),
-              day: c.day,
-              time: `${c.startTime}-${c.endTime}`,
-            }))
-          );
-
-          // Update stats with the processed data
-          setStats({
-            totalBatches: dashboardResponse.data?.data?.totalBatches || 0,
-            totalStudents: dashboardResponse.data?.data?.totalStudents || 0,
-            activeAnnouncements:
-              dashboardResponse.data?.data?.activeAnnouncements || [],
-            upcomingClasses: upcomingClasses,
-          });
-        } else {
-          console.log(
-            "Invalid teacher batches response:",
-            teacherResponse.data
-          );
-          setStats({
-            totalBatches: 0,
-            totalStudents: 0,
-            activeAnnouncements: [],
-            upcomingClasses: [],
-          });
-        }
-        setError(null);
-      } catch (err) {
-        console.error("Error fetching teacher data:", err);
-        setStats({
-          totalBatches: 0,
-          totalStudents: 0,
-          activeAnnouncements: [],
-          upcomingClasses: [],
-        });
-
-        if (err.response) {
-          const status = err.response.status;
-          if (status === 401) {
-            setError("Your session has expired. Please login again.");
-          } else if (status === 403) {
-            setError("You don't have permission to access this resource.");
-          } else {
-            setError(
-              err.response.data?.message || "Failed to load dashboard data"
-            );
-          }
-        } else if (err.request) {
-          setError("Network error. Please check your connection.");
-        } else {
-          setError("An unexpected error occurred. Please try again later.");
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchTeacherStats();
+    fetchStats();
   }, []);
 
   // Helper function to get the next occurrence of a day
@@ -473,6 +285,14 @@ function TeacherDashboard() {
             icon={SchoolIcon}
             title="My Students"
             value={stats.totalStudents}
+            color="secondary"
+          />
+        </Grid>
+        <Grid item xs={12} sm={6}>
+          <StatCard
+            icon={SchoolIcon}
+            title="My Subjects"
+            value={stats.totalSubjects}
             color="secondary"
           />
         </Grid>

@@ -8,10 +8,11 @@ export const validate = (req, res, next) => {
     return res.status(422).json({
       success: false,
       message: "Validation failed",
-      errors: errors.array().map(err => ({
-        field: err.param,
-        message: err.msg
-      }))
+      errors: errors.array().map((error) => ({
+        msg: error.msg,
+        param: error.param,
+        value: error.value,
+      })),
     });
   }
   next();

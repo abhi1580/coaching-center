@@ -20,6 +20,11 @@ const subjectSchema = new mongoose.Schema(
       required: [true, "Please add duration"],
       trim: true,
     },
+    standard: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Standard",
+      required: false,
+    },
   },
   {
     timestamps: true,

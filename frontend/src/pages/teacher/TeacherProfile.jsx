@@ -32,13 +32,15 @@ import {
   Visibility as VisibilityIcon,
   VisibilityOff as VisibilityOffIcon,
 } from "@mui/icons-material";
-import axios from "axios";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
+import { updateProfile } from "../../store/slices/authSlice";
+import api from "../../services/common/apiClient";
 
 function TeacherProfile() {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const { user } = useSelector((state) => state.auth);
+  const dispatch = useDispatch();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -49,7 +51,7 @@ function TeacherProfile() {
     message: "",
     severity: "success",
   });
-  
+
   // Password change state
   const [passwordData, setPasswordData] = useState({
     currentPassword: "",
@@ -74,48 +76,71 @@ function TeacherProfile() {
     const fetchTeacherProfile = async () => {
       try {
         setLoading(true);
-        const token = localStorage.getItem("token");
-        if (!token) {
-          setError("Authentication required");
-          setLoading(false);
-          return;
-        }
+        // const token = localStorage.getItem("token");
+        // if (!token) {
+        //   setError("Authentication required");
+        //   setLoading(false);
+        //   return;
+        // }
 
         // Fetch the authenticated teacher's profile
-        const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
-        const response = await axios.get(
-          `${baseUrl}/teacher/profile`,
-          { headers: { Authorization: `Bearer ${token}` } }
+        const baseUrl =
+          import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+        const response = await api.get(
+          `${baseUrl}/teacher/profile`
+          // { headers: { Authorization: `Bearer ${token}` } }
         );
-        
+
         const profileData = response.data.data || response.data;
-        
+
         // Check if we need to fetch subject names (we have IDs but no names)
-        const hasSubjectIds = profileData.subjects && Array.isArray(profileData.subjects) && 
-                             profileData.subjects.some(subject => 
-                               typeof subject === 'string' || 
-                               (typeof subject === 'object' && !subject.name));
-        
+        const hasSubjectIds =
+          profileData.subjects &&
+          Array.isArray(profileData.subjects) &&
+          profileData.subjects.some(
+            (subject) =>
+              typeof subject === "string" ||
+              (typeof subject === "object" && !subject.name)
+          );
+
         if (hasSubjectIds) {
           try {
             // Fetch all subjects to get their names
-            const subjectsResponse = await axios.get(
-              `${baseUrl}/subjects`,
-              { headers: { Authorization: `Bearer ${token}` } }
+            const subjectsResponse = await api.get(
+              `${baseUrl}/subjects`
+              // { headers: { Authorization: `Bearer ${token}` } }
             );
-            
+
             const allSubjects = subjectsResponse.data.data || [];
             setSubjects(allSubjects);
-            
+
             // Replace IDs with full subject objects
             if (profileData.subjects) {
-              profileData.subjects = profileData.subjects.map(subject => {
-                if (typeof subject === 'string') {
-                  const foundSubject = allSubjects.find(s => s._id === subject);
-                  return foundSubject || { _id: subject, name: `Unknown (ID: ${subject.substring(0, 6)}...)` };
-                } else if (typeof subject === 'object' && !subject.name && subject._id) {
-                  const foundSubject = allSubjects.find(s => s._id === subject._id);
-                  return foundSubject || { ...subject, name: `Unknown (ID: ${subject._id.substring(0, 6)}...)` };
+              profileData.subjects = profileData.subjects.map((subject) => {
+                if (typeof subject === "string") {
+                  const foundSubject = allSubjects.find(
+                    (s) => s._id === subject
+                  );
+                  return (
+                    foundSubject || {
+                      _id: subject,
+                      name: `Unknown (ID: ${subject.substring(0, 6)}...)`,
+                    }
+                  );
+                } else if (
+                  typeof subject === "object" &&
+                  !subject.name &&
+                  subject._id
+                ) {
+                  const foundSubject = allSubjects.find(
+                    (s) => s._id === subject._id
+                  );
+                  return (
+                    foundSubject || {
+                      ...subject,
+                      name: `Unknown (ID: ${subject._id.substring(0, 6)}...)`,
+                    }
+                  );
                 }
                 return subject;
               });
@@ -124,24 +149,31 @@ function TeacherProfile() {
             console.error("Error fetching subjects:", error);
             // Continue with placeholder names if we can't fetch subjects
             if (profileData.subjects) {
-              profileData.subjects = profileData.subjects.map(subject => {
-                if (typeof subject === 'string') {
-                  return { _id: subject, name: `Subject (ID: ${subject.substring(0, 6)}...)` };
-                } else if (typeof subject === 'object' && !subject.name) {
-                  return { ...subject, name: `Subject (ID: ${subject._id?.substring(0, 6) || 'Unknown'}...)` };
+              profileData.subjects = profileData.subjects.map((subject) => {
+                if (typeof subject === "string") {
+                  return {
+                    _id: subject,
+                    name: `Subject (ID: ${subject.substring(0, 6)}...)`,
+                  };
+                } else if (typeof subject === "object" && !subject.name) {
+                  return {
+                    ...subject,
+                    name: `Subject (ID: ${
+                      subject._id?.substring(0, 6) || "Unknown"
+                    }...)`,
+                  };
                 }
                 return subject;
               });
             }
-          }
         }
-        
+
         setProfile(profileData);
         setEditableProfile({ ...profileData });
         setError(null);
       } catch (err) {
         console.error("Error fetching teacher profile:", err);
-        
+
         // For demo purposes, create some fallback data if API is not yet implemented
         if (err.response?.status === 404) {
           const fallbackProfile = {
@@ -152,15 +184,13 @@ function TeacherProfile() {
             subjects: ["Mathematics", "Physics"],
             qualification: "M.Sc. in Mathematics",
             experience: "5 years",
-            joiningDate: new Date().toISOString().split('T')[0],
+            joiningDate: new Date().toISOString().split("T")[0],
             gender: user?.gender || "male",
           };
           setProfile(fallbackProfile);
           setEditableProfile({ ...fallbackProfile });
         } else {
-          setError(
-            err.response?.data?.message || "Failed to load profile"
-          );
+          setError(err.response?.data?.message || "Failed to load profile");
         }
       } finally {
         setLoading(false);
@@ -181,48 +211,48 @@ function TeacherProfile() {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setEditableProfile({ ...editableProfile, [name]: value });
-    
+
     // Clear errors when typing
     if (profileErrors[name]) {
-      setProfileErrors(prev => ({ ...prev, [name]: "" }));
+      setProfileErrors((prev) => ({ ...prev, [name]: "" }));
     }
   };
 
   const handlePasswordChange = (e) => {
     const { name, value } = e.target;
     setPasswordData({ ...passwordData, [name]: value });
-    
+
     // Clear errors when typing
     if (passwordErrors[name]) {
-      setPasswordErrors(prev => ({ ...prev, [name]: "" }));
+      setPasswordErrors((prev) => ({ ...prev, [name]: "" }));
     }
   };
 
   const togglePasswordVisibility = (field) => {
-    setShowPassword(prev => ({ ...prev, [field]: !prev[field] }));
+    setShowPassword((prev) => ({ ...prev, [field]: !prev[field] }));
   };
 
   const validatePasswordForm = () => {
     const errors = {};
-    
+
     if (includePasswordChange) {
       if (!passwordData.currentPassword) {
         errors.currentPassword = "Current password is required";
       }
-      
+
       if (!passwordData.newPassword) {
         errors.newPassword = "New password is required";
       } else if (passwordData.newPassword.length < 6) {
         errors.newPassword = "New password must be at least 6 characters";
       }
-      
+
       if (!passwordData.confirmPassword) {
         errors.confirmPassword = "Please confirm your new password";
       } else if (passwordData.newPassword !== passwordData.confirmPassword) {
         errors.confirmPassword = "Passwords do not match";
       }
     }
-    
+
     setPasswordErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -231,31 +261,37 @@ function TeacherProfile() {
   const validateProfileForm = () => {
     const errors = {};
     const phoneRegex = /^[0-9]{10}$/;
-    
-    if (!editableProfile.name || editableProfile.name.trim() === '') {
+
+    if (!editableProfile.name || editableProfile.name.trim() === "") {
       errors.name = "Name is required";
     } else if (editableProfile.name.length > 100) {
       errors.name = "Name must be less than 100 characters";
     }
-    
-    if (!editableProfile.phone || editableProfile.phone.trim() === '') {
+
+    if (!editableProfile.phone || editableProfile.phone.trim() === "") {
       errors.phone = "Phone number is required";
-    } else if (!phoneRegex.test(editableProfile.phone.replace(/\s+/g, ''))) {
+    } else if (!phoneRegex.test(editableProfile.phone.replace(/\s+/g, ""))) {
       errors.phone = "Phone number must be exactly 10 digits";
     }
-    
+
     if (editableProfile.address && editableProfile.address.length > 200) {
       errors.address = "Address must be less than 200 characters";
     }
-    
-    if (!editableProfile.qualification || editableProfile.qualification.trim() === '') {
+
+    if (
+      !editableProfile.qualification ||
+      editableProfile.qualification.trim() === ""
+    ) {
       errors.qualification = "Qualification is required";
     }
-    
-    if (!editableProfile.experience || editableProfile.experience.trim() === '') {
+
+    if (
+      !editableProfile.experience ||
+      editableProfile.experience.trim() === ""
+    ) {
       errors.experience = "Experience is required";
     }
-    
+
     // Set profile validation errors in state
     setProfileErrors(errors);
     return Object.keys(errors).length === 0;
@@ -272,88 +308,93 @@ function TeacherProfile() {
         });
         return;
       }
-      
+
       // Then validate password if password change is included
       if (includePasswordChange && !validatePasswordForm()) {
         return;
       }
-      
+
       setLoading(true);
-      const token = localStorage.getItem("token");
-      
+      // const token = localStorage.getItem("token");
+
       // Make API request to update teacher profile
-      const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
-      const response = await axios.put(
+      const baseUrl =
+        import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+      const response = await api.put(
         `${baseUrl}/teacher/profile`,
-        editableProfile,
-        { headers: { Authorization: `Bearer ${token}` } }
+        editableProfile
+        // { headers: { Authorization: `Bearer ${token}` } }
       );
-      
+
       // If password change is included, verify current password and update password
       if (includePasswordChange) {
         try {
-          await axios.post(
+          await api.post(
             `${baseUrl}/auth/change-password`,
             {
               currentPassword: passwordData.currentPassword,
-              newPassword: passwordData.newPassword
-            },
-            { headers: { Authorization: `Bearer ${token}` } }
+              newPassword: passwordData.newPassword,
+            }
+            // { headers: { Authorization: `Bearer ${token}` } }
           );
-          
+
           // Reset password fields on success
           setPasswordData({
             currentPassword: "",
             newPassword: "",
-            confirmPassword: ""
+            confirmPassword: "",
           });
           setIncludePasswordChange(false);
         } catch (err) {
           console.error("Error updating password:", err);
           setSnackbar({
             open: true,
-            message: err.response?.data?.message || "Failed to update password. Profile was updated.",
-            severity: "warning"
+            message:
+              err.response?.data?.message ||
+              "Failed to update password. Profile was updated.",
+            severity: "warning",
           });
           setLoading(false);
           return;
         }
       }
-      
+
       // Update local state with the response
       const updatedProfile = response.data.data || response.data;
       setProfile(updatedProfile);
       setIsEditing(false);
-      
+
       // Show success message
       setSnackbar({
         open: true,
-        message: includePasswordChange 
-          ? "Profile and password updated successfully" 
+        message: includePasswordChange
+          ? "Profile and password updated successfully"
           : "Profile updated successfully",
         severity: "success",
       });
+
+      dispatch(updateProfile(updatedProfile));
     } catch (err) {
       console.error("Error updating profile:", err);
-      
+
       // For demo purposes, simulate successful update if API is not implemented
       if (err.response?.status === 404) {
         setProfile({ ...editableProfile });
         setIsEditing(false);
-        
+
         if (includePasswordChange) {
           setPasswordData({
             currentPassword: "",
             newPassword: "",
-            confirmPassword: ""
+            confirmPassword: "",
           });
           setIncludePasswordChange(false);
         }
-        
+
         setSnackbar({
           open: true,
-          message: includePasswordChange 
-            ? "Profile and password updated successfully (Demo)" 
+          message: includePasswordChange
+            ? "Profile and password updated successfully (Demo)"
             : "Profile updated successfully (Demo)",
           severity: "success",
         });
@@ -375,8 +416,8 @@ function TeacherProfile() {
 
   // Format date function
   const formatDate = (dateString) => {
-    if (!dateString) return '';
-    
+    if (!dateString) return "";
+
     try {
       const date = new Date(dateString);
       return date.toLocaleDateString();
@@ -434,26 +475,34 @@ function TeacherProfile() {
         >
           My Profile
         </Typography>
-        <Typography variant="body1" color="text.secondary" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>
+        <Typography
+          variant="body1"
+          color="text.secondary"
+          sx={{ fontSize: { xs: "0.875rem", sm: "1rem" } }}
+        >
           View and manage your personal information
         </Typography>
       </Paper>
 
       {/* Profile content */}
       <Paper sx={{ p: { xs: 2, sm: 3 }, borderRadius: 2, mb: 3 }}>
-        <Box sx={{ 
-          display: 'flex', 
-          flexDirection: isMobile ? 'column' : 'row',
-          justifyContent: 'space-between', 
-          alignItems: isMobile ? 'flex-start' : 'flex-start', 
-          mb: 3 
-        }}>
-          <Box sx={{ 
-            display: 'flex', 
-            alignItems: 'center',
-            width: '100%',
-            mb: isMobile ? 2 : 0
-          }}>
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: isMobile ? "column" : "row",
+            justifyContent: "space-between",
+            alignItems: isMobile ? "flex-start" : "flex-start",
+            mb: 3,
+          }}
+        >
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              width: "100%",
+              mb: isMobile ? 2 : 0,
+            }}
+          >
             <Avatar
               sx={{
                 width: { xs: 56, sm: 80 },
@@ -463,30 +512,38 @@ function TeacherProfile() {
                 mr: 2,
               }}
             >
-              {profile?.name?.charAt(0) || 'T'}
+              {profile?.name?.charAt(0) || "T"}
             </Avatar>
             <Box>
-              <Typography variant="h5" component="h2" sx={{ 
-                fontWeight: 600,
-                fontSize: { xs: '1.25rem', sm: '1.5rem' }
-              }}>
+              <Typography
+                variant="h5"
+                component="h2"
+                sx={{
+                  fontWeight: 600,
+                  fontSize: { xs: "1.25rem", sm: "1.5rem" },
+                }}
+              >
                 {profile?.name}
               </Typography>
-              <Typography variant="body1" color="text.secondary" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>
+              <Typography
+                variant="body1"
+                color="text.secondary"
+                sx={{ fontSize: { xs: "0.875rem", sm: "1rem" } }}
+              >
                 {profile?.qualification}
               </Typography>
             </Box>
           </Box>
-          
+
           <Button
             variant={isEditing ? "outlined" : "contained"}
             color={isEditing ? "secondary" : "primary"}
             startIcon={isEditing ? <CancelIcon /> : <EditIcon />}
             onClick={handleEditToggle}
             size={isMobile ? "small" : "medium"}
-            sx={{ 
+            sx={{
               mt: isMobile ? 0 : 1,
-              alignSelf: isMobile ? 'flex-start' : 'flex-end'
+              alignSelf: isMobile ? "flex-start" : "flex-end",
             }}
           >
             {isEditing ? "Cancel" : "Edit Profile"}
@@ -504,7 +561,7 @@ function TeacherProfile() {
                   fullWidth
                   label="Full Name"
                   name="name"
-                  value={editableProfile.name || ''}
+                  value={editableProfile.name || ""}
                   onChange={handleInputChange}
                   margin="normal"
                   variant="outlined"
@@ -519,7 +576,7 @@ function TeacherProfile() {
                   fullWidth
                   label="Email"
                   name="email"
-                  value={editableProfile.email || ''}
+                  value={editableProfile.email || ""}
                   onChange={handleInputChange}
                   margin="normal"
                   variant="outlined"
@@ -534,7 +591,7 @@ function TeacherProfile() {
                   fullWidth
                   label="Phone"
                   name="phone"
-                  value={editableProfile.phone || ''}
+                  value={editableProfile.phone || ""}
                   onChange={handleInputChange}
                   margin="normal"
                   variant="outlined"
@@ -549,7 +606,7 @@ function TeacherProfile() {
                   fullWidth
                   label="Address"
                   name="address"
-                  value={editableProfile.address || ''}
+                  value={editableProfile.address || ""}
                   onChange={handleInputChange}
                   margin="normal"
                   variant="outlined"
@@ -564,7 +621,7 @@ function TeacherProfile() {
                   fullWidth
                   label="Qualification"
                   name="qualification"
-                  value={editableProfile.qualification || ''}
+                  value={editableProfile.qualification || ""}
                   onChange={handleInputChange}
                   margin="normal"
                   variant="outlined"
@@ -579,7 +636,7 @@ function TeacherProfile() {
                   fullWidth
                   label="Experience"
                   name="experience"
-                  value={editableProfile.experience || ''}
+                  value={editableProfile.experience || ""}
                   onChange={handleInputChange}
                   margin="normal"
                   variant="outlined"
@@ -589,25 +646,34 @@ function TeacherProfile() {
                   helperText={profileErrors.experience}
                 />
               </Grid>
-              
+
               {/* Password change section in edit mode */}
               <Grid item xs={12}>
                 <Box sx={{ mt: 2, mb: 1 }}>
-                  <Typography variant="h6" component="h3" color="primary" sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}>
+                  <Typography
+                    variant="h6"
+                    component="h3"
+                    color="primary"
+                    sx={{ fontSize: { xs: "1rem", sm: "1.25rem" } }}
+                  >
                     Change Password
                   </Typography>
-                  <Button 
-                    variant="text" 
+                  <Button
+                    variant="text"
                     color={includePasswordChange ? "error" : "primary"}
-                    onClick={() => setIncludePasswordChange(!includePasswordChange)}
+                    onClick={() =>
+                      setIncludePasswordChange(!includePasswordChange)
+                    }
                     sx={{ mt: 1 }}
                     size={isMobile ? "small" : "medium"}
                   >
-                    {includePasswordChange ? "Cancel Password Change" : "Update Password"}
+                    {includePasswordChange
+                      ? "Cancel Password Change"
+                      : "Update Password"}
                   </Button>
                 </Box>
               </Grid>
-              
+
               {includePasswordChange && (
                 <>
                   <Grid item xs={12} sm={4}>
@@ -624,14 +690,22 @@ function TeacherProfile() {
                       size={isMobile ? "small" : "medium"}
                       InputProps={{
                         endAdornment: (
-                          <IconButton 
-                            onClick={() => togglePasswordVisibility('current')}
+                          <IconButton
+                            onClick={() => togglePasswordVisibility("current")}
                             edge="end"
                             size={isMobile ? "small" : "medium"}
                           >
-                            {showPassword.current ? <VisibilityOffIcon fontSize={isMobile ? "small" : "medium"} /> : <VisibilityIcon fontSize={isMobile ? "small" : "medium"} />}
+                            {showPassword.current ? (
+                              <VisibilityOffIcon
+                                fontSize={isMobile ? "small" : "medium"}
+                              />
+                            ) : (
+                              <VisibilityIcon
+                                fontSize={isMobile ? "small" : "medium"}
+                              />
+                            )}
                           </IconButton>
-                        )
+                        ),
                       }}
                     />
                   </Grid>
@@ -649,14 +723,22 @@ function TeacherProfile() {
                       size={isMobile ? "small" : "medium"}
                       InputProps={{
                         endAdornment: (
-                          <IconButton 
-                            onClick={() => togglePasswordVisibility('new')}
+                          <IconButton
+                            onClick={() => togglePasswordVisibility("new")}
                             edge="end"
                             size={isMobile ? "small" : "medium"}
                           >
-                            {showPassword.new ? <VisibilityOffIcon fontSize={isMobile ? "small" : "medium"} /> : <VisibilityIcon fontSize={isMobile ? "small" : "medium"} />}
+                            {showPassword.new ? (
+                              <VisibilityOffIcon
+                                fontSize={isMobile ? "small" : "medium"}
+                              />
+                            ) : (
+                              <VisibilityIcon
+                                fontSize={isMobile ? "small" : "medium"}
+                              />
+                            )}
                           </IconButton>
-                        )
+                        ),
                       }}
                     />
                   </Grid>
@@ -674,22 +756,32 @@ function TeacherProfile() {
                       size={isMobile ? "small" : "medium"}
                       InputProps={{
                         endAdornment: (
-                          <IconButton 
-                            onClick={() => togglePasswordVisibility('confirm')}
+                          <IconButton
+                            onClick={() => togglePasswordVisibility("confirm")}
                             edge="end"
                             size={isMobile ? "small" : "medium"}
                           >
-                            {showPassword.confirm ? <VisibilityOffIcon fontSize={isMobile ? "small" : "medium"} /> : <VisibilityIcon fontSize={isMobile ? "small" : "medium"} />}
+                            {showPassword.confirm ? (
+                              <VisibilityOffIcon
+                                fontSize={isMobile ? "small" : "medium"}
+                              />
+                            ) : (
+                              <VisibilityIcon
+                                fontSize={isMobile ? "small" : "medium"}
+                              />
+                            )}
                           </IconButton>
-                        )
+                        ),
                       }}
                     />
                   </Grid>
                 </>
               )}
-              
+
               <Grid item xs={12}>
-                <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
+                <Box
+                  sx={{ display: "flex", justifyContent: "flex-end", mt: 2 }}
+                >
                   <Button
                     variant="contained"
                     color="primary"
@@ -699,7 +791,11 @@ function TeacherProfile() {
                     sx={{ ml: 2 }}
                     size={isMobile ? "small" : "medium"}
                   >
-                    {loading ? <CircularProgress size={isMobile ? 20 : 24} /> : "Save Changes"}
+                    {loading ? (
+                      <CircularProgress size={isMobile ? 20 : 24} />
+                    ) : (
+                      "Save Changes"
+                    )}
                   </Button>
                 </Box>
               </Grid>
@@ -709,98 +805,190 @@ function TeacherProfile() {
             <>
               <Grid item xs={12} sm={6}>
                 <Box sx={{ mb: 2 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                    <EmailIcon sx={{ mr: 1, color: 'text.secondary', fontSize: isMobile ? 18 : 24 }} />
-                    <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
+                  <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
+                    <EmailIcon
+                      sx={{
+                        mr: 1,
+                        color: "text.secondary",
+                        fontSize: isMobile ? 18 : 24,
+                      }}
+                    />
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                      sx={{ fontSize: { xs: "0.75rem", sm: "0.875rem" } }}
+                    >
                       Email
                     </Typography>
                   </Box>
-                  <Typography variant="body1" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>
-                    {profile?.email || 'Not provided'}
+                  <Typography
+                    variant="body1"
+                    sx={{ fontSize: { xs: "0.875rem", sm: "1rem" } }}
+                  >
+                    {profile?.email || "Not provided"}
                   </Typography>
                 </Box>
               </Grid>
               <Grid item xs={12} sm={6}>
                 <Box sx={{ mb: 2 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                    <PhoneIcon sx={{ mr: 1, color: 'text.secondary', fontSize: isMobile ? 18 : 24 }} />
-                    <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
+                  <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
+                    <PhoneIcon
+                      sx={{
+                        mr: 1,
+                        color: "text.secondary",
+                        fontSize: isMobile ? 18 : 24,
+                      }}
+                    />
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                      sx={{ fontSize: { xs: "0.75rem", sm: "0.875rem" } }}
+                    >
                       Phone
                     </Typography>
                   </Box>
-                  <Typography variant="body1" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>
-                    {profile?.phone || 'Not provided'}
+                  <Typography
+                    variant="body1"
+                    sx={{ fontSize: { xs: "0.875rem", sm: "1rem" } }}
+                  >
+                    {profile?.phone || "Not provided"}
                   </Typography>
                 </Box>
               </Grid>
               <Grid item xs={12} sm={6}>
                 <Box sx={{ mb: 2 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                    <HomeIcon sx={{ mr: 1, color: 'text.secondary', fontSize: isMobile ? 18 : 24 }} />
-                    <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
+                  <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
+                    <HomeIcon
+                      sx={{
+                        mr: 1,
+                        color: "text.secondary",
+                        fontSize: isMobile ? 18 : 24,
+                      }}
+                    />
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                      sx={{ fontSize: { xs: "0.75rem", sm: "0.875rem" } }}
+                    >
                       Address
                     </Typography>
                   </Box>
-                  <Typography variant="body1" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>
-                    {profile?.address || 'Not provided'}
+                  <Typography
+                    variant="body1"
+                    sx={{ fontSize: { xs: "0.875rem", sm: "1rem" } }}
+                  >
+                    {profile?.address || "Not provided"}
                   </Typography>
                 </Box>
               </Grid>
               <Grid item xs={12} sm={6}>
                 <Box sx={{ mb: 2 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                    <CalendarIcon sx={{ mr: 1, color: 'text.secondary', fontSize: isMobile ? 18 : 24 }} />
-                    <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
+                  <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
+                    <CalendarIcon
+                      sx={{
+                        mr: 1,
+                        color: "text.secondary",
+                        fontSize: isMobile ? 18 : 24,
+                      }}
+                    />
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                      sx={{ fontSize: { xs: "0.75rem", sm: "0.875rem" } }}
+                    >
                       Joining Date
                     </Typography>
                   </Box>
-                  <Typography variant="body1" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>
-                    {profile?.joiningDate ? formatDate(profile.joiningDate) : 'Not provided'}
+                  <Typography
+                    variant="body1"
+                    sx={{ fontSize: { xs: "0.875rem", sm: "1rem" } }}
+                  >
+                    {profile?.joiningDate
+                      ? formatDate(profile.joiningDate)
+                      : "Not provided"}
                   </Typography>
                 </Box>
               </Grid>
               <Grid item xs={12} sm={6}>
                 <Box sx={{ mb: 2 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                    <WorkIcon sx={{ mr: 1, color: 'text.secondary', fontSize: isMobile ? 18 : 24 }} />
-                    <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
+                  <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
+                    <WorkIcon
+                      sx={{
+                        mr: 1,
+                        color: "text.secondary",
+                        fontSize: isMobile ? 18 : 24,
+                      }}
+                    />
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                      sx={{ fontSize: { xs: "0.75rem", sm: "0.875rem" } }}
+                    >
                       Experience
                     </Typography>
                   </Box>
-                  <Typography variant="body1" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>
-                    {profile?.experience || 'Not provided'}
+                  <Typography
+                    variant="body1"
+                    sx={{ fontSize: { xs: "0.875rem", sm: "1rem" } }}
+                  >
+                    {profile?.experience || "Not provided"}
                   </Typography>
                 </Box>
               </Grid>
               <Grid item xs={12} sm={6}>
                 <Box sx={{ mb: 2 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                    <SchoolIcon sx={{ mr: 1, color: 'text.secondary', fontSize: isMobile ? 18 : 24 }} />
-                    <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
+                  <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
+                    <SchoolIcon
+                      sx={{
+                        mr: 1,
+                        color: "text.secondary",
+                        fontSize: isMobile ? 18 : 24,
+                      }}
+                    />
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                      sx={{ fontSize: { xs: "0.75rem", sm: "0.875rem" } }}
+                    >
                       Qualification
                     </Typography>
                   </Box>
-                  <Typography variant="body1" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>
-                    {profile?.qualification || 'Not provided'}
+                  <Typography
+                    variant="body1"
+                    sx={{ fontSize: { xs: "0.875rem", sm: "1rem" } }}
+                  >
+                    {profile?.qualification || "Not provided"}
                   </Typography>
                 </Box>
               </Grid>
               <Grid item xs={12}>
                 <Box sx={{ mb: 2 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                    <SchoolIcon sx={{ mr: 1, color: 'text.secondary', fontSize: isMobile ? 18 : 24 }} />
-                    <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
+                  <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
+                    <SchoolIcon
+                      sx={{
+                        mr: 1,
+                        color: "text.secondary",
+                        fontSize: isMobile ? 18 : 24,
+                      }}
+                    />
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                      sx={{ fontSize: { xs: "0.75rem", sm: "0.875rem" } }}
+                    >
                       Subjects
                     </Typography>
                   </Box>
-                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                    {profile?.subjectDetails && Array.isArray(profile.subjectDetails) && profile.subjectDetails.length > 0 ? (
+                  <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+                    {profile?.subjectDetails &&
+                    Array.isArray(profile.subjectDetails) &&
+                    profile.subjectDetails.length > 0 ? (
                       // First priority: use subjectDetails if available
                       profile.subjectDetails.map((subject, index) => (
-                        <Chip 
-                          key={index} 
-                          label={subject.name || 'Unknown Subject'} 
-                          color="primary" 
+                        <Chip
+                          key={index}
+                          label={subject.name || "Unknown Subject"}
+                          color="primary"
                           variant="outlined"
                           size="small"
                         />
@@ -809,28 +997,35 @@ function TeacherProfile() {
                       // Second priority: use subjects array with robust rendering logic
                       profile.subjects.map((subject, index) => {
                         // Handle all possible data formats
-                        let subjectName = 'Unknown Subject';
-                        
-                        if (typeof subject === 'string') {
+                        let subjectName = "Unknown Subject";
+
+                        if (typeof subject === "string") {
                           // If subject is just a string ID, show placeholder name
                           subjectName = `Subject ${subject.substring(0, 5)}...`;
-                        } else if (typeof subject === 'object') {
+                        } else if (typeof subject === "object") {
                           // If subject is an object, try to get the name property
-                          subjectName = subject.name || (subject._id ? `Subject ${subject._id.substring(0, 5)}...` : 'Unknown Subject');
+                          subjectName =
+                            subject.name ||
+                            (subject._id
+                              ? `Subject ${subject._id.substring(0, 5)}...`
+                              : "Unknown Subject");
                         }
-                        
+
                         return (
-                          <Chip 
-                            key={index} 
-                            label={subjectName} 
-                            color="primary" 
+                          <Chip
+                            key={index}
+                            label={subjectName}
+                            color="primary"
                             variant="outlined"
                             size="small"
                           />
                         );
                       })
                     ) : (
-                      <Typography variant="body1" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>
+                      <Typography
+                        variant="body1"
+                        sx={{ fontSize: { xs: "0.875rem", sm: "1rem" } }}
+                      >
                         No subjects assigned
                       </Typography>
                     )}
@@ -841,18 +1036,18 @@ function TeacherProfile() {
           )}
         </Grid>
       </Paper>
-      
+
       {/* Snackbar for notifications */}
       <Snackbar
         open={snackbar.open}
         autoHideDuration={6000}
         onClose={handleCloseSnackbar}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
       >
-        <Alert 
-          onClose={handleCloseSnackbar} 
-          severity={snackbar.severity} 
-          sx={{ width: '100%' }}
+        <Alert
+          onClose={handleCloseSnackbar}
+          severity={snackbar.severity}
+          sx={{ width: "100%" }}
           variant="filled"
         >
           {snackbar.message}
@@ -862,4 +1057,4 @@ function TeacherProfile() {
   );
 }
 
-export default TeacherProfile; 
+export default TeacherProfile;

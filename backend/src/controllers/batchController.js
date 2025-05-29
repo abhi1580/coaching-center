@@ -7,9 +7,6 @@ import Subject from "../models/Subject.js";
 // Get all batches
 export const getAllBatches = async (req, res) => {
   try {
-    // Update batch statuses first
-    await Batch.updateBatchStatuses();
-    
     // Import Student model
     const Student = (await import("../models/Student.js")).default;
 
@@ -135,9 +132,6 @@ export const getAllBatches = async (req, res) => {
 // Get a single batch
 export const getBatchById = async (req, res) => {
   try {
-    // Update batch statuses first
-    await Batch.updateBatchStatuses();
-    
     // Import Student model
     const Student = (await import("../models/Student.js")).default;
 
@@ -219,17 +213,19 @@ export const getBatchById = async (req, res) => {
       if (studentsWithBatch.length > 0) {
         await batch.save();
       }
-      
+
       // Clean up enrolledStudents by removing any that don't exist in the Student collection
       if (batchData.enrolledStudents && batchData.enrolledStudents.length > 0) {
         // Filter to keep only students with valid _id property (existing students)
         batchData.enrolledStudents = batchData.enrolledStudents.filter(
           (student) => student && student._id
         );
-        
+
         // Also update the actual batch document
         if (batch.enrolledStudents && batch.enrolledStudents.length > 0) {
-          const validStudentIds = batchData.enrolledStudents.map(student => student._id);
+          const validStudentIds = batchData.enrolledStudents.map(
+            (student) => student._id
+          );
           batch.enrolledStudents = validStudentIds;
           await batch.save();
         }
@@ -355,13 +351,15 @@ export const deleteBatch = async (req, res) => {
 // Get batches by subject
 export const getBatchesBySubject = async (req, res) => {
   try {
-    // Update batch statuses first
-    await Batch.updateBatchStatuses();
+    const { subjectId } = req.params;
+    const { populate } = req.query;
+    const shouldPopulateEnrolledStudents =
+      populate && populate.includes("enrolledStudents");
 
     // Import Student model
     const Student = (await import("../models/Student.js")).default;
 
-    let { subjects, standard, populate } = req.query;
+    let { subjects, standard } = req.query;
     // Validate query parameters
     if (!subjects) {
       return res.status(400).json({
@@ -394,8 +392,6 @@ export const getBatchesBySubject = async (req, res) => {
       .populate("teacher", "name");
 
     // Conditionally populate enrolledStudents with student details
-    const shouldPopulateEnrolledStudents =
-      populate && populate.includes("enrolledStudents");
     if (shouldPopulateEnrolledStudents) {
       batchQuery = batchQuery.populate(
         "enrolledStudents",
@@ -661,7 +657,7 @@ export const syncBatchStudents = async (req, res) => {
 
     // Create a map of student IDs for quick lookup
     const studentMap = new Map();
-    students.forEach(student => {
+    students.forEach((student) => {
       studentMap.set(student._id.toString(), student);
     });
 
@@ -689,12 +685,18 @@ export const syncBatchStudents = async (req, res) => {
           if (studentMap.has(studentIdStr)) {
             validStudentIds.push(studentId);
           } else {
-            console.log(`Removing non-existent student ${studentId} from batch ${batchId}`);
+            console.log(
+              `Removing non-existent student ${studentId} from batch ${batchId}`
+            );
             removedInvalidStudents++;
           }
         } catch (error) {
-          console.error(`Error processing student ID ${studentId}: ${error.message}`);
-          errors.push(`Invalid student ID format in batch ${batchId}: ${error.message}`);
+          console.error(
+            `Error processing student ID ${studentId}: ${error.message}`
+          );
+          errors.push(
+            `Invalid student ID format in batch ${batchId}: ${error.message}`
+          );
         }
       }
 
@@ -708,7 +710,7 @@ export const syncBatchStudents = async (req, res) => {
         try {
           const studentIdStr = studentId.toString();
           const student = studentMap.get(studentIdStr);
-          
+
           if (student) {
             // Ensure student has this batch in their batches array
             if (!student.batches || !Array.isArray(student.batches)) {
@@ -736,22 +738,24 @@ export const syncBatchStudents = async (req, res) => {
               try {
                 return b.toString() === batchId;
               } catch (error) {
-                errors.push(`Invalid batch ID format in student ${student._id}: ${error.message}`);
+                errors.push(
+                  `Invalid batch ID format in student ${student._id}: ${error.message}`
+                );
                 return false;
               }
             })
           ) {
             if (
-              !batch.enrolledStudents.some(
-                (s) => {
-                  try {
-                    return s.toString() === student._id.toString();
-                  } catch (error) {
-                    errors.push(`Invalid student ID format in batch ${batchId}: ${error.message}`);
-                    return false;
-                  }
+              !batch.enrolledStudents.some((s) => {
+                try {
+                  return s.toString() === student._id.toString();
+                } catch (error) {
+                  errors.push(
+                    `Invalid student ID format in batch ${batchId}: ${error.message}`
+                  );
+                  return false;
                 }
-              )
+              })
             ) {
               // Add student to batch.enrolledStudents
               batch.enrolledStudents.push(student._id);

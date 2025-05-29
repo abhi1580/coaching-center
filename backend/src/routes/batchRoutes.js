@@ -10,7 +10,10 @@ import {
   removeStudentFromBatch,
   syncBatchStudents,
 } from "../controllers/batchController.js";
-import {  createBatchValidator,  updateBatchValidator,} from "../validators/batchValidators.js";
+import {
+  createBatchValidator,
+  updateBatchValidator,
+} from "../validators/batchValidators.js";
 import { protect, authorize } from "../middleware/authMiddleware.js";
 import { validate } from "../middleware/validate.js";
 
@@ -20,17 +23,13 @@ const router = express.Router();
 router.use(protect);
 
 // Get all batches
-router.get("/", authorize("admin", "staff", "teacher"), getAllBatches);
+router.get("/", authorize("admin", "teacher"), getAllBatches);
 
 // Get batches by subject
-router.get(
-  "/by-subject",
-  authorize("admin", "staff", "teacher"),
-  getBatchesBySubject
-);
+router.get("/by-subject", authorize("admin", "teacher"), getBatchesBySubject);
 
 // Get single batch
-router.get("/:id", authorize("admin", "staff", "teacher"), getBatchById);
+router.get("/:id", authorize("admin", "teacher"), getBatchById);
 
 // Create new batch
 router.post(

@@ -15,17 +15,18 @@ import {
   Chip,
   useTheme,
   InputAdornment,
+  IconButton,
   CircularProgress,
   Breadcrumbs,
   Link,
+  alpha,
 } from "@mui/material";
-import { alpha } from "@mui/material/styles";
-import { updateBatch, fetchBatches } from "../../../store/slices/batchSlice";
+import { updateBatch } from "../../../store/slices/batchSlice";
 import { fetchStandards } from "../../../store/slices/standardSlice";
 import { fetchSubjects } from "../../../store/slices/subjectSlice";
 import { fetchTeachers } from "../../../store/slices/teacherSlice";
 import { Home as HomeIcon, Class as ClassIcon } from "@mui/icons-material";
-import Swal from "sweetalert2";
+import Swal from 'sweetalert2';
 
 const DAYS_OF_WEEK = [
   "Monday",
@@ -38,12 +39,12 @@ const DAYS_OF_WEEK = [
 ];
 
 const BatchEdit = () => {
-  const { id } = useParams();
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const theme = useTheme();
+  const { id } = useParams();
 
-  const { batches, loading } = useSelector((state) => state.batches);
+  const { batches } = useSelector((state) => state.batches);
   const { standards } = useSelector((state) => state.standards);
   const { subjects } = useSelector((state) => state.subjects);
   const { teachers } = useSelector((state) => state.teachers);
@@ -68,78 +69,62 @@ const BatchEdit = () => {
   const [filteredSubjects, setFilteredSubjects] = useState([]);
   const [filteredTeachers, setFilteredTeachers] = useState([]);
   const [submitting, setSubmitting] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    dispatch(fetchBatches());
     dispatch(fetchStandards());
     dispatch(fetchSubjects());
     dispatch(fetchTeachers());
   }, [dispatch]);
 
   useEffect(() => {
-    if (batches && id) {
-      const batch = batches.find((b) => b._id === id);
-      if (batch) {
-        const startDate = batch.startDate
-          ? new Date(batch.startDate).toISOString().split("T")[0]
-          : "";
-        const endDate = batch.endDate
-          ? new Date(batch.endDate).toISOString().split("T")[0]
-          : "";
-
-        setFormData({
-          name: batch.name || "",
-          standard: batch.standard?._id || batch.standard || "",
-          subject: batch.subject?._id || batch.subject || "",
-          startDate,
-          endDate,
-          schedule: {
-            days: batch.schedule?.days || [],
-            startTime: batch.schedule?.startTime || "",
-            endTime: batch.schedule?.endTime || "",
-          },
-          capacity: batch.capacity || "",
-          fees: batch.fees || "",
-          description: batch.description || "",
-          teacher: batch.teacher?._id || batch.teacher || "",
-        });
-
-        if (batch.standard) {
-          const standard = standards.find(
-            (s) => s._id === (batch.standard._id || batch.standard)
-          );
-          if (standard) {
-            const standardSubjects = subjects.filter((subject) =>
-              standard.subjects?.some((s) => (s._id || s) === subject._id)
-            );
-            setFilteredSubjects(standardSubjects);
-          }
-        }
-
-        if (batch.subject) {
-          const subjectTeachers = teachers.filter((teacher) =>
-            teacher.subjects?.some(
-              (s) => (s._id || s) === (batch.subject._id || batch.subject)
-            )
-          );
-          setFilteredTeachers(subjectTeachers);
-        }
-      }
+    const batch = batches.find((b) => b._id === id);
+    if (batch) {
+      setFormData({
+        name: batch.name || "",
+        standard: batch.standard?._id || "",
+        subject: batch.subject?._id || "",
+        startDate: batch.startDate || "",
+        endDate: batch.endDate || "",
+        schedule: {
+          days: batch.schedule?.days || [],
+          startTime: batch.schedule?.startTime || "",
+          endTime: batch.schedule?.endTime || "",
+        },
+        capacity: batch.capacity || "",
+        fees: batch.fees || "",
+        description: batch.description || "",
+        teacher: batch.teacher?._id || "",
+      });
+      setLoading(false);
     }
-  }, [batches, id, standards, subjects, teachers]);
+  }, [batches, id]);
+
+  useEffect(() => {
+    if (formData.standard) {
+      const standardSubjects = subjects.filter(
+        (subject) => subject.standard?._id === formData.standard || subject.standard === formData.standard
+      );
+      setFilteredSubjects(standardSubjects);
+    } else {
+      setFilteredSubjects([]);
+    }
+  }, [formData.standard, subjects]);
+
+  useEffect(() => {
+    if (formData.subject) {
+      const subjectTeachers = teachers.filter((teacher) =>
+        teacher.subjects.includes(formData.subject)
+      );
+      setFilteredTeachers(subjectTeachers);
+    } else {
+      setFilteredTeachers([]);
+    }
+  }, [formData.subject, teachers]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-
     if (name === "standard") {
-      const standard = standards.find((s) => s._id === value);
-      const standardSubjects = standard
-        ? subjects.filter((subject) =>
-          standard.subjects?.some((s) => (s._id || s) === subject._id)
-        )
-        : [];
-      setFilteredSubjects(standardSubjects);
-      setFilteredTeachers([]);
       setFormData({
         ...formData,
         standard: value,
@@ -147,47 +132,9 @@ const BatchEdit = () => {
         teacher: "",
       });
     } else if (name === "subject") {
-      console.log(`Selected subject ID: ${value}`);
-      console.log(`Available teachers:`, teachers.length);
-
-      const subjectTeachers = teachers.filter((teacher) => {
-        if (!teacher.subjects || !Array.isArray(teacher.subjects)) {
-          console.log(`Teacher ${teacher.name} has no subjects array`);
-          return false;
-        }
-
-        // Log the teacher's subjects for debugging
-        console.log(
-          `Teacher ${teacher.name} subjects:`,
-          JSON.stringify(
-            teacher.subjects.map((s) => (typeof s === "object" ? s._id : s))
-          )
-        );
-
-        return teacher.subjects.some((s) => {
-          // Handle object format (populated subjects)
-          if (typeof s === "object" && s !== null && s._id) {
-            return s._id === value;
-          }
-          // Handle string format (just ID references)
-          if (typeof s === "string") {
-            return s === value;
-          }
-          return false;
-        });
-      });
-
-      console.log(
-        `Filtered ${subjectTeachers.length} teachers for subject ${value}`
+      const subjectTeachers = teachers.filter((teacher) =>
+        teacher.subjects.includes(value)
       );
-
-      if (subjectTeachers.length === 0) {
-        console.log(
-          `No teachers found for subject ID ${value}. All teachers:`,
-          teachers.map((t) => ({ name: t.name, subjects: t.subjects }))
-        );
-      }
-
       setFilteredTeachers(subjectTeachers);
       setFormData({
         ...formData,
@@ -234,10 +181,10 @@ const BatchEdit = () => {
 
     if (!formData.name || !formData.standard || !formData.subject) {
       Swal.fire({
-        icon: "error",
-        title: "Required Fields Missing",
-        text: "Please fill all required fields: Name, Standard, and Subject",
-        confirmButtonColor: theme.palette.primary.main,
+        icon: 'error',
+        title: 'Required Fields Missing',
+        text: 'Please fill all required fields: Name, Standard, and Subject',
+        confirmButtonColor: theme.palette.primary.main
       });
       return;
     }
@@ -247,29 +194,36 @@ const BatchEdit = () => {
       await dispatch(updateBatch({ id, data: formData })).unwrap();
 
       Swal.fire({
-        icon: "success",
-        title: "Batch Updated!",
+        icon: 'success',
+        title: 'Batch Updated!',
         text: `"${formData.name}" batch has been updated successfully.`,
         confirmButtonColor: theme.palette.primary.main,
-        timer: 2000,
+        timer: 2000
       });
 
       navigate(`/app/batches/${id}`);
     } catch (error) {
       Swal.fire({
-        icon: "error",
-        title: "Error",
+        icon: 'error',
+        title: 'Error',
         text: `Failed to update batch: ${error.message || "Unknown error"}`,
-        confirmButtonColor: theme.palette.primary.main,
+        confirmButtonColor: theme.palette.primary.main
       });
     } finally {
       setSubmitting(false);
     }
   };
 
-  if (loading && !formData.name) {
+  if (loading) {
     return (
-      <Box sx={{ display: "flex", justifyContent: "center", p: 3 }}>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          minHeight: "60vh",
+        }}
+      >
         <CircularProgress />
       </Box>
     );
@@ -296,15 +250,7 @@ const BatchEdit = () => {
           <ClassIcon sx={{ mr: 0.5 }} fontSize="small" />
           Batches
         </Link>
-        <Link
-          underline="hover"
-          color="inherit"
-          href={`/app/batches/${id}`}
-          sx={{ display: "flex", alignItems: "center" }}
-        >
-          {formData.name}
-        </Link>
-        <Typography color="text.primary">Edit</Typography>
+        <Typography color="text.primary">Edit Batch</Typography>
       </Breadcrumbs>
 
       <Paper
@@ -317,6 +263,7 @@ const BatchEdit = () => {
           display: "flex",
           alignItems: "center",
           gap: 2,
+          flexWrap: "wrap",
         }}
       >
         <Typography

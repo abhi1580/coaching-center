@@ -363,6 +363,7 @@ const TeacherCreate = () => {
                                             "Password must contain at least 6 characters, one uppercase letter, one lowercase letter, and one number"}
                                         disabled={isSubmitting}
                                         required
+                                        autoComplete="new-password"
                                         InputProps={{
                                             endAdornment: (
                                                 <InputAdornment position="end">

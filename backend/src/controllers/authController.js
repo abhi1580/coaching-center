@@ -7,9 +7,15 @@ import mongoose from "mongoose";
 
 // Generate JWT Token
 const generateToken = (id, role) => {
-  return jwt.sign({ id, role }, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRE,
-  });
+  const expiresIn = process.env.JWT_EXPIRE || "30d";
+  return jwt.sign(
+    {
+      id,
+      role,
+      exp: Math.floor(Date.now() / 1000) + parseInt(expiresIn) * 24 * 60 * 60, // Convert days to seconds
+    },
+    process.env.JWT_SECRET
+  );
 };
 
 // @desc    Create user (admin only)
@@ -133,9 +139,8 @@ export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Check if user exists
+    // Check for user
     const user = await User.findOne({ email }).select("+password");
-
     if (!user) {
       return res.status(401).json({
         success: false,
@@ -143,7 +148,7 @@ export const login = async (req, res) => {
       });
     }
 
-    // Check password
+    // Check if password matches
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
       return res.status(401).json({
@@ -152,24 +157,52 @@ export const login = async (req, res) => {
       });
     }
 
-    // Generate token with role
-    const token = generateToken(user._id, user.role);
-
-    res.json({
-      success: true,
-      token,
-      user: {
+    // Create token with expiration
+    const expiresIn = process.env.JWT_EXPIRE || "30d";
+    const token = jwt.sign(
+      {
         id: user._id,
-        name: user.name,
-        email: user.email,
         role: user.role,
+        exp: Math.floor(Date.now() / 1000) + parseInt(expiresIn) * 24 * 60 * 60, // Convert days to seconds
+      },
+      process.env.JWT_SECRET
+    );
+
+    // Set cookie options
+    const cookieOptions = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: parseInt(expiresIn) * 24 * 60 * 60 * 1000, // Convert days to milliseconds
+      path: "/",
+      domain: process.env.COOKIE_DOMAIN || undefined,
+    };
+
+    // Set the token in HTTP-only cookie
+    res.cookie("token", token, cookieOptions);
+
+    // Update last login
+    user.lastLogin = new Date();
+    await user.save();
+
+    // Send response without token in body
+    res.status(200).json({
+      success: true,
+      message: "Login successful",
+      data: {
+        user: {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+        },
       },
     });
   } catch (error) {
+    console.error("Login error:", error);
     res.status(500).json({
       success: false,
-      message: "Error in login",
-      error: error.message,
+      message: "An error occurred during login",
     });
   }
 };
@@ -303,10 +336,10 @@ export const resetPassword = async (req, res) => {
 export const changePassword = async (req, res, next) => {
   try {
     const { currentPassword, newPassword } = req.body;
-    
+
     // Get user by ID from auth middleware
     const user = await User.findById(req.user.id);
-    
+
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -359,6 +392,7 @@ export const createAdmin = async (req, res) => {
       try {
         // Verify token
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        console.log("Decoded Token : ", decoded);
         const user = await User.findById(decoded.id);
 
         if (!user || user.role !== "admin") {
@@ -442,21 +476,38 @@ export const createAdmin = async (req, res) => {
   }
 };
 
+// @desc    Logout user
+// @route   POST /api/auth/logout
+// @access  Private
 export const logout = async (req, res) => {
   try {
-    // Clear the token from the client
-    res.clearCookie("token");
+    // Clear the token cookie with matching options
+    res.clearCookie("token", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      domain: process.env.COOKIE_DOMAIN || undefined,
+    });
 
-    // Send success response
+    // Clear the CSRF token cookie with matching options
+    res.clearCookie("X-CSRF-Token", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      domain: process.env.COOKIE_DOMAIN || undefined,
+    });
+
     res.status(200).json({
       success: true,
       message: "Logged out successfully",
     });
   } catch (error) {
+    console.error("Logout error:", error);
     res.status(500).json({
       success: false,
       message: "Error during logout",
-      error: error.message,
     });
   }
 };

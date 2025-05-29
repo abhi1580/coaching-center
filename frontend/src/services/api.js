@@ -3,26 +3,108 @@ import axios from "axios";
 // Fallback to localhost if VITE_API_URL is not defined
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
+// Function to get CSRF token from cookies
+const getCsrfToken = () => {
+  const cookies = document.cookie.split(";");
+  console.log("All cookies:", cookies);
+  for (let cookie of cookies) {
+    const [name, value] = cookie.trim().split("=");
+    if (name === "X-CSRF-Token") {
+      console.log("Found CSRF token in cookies:", value);
+      return value;
+    }
+  }
+  console.log("No CSRF token found in cookies");
+  return null;
+};
+
+// Function to refresh CSRF token
+const refreshCsrfToken = async () => {
+  try {
+    console.log("Attempting to refresh CSRF token...");
+    // Make a GET request to get a new CSRF token
+    const response = await axios.get(`${API_URL}/auth/csrf-token`, {
+      withCredentials: true,
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+    });
+    console.log("CSRF token refresh response:", response.data);
+
+    // Wait a bit for the cookie to be set
+    await new Promise((resolve) => setTimeout(resolve, 500));
+
+    // First try to get token from response data
+    if (response.data && response.data.token) {
+      console.log("Got CSRF token from response data:", response.data.token);
+      return response.data.token;
+    }
+
+    // Then check cookies
+    const cookieToken = getCsrfToken();
+    if (cookieToken) {
+      console.log("Got CSRF token from cookies:", cookieToken);
+      return cookieToken;
+    }
+
+    console.log("No CSRF token found in response or cookies");
+    return null;
+  } catch (error) {
+    console.error("Failed to refresh CSRF token:", error);
+    return null;
+  }
+};
+
+// Function to ensure we have a valid CSRF token
+const ensureCsrfToken = async () => {
+  console.log("Ensuring CSRF token...");
+  let csrfToken = getCsrfToken();
+
+  if (!csrfToken) {
+    console.log("No existing CSRF token, attempting to refresh...");
+    csrfToken = await refreshCsrfToken();
+
+    if (csrfToken) {
+      console.log("Successfully refreshed CSRF token:", csrfToken);
+    } else {
+      console.log("Failed to refresh CSRF token");
+    }
+  } else {
+    console.log("Using existing CSRF token:", csrfToken);
+  }
+
+  return csrfToken;
+};
+
 export const api = axios.create({
   baseURL: API_URL,
   headers: {
     "Content-Type": "application/json",
   },
+  withCredentials: true,
 });
 
-// Initialize auth header from localStorage if token exists
-const token = localStorage.getItem("token");
-if (token) {
-  api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-}
-
-// Add a request interceptor to add the auth token to requests
+// Add request interceptor to include CSRF token
 api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem("token");
-    if (token) {
-      config.headers["Authorization"] = `Bearer ${token}`;
+  async (config) => {
+    console.log("Making request to:", config.url);
+
+    // Skip CSRF token for GET requests and CSRF token endpoint
+    if (config.method === "get" || config.url === "/auth/csrf-token") {
+      return config;
     }
+
+    // Get CSRF token before making the request
+    const csrfToken = await ensureCsrfToken();
+    if (csrfToken) {
+      console.log("Adding CSRF token to request headers:", csrfToken);
+      config.headers["X-CSRF-Token"] = csrfToken;
+    } else {
+      console.warn("No CSRF token available for request");
+    }
+
+    console.log("Request config:", config);
     return config;
   },
   (error) => {
@@ -30,13 +112,13 @@ api.interceptors.request.use(
   }
 );
 
-// Add a response interceptor to handle errors and log responses
+// Add a response interceptor to handle errors
 api.interceptors.response.use(
   (response) => {
     return response;
   },
   async (error) => {
-    // Log error responses for debugging in production
+    // Log error responses for debugging
     console.error(
       `API Error [${error.config?.method?.toUpperCase()} ${
         error.config?.url
@@ -45,10 +127,33 @@ api.interceptors.response.use(
       error.response?.data
     );
 
+    // Handle CSRF token errors
+    if (
+      error.response?.status === 403 &&
+      error.response?.data?.message?.includes("CSRF")
+    ) {
+      console.log("CSRF token validation failed, attempting to refresh...");
+
+      // Try to refresh the token
+      const refreshed = await refreshCsrfToken();
+      if (refreshed) {
+        // Retry the original request
+        const newToken = getCsrfToken();
+        if (newToken) {
+          error.config.headers["X-CSRF-Token"] = newToken;
+          return api(error.config);
+        }
+      }
+
+      // If refresh failed, reload the page
+      window.location.reload();
+      return Promise.reject(error);
+    }
+
     // Create a list of endpoints that should not trigger automatic logout on 401
     const ignoreLogoutEndpoints = [
       "/teacher/dashboard",
-      "/auth/change-password", // Add password change endpoint to the ignore list
+      "/auth/change-password",
     ];
 
     // Check if the current request is for an endpoint that should not trigger logout
@@ -57,7 +162,6 @@ api.interceptors.response.use(
     );
 
     if (shouldIgnoreLogout) {
-      // Don't trigger logout for these specific endpoints
       return Promise.reject(error);
     }
 
@@ -65,21 +169,14 @@ api.interceptors.response.use(
       // Check if we're in a teacher route
       const currentPath = window.location.pathname;
       const isTeacherRoute = currentPath.includes("/app/teacher");
-      // Only clear auth and redirect if not already on login page
-      // ADDITION: Do not force reload if user is already logging out or on login page
+      // Only redirect if not already on login page
       const isLoggingOut = error.config?.url?.includes("/auth/logout");
       if (!window.location.pathname.includes("/login") && !isLoggingOut) {
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
-        // Only redirect if not from a teacher route
-        if (!isTeacherRoute) {
-          // Instead of hard reload, use client-side navigation if possible
-          // If React Router is available, use navigate. Otherwise, fallback to reload.
-          if (window.reactNavigate) {
-            window.reactNavigate("/login");
-          } else {
-            window.location.replace("/login"); // softer than href
-          }
+        // Instead of hard reload, use client-side navigation if possible
+        if (window.reactNavigate) {
+          window.reactNavigate("/login");
+        } else {
+          window.location.replace("/login");
         }
       }
     }
@@ -87,39 +184,9 @@ api.interceptors.response.use(
   }
 );
 
-// Auth services
-export const authService = {
-  login: (data) => api.post("/auth/login", data),
-  register: (data) => api.post("/auth/register", data),
-  logout: async () => {
-    try {
-      // Do NOT remove token/user from localStorage or Authorization header before API call
-      // Call the API endpoint to invalidate the session on server first
-      const response = await api.post("/auth/logout");
-      // Now remove all authentication data from localStorage
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
-      // Remove authorization header
-      delete api.defaults.headers.common["Authorization"];
-      return response;
-    } catch (error) {
-      // Even if API call fails, remove local auth data
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
-      delete api.defaults.headers.common["Authorization"];
-      console.error("Error during API logout:", error);
-      return { success: true };
-    }
-  },
-  getProfile: () => api.get("/auth/profile"),
-  forgotPassword: (email) => api.post("/auth/forgot-password", { email }),
-  resetPassword: (token, password) =>
-    api.post("/auth/reset-password", { token, password }),
-};
-
 // Student services
 export const studentService = {
-  // General methods used by admin/staff
+  // General methods used by admin
   getAll: () => api.get("/students"),
   getById: (id) => api.get(`/students/${id}`),
 
@@ -276,35 +343,27 @@ export const studentService = {
 
 // Teacher services
 export const teacherService = {
+  // Admin operations
   getAll: () => api.get("/teachers"),
-  getById: (id) => {
-    console.log(`Fetching teacher with ID: ${id}`);
-    return api
-      .get(`/teachers/${id}`)
-      .then((response) => {
-        console.log(`Received teacher data:`, response.data);
-        return response;
-      })
-      .catch((error) => {
-        console.error(`Error fetching teacher ${id}:`, error);
-        throw error;
-      });
-  },
+  getById: (id) => api.get(`/teachers/${id}`),
   create: (data) => api.post("/teachers", data),
   update: (id, data) => api.put(`/teachers/${id}`, data),
   delete: (id) => api.delete(`/teachers/${id}`),
-  // Get batches assigned to a specific teacher
-  getBatches: () => {
-    console.log(`Fetching teacher's batches`);
-    return api.get(`/teachers/batches`);
-  },
+
+  // Teacher-specific operations
+  getProfile: () => api.get("/teacher/profile"),
+  updateProfile: (data) => api.put("/teacher/profile", data),
+  getBatches: () => api.get("/teacher/batches"),
+  getBatchDetails: (id) => api.get(`/teacher/batches/${id}`),
+  getStudents: () => api.get("/teacher/students"),
+  getDashboard: () => api.get("/teacher/dashboard"),
 };
 
 // Subject services
 export const subjectService = {
-  getAll: () => api.get("/subjects"),
-  getById: (id) => api.get(`/subjects/${id}`),
-  getByStandard: (standardId) => api.get(`/subjects?standard=${standardId}`),
+  getAll: () => api.get("/subjects?populate=standard"),
+  getById: (id) => api.get(`/subjects/${id}?populate=standard`),
+  getByStandard: (standardId) => api.get(`/subjects?standard=${standardId}&populate=standard`),
   create: (data) => api.post("/subjects", data),
   update: (id, data) => api.put(`/subjects/${id}`, data),
   delete: (id) => api.delete(`/subjects/${id}`),
@@ -315,7 +374,7 @@ export const standardService = {
   getAll: () => api.get("/standards"),
   getById: (id) => api.get(`/standards/${id}`),
   create: (data) => {
-    // Make sure we don't include isActive in new standard creation 
+    // Make sure we don't include isActive in new standard creation
     const { isActive, ...cleanData } = data;
     return api.post("/standards", cleanData);
   },
@@ -423,16 +482,7 @@ export const dashboardService = {
   getStats: () => api.get("/dashboard/stats"),
   getRecentActivities: () => api.get("/dashboard/recent-activities"),
   getUpcomingClasses: () => api.get("/dashboard/upcoming-classes"),
-};
-
-// Staff Service
-export const staffService = {
-  getAll: () => api.get("/staff"),
-  getById: (id) => api.get(`/staff/${id}`),
-  create: (data) => api.post("/staff", data),
-  update: (id, data) => api.put(`/staff/${id}`, data),
-  delete: (id) => api.delete(`/staff/${id}`),
-  updateStatus: (id, status) => api.patch(`/staff/${id}/status`, { status }),
+  getTeacherStats: () => api.get("/teacher/dashboard"),
 };
 
 // Attendance Service

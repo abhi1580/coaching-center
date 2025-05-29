@@ -8,22 +8,25 @@ import {
 } from "../controllers/subjectController.js";
 import { protect, authorize } from "../middleware/authMiddleware.js";
 import { validate } from "../middleware/validate.js";
-import {  createSubjectValidator,  updateSubjectValidator,} from "../validators/subjectValidators.js";
+import {
+  createSubjectValidator,
+  updateSubjectValidator,
+} from "../validators/subjectValidators.js";
 
 const router = express.Router();
 
 // All routes are protected
 router.use(protect);
 
-// Routes accessible by admin and staff
+// Routes accessible by admin and teacher
 router
   .route("/")
-  .get(authorize("admin", "staff", "teacher"), getSubjects)
+  .get(authorize("admin", "teacher"), getSubjects)
   .post(authorize("admin"), createSubjectValidator, validate, createSubject);
 
 router
   .route("/:id")
-  .get(authorize("admin", "staff", "teacher"), getSubject)
+  .get(authorize("admin", "teacher"), getSubject)
   .put(authorize("admin"), updateSubjectValidator, validate, updateSubject)
   .delete(authorize("admin"), deleteSubject);
 

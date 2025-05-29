@@ -172,72 +172,9 @@ function Admission() {
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Load saved form data
-  const loadFormData = () => {
-    const savedData = localStorage.getItem("admissionFormData");
-    return savedData ? JSON.parse(savedData) : initialValues;
-  };
-
-  // Save form data
-  const saveFormData = (values) => {
-    localStorage.setItem("admissionFormData", JSON.stringify(values));
-    Swal.fire({
-      title: "Progress Saved!",
-      text: "Your form progress has been saved.",
-      icon: "success",
-      timer: 2000,
-      showConfirmButton: false,
-    });
-  };
-
-  // Calculate form progress
   const getStepProgress = () => {
     return ((activeStep + 1) / steps.length) * 100;
   };
-
-  // Handle form reset
-  const handleReset = (resetForm) => {
-    Swal.fire({
-      title: "Reset Form?",
-      text: "Are you sure you want to reset the form? All entered data will be lost.",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonColor: "#1976d2",
-      cancelButtonColor: "#d33",
-      confirmButtonText: "Yes, reset it!",
-      cancelButtonText: "No, keep it",
-    }).then((result) => {
-      if (result.isConfirmed) {
-        resetForm();
-        setActiveStep(0);
-        localStorage.removeItem("admissionFormData");
-      }
-    });
-  };
-
-  // Keyboard navigation
-  useEffect(() => {
-    const handleKeyPress = (event) => {
-      if (event.key === "Enter" && !event.shiftKey) {
-        event.preventDefault();
-        const form = document.querySelector("form");
-        if (form) {
-          const submitButton = form.querySelector('button[type="submit"]');
-          const nextButton = form.querySelector('button:not([type="submit"])');
-          if (activeStep === steps.length - 1) {
-            submitButton?.click();
-          } else {
-            nextButton?.click();
-          }
-        }
-      }
-    };
-
-    document.addEventListener("keypress", handleKeyPress);
-    return () => {
-      document.removeEventListener("keypress", handleKeyPress);
-    };
-  }, [activeStep]);
 
   const handleNext = (values, { setTouched, setErrors }) => {
     // Validate current step
@@ -308,7 +245,6 @@ function Admission() {
         setSubmitSuccess(true);
         setSubmitting(false);
         resetForm();
-        localStorage.removeItem("admissionFormData");
         setTimeout(() => {
           setSubmitSuccess(false);
           setActiveStep(0);
@@ -842,7 +778,7 @@ function Admission() {
         </Stepper>
 
         <Formik
-          initialValues={loadFormData()}
+          initialValues={initialValues}
           validationSchema={validationSchema}
           onSubmit={handleSubmit}
           validateOnChange={false}

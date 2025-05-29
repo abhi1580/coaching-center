@@ -41,14 +41,18 @@ import {
   Book as BookIcon,
   Email as EmailIcon,
   Phone as PhoneIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
 } from "@mui/icons-material";
-import axios from "axios";
+import { useSelector } from "react-redux";
+import api from "../../services/common/apiClient";
 
 function TeacherBatchDetail() {
-  const { id } = useParams();
+  const { batchId } = useParams();
   const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const { user } = useSelector((state) => state.auth);
 
   const [batch, setBatch] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -58,23 +62,14 @@ function TeacherBatchDetail() {
     const fetchBatchDetails = async () => {
       try {
         setLoading(true);
-        const token = localStorage.getItem("token");
-        if (!token) {
-          setError("Authentication required");
-          setLoading(false);
-          return;
-        }
-
-        // Make API request to fetch batch details using environment variables
-        const baseUrl =
-          import.meta.env.VITE_API_URL || "http://localhost:5000/api";
-        const response = await axios.get(
-          `${baseUrl}/batches/${id}?populate=enrolledStudents`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-
-        setBatch(response.data.data || response.data);
         setError(null);
+
+        const response = await api.get(`/teacher/batches/${batchId}`, {
+          params: {
+            populate: "enrolledStudents,subject,standard"
+          }
+        });
+        setBatch(response.data);
       } catch (err) {
         console.error("Error fetching batch details:", err);
         setError(err.response?.data?.message || "Failed to load batch details");
@@ -83,10 +78,25 @@ function TeacherBatchDetail() {
       }
     };
 
-    if (id) {
-      fetchBatchDetails();
+    fetchBatchDetails();
+  }, [batchId, user]);
+
+  const handleDelete = async () => {
+    if (!window.confirm("Are you sure you want to delete this batch?")) {
+      return;
     }
-  }, [id]);
+
+    try {
+      setLoading(true);
+      await api.delete(`/teacher/batches/${batchId}`);
+      navigate("/app/teacher/batches");
+    } catch (err) {
+      console.error("Error deleting batch:", err);
+      setError(err.response?.data?.message || "Failed to delete batch");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Format time function
   const formatTime = (timeString) => {

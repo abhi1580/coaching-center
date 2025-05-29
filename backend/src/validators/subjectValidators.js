@@ -19,6 +19,11 @@ export const createSubjectValidator = [
     .trim()
     .notEmpty()
     .withMessage("Duration is required"),
+
+  body("standard")
+    .optional()
+    .isMongoId()
+    .withMessage("Invalid standard ID"),
 ];
 
 export const updateSubjectValidator = [
@@ -39,4 +44,9 @@ export const updateSubjectValidator = [
     .trim()
     .notEmpty()
     .withMessage("Duration is required"),
+
+  body("standard")
+    .optional()
+    .isMongoId()
+    .withMessage("Invalid standard ID"),
 ]; 

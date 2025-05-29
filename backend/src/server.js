@@ -1,69 +1,124 @@
 import express from "express";
 import cors from "cors";
-import dotenv from "dotenv";
-import connectDB from "./config/db.js";
-import cron from "node-cron";
 import morgan from "morgan";
-import { checkAndExpireAnnouncements } from "./utils/announcementExpiry.js";
-import { updateBatchStatuses } from "./utils/batchStatusUpdates.js";
+import path from "path";
+import { fileURLToPath } from "url";
+import connectDB from "./config/db.js";
+import config from "./config/config.js";
 import { notFound, errorHandler } from "./middleware/errorMiddleware.js";
-
-// Import all routes from consolidated index
 import routes from "./routes/index.js";
-
-// Load environment variables
-dotenv.config();
+import helmet from "helmet";
+import limiter from "./middleware/rateLimiter.js";
+import cookieParser from "cookie-parser";
+import { doubleCsrf } from "csrf-csrf";
 
 const app = express();
+
+// Get current file path
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Connect to database
 connectDB();
 
-// Middleware
+// Basic middleware - cookie-parser must be first
+app.use(cookieParser());
+
+// Parse JSON bodies
+app.use(express.json());
+
+// Security middleware
 app.use(
-  cors({
-    origin: process.env.CLIENT_BASE_URL,
-    methods: ["GET", "POST", "DELETE", "PUT", "PATCH"],
-    allowedHeaders: [
-      "Content-Type",
-      "Authorization",
-      "Cache-Control",
-      "Expires",
-      "Pragma",
-    ],
-    credentials: true,
+  helmet({
+    contentSecurityPolicy: config.env === "production" ? undefined : false,
   })
 );
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 
-//logging http requests
+// CORS configuration must be before other middleware
+app.use(cors(config.corsOptions));
 
-if (process.env.NODE_ENV === "development") {
+// app.use(limiter);
+
+// CSRF validation middleware
+const csrfProtection = (req, res, next) => {
+  // Skip CSRF check for GET requests, CSRF token endpoint, and create-admin endpoint
+  if (
+    req.method === "GET" ||
+    req.path === "/api/auth/csrf-token" ||
+    req.path === "/api/auth/create-admin"
+  ) {
+    return next();
+  }
+
+  const csrfToken = req.headers["x-csrf-token"];
+  const cookieToken = req.cookies["X-CSRF-Token"];
+
+  console.log("CSRF validation:", {
+    method: req.method,
+    path: req.path,
+    headerToken: csrfToken,
+    cookieToken: cookieToken,
+  });
+
+  if (!csrfToken || !cookieToken || csrfToken !== cookieToken) {
+    console.error("CSRF validation failed:", {
+      headerToken: csrfToken,
+      cookieToken: cookieToken,
+    });
+    return res.status(403).json({
+      success: false,
+      message: "Invalid CSRF token",
+    });
+  }
+
+  next();
+};
+
+// Apply CSRF protection
+app.use(csrfProtection);
+console.log(`CSRF protection enabled in ${process.env.NODE_ENV} mode`);
+
+// Serve static files from uploads directory
+app.use(
+  "/uploads",
+  express.static(path.join(process.cwd(), config.uploadPath))
+);
+
+// Logging middleware
+if (config.env === "development") {
   app.use(morgan("dev"));
+  app.use((req, res, next) => {
+    console.log(`${req.method} ${req.url}`);
+    next();
+  });
+} else {
+  // Production logging - only errors
+  app.use(
+    morgan("combined", {
+      skip: (req, res) => res.statusCode < 400,
+      stream: {
+        write: (message) => console.error(message.trim()),
+      },
+    })
+  );
 }
 
-// Request logging middleware
-// app.use((req, res, next) => {
-//   console.log(`${new Date().toISOString()} - ${req.method} ${req.originalUrl}`);
-//   next();
-// });
-
-// Schedule announcement expiry check to run every minute
-cron.schedule("* * * * *", () => {
-  checkAndExpireAnnouncements();
-});
-
-// Schedule batch status updates to run every hour
-cron.schedule("0 * * * *", () => {
-  console.log("Running scheduled batch status update");
-  updateBatchStatuses().catch((err) => {
-    console.error("Error in scheduled batch status update:", err);
-  });
-});
-
-// Mount all routes from the consolidated index
+// API routes
 app.use("/api", routes);
+
+// Serve static files in production
+if (config.env === "production") {
+  // Use absolute path to frontend build directory
+  const buildPath = path.resolve(process.cwd(), "../frontend/dist");
+
+  // Serve static files from the build directory
+  app.use(express.static(buildPath));
+
+  // Handle all other routes by serving index.html
+  app.get("*", (req, res) => {
+    res.sendFile(path.join(buildPath, "index.html"));
+  });
+}
 
 // 404 handler for undefined routes
 app.use(notFound);
@@ -72,19 +127,18 @@ app.use(notFound);
 app.use(errorHandler);
 
 // Start server
-const PORT = process.env.PORT || 5000;
+const PORT = config.port;
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-
-  // Update batch statuses immediately on server start
-  updateBatchStatuses().catch((err) => {
-    console.error("Error updating batch statuses on startup:", err);
-  });
+  console.log(`Server running in ${config.env} mode on port ${PORT}`);
 });
 
 // Handle unhandled promise rejections
 process.on("unhandledRejection", (err) => {
   console.error("UNHANDLED REJECTION! Shutting down...");
-  console.error(err.name, err.message);
+  if (config.env === "development") {
+    console.error(err);
+  } else {
+    console.error(err.message);
+  }
   process.exit(1);
 });

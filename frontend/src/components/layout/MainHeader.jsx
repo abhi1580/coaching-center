@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Link as RouterLink, useNavigate, useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
+import { getDashboardUrl } from "../../utils/helpers";
 import {
   AppBar,
   Box,
@@ -36,6 +37,9 @@ const MainHeader = () => {
   // Get authentication state from Redux
   const { isAuthenticated, user } = useSelector((state) => state.auth);
 
+  // Remove duplicate getDashboardUrl function and use the utility
+  const dashboardUrl = getDashboardUrl(user);
+
   const handleOpenNavMenu = (event) => {
     setAnchorElNav(event.currentTarget);
   };
@@ -46,21 +50,6 @@ const MainHeader = () => {
   // Check if current path matches navigation item
   const isActive = (path) => {
     return location.pathname === path;
-  };
-
-  // Get dashboard URL based on user role
-  const getDashboardUrl = () => {
-    if (!user) return "/login";
-    switch (user.role) {
-      case "admin":
-        return "/app/dashboard";
-      case "teacher":
-        return "/app/teacher/dashboard";
-      case "student":
-        return "/app/student/dashboard";
-      default:
-        return "/app";
-    }
   };
 
   return (
@@ -178,7 +167,7 @@ const MainHeader = () => {
                 {isAuthenticated ? (
                   <MenuItem
                     onClick={() => {
-                      navigate(getDashboardUrl());
+                      navigate(dashboardUrl);
                       handleCloseNavMenu();
                     }}
                     sx={{
@@ -252,7 +241,7 @@ const MainHeader = () => {
               {isAuthenticated ? (
                 <Button
                   className="dashboard-btn"
-                  onClick={() => navigate(getDashboardUrl())}
+                  onClick={() => navigate(dashboardUrl)}
                   startIcon={<AccountCircleIcon />}
                   sx={{
                     color: "white",

@@ -1,8 +1,19 @@
 import { check, body } from "express-validator";
 
 export const loginValidator = [
-  check("email", "Please include a valid email").isEmail(),
-  check("password", "Password is required").exists(),
+  body("email")
+    .trim()
+    .notEmpty()
+    .withMessage("Email is required")
+    .isEmail()
+    .withMessage("Please provide a valid email address")
+    .normalizeEmail(),
+  body("password")
+    .trim()
+    .notEmpty()
+    .withMessage("Password is required")
+    .isLength({ min: 6 })
+    .withMessage("Password must be at least 6 characters long"),
 ];
 
 export const forgotPasswordValidator = [
@@ -82,4 +93,4 @@ export const changePasswordValidator = [
     .withMessage("New password is required")
     .isLength({ min: 6 })
     .withMessage("Password must be at least 6 characters long"),
-]; 
+];

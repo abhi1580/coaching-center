@@ -1,6 +1,7 @@
 import Teacher from "../../models/Teacher.js";
 import Batch from "../../models/Batch.js";
 import Student from "../../models/Student.js";
+import Announcement from "../../models/Announcement.js";
 import asyncHandler from "../../utils/asyncHandler.js";
 import {  sendSuccess,  sendNotFound,  sendBadRequest,} from "../../utils/responseUtil.js";
 import { ApiError } from "../../middleware/errorMiddleware.js";
@@ -211,3 +212,120 @@ export const getTeacherStudents = asyncHandler(async (req, res) => {
     studentsWithBatchInfo
   );
 });
+
+/**
+ * @desc    Get teacher dashboard data
+ * @route   GET /api/teacher/dashboard
+ * @access  Private (Teacher only)
+ */
+export const getTeacherDashboard = asyncHandler(async (req, res) => {
+  try {
+    // Get authenticated user's ID
+    const userId = req.user.id;
+
+    // Find the teacher profile for this user
+    const teacher = await Teacher.findOne({ user: userId }).populate("user", "name email");
+
+    if (!teacher) {
+      throw new ApiError("Teacher profile not found", 404);
+    }
+
+    // Get all batches assigned to this teacher with populated data
+    const batches = await Batch.find({ teacher: teacher._id })
+      .populate("subject", "name")
+      .populate("standard", "name")
+      .populate({
+        path: "enrolledStudents",
+        select: "name email phone"
+      });
+
+    // Calculate total number of unique students
+    const uniqueStudents = new Set();
+    
+    // Add students from enrolledStudents arrays
+    batches.forEach(batch => {
+      if (batch.enrolledStudents && batch.enrolledStudents.length > 0) {
+        batch.enrolledStudents.forEach(student => {
+          if (student && student._id) {
+            uniqueStudents.add(student._id.toString());
+          }
+        });
+      }
+    });
+    
+    // Get active announcements for the teacher
+    const announcements = await Announcement.find({
+      targetAudience: { $in: ['all', 'teachers'] },
+      expiryDate: { $gte: new Date() }
+    }).sort({ createdAt: -1 });
+
+    // Get upcoming classes for the next week
+    const today = new Date();
+    const nextWeek = new Date(today);
+    nextWeek.setDate(today.getDate() + 7);
+    
+    const upcomingClasses = [];
+    
+    batches.forEach(batch => {
+      if (batch.status === 'active' || batch.status === 'upcoming') {
+        // Check if schedule and days exist and are valid
+        if (batch.schedule && batch.schedule.days && Array.isArray(batch.schedule.days)) {
+          batch.schedule.days.forEach(day => {
+            // Create a date object for the next occurrence of this schedule day
+            const nextClassDate = getNextDayOfWeek(today, day);
+            
+            if (nextClassDate && nextClassDate <= nextWeek) {
+              upcomingClasses.push({
+                batchName: batch.name,
+                subject: batch.subject ? batch.subject.name : 'Not assigned',
+                standard: batch.standard ? batch.standard.name : 'Not assigned',
+                day: day,
+                startTime: batch.schedule.startTime,
+                endTime: batch.schedule.endTime,
+                date: nextClassDate
+              });
+            }
+          });
+        }
+      }
+    });
+    
+    // Sort upcoming classes by date and time
+    upcomingClasses.sort((a, b) => {
+      if (a.date.getTime() !== b.date.getTime()) {
+        return a.date.getTime() - b.date.getTime();
+      }
+      return a.startTime.localeCompare(b.startTime);
+    });
+
+    sendSuccess(res, 200, "Dashboard data retrieved successfully", {
+      totalBatches: batches.length,
+      totalStudents: uniqueStudents.size,
+      activeAnnouncements: announcements,
+      upcomingClasses: upcomingClasses
+    });
+  } catch (error) {
+    console.error("Error in getTeacherDashboard:", error);
+    throw new ApiError(error.message || "Error fetching dashboard data", 500);
+  }
+});
+
+// Helper function to get the next occurrence of a day
+function getNextDayOfWeek(date, dayName) {
+  const days = {
+    Monday: 1,
+    Tuesday: 2,
+    Wednesday: 3,
+    Thursday: 4,
+    Friday: 5,
+    Saturday: 6,
+    Sunday: 0
+  };
+  
+  const dayNumber = days[dayName];
+  if (dayNumber === undefined) return null;
+  
+  const resultDate = new Date(date);
+  resultDate.setDate(date.getDate() + (dayNumber + 7 - date.getDay()) % 7);
+  return resultDate;
+}

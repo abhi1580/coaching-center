@@ -21,10 +21,10 @@ import {
   publicRoutes,
   adminRoutes,
   teacherRoutes,
-  studentRoutes
+  studentRoutes,
 } from "./routes/routeConfig";
 
-// Redux 
+// Redux
 import { initializeAuth } from "./store/slices/authSlice";
 
 // Theme
@@ -33,80 +33,98 @@ import { theme } from "./theme";
 // Lazy load components
 const componentMap = {
   // Public pages
-  LandingPage: lazy(() => import('./pages/common/LandingPage')),
-  Login: lazy(() => import('./pages/common/Login')),
-  AboutUs: lazy(() => import('./pages/common/AboutUs')),
-  ContactUs: lazy(() => import('./pages/common/ContactUs')),
-  Courses: lazy(() => import('./pages/common/Courses')),
-  Resources: lazy(() => import('./pages/common/Resources')),
-  Admission: lazy(() => import('./pages/common/Admission')),
-  NotFound: lazy(() => import('./pages/common/NotFound')),
+  LandingPage: lazy(() => import("./pages/common/LandingPage")),
+  Login: lazy(() => import("./pages/common/Login")),
+  AboutUs: lazy(() => import("./pages/common/AboutUs")),
+  ContactUs: lazy(() => import("./pages/common/ContactUs")),
+  Courses: lazy(() => import("./pages/common/Courses")),
+  Resources: lazy(() => import("./pages/common/Resources")),
+  Admission: lazy(() => import("./pages/common/Admission")),
+  NotFound: lazy(() => import("./pages/common/NotFound")),
 
   // Admin pages
-  Dashboard: lazy(() => import('./pages/admin/Dashboard')),
+  Dashboard: lazy(() => import("./pages/admin/Dashboard")),
 
   // Announcements
-  AnnouncementList: lazy(() => import('./pages/admin/announcement/AnnouncementList')),
-  AnnouncementCreate: lazy(() => import('./pages/admin/announcement/AnnouncementCreate')),
-  AnnouncementView: lazy(() => import('./pages/admin/announcement/AnnouncementView')),
-  AnnouncementEdit: lazy(() => import('./pages/admin/announcement/AnnouncementEdit')),
+  AnnouncementList: lazy(() =>
+    import("./pages/admin/announcement/AnnouncementList")
+  ),
+  AnnouncementCreate: lazy(() =>
+    import("./pages/admin/announcement/AnnouncementCreate")
+  ),
+  AnnouncementView: lazy(() =>
+    import("./pages/admin/announcement/AnnouncementView")
+  ),
+  AnnouncementEdit: lazy(() =>
+    import("./pages/admin/announcement/AnnouncementEdit")
+  ),
 
   // Admin - Students
-  StudentList: lazy(() => import('./pages/admin/student/StudentList')),
-  StudentCreate: lazy(() => import('./pages/admin/student/StudentCreate')),
-  StudentView: lazy(() => import('./pages/admin/student/StudentView')),
-  StudentEdit: lazy(() => import('./pages/admin/student/StudentEdit')),
+  StudentList: lazy(() => import("./pages/admin/student/StudentList")),
+  StudentCreate: lazy(() => import("./pages/admin/student/StudentCreate")),
+  StudentView: lazy(() => import("./pages/admin/student/StudentView")),
+  StudentEdit: lazy(() => import("./pages/admin/student/StudentEdit")),
 
   // Admin - Subjects
-  SubjectList: lazy(() => import('./pages/admin/subject/SubjectList')),
-  SubjectCreate: lazy(() => import('./pages/admin/subject/SubjectCreate')),
-  SubjectView: lazy(() => import('./pages/admin/subject/SubjectView')),
-  SubjectEdit: lazy(() => import('./pages/admin/subject/SubjectEdit')),
+  SubjectList: lazy(() => import("./pages/admin/subject/SubjectList")),
+  SubjectCreate: lazy(() => import("./pages/admin/subject/SubjectCreate")),
+  SubjectView: lazy(() => import("./pages/admin/subject/SubjectView")),
+  SubjectEdit: lazy(() => import("./pages/admin/subject/SubjectEdit")),
 
   // Admin - Teachers
-  TeacherList: lazy(() => import('./pages/admin/teacher/TeacherList')),
-  TeacherCreate: lazy(() => import('./pages/admin/teacher/TeacherCreate')),
-  TeacherView: lazy(() => import('./pages/admin/teacher/TeacherView')),
-  TeacherEdit: lazy(() => import('./pages/admin/teacher/TeacherEdit')),
+  TeacherList: lazy(() => import("./pages/admin/teacher/TeacherList")),
+  TeacherCreate: lazy(() => import("./pages/admin/teacher/TeacherCreate")),
+  TeacherView: lazy(() => import("./pages/admin/teacher/TeacherView")),
+  TeacherEdit: lazy(() => import("./pages/admin/teacher/TeacherEdit")),
 
   // Admin - Standards
-  StandardList: lazy(() => import('./pages/admin/standard/StandardList')),
-  StandardCreate: lazy(() => import('./pages/admin/standard/StandardCreate')),
-  StandardView: lazy(() => import('./pages/admin/standard/StandardView')),
-  StandardEdit: lazy(() => import('./pages/admin/standard/StandardEdit')),
+  StandardList: lazy(() => import("./pages/admin/standard/StandardList")),
+  StandardCreate: lazy(() => import("./pages/admin/standard/StandardCreate")),
+  StandardView: lazy(() => import("./pages/admin/standard/StandardView")),
+  StandardEdit: lazy(() => import("./pages/admin/standard/StandardEdit")),
 
   // Admin - Batches
-  BatchList: lazy(() => import('./pages/admin/batch/BatchList')),
-  BatchCreate: lazy(() => import('./pages/admin/batch/BatchCreate')),
-  BatchView: lazy(() => import('./pages/admin/batch/BatchView')),
-  BatchEdit: lazy(() => import('./pages/admin/batch/BatchEdit')),
+  BatchList: lazy(() => import("./pages/admin/batch/BatchList")),
+  BatchCreate: lazy(() => import("./pages/admin/batch/BatchCreate")),
+  BatchView: lazy(() => import("./pages/admin/batch/BatchView")),
+  BatchEdit: lazy(() => import("./pages/admin/batch/BatchEdit")),
 
   // Admin - Videos
-  VideoList: lazy(() => import('./pages/admin/free-resources/video/VideoList')),
-  VideoCreate: lazy(() => import('./pages/admin/free-resources/video/VideoCreate')),
-  VideoEdit: lazy(() => import('./pages/admin/free-resources/video/VideoEdit')),
+  VideoList: lazy(() => import("./pages/admin/free-resources/video/VideoList")),
+  VideoCreate: lazy(() =>
+    import("./pages/admin/free-resources/video/VideoCreate")
+  ),
+  VideoEdit: lazy(() => import("./pages/admin/free-resources/video/VideoEdit")),
 
   // Teacher pages
-  TeacherDashboard: lazy(() => import('./pages/teacher/TeacherDashboard')),
-  TeacherBatches: lazy(() => import('./pages/teacher/TeacherBatches')),
-  TeacherBatchDetail: lazy(() => import('./pages/teacher/TeacherBatchDetail')),
-  TeacherStudents: lazy(() => import('./pages/teacher/TeacherStudents')),
-  TeacherAttendance: lazy(() => import('./pages/teacher/TeacherAttendance')),
-  TeacherProfile: lazy(() => import('./pages/teacher/TeacherProfile')),
-  TeacherAnnouncementView: lazy(() => import('./pages/teacher/TeacherAnnouncementView')),
-  TeacherAnnouncementList: lazy(() => import('./pages/teacher/TeacherAnnouncementList')),
-  NotesPage: lazy(() => import('./pages/teacher/NotesPage')),
-  TeacherRedirect: lazy(() => import('./components/teacher/TeacherRedirect')),
+  TeacherDashboard: lazy(() => import("./pages/teacher/TeacherDashboard")),
+  TeacherBatches: lazy(() => import("./pages/teacher/TeacherBatches")),
+  TeacherBatchDetail: lazy(() => import("./pages/teacher/TeacherBatchDetail")),
+  TeacherStudents: lazy(() => import("./pages/teacher/TeacherStudents")),
+  TeacherAttendance: lazy(() => import("./pages/teacher/TeacherAttendance")),
+  TeacherProfile: lazy(() => import("./pages/teacher/TeacherProfile")),
+  TeacherAnnouncementView: lazy(() =>
+    import("./pages/teacher/TeacherAnnouncementView")
+  ),
+  TeacherAnnouncementList: lazy(() =>
+    import("./pages/teacher/TeacherAnnouncementList")
+  ),
+  NotesPage: lazy(() => import("./pages/teacher/NotesPage")),
+  TeacherRedirect: lazy(() => import("./components/teacher/TeacherRedirect")),
 
   // Student pages
-  StudentDashboard: lazy(() => import('./pages/student/StudentDashboard')),
-  StudentBatches: lazy(() => import('./pages/student/StudentBatches')),
-  StudentAttendance: lazy(() => import('./pages/student/StudentAttendance')),
-  StudentProfile: lazy(() => import('./pages/student/StudentProfile')),
-  StudentSchedule: lazy(() => import('./pages/student/StudentSchedule')),
-  StudentNotes: lazy(() => import('./pages/student/StudentNotes')),
-  StudentAnnouncementView: lazy(() => import('./pages/student/StudentAnnouncementView')),
-  StudentAnnouncementList: lazy(() => import('./pages/student/StudentAnnouncementList')),
+  StudentDashboard: lazy(() => import("./pages/student/StudentDashboard")),
+  StudentBatches: lazy(() => import("./pages/student/StudentBatches")),
+  StudentAttendance: lazy(() => import("./pages/student/StudentAttendance")),
+  StudentProfile: lazy(() => import("./pages/student/StudentProfile")),
+  StudentSchedule: lazy(() => import("./pages/student/StudentSchedule")),
+  StudentNotes: lazy(() => import("./pages/student/StudentNotes")),
+  StudentAnnouncementView: lazy(() =>
+    import("./pages/student/StudentAnnouncementView")
+  ),
+  StudentAnnouncementList: lazy(() =>
+    import("./pages/student/StudentAnnouncementList")
+  ),
 };
 
 // Memoized ProtectedRoute to prevent unnecessary re-renders

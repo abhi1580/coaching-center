@@ -95,11 +95,9 @@ const validateSubjectData = (name, description, duration) => {
     errors.push("Description must not exceed 500 characters");
   }
 
-  // Duration validation
+  // Duration validation - only check if it's not empty
   if (!duration || duration.trim().length === 0) {
     errors.push("Duration is required");
-  } else if (!/^\d+\s*(?:hour|hr|h|minute|min|m)s?$/i.test(duration.trim())) {
-    errors.push("Duration must be in format: 'X hours' or 'X minutes'");
   }
 
   return errors;
@@ -110,7 +108,7 @@ const validateSubjectData = (name, description, duration) => {
 // @access  Private
 export const createSubject = async (req, res) => {
   try {
-    const { name, description, duration } = req.body;
+    const { name, description, duration, standard } = req.body;
 
     // Validate all fields
     const validationErrors = validateSubjectData(name, description, duration);
@@ -121,6 +119,19 @@ export const createSubject = async (req, res) => {
         errors: validationErrors,
         error: "VALIDATION_ERROR",
       });
+    }
+
+    // Check if standard exists if provided
+    if (standard) {
+      const Standard = (await import("../models/Standard.js")).default;
+      const standardExists = await Standard.findById(standard);
+      if (!standardExists) {
+        return res.status(404).json({
+          success: false,
+          message: "Standard not found",
+          error: "STANDARD_NOT_FOUND",
+        });
+      }
     }
 
     // Normalize the subject name
@@ -144,9 +155,20 @@ export const createSubject = async (req, res) => {
       name: normalizedName,
       description: description.trim(),
       duration: duration.trim(),
+      standard: standard || null,
     });
 
     await subject.save();
+
+    // Add subject to standard's subjects array if standard is provided
+    if (standard) {
+      const Standard = (await import("../models/Standard.js")).default;
+      const standardDoc = await Standard.findById(standard);
+      if (standardDoc) {
+        standardDoc.subjects.push(subject._id);
+        await standardDoc.save();
+      }
+    }
 
     res.status(201).json({
       success: true,
@@ -176,7 +198,7 @@ export const updateSubject = async (req, res) => {
       });
     }
 
-    const { name, description, duration } = req.body;
+    const { name, description, duration, standard } = req.body;
 
     // Validate all fields
     const validationErrors = validateSubjectData(name, description, duration);
@@ -197,12 +219,39 @@ export const updateSubject = async (req, res) => {
       });
     }
 
+    // If standard is being changed, update both subject and standard
+    if (standard && standard !== subject.standard.toString()) {
+      const Standard = (await import("../models/Standard.js")).default;
+      const newStandard = await Standard.findById(standard);
+      if (!newStandard) {
+        return res.status(404).json({
+          success: false,
+          message: "New standard not found",
+          error: "STANDARD_NOT_FOUND",
+        });
+      }
+
+      // Remove subject from old standard
+      const oldStandard = await Standard.findById(subject.standard);
+      if (oldStandard) {
+        oldStandard.subjects = oldStandard.subjects.filter(
+          (s) => s.toString() !== subject._id.toString()
+        );
+        await oldStandard.save();
+      }
+
+      // Add subject to new standard
+      newStandard.subjects.push(subject._id);
+      await newStandard.save();
+    }
+
     // Check if any fields have actually changed
     const normalizedName = name.toLowerCase().trim();
     const hasChanges =
       normalizedName !== subject.name.toLowerCase() ||
       description.trim() !== subject.description ||
-      duration.trim() !== subject.duration;
+      duration.trim() !== subject.duration ||
+      (standard && standard !== subject.standard.toString());
 
     if (!hasChanges) {
       return res.status(400).json({
@@ -233,6 +282,7 @@ export const updateSubject = async (req, res) => {
         name: normalizedName,
         description: description.trim(),
         duration: duration.trim(),
+        standard: standard || subject.standard,
       },
       {
         new: true,

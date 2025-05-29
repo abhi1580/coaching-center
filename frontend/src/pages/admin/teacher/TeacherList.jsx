@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate, Link as RouterLink } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import {
@@ -55,6 +55,7 @@ import {
 import { fetchSubjects } from "../../../store/slices/subjectSlice";
 import RefreshButton from "../../../components/common/RefreshButton";
 import Swal from "sweetalert2";
+import debounce from "lodash/debounce";
 
 const TeacherList = () => {
   const dispatch = useDispatch();
@@ -66,7 +67,6 @@ const TeacherList = () => {
   const { teachers, loading } = useSelector((state) => state.teachers);
   const { subjects } = useSelector((state) => state.subjects);
 
-  const [filteredTeachers, setFilteredTeachers] = useState([]);
   const [nameFilter, setNameFilter] = useState("");
   const [subjectFilter, setSubjectFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
@@ -79,18 +79,28 @@ const TeacherList = () => {
   // Delete confirmation state
   const [deleteLoading, setDeleteLoading] = useState(false);
 
-  // Clear filters
-  const clearFilters = () => {
-    setNameFilter("");
-    setSubjectFilter("");
-    setStatusFilter("");
+  // Debounced search handler
+  const debouncedSearch = useCallback(
+    debounce((value) => {
+      setNameFilter(value);
+    }, 300),
+    []
+  );
+
+  // Handle search input change
+  const handleSearchChange = (e) => {
+    const value = e.target.value;
+    debouncedSearch(value);
   };
 
-  // Load data
+  // Load data with caching
   const loadAllData = useCallback(() => {
     dispatch(fetchTeachers());
-    dispatch(fetchSubjects());
-  }, [dispatch]);
+    // Only fetch subjects if they're not already loaded
+    if (!subjects || subjects.length === 0) {
+      dispatch(fetchSubjects());
+    }
+  }, [dispatch, subjects]);
 
   useEffect(() => {
     loadAllData();
@@ -114,11 +124,10 @@ const TeacherList = () => {
     );
   };
 
-  // Filter teachers
-  useEffect(() => {
+  // Keep only the useMemo version of filteredTeachers
+  const filteredTeachers = useMemo(() => {
     if (!teachers || !Array.isArray(teachers)) {
-      setFilteredTeachers([]);
-      return;
+      return [];
     }
 
     let results = [...teachers];
@@ -151,10 +160,16 @@ const TeacherList = () => {
       results = results.filter((teacher) => teacher.status === statusFilter);
     }
 
-    // Reset page to 0 when filters change
-    setPage(0);
-    setFilteredTeachers(results);
+    return results;
   }, [teachers, nameFilter, subjectFilter, statusFilter]);
+
+  // Add useMemo for paginated data
+  const paginatedData = useMemo(() => {
+    return filteredTeachers.slice(
+      page * rowsPerPage,
+      page * rowsPerPage + rowsPerPage
+    );
+  }, [filteredTeachers, page, rowsPerPage]);
 
   // Delete handler
   const handleDeleteClick = (teacher) => {
@@ -323,15 +338,18 @@ const TeacherList = () => {
                   variant="outlined"
                   size="small"
                   label="By name or email"
-                  value={nameFilter}
-                  onChange={(e) => setNameFilter(e.target.value)}
+                  defaultValue={nameFilter}
+                  onChange={handleSearchChange}
                   InputProps={{
                     endAdornment: (
                       <Box sx={{ display: "flex", alignItems: "center" }}>
                         {nameFilter && (
                           <IconButton
                             size="small"
-                            onClick={() => setNameFilter("")}
+                            onClick={() => {
+                              setNameFilter("");
+                              debouncedSearch("");
+                            }}
                             edge="end"
                           >
                             <ClearIcon fontSize="small" />
@@ -360,8 +378,8 @@ const TeacherList = () => {
                 >
                   <MenuItem value="">All Subjects</MenuItem>
                   {subjects &&
-                    subjects.map((subject) => (
-                      <MenuItem key={subject._id} value={subject._id}>
+                    subjects.map((subject,index) => (
+                      <MenuItem key={index} value={subject._id}>
                         {subject.name}
                       </MenuItem>
                     ))}
@@ -387,7 +405,11 @@ const TeacherList = () => {
                 <Button
                   variant="outlined"
                   size="small"
-                  onClick={clearFilters}
+                  onClick={() => {
+                    setNameFilter("");
+                    setSubjectFilter("");
+                    setStatusFilter("");
+                  }}
                   fullWidth
                   startIcon={<ClearIcon />}
                   disabled={!nameFilter && !subjectFilter && !statusFilter}
@@ -438,7 +460,11 @@ const TeacherList = () => {
               <Button
                 variant="outlined"
                 startIcon={<ClearIcon />}
-                onClick={clearFilters}
+                onClick={() => {
+                  setNameFilter("");
+                  setSubjectFilter("");
+                  setStatusFilter("");
+                }}
                 size="small"
               >
                 Clear Filters
@@ -796,7 +822,11 @@ const TeacherList = () => {
                     <Button
                       variant="outlined"
                       startIcon={<ClearIcon />}
-                      onClick={clearFilters}
+                      onClick={() => {
+                        setNameFilter("");
+                        setSubjectFilter("");
+                        setStatusFilter("");
+                      }}
                       sx={{ mt: 1 }}
                       size="small"
                     >
@@ -805,7 +835,7 @@ const TeacherList = () => {
                   </TableCell>
                 </TableRow>
               ) : (
-                getPaginatedData().map((teacher, index) => (
+                paginatedData.map((teacher, index) => (
                   <TableRow
                     key={teacher._id}
                     sx={{

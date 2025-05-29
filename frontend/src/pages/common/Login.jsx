@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Form, Button } from "react-bootstrap";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import "./Login.css";
 import { useNavigate } from "react-router-dom";
 import {
@@ -38,6 +38,7 @@ const validationSchema = Yup.object({
 
 const Login = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const dispatch = useDispatch();
   const { loading, error } = useSelector((state) => state.auth);
   const [showPassword, setShowPassword] = useState(false);
@@ -87,13 +88,35 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Validate form data
+    if (!formData.email || !formData.password) {
+      Swal.fire({
+        title: "Validation Error",
+        text: "Please enter both email and password",
+        icon: "error",
+        confirmButtonColor: "var(--accent-yellow)",
+        timer: 2000,
+        timerProgressBar: true,
+        showConfirmButton: false,
+      });
+      return;
+    }
+
     try {
-      const userData = await dispatch(login(formData)).unwrap();
+      // Ensure data is properly formatted
+      const loginData = {
+        email: formData.email.trim(),
+        password: formData.password,
+      };
+
+      console.log("Submitting login data:", loginData);
+      const result = await dispatch(login(loginData)).unwrap();
 
       // Show success message with SweetAlert2 that auto-closes after 3 seconds
       Swal.fire({
         title: "Login Successful!",
-        text: `Welcome back, ${userData.user.name || userData.user.email}!`,
+        text: `Welcome back, ${result.user.name || result.user.email}!`,
         icon: "success",
         confirmButtonColor: "var(--accent-yellow)",
         timer: 2000,
@@ -101,24 +124,31 @@ const Login = () => {
         showConfirmButton: false,
       }).then(() => {
         // Navigate based on user role
-        if (userData.user.role === "admin") {
+        if (result.user.role === "admin") {
           navigate("/app/dashboard");
-        } else if (userData.user.role === "teacher") {
+        } else if (result.user.role === "teacher") {
           navigate("/app/teacher/dashboard");
-        } else if (userData.user.role === "student") {
+        } else if (result.user.role === "student") {
           navigate("/app/student/dashboard");
         } else {
           navigate("/app");
         }
       });
     } catch (err) {
+      console.error("Login error:", err.response?.data);
       // Show error message with SweetAlert2 that auto-closes after 3 seconds
+      const errorMessage = err.response?.data?.errors
+        ? err.response.data.errors.map((e) => `${e.param}: ${e.msg}`).join("\n")
+        : err.response?.data?.message ||
+          err.message ||
+          "Invalid credentials. Please try again.";
+
       Swal.fire({
         title: "Login Failed",
-        text: err.message || "Invalid credentials. Please try again.",
+        text: errorMessage,
         icon: "error",
         confirmButtonColor: "var(--accent-yellow)",
-        timer: 2000,
+        timer: 3000,
         timerProgressBar: true,
         showConfirmButton: false,
       });
@@ -132,6 +162,11 @@ const Login = () => {
           <div className="login-header">
             <h1>Welcome Back</h1>
             <p>Please login to your account</p>
+            {location.state?.sessionExpired && (
+              <Alert severity="warning" sx={{ mt: 2 }}>
+                Your session has expired. Please log in again.
+              </Alert>
+            )}
           </div>
 
           <Form onSubmit={handleSubmit}>

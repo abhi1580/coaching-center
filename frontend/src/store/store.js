@@ -8,7 +8,8 @@ import teacherReducer from "./slices/teacherSlice";
 import announcementReducer from "./slices/announcementSlice";
 import attendanceReducer from "./slices/attendanceSlice";
 
-export const store = configureStore({
+// Create store configuration
+const storeConfig = {
   reducer: {
     auth: authReducer,
     subjects: subjectReducer,
@@ -19,4 +20,12 @@ export const store = configureStore({
     announcements: announcementReducer,
     attendance: attendanceReducer,
   },
-});
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware({
+      serializableCheck: false,
+      immutableCheck: false,
+    }),
+};
+
+// Create and export store
+export const store = configureStore(storeConfig);

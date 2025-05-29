@@ -39,3 +39,6 @@ build/
 
 # MongoDB dump files
 dump/
+
+# PDF uploads
+uploads/notes

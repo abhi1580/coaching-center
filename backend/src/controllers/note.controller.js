@@ -1,7 +1,7 @@
 import asyncHandler from 'express-async-handler';
 import Note from '../models/note.model.js';
-import { cloudinary } from '../config/cloudinary.js';
-import { uploadToCloudinary } from '../utils/cloudinary.js';
+import path from 'path';
+import { deleteFile } from '../utils/fileStorage.js';
 
 // @desc    Upload a new note
 // @route   POST /api/notes/upload
@@ -26,24 +26,10 @@ const uploadNote = asyncHandler(async (req, res) => {
       }
     });
 
-    // Keep it simple - use a basic upload
-    const result = await uploadToCloudinary(file.path, {
-      folder: 'notes',
-      resource_type: 'raw'
-    });
-
-    console.log('Upload successful, result:', {
-      secure_url: result.secure_url,
-      public_id: result.public_id
-    });
-
-    // Get file URL from Cloudinary
-    const fileUrl = result.secure_url;
-
-    // Create the note
+    // Create the note with local file path
     const note = await Note.create({
       title,
-      fileUrl,
+      fileUrl: `/uploads/notes/${file.filename}`,
       batches: JSON.parse(batches),
       uploadedBy: req.user._id
     });
@@ -77,7 +63,7 @@ const uploadNote = asyncHandler(async (req, res) => {
 const getTeacherNotes = asyncHandler(async (req, res) => {
   const notes = await Note.find({ uploadedBy: req.user._id })
     .populate('batches', 'name')
-    .sort({ uploadedAt: -1 });
+    .sort({ createdAt: -1 });
 
   res.json({
     success: true,
@@ -85,13 +71,13 @@ const getTeacherNotes = asyncHandler(async (req, res) => {
   });
 });
 
-// @desc    Get notes for a specific batch
+// @desc    Get all notes for a batch
 // @route   GET /api/notes/batch/:batchId
 // @access  Private
 const getBatchNotes = asyncHandler(async (req, res) => {
   const notes = await Note.find({ batches: req.params.batchId })
     .populate('uploadedBy', 'name')
-    .sort({ uploadedAt: -1 });
+    .sort({ createdAt: -1 });
 
   res.json({
     success: true,
@@ -124,16 +110,11 @@ const deleteNote = asyncHandler(async (req, res) => {
   }
   
   try {
-    // Extract public_id from the Cloudinary URL
-    const urlParts = note.fileUrl.split('/');
-    const publicIdWithExtension = urlParts[urlParts.length - 1];
-    const publicId = `notes/${publicIdWithExtension.split('.')[0]}`;
+    // Get the file path
+    const filePath = path.join(process.cwd(), note.fileUrl);
     
-    // Log deletion attempt
-    console.log('Attempting to delete from Cloudinary:', publicId);
-    
-    // Delete from Cloudinary
-    await cloudinary.uploader.destroy(publicId, { resource_type: 'raw' });
+    // Delete the file
+    deleteFile(filePath);
     
     // Delete from database
     await Note.findByIdAndDelete(noteId);
@@ -145,7 +126,7 @@ const deleteNote = asyncHandler(async (req, res) => {
   } catch (error) {
     console.error('Error deleting note:', error);
     
-    // Delete from database anyway if Cloudinary fails
+    // Delete from database anyway if file deletion fails
     await Note.findByIdAndDelete(noteId);
     
     res.json({

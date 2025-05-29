@@ -46,85 +46,43 @@ const announcementSchema = new mongoose.Schema(
         message: "Invalid end date",
       },
     },
-    status: {
-      type: String,
-      enum: ["scheduled", "active", "expired"],
-      default: "scheduled",
-    },
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
     },
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
+  }
 );
+
+// Helper function to get current time in IST
+const getCurrentIST = () => {
+  return new Date(
+    new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" })
+  );
+};
 
 // Pre-save middleware to validate dates
 announcementSchema.pre("save", function (next) {
-  if (this.endDate < this.startDate) {
-    next(new Error("End date must be on or after start date"));
+  if (this.startDate >= this.endDate) {
+    next(new Error("End date must be after start date"));
   }
   next();
-});
-
-// Static method to update announcement statuses
-announcementSchema.statics.updateAnnouncementStatuses = async function () {
-  try {
-    const now = new Date();
-    const AnnouncementModel = this;
-
-    // Update expired announcements
-    await AnnouncementModel.updateMany(
-      {
-        endDate: { $lt: now },
-        status: { $ne: "expired" },
-      },
-      { status: "expired" }
-    );
-
-    // Update active announcements
-    await AnnouncementModel.updateMany(
-      {
-        startDate: { $lte: now },
-        endDate: { $gte: now },
-        status: { $ne: "active" },
-      },
-      { status: "active" }
-    );
-
-    // Update scheduled announcements
-    await AnnouncementModel.updateMany(
-      {
-        startDate: { $gt: now },
-        status: { $ne: "scheduled" },
-      },
-      { status: "scheduled" }
-    );
-
-    return { success: true };
-  } catch (error) {
-    console.error("Error updating announcement statuses:", error);
-    return { success: false, error: error.message };
-  }
-};
-
-// Update announcement statuses on save
-announcementSchema.post("save", function () {
-  // Get the model constructor
-  const Model = mongoose.model("Announcement");
-  // Update statuses silently
-  Model.updateAnnouncementStatuses().catch((err) => {
-    console.error("Error updating announcement statuses after save:", err);
-  });
 });
 
 // Method to format date in DD/MM/YYYY format
 announcementSchema.methods.formatDate = function (date) {
   if (!date) return null;
-  const day = date.getDate().toString().padStart(2, "0");
-  const month = (date.getMonth() + 1).toString().padStart(2, "0");
-  const year = date.getFullYear();
+  const indianDate = new Date(
+    date.toLocaleString("en-US", { timeZone: "Asia/Kolkata" })
+  );
+  const day = indianDate.getDate().toString().padStart(2, "0");
+  const month = (indianDate.getMonth() + 1).toString().padStart(2, "0");
+  const year = indianDate.getFullYear();
   return `${day}/${month}/${year}`;
 };
 
@@ -137,8 +95,17 @@ announcementSchema.virtual("formattedEndDate").get(function () {
   return this.formatDate(this.endDate);
 });
 
-// Ensure virtuals are included in toJSON output
-announcementSchema.set("toJSON", { virtuals: true });
+// Virtual getter for status
+announcementSchema.virtual("status").get(function () {
+  const now = getCurrentIST();
+  if (this.endDate < now) {
+    return "expired";
+  } else if (this.startDate <= now && this.endDate >= now) {
+    return "active";
+  } else {
+    return "scheduled";
+  }
+});
 
 const Announcement = mongoose.model("Announcement", announcementSchema);
 

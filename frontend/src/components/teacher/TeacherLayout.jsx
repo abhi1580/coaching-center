@@ -81,35 +81,10 @@ const TeacherLayout = () => {
   const handleLogout = async () => {
     try {
       await dispatch(logoutUser()).unwrap();
-
-      // Show success message with SweetAlert2 that auto-closes after 3 seconds
-      Swal.fire({
-        title: "Logged Out",
-        text: "You have been successfully logged out",
-        icon: "success",
-        confirmButtonColor: "var(--accent-yellow)",
-        timer: 2000,
-        timerProgressBar: true,
-        showConfirmButton: false,
-      }).then(() => {
-        navigate("/login");
-      });
+      window.location.replace("/login");
     } catch (error) {
-      console.error("Logout failed:", error);
-
-      // Show error message with SweetAlert2 that auto-closes after 3 seconds
-      Swal.fire({
-        title: "Logout Failed",
-        text: "There was an issue logging you out. Please try again.",
-        icon: "warning",
-        confirmButtonColor: "var(--accent-yellow)",
-        timer: 2000,
-        timerProgressBar: true,
-        showConfirmButton: false,
-      }).then(() => {
-        // Navigate anyway even if the API call fails
-        navigate("/login");
-      });
+      // Even if there's an error, we should still redirect to login
+      window.location.replace("/login");
     }
   };
 

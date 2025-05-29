@@ -11,11 +11,25 @@ export default defineConfig(({ mode }) => {
       host: true,
       proxy: {
         "/api": {
-          target: env.VITE_API_URL, // ✅ fixed
+          target: env.VITE_API_URL,
           changeOrigin: true,
           secure: false,
+          credentials: "include",
         },
       },
+    },
+    build: {
+      sourcemap: mode !== "production",
+      minify: "terser",
+      terserOptions: {
+        compress: {
+          drop_console: mode === "production",
+          drop_debugger: mode === "production",
+        },
+      },
+    },
+    define: {
+      "process.env.NODE_ENV": JSON.stringify(mode),
     },
   };
 });
