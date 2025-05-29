@@ -97,13 +97,7 @@ export const getStudent = async (req, res) => {
 // @route   POST /api/students
 // @access  Private
 export const createStudent = async (req, res) => {
-  // Start a new session for transaction
-  const session = await mongoose.startSession();
-  session.startTransaction();
-
   try {
-    // console.log("Creating student with data:", req.body);
-
     const {
       name,
       email,
@@ -129,7 +123,6 @@ export const createStudent = async (req, res) => {
     const missingFields = requiredFields.filter((field) => !req.body[field]);
 
     if (missingFields.length > 0) {
-      await session.abortTransaction();
       return res.status(400).json({
         success: false,
         message: "Missing required fields",
@@ -138,11 +131,10 @@ export const createStudent = async (req, res) => {
     }
 
     // Check if user or student already exists with this email
-    const existingUser = await User.findOne({ email }).session(session);
-    const existingStudent = await Student.findOne({ email }).session(session);
+    const existingUser = await User.findOne({ email });
+    const existingStudent = await Student.findOne({ email });
 
     if (existingUser || existingStudent) {
-      await session.abortTransaction();
       return res.status(400).json({
         success: false,
         message: "User with this email already exists",
@@ -151,57 +143,46 @@ export const createStudent = async (req, res) => {
 
     // Create user account for the student with the provided password
     try {
-      const user = await User.create(
-        [
-          {
-            name,
-            email,
-            password,
-            role: "student",
-            gender,
-            address,
-            phone,
-          },
-        ],
-        { session }
-      );
+      const user = await User.create({
+        name,
+        email,
+        password,
+        role: "student",
+        gender,
+        address,
+        phone,
+      });
 
       // Create the student with the user reference
-      const student = await Student.create(
-        [
-          {
-            name,
-            email,
-            phone,
-            standard,
-            subjects: subjects || [],
-            batches: batches || [],
-            parentName,
-            parentPhone,
-            address,
-            dateOfBirth,
-            gender,
-            board,
-            schoolName,
-            previousPercentage,
-            joiningDate,
-            user: user[0]._id, // Link to the created user
-            studentId,
-          },
-        ],
-        { session }
-      );
-
-      // If we get here, both user and student were created successfully
-      await session.commitTransaction();
+      const student = await Student.create({
+        name,
+        email,
+        phone,
+        standard,
+        subjects: subjects || [],
+        batches: batches || [],
+        parentName,
+        parentPhone,
+        address,
+        dateOfBirth,
+        gender,
+        board,
+        schoolName,
+        previousPercentage,
+        joiningDate,
+        user: user._id, // Link to the created user
+        studentId,
+      });
 
       res.status(201).json({
         success: true,
-        data: student[0],
+        data: student,
       });
     } catch (error) {
-      // If any error occurs, rollback both operations
-      await session.abortTransaction();
+      // If student creation fails, try to clean up the user
+      if (user) {
+        await User.findByIdAndDelete(user._id);
+      }
       console.error("Error creating user/student:", error);
       return res.status(400).json({
         success: false,
@@ -209,15 +190,12 @@ export const createStudent = async (req, res) => {
       });
     }
   } catch (err) {
-    await session.abortTransaction();
     console.error("Error in createStudent controller:", err);
     res.status(400).json({
       success: false,
       message: err.message,
       stack: process.env.NODE_ENV === "production" ? null : err.stack,
     });
-  } finally {
-    session.endSession();
   }
 };
 
